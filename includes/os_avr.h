@@ -1,3 +1,15 @@
+/*
+ * os_avr.h
+ *
+ * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
+ *
+ * Standard MIT License apply on this source code, with the inclusion of below
+ * clause.
+ *
+ * This source is for educational purpose only, and should never be used for
+ * any other purpose. If this source is used for other than educational purpose
+ * (in any form) the author will not be liable for any legal charges.
+ */
 #ifndef _OS_AVR_H_
 #define _OS_AVR_H_
 
@@ -20,7 +32,7 @@
 #define EXIT_CRITICAL()     asm volatile ( "pop     __tmp_reg__" :: );              \
                             asm volatile ( "out     __SREG__, __tmp_reg__" :: )
 
-
+/* This macro saves a function's context on the stack. */
 #define SAVE_CONTEXT()                                      \
     asm volatile (                                          \
                     "push   r0                      \n\t"   \
@@ -72,6 +84,7 @@
                     :: [tos_offset] "M" (OFFSETOF(TASK, tos))    \
                   );
 
+/* This macro loads a function's context from the stack. */
 #define RESTORE_CONTEXT()                                   \
     asm volatile (                                          \
                     "lds    r14, current_task        \n\t"       \
@@ -120,7 +133,8 @@
                     "pop    r0                      \n\t"   \
                     :: [tos_offset] "M" (OFFSETOF(TASK, tos))    \
                   );
-/* The function will manage it's own stack so compiler should not save context for this. */
+
+/* This macro tells the compiler to not manage the stack for a given function. */
 #define STACK_LESS                      __attribute__ (( naked, optimize("O0")))
 
 /* Return statements for the functions which are stack less. */

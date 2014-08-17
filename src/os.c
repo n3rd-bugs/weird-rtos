@@ -123,7 +123,7 @@ void set_current_task(TASK *tcb)
 
 /*
  * get_current_task
- * return: The pointer to control block of the currently running task.
+ * @return: The pointer to control block of the currently running task.
  * This function returns the pointer to the control block of the currently
  * running task.
  */
@@ -136,7 +136,7 @@ TASK *get_current_task()
 
 /*
  * current_system_tick
- * return: Current system tick.
+ * @return: Current system tick.
  * This function returns the number of system ticks elapsed from the system
  * boot.
  */

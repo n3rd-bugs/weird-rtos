@@ -1,3 +1,18 @@
+/*
+ * simple.h
+ *
+ * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
+ *
+ * Standard MIT License apply on this source code, with the inclusion of below
+ * clause.
+ *
+ * This source is for educational purpose only, and should never be used for
+ * any other purpose. If this source is used for other than educational purpose
+ * (in any form) the author will not be liable for any legal charges.
+ *
+ * This is an example of how to create the tasks and using different components.
+ */
+
 #include <avr/io.h>
 #include <stdio.h>
 #include <os.h>
@@ -116,6 +131,6 @@ int main(void)
 
     os_run();
 
-    return 0;
+    return (0);
 
 }
