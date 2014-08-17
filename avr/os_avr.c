@@ -1,7 +1,17 @@
+/*
+ * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
+ *
+ * This source is for educational purpose only, and should never be used for
+ * any other purpose.
+ */
 #include <avr/interrupt.h>
 #include <os.h>
 #include <os_avr.h>
 
+/*
+ * ISR(TIMER1_COMPA_vect, ISR_NAKED)
+ * This is timer interrupt that will be called at each system tick.
+ */
 ISR(TIMER1_COMPA_vect, ISR_NAKED)
 {
     /* Save the context on the current task's stack. */
@@ -19,13 +29,18 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 
 } /* ISR(TIMER1_COMPA_vect, ISR_NAKED) */
 
+/*
+ * system_tick_Init
+ * This initializes system tick.
+ * On AVR we are using Timer1 with CCP1 module to reload the timer when expired.
+ */
 void system_tick_Init()
 {
     /* Using 16bit timer 1 to generate the system tick. */
     OCR1AH = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFF00) >> 8;
     OCR1AL = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0x00FF);
 
-    /* Setup clock source and compare match behaviour. */
+    /* Setup clock source and compare match behavior. */
     TCCR1B =  0x03 | 0x08;
 
     /* Enable the compare A match interrupt. */
