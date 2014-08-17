@@ -3,6 +3,8 @@
 
 #include "os.h"
 
+#ifdef CONFIG_INCLUDE_SEMAPHORE
+
 /* Some status definitions. */
 #define SEMAPHORE_TIMEOUT   -700
 #define SEMAPHORE_BUSY      -701
@@ -31,5 +33,7 @@ typedef struct _semaphore
 void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t type);
 uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait);
 void semaphore_release(SEMAPHORE *semaphore);
+
+#endif /* CONFIG_INCLUDE_SEMAPHORE */
 
 #endif /* _SEMAPHORE_H_ */

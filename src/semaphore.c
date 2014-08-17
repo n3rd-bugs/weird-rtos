@@ -2,6 +2,8 @@
 #include <sleep.h>
 #include <sll.h>
 
+#ifdef CONFIG_INCLUDE_SEMAPHORE
+
 void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t type)
 {
     semaphore->count = count;
@@ -166,3 +168,5 @@ void semaphore_release(SEMAPHORE *semaphore)
     ENABLE_INTERRUPTS();
 
 } /* semaphore_release */
+
+#endif /* CONFIG_INCLUDE_SEMAPHORE */
