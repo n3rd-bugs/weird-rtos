@@ -53,3 +53,38 @@ void system_tick_Init()
     TIMSK1 |= 0x02;
 
 } /* system_tick_Init */
+
+/*
+ * os_stack_init
+ * @tcb: Task control block for which stack is needed to be initialized.
+ * @entry: Task entry function.
+ * @argv: Argument that is needed to be passed to the task.
+ * This function initializes stack for a new task.
+ */
+void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
+{
+    /* The start of the task code will be popped off the stack last, so place
+     * it on first. */
+    *(tcb->tos) = ((uint16_t)entry & 0x00FF);
+    (tcb->tos)--;
+
+    *(tcb->tos) = ((uint16_t)entry & 0xFF00) >> 8;
+    (tcb->tos)--;
+
+    (tcb->tos)--;                                   /* Push R0 on the stack. */
+
+    *(tcb->tos) = 0x80;
+    (tcb->tos)--;
+
+    *(tcb->tos) = 0x00;                             /* The compiler expects R1 to be 0. */
+    (tcb->tos) -= 0x17;                             /* Push R1-R23 on the stack. */
+
+    *(tcb->tos) = ((uint16_t)argv & 0x00FF);
+    (tcb->tos)--;                                   /* Push R24 on the stack. */
+
+    *(tcb->tos) = ((uint16_t)argv & 0xFF00) >> 8;
+    (tcb->tos)--;                                   /* Push R25 on the stack. */
+
+    (tcb->tos) -= 0x06;                             /* Push R26-R31 on the stack. */
+
+} /* os_stack_init */

@@ -14,6 +14,7 @@
 #define _OS_AVR_H_
 
 #include <avr/io.h>
+#include <tasks.h>
 
 /* AVR specific configurations. */
 #define OSC_FREQ            F_CPU
@@ -135,7 +136,7 @@
                   );
 
 /* This macro tells the compiler to not manage the stack for a given function. */
-#define STACK_LESS                      __attribute__ (( naked, optimize("O0")))
+#define STACK_LESS                      __attribute__ (( naked ))
 
 /* Return statements for the functions which are stack less. */
 #define RETURN_ENABLING_INTERRUPTS()    asm volatile ( "reti" )
@@ -143,5 +144,6 @@
 
 /* Function prototypes. */
 void system_tick_Init();
+void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv);
 
 #endif /* _OS_AVR_H_ */

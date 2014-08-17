@@ -1,20 +1,53 @@
+/*
+ * semaphore.c
+ *
+ * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
+ *
+ * Standard MIT License apply on this source code, with the inclusion of below
+ * clause.
+ *
+ * This source is for educational purpose only, and should never be used for
+ * any other purpose. If this source is used for other than educational purpose
+ * (in any form) the author will not be liable for any legal charges.
+ */
 #include <semaphore.h>
 #include <sleep.h>
 #include <sll.h>
 
 #ifdef CONFIG_INCLUDE_SEMAPHORE
 
+/*
+ * semaphore_create
+ * @semaphore: Semaphore control block to be initialized.
+ * @count: Initial count to be set for this semaphore.
+ * @max_count: Maximum count for this semaphore.
+ * This routine initializes a semaphore control block. After this the semaphore
+ * can be used to protect important resources.
+ */
 void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t type)
 {
+    /* Initialize semaphore count. */
     semaphore->count = count;
     semaphore->max_count = max_count;
 
+    /* Initialize semaphore type. */
     semaphore->type = type;
 
-    semaphore->tasks.head = 0;
-    semaphore->tasks.tail = 0;
-}
+    /* Initialize task list for this semaphore. */
+    semaphore->tasks.head = NULL;
+    semaphore->tasks.tail = NULL;
 
+} /* semaphore_create */
+
+/*
+ * semaphore_fifo_sort
+ * @node: Existing task in the semaphore task list.
+ * @task: New task being added in the semaphore task list.
+ * @return: TRUE if the new task is needed be scheduled before the existing node
+ *  in the list.
+ * This is sorting function called by SLL routines to sort the task list for
+ * the FIFO semaphores.
+ */
 static uint8_t semaphore_fifo_sort(void *node, void *task)
 {
     /* Always return false so that the new task is placed at the end
@@ -23,6 +56,15 @@ static uint8_t semaphore_fifo_sort(void *node, void *task)
 
 } /* semaphore_fifo_sort. */
 
+/*
+ * semaphore_priority_sort
+ * @node: Existing task in the semaphore task list.
+ * @task: New task being added in the semaphore task list.
+ * @return: TRUE if the new task is needed be scheduled before the existing node
+ *  in the list.
+ * This is sorting function called by SLL routines to sort the task list for
+ * the priority based semaphores.
+ */
 static uint8_t semaphore_priority_sort(void *node, void *task)
 {
     uint8_t schedule = FALSE;
@@ -39,6 +81,17 @@ static uint8_t semaphore_priority_sort(void *node, void *task)
 
 } /* semaphore_priority_sort. */
 
+/*
+ * semaphore_obtain
+ * @semaphore: Semaphore control block that is needed to be acquired.
+ * @wait: The number of ticks to wait for this semaphore, MAX_WAIT should be
+ *  used if user wants to wait for infinite time for this semaphore.
+ * @return: SUCCESS if the semaphore was successfully acquired, SEMAPHORE_BUSY
+ *  if the semaphore is busy and cannot be acquired, SEMAPHORE_TIMEOUT if system
+ *  has exhausted the given timeout to obtain this semaphore.
+ * This function is called to acquire a semaphore. User can specify the number
+ * of ticks to wait before returning an error.
+ */
 uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
     uint32_t    status = SUCCESS;
@@ -57,7 +110,7 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
             tcb = get_current_task();
 
             /* Check if we need to wait for a finite time. */
-            if (wait != (uint32_t)(-1))
+            if (wait != (uint32_t)(MAX_WAIT))
             {
                 /* Add the current task to the sleep list, if not available in
                  * the allowed time the task will be resumed. */
@@ -133,6 +186,11 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 
 } /* semaphore_obtain */
 
+/*
+ * semaphore_release
+ * @semaphore: Semaphore that is needed to be released.
+ * This function releases a previously acquired semaphore.
+ */
 void semaphore_release(SEMAPHORE *semaphore)
 {
     TASK *tcb;
@@ -149,7 +207,7 @@ void semaphore_release(SEMAPHORE *semaphore)
     /* Get the first task that can be resumed now. */
     tcb = (TASK *)sll_pop(&semaphore->tasks, OFFSETOF(TASK, next));
 
-    if (tcb != 0)
+    if (tcb != NULL)
     {
         /* Task is resuming from a semaphore. */
         tcb->status = TASK_RESUME_SEMAPHORE;

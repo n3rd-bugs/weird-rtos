@@ -1,26 +1,55 @@
+/*
+ * sch_aperiodic.c
+ *
+ * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
+ *
+ * Standard MIT License apply on this source code, with the inclusion of below
+ * clause.
+ *
+ * This source is for educational purpose only, and should never be used for
+ * any other purpose. If this source is used for other than educational purpose
+ * (in any form) the author will not be liable for any legal charges.
+ */
 #include <scheduler.h>
 #include <sch_aperiodic.h>
 #include <sll.h>
 
 #ifdef CONFIG_INCLUDE_APERIODIC_TASKS
 
+/*
+ * sch_aperiodic_task_sort
+ * @node: An existing node in the list.
+ * @task: New task that is needed to be added in the list.
+ * @return: If the new task is needed to be scheduled before the existing node
+ *  TRUE will be returned otherwise FALSE will be returned.
+ * This is task sorting function that is used by SLL routines to schedule new
+ * aperiodic tasks.
+ */
 static uint8_t sch_aperiodic_task_sort(void *node, void *task)
 {
-    uint8_t schedule = 0;
+    uint8_t schedule = FALSE;
 
     /* If node has low priority than the given task, then we can schedule the
      * given task here. */
     if (((TASK *)node)->priority > ((TASK *)task)->priority)
     {
         /* Schedule the given task before this node. */
-        schedule = 1;
+        schedule = TRUE;
     }
 
     /* Return if we need to schedule this task before the given node. */
     return (schedule);
 
-} /* SCH_Aperiodic_Can_Insert */
+} /* sch_aperiodic_task_sort */
 
+/*
+ * sch_aperiodic_task_yield
+ * @tcb: The task's control block that is needed to be scheduled in the
+ *  aperiodic scheduler.
+ * @from: From where this task is being scheduled.
+ * This is yield function required by a scheduling class, this is called when a
+ * task is needed to be scheduled in the aperiodic scheduler.
+ */
 static void sch_aperiodic_task_yield(TASK *tcb, uint8_t from)
 {
     /* Process all the cases from a task can be re/scheduled. */
@@ -52,13 +81,19 @@ static void sch_aperiodic_task_yield(TASK *tcb, uint8_t from)
 
 } /* sch_aperiodic_task_yield */
 
+/*
+ * sch_aperiodic_get_task
+ * @return: Task's control block which is needed to be run from this scheduler.
+ * This function implements get task routine required by a scheduling class.
+ * This is called by scheduler to get the next task that is needed to run.
+ */
 static TASK *sch_aperiodic_get_task()
 {
     /* Get the first task in the ready list. */
     TASK *tcb = (TASK *)sll_pop(&aperiodic_scheduler.ready_tasks, OFFSETOF(TASK, next));
 
     /* If there is a task that can run next. */
-    if (tcb != 0)
+    if (tcb != NULL)
     {
         /* Task is being resumed. */
         tcb->status = TASK_RESUME_NORMAL;
@@ -73,7 +108,7 @@ static TASK *sch_aperiodic_get_task()
 SCHEDULER aperiodic_scheduler =
 {
     /* List of tasks that are enqueued to run. */
-    .ready_tasks    = {0, 0},
+    .ready_tasks    = {NULL, NULL},
 
     /* Function that will return the next task that is needed to run. */
     .get_task       = &sch_aperiodic_get_task,

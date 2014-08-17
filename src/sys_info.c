@@ -1,9 +1,29 @@
+/*
+ * sys_info.c
+ *
+ * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
+ *
+ * Standard MIT License apply on this source code, with the inclusion of below
+ * clause.
+ *
+ * This source is for educational purpose only, and should never be used for
+ * any other purpose. If this source is used for other than educational purpose
+ * (in any form) the author will not be liable for any legal charges.
+ */
 #include <os.h>
 #include <sys_info.h>
 #include <stdio.h>
 
 #ifdef CONFIG_INCLUDE_TASK_STATS
 
+/*
+ * util_task_calc_free_stack
+ * @tcb: Task control block of which number of free bytes on the stack are
+ *  needed to be calculated.
+ * @return: Number of bytes free on the given task's stack.
+ * This function calculate and returns number of bytes free on a given task's
+ * stack.
+ */
 uint32_t util_task_calc_free_stack(TASK *tcb)
 {
     uint32_t free = 0;
@@ -20,6 +40,10 @@ uint32_t util_task_calc_free_stack(TASK *tcb)
 
 } /* util_task_calc_free_stack */
 
+/*
+ * util_print_sys_info
+ * This function prints generalized information about the operating system.
+ */
 void util_print_sys_info()
 {
     /* Get the first task. */
@@ -33,7 +57,7 @@ void util_print_sys_info()
     printf("Name\tClass\tTotal\tFree\tMin.\tn(T)\n");
 
     /* Print information about all the tasks in the system. */
-    while (tcb != 0)
+    while (tcb != NULL)
     {
         /* Calculate number of bytes still intact on the task's stack. */
         stack_used = util_task_calc_free_stack(tcb);
@@ -52,17 +76,5 @@ void util_print_sys_info()
     }
 
 } /* util_print_sys_info */
-
-#else
-
-uint32_t util_task_calc_free_stack(TASK *tcb)
-{
-    return 0;
-}
-
-void util_print_sys_info()
-{
-    ;
-}
 
 #endif /* CONFIG_INCLUDE_TASK_STATS */

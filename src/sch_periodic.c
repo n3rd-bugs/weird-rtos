@@ -1,12 +1,33 @@
+/*
+ * sch_periodic.c
+ *
+ * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
+ *
+ * Standard MIT License apply on this source code, with the inclusion of below
+ * clause.
+ *
+ * This source is for educational purpose only, and should never be used for
+ * any other purpose. If this source is used for other than educational purpose
+ * (in any form) the author will not be liable for any legal charges.
+ */
 #include <scheduler.h>
 #include <sch_periodic.h>
 #include <sll.h>
 
 #ifdef CONFIG_INCLUDE_PERIODIC_TASKS
 
+/*
+ * sch_periodic_task_sort
+ * @node: An existing node in the list.
+ * @task: New task that is needed to be added in the list.
+ * @return: If the new task is needed to be scheduled before the existing node
+ *  TRUE will be returned otherwise FALSE will be returned.
+ * This is the task sorting routine that is used by SLL routines to schedule new
+ * periodic tasks.
+ */
 static uint8_t sch_periodic_task_sort(void *node, void *task)
 {
-    uint8_t schedule = 0;
+    uint8_t schedule = FALSE;
 
     /* If node has scheduling time greater than the given task then we need to
      * insert this task before this node. */
@@ -18,7 +39,7 @@ static uint8_t sch_periodic_task_sort(void *node, void *task)
            (((TASK *)node)->priority > ((TASK *)task)->priority) ) )
     {
         /* Schedule the given task before this node. */
-        schedule = 1;
+        schedule = TRUE;
     }
 
     /* Return if we need to schedule this task before the given node. */
@@ -26,6 +47,14 @@ static uint8_t sch_periodic_task_sort(void *node, void *task)
 
 } /* sch_periodic_task_sort */
 
+/*
+ * sch_periodic_task_yield
+ * @tcb: The task's control block that is needed to be scheduled in the periodic
+ *  scheduler.
+ * @from: From where this task is being scheduled.
+ * This is yield function required by a scheduling class, this is called when a
+ * task is needed to be scheduled in the periodic scheduler.
+ */
 static void sch_periodic_task_yield(TASK *tcb, uint8_t from)
 {
     uint64_t last_time;
@@ -89,12 +118,18 @@ static void sch_periodic_task_yield(TASK *tcb, uint8_t from)
 
 } /* sch_periodic_task_yield */
 
+/*
+ * sch_periodic_get_task
+ * @return: Task's control block which is needed to be run from this scheduler.
+ * This function implements get task routine required by a scheduling class.
+ * This is called by scheduler to get the next task that is needed to run.
+ */
 static TASK *sch_periodic_get_task()
 {
-    TASK *tcb = 0;
+    TASK *tcb = NULL;
 
     /* Check if we need to schedule the task on the head. */
-    if ( (periodic_scheduler.ready_tasks.head != 0) &&
+    if ( (periodic_scheduler.ready_tasks.head != NULL) &&
          (current_system_tick() >= periodic_scheduler.ready_tasks.head->scheduler_data_2) )
     {
         tcb = (TASK *)sll_pop(&periodic_scheduler.ready_tasks, OFFSETOF(TASK, next));
@@ -112,7 +147,7 @@ static TASK *sch_periodic_get_task()
 SCHEDULER periodic_scheduler =
 {
     /* List of tasks that are enqueued to run. */
-    .ready_tasks    = {0, 0},
+    .ready_tasks    = {NULL, NULL},
 
     /* Function that will return the next task that is needed to run. */
     .get_task       = &sch_periodic_get_task,

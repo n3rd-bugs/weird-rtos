@@ -21,7 +21,7 @@ uint64_t current_tick = 0;
 /*
  * os_process_system_tick
  * This function is called at each system tick. Here we decide which task is
- * needed to be run in next system tick.
+ * needed to run in next system tick.
  */
 void os_process_system_tick()
 {
@@ -55,7 +55,7 @@ void os_process_system_tick()
 
 /*
  * task_yield
- * This function is used to yield current task. This can be called from any
+ * This function is used to yield the current task. This can be called from any
  * task. Depending on task priority the current task will be preempted or
  * continue to run after this is called.
  */
@@ -86,7 +86,8 @@ void task_yield()
 /*
  * task_waiting
  * This called when the current task is waiting for a resource and is needed
- * to be removed from the normal scheduling methods.
+ * to be removed from the parent scheduling class, and will be rescheduled by
+ * the resource manager.
  */
 void task_waiting()
 {
@@ -124,8 +125,7 @@ void set_current_task(TASK *tcb)
 /*
  * get_current_task
  * @return: The pointer to control block of the currently running task.
- * This function returns the pointer to the control block of the currently
- * running task.
+ * This function returns the pointer to the control block of the current task.
  */
 TASK *get_current_task()
 {
