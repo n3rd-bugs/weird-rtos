@@ -15,12 +15,13 @@
 #include <sch_aperiodic.h>
 #include <sch_periodic.h>
 #include <sleep.h>
+#include <string.h>
 
 /* A list of all the tasks in the system. */
-TASK_LIST sch_task_list = {NULL ,NULL};
+TASK_LIST sch_task_list;
 
 /* This is the list of schedulers sorted on their priority. */
-static SCHEDULER_LIST scheduler_list = {NULL, NULL};
+static SCHEDULER_LIST scheduler_list;
 
 /* Definitions for idle task. */
 static TASK __idle_task;
@@ -34,10 +35,12 @@ static char __idle_task_stack[128];
  */
 void __idle_task_entry(void *argv)
 {
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(argv);
+
     while(1)
     {
-        PORTB &= ~(1 << (uint16_t)1);
-        PORTB |= (1 << (uint16_t)1);
+        ;
     }
 }
 
@@ -72,6 +75,9 @@ static uint8_t scheduler_sort(void *node, void *scheduler)
  */
 void scheduler_init()
 {
+    /* Clear the schedule lists. */
+    memset(&scheduler_list, 0, sizeof(scheduler_list));
+    memset(&sch_task_list, 0, sizeof(sch_task_list));
 
 #ifdef CONFIG_INCLUDE_APERIODIC_TASKS
     /* Add aperiodic scheduler. */

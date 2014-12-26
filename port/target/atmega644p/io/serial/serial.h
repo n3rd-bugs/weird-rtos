@@ -13,6 +13,8 @@
 #ifndef _SERIAL_H_
 #define _SERIAL_H_
 
+#include <stdio.h>
+
 /* Serial stream definition. */
 extern FILE serial_fd;
 

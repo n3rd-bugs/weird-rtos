@@ -21,10 +21,10 @@
 #define TASK_IDLE        0x03
 
 /* Some task resume status. */
-#define TASK_SUSPENDED          -100
-#define TASK_RESUME_NORMAL      -101
-#define TASK_RESUME_SLEEP       -102
-#define TASK_RESUME_SEMAPHORE   -103
+#define TASK_SUSPENDED          0
+#define TASK_RESUME_NORMAL      1
+#define TASK_RESUME_SLEEP       2
+#define TASK_RESUME_SEMAPHORE   3
 
 /* Scheduler class definition. */
 typedef struct _scheduler SCHEDULER;

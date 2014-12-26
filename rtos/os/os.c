@@ -11,13 +11,13 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
-#include <os_avr.h>
+#include <os_target.h>
 
 /* This will hold the control block for the currently running. */
 TASK *current_task;
 
 /* This is used for time keeping in the system. */
-uint64_t current_tick = 0;
+uint64_t current_tick;
 /*
  * os_process_system_tick
  * This function is called at each system tick. Here we decide which task is
@@ -25,9 +25,6 @@ uint64_t current_tick = 0;
  */
 void os_process_system_tick()
 {
-    /* DEBUG: Set PB0 high. */
-    PORTB &= ~(1);
-
     /* Increment system clock. */
     current_tick ++;
 
@@ -45,12 +42,6 @@ void os_process_system_tick()
         current_task = scheduler_get_next_task();
     }
 
-    /* DEBUG: Set PB0 low. */
-    PORTB |= (1);
-
-    /* Return from this function. */
-    RETURN_FUNCTION();
-
 } /* os_process_system_tick */
 
 /*
@@ -61,9 +52,8 @@ void os_process_system_tick()
  */
 void task_yield()
 {
-    /* Save the context on the current task's stack. */
-    /* This will also disable global interrupts. */
-    SAVE_CONTEXT();
+    /* Disable interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* If current task has a scheduler defined. */
     if (current_task->scheduler != NULL)
@@ -72,14 +62,8 @@ void task_yield()
         ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_MANUAL);
     }
 
-    /* Get the task that should run next. */
-    current_task = scheduler_get_next_task();
-
-    /* Restore the previous task's context. */
-    RESTORE_CONTEXT();
-
-    /* Return and enable global interrupts. */
-    RETURN_ENABLING_INTERRUPTS();
+    /* Schedule next task. */
+    CONTROL_TO_SYSTEM();
 
 } /* task_yield */
 
@@ -87,25 +71,16 @@ void task_yield()
  * task_waiting
  * This called when the current task is waiting for a resource and is needed
  * to be removed from the parent scheduling class, and will be rescheduled by
- * the resource manager.
+ * the resource manager. If required user can keep the interrupts disabled when
+ * jumping into this function.
  */
 void task_waiting()
 {
-    /* Save the context on the current task's stack. */
-    /* This will also disable global interrupts. */
-    SAVE_CONTEXT();
-
     /* We will not re-enqueue this task as it is suspended and only the
      * suspending component can resume this task. */
 
-    /* Get the task that should run next. */
-    current_task = scheduler_get_next_task();
-
-    /* Restore the previous task's context. */
-    RESTORE_CONTEXT();
-
-    /* Return and enable global interrupts. */
-    RETURN_ENABLING_INTERRUPTS();
+    /* Give control back to system. */
+    CONTROL_TO_SYSTEM();
 
 } /* task_waiting */
 
@@ -155,15 +130,15 @@ uint64_t current_system_tick()
 void os_run()
 {
     /* Initialize system clock. */
+    current_tick = 0;
+
+    /* Initialize system clock. */
     system_tick_Init();
 
     /* Get the first task that is needed to run. */
     current_task = scheduler_get_next_task();
 
     /* Load/restore task's context. */
-    RESTORE_CONTEXT();
-
-    /* Return and enable global interrupts. */
-    RETURN_ENABLING_INTERRUPTS();
+    RESTORE_CONTEXT_FIRST();
 
 } /* os_run */

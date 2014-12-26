@@ -13,7 +13,7 @@
 #ifndef _SLL_H_
 #define _SLL_H_
 
-#include <avr/io.h>
+#include <stdint.h>
 
 /* Single SLL node definition. */
 typedef struct _sll_node

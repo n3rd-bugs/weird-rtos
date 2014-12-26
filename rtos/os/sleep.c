@@ -158,6 +158,9 @@ void sleep(uint32_t ticks)
     /* Task is being suspended. */
     tcb->status = TASK_SUSPENDED;
 
+    /* Enable interrupts. */
+    ENABLE_INTERRUPTS();
+
     /* Return control to the system.
      * We will resume from here when our required delay has been achieved. */
     task_waiting();

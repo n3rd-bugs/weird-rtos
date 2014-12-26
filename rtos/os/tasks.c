@@ -49,10 +49,15 @@ void task_create(TASK *tcb, char *name, char *stack, uint32_t stack_size, TASK_E
     UNUSED_PARAM(name);
 #endif /* CONFIG_INCLUDE_TASK_STATS */
 
-    /* Set task's stack pointer. */
-    tcb->tos = stack + (stack_size - 1);
+    /* Adjust task's stack pointer. */
+    TOS_SET(tcb->tos, stack, stack_size);
 
     /* Initialize task's stack. */
     os_stack_init(tcb, entry, argv);
+
+#ifdef CONFIG_INCLUDE_TASK_STATS
+    /* Break the task stack pattern. */
+    *(tcb->tos) = 0x00;
+#endif /* CONFIG_INCLUDE_TASK_STATS */
 
 } /* task_create */

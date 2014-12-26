@@ -13,7 +13,8 @@
 #ifndef _TASKS_H_
 #define _TASKS_H_
 
-#include <avr/io.h>
+#include <stdint.h>
+#include <config.h>
 
 /* These defines different task flags. */
 #define TASK_DONT_PREEMPT   0x01    /* This will disable task preemption. */

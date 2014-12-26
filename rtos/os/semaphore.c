@@ -50,6 +50,10 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
  */
 static uint8_t semaphore_fifo_sort(void *node, void *task)
 {
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(node);
+    UNUSED_PARAM(task);
+
     /* Always return false so that the new task is placed at the end
      * of the list. */
     return (FALSE);

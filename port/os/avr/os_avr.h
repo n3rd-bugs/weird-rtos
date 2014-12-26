@@ -10,8 +10,9 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#ifndef _OS_AVR_H_
-#define _OS_AVR_H_
+
+#ifndef OS_AVR_H
+#define OS_AVR_H
 
 #include <avr/io.h>
 #include <tasks.h>
@@ -135,6 +136,14 @@
                     :: [tos_offset] "M" (OFFSETOF(TASK, tos))    \
                   );
 
+/* This macro is responsible for switching context for time. */
+#define RESTORE_CONTEXT_FIRST()         {                                   \
+                                            RESTORE_CONTEXT();              \
+                                            RETURN_ENABLING_INTERRUPTS();   \
+                                        }
+
+#define CONTROL_TO_SYSTEM()             control_to_system()
+
 /* This macro tells the compiler to not manage the stack for a given function. */
 #define STACK_LESS                      __attribute__ (( naked ))
 
@@ -142,8 +151,11 @@
 #define RETURN_ENABLING_INTERRUPTS()    asm volatile ( "reti" )
 #define RETURN_FUNCTION()               asm volatile ( "ret" )
 
+#define TOS_SET(tos, sp, size)      (tos = (sp + (size-1)))
+
 /* Function prototypes. */
 void system_tick_Init();
 void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv);
+void control_to_system();
 
-#endif /* _OS_AVR_H_ */
+#endif /* OS_AVR_H */

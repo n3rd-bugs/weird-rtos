@@ -88,3 +88,26 @@ void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
     (tcb->tos) -= 0x06;                             /* Push R26-R31 on the stack. */
 
 } /* os_stack_init */
+
+/*
+ * control_to_system
+ */
+void control_to_system()
+{
+    /* Save the context on the current task's stack. */
+    /* This will also disable global interrupts. */
+    SAVE_CONTEXT();
+
+    /* We will not re-enqueue this task as it is suspended and only the
+     * suspending component can resume this task. */
+
+    /* Get the task that should run next. */
+    current_task = scheduler_get_next_task();
+
+    /* Restore the previous task's context. */
+    RESTORE_CONTEXT();
+
+    /* Return and enable global interrupts. */
+    RETURN_ENABLING_INTERRUPTS();
+
+} /* run_first_task */

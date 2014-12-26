@@ -13,9 +13,9 @@
 #ifndef _OS_H_
 #define _OS_H_
 
-#include <avr/io.h>
+#include <stdint.h>
 #include <config.h>
-#include <os_avr.h>
+#include <os_target.h>
 #include <tasks.h>
 #include <scheduler.h>
 #include <semaphore.h>
@@ -26,15 +26,17 @@
 #define TRUE                1
 #define MAX_WAIT            (-1)
 
-#ifndef NULL
-#define NULL                0
+#ifdef NULL
+#undef NULL
 #endif
+#define NULL                0
 
 /* Number of system ticks per second. */
-#define OS_TICKS_PER_SEC    1000
+#define OS_TICKS_PER_SEC    100
+#define OS_TICK64_PER_SEC   1000000
 
 /* Some useful macros. */
-#define OFFSETOF(type, field)   ((uint16_t) &(((type *) 0)->field))
+#define OFFSETOF(type, field)   ((int) &(((type *) 0)->field))
 #define UNUSED_PARAM(x)         (void)(x)
 
 /* Defines the origin from which this task is being yielded.  */
@@ -43,17 +45,20 @@
 #define YIELD_MANUAL            0x02
 #define YIELD_CANNOT_RUN        0x03
 
+/* Exported variables. */
+extern TASK *current_task;
+
 /* Public function prototypes. */
 void os_run();
-uint64_t current_system_tick();
 
 /* External function prototypes. */
 void sleep(uint32_t ticks);
+#define sleep_ms(ms)            sleep( (ms * OS_TICKS_PER_SEC) / (1000) )
 
 /* Internal functions should not be called from user applications. */
-void os_process_system_tick()   STACK_LESS;
-void task_yield()               STACK_LESS;
-void task_waiting()             STACK_LESS;
+void os_process_system_tick();
+void task_yield();
+void task_waiting();
 
 void set_current_task(TASK *tcb);
 TASK *get_current_task();
