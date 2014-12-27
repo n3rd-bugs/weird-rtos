@@ -18,9 +18,6 @@
 /* System entry function. */
 extern void system_entry(void);
 
-/* Variable definitions. */
-uint32_t os_stack_end;
-
 /* Initial vector table definition. */
 __attribute__ ((section (".vectortable"))) VECTOR_TABLE system_isr_table =
 {
