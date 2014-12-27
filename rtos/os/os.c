@@ -17,7 +17,7 @@
 TASK *current_task;
 
 /* This is used for time keeping in the system. */
-uint64_t current_tick;
+uint64_t current_tick = 0;
 /*
  * os_process_system_tick
  * This function is called at each system tick. Here we decide which task is
@@ -129,9 +129,6 @@ uint64_t current_system_tick()
  */
 void os_run()
 {
-    /* Initialize system clock. */
-    current_tick = 0;
-
     /* Initialize system clock. */
     system_tick_Init();
 
