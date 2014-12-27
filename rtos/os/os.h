@@ -18,7 +18,9 @@
 #include <os_target.h>
 #include <tasks.h>
 #include <scheduler.h>
+#ifdef CONFIG_INCLUDE_SEMAPHORE
 #include <semaphore.h>
+#endif
 
 /* Some return codes. */
 #define SUCCESS             0
