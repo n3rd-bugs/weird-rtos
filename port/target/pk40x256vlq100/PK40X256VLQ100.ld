@@ -1,19 +1,14 @@
-/* Linker file for GNU C Compiler */
-
-/* Entry Point */
 ENTRY(system_entry)
 
-/* Generate a link error if heap and stack don't fit into RAM */
-heap_size = 0;
-stack_size = 0;
+heap_size   = 0;
+stack_size  = 0x800;
 
-/* Specify the memory areas */
 MEMORY
 {
-   m_interrupts    (RX) : ORIGIN = 0x1FFF0000, LENGTH = 0x000001E0
-   m_flash_config  (RX) : ORIGIN = 0x00000400, LENGTH = 0x00000010
-   m_text          (RX) : ORIGIN = 0x20000000, LENGTH = 0x00010000
-   m_data          (RW) : ORIGIN = 0x1FFF01E0, LENGTH = 0x0000FE20
+    m_interrupts    (RX): ORIGIN = 0x1FFF0000, LENGTH = 0x000001E0
+    m_flash_config  (RX): ORIGIN = 0x00000400, LENGTH = 0x00000010
+    m_text          (RX): ORIGIN = 0x20000000, LENGTH = 0x00010000
+    m_data          (RW): ORIGIN = 0x1FFF01E0, LENGTH = 0x0000FE20
 }
 
 SECTIONS
@@ -44,12 +39,15 @@ SECTIONS
         *(.glue_7t)
         *(.eh_frame)
         
+        . = ALIGN(4);
+        
+        ___ROM_AT = .;
     } > m_text
     
     .data :
     {
         . = ALIGN(4);
-        *(.data) 
+        *(.data)
         *(.data*)
     } > m_text
     
@@ -62,14 +60,19 @@ SECTIONS
         *(COMMON)
     } > m_text
     
-    
-    ._user_heap_stack :
+    .heap_stack :
     {
         . = ALIGN(4);
         PROVIDE ( end = . );
         PROVIDE ( _end = . );
+        PROVIDE ( os_stack_end = . );
         . = . + heap_size;
         . = . + stack_size;
         . = ALIGN(4);
     } > m_data
+    
+    .ARM.attributes 0 : 
+    { 
+        *(.ARM.attributes) 
+    }
 }
