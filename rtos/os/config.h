@@ -28,4 +28,7 @@
 #define CONFIG_INCLUDE_SLEEP
 #define CONFIG_INCLUDE_SEMAPHORE
 
+/* Memory manger. */
+#define CONFIG_MEMGR
+
 #endif /* _CONFIG_H_ */

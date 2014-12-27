@@ -20,14 +20,14 @@ SECTIONS
         KEEP(*(.vectortable))
         . = ALIGN(4);
     } > m_interrupts
-    
+
     .cfmprotect :
     {
         . = ALIGN(4);
         KEEP(*(.cfmconfig))
         . = ALIGN(4);
     } > m_flash_config
-    
+
     .text :
     {
         . = ALIGN(4);
@@ -38,19 +38,19 @@ SECTIONS
         *(.glue_7)
         *(.glue_7t)
         *(.eh_frame)
-        
+
         . = ALIGN(4);
-        
+
         ___ROM_AT = .;
     } > m_text
-    
+
     .data :
     {
         . = ALIGN(4);
         *(.data)
         *(.data*)
     } > m_text
-    
+
     . = ALIGN(4);
     .bss :
     {
@@ -59,20 +59,39 @@ SECTIONS
         *(.bss*)
         *(COMMON)
     } > m_text
-    
+
+    /* This is memory region for allocation that will be done over a system
+     * reset. */
+    .static_mem :
+    {
+        PROVIDE ( static_start = . );
+        FILL(0xDEADBEEF);
+        . = ORIGIN(m_text) + LENGTH(m_text) - 1;
+        PROVIDE ( static_end = . );
+
+    } > m_text
+
+    /* This is memory region for dynamic allocations. */
+    .dynamic_mem :
+    {
+        PROVIDE ( dynamic_start = . );
+        FILL(0xDEADBEEF);
+        . = ORIGIN(m_data) + LENGTH(m_data) - (heap_size + stack_size);
+        PROVIDE ( dynamic_end = . );
+    } > m_data
+
     .heap_stack :
     {
         . = ALIGN(4);
         PROVIDE ( end = . );
-        PROVIDE ( _end = . );
         PROVIDE ( os_stack_end = . );
         . = . + heap_size;
         . = . + stack_size;
         . = ALIGN(4);
     } > m_data
-    
-    .ARM.attributes 0 : 
-    { 
-        *(.ARM.attributes) 
+
+    .ARM.attributes 0 :
+    {
+        *(.ARM.attributes)
     }
 }

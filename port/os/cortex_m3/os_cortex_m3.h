@@ -67,6 +67,10 @@ extern uint32_t sys_interrupt_level;
 #define current_system_tick64()         pit_get_clock()
 #define current_system_tick64_usec()    (pit_get_clock() / PCLK_FREQ)
 
+/* Memory definitions. */
+#define STATIC_MEM_START                ((char *)(&static_start))
+#define STATIC_MEM_END                  ((char *)(&static_end))
+
 typedef struct _hardware_stack_farme
 {
   uint32_t r0;
@@ -92,6 +96,10 @@ typedef struct _software_stack_farme
 } software_stack_farme;
 
 #define TOS_SET(tos, sp, size)      (tos = (sp + size))
+
+/* Exported variables. */
+extern uint32_t static_start;
+extern uint32_t static_end;
 
 /* Function prototypes. */
 void run_first_task();

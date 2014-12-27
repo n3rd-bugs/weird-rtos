@@ -21,6 +21,9 @@
 #ifdef CONFIG_INCLUDE_SEMAPHORE
 #include <semaphore.h>
 #endif
+#ifdef CONFIG_MEMGR
+#include <mem.h>
+#endif
 
 /* Some return codes. */
 #define SUCCESS             0
