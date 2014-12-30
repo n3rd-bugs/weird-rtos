@@ -32,7 +32,7 @@ typedef struct _mem_static
 
 /* Function prototypes. */
 void mem_static_init_region(MEM_STATIC *, char *, char *);
-char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size);
-char *mem_static_dealloc_region(MEM_STATIC *mem_static, char *mem_ptr);
+char *mem_static_alloc_region(MEM_STATIC *, uint32_t);
+char *mem_static_dealloc_region(char *);
 
 #endif /* MEM_STATIC_H */

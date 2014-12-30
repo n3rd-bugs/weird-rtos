@@ -18,10 +18,15 @@
 
 /* Memory manager configuration. */
 #define CONFIG_MEMGR_STATIC
+#define CONFIG_MEMGR_DYNAMIC
 #define CONFIG_MEMGR_STATS
 
 #ifdef CONFIG_MEMGR_STATIC
 #include <mem_static.h>
+#endif
+
+#ifdef CONFIG_MEMGR_DYNAMIC
+#include <mem_dynamic.h>
 #endif
 
 /* Exported variable definitions. */
@@ -29,12 +34,21 @@
 extern MEM_STATIC mem_static;
 #endif
 
+#ifdef CONFIG_MEMGR_DYNAMIC
+extern MEM_DYNAMIC mem_dynamic;
+#endif
+
 /* Function prototypes. */
 void mem_init();
 
 #ifdef CONFIG_MEMGR_STATIC
 #define mem_static_alloc(size)      mem_static_alloc_region(&mem_static, size)
-#define mem_static_dealloc(mem)     mem_static_dealloc_region(&mem_static, mem)
+#define mem_static_dealloc(mem)     mem_static_dealloc_region(mem)
+#endif
+
+#ifdef CONFIG_MEMGR_DYNAMIC
+#define mem_dynamic_alloc(size)     mem_dynamic_alloc_region(&mem_dynamic, size)
+#define mem_dynamic_dealloc(mem)    mem_dynamic_dealloc_region(mem)
 #endif
 
 #endif /* MEM_H */

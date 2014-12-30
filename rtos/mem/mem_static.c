@@ -72,17 +72,13 @@ char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
 
 /*
  * mem_static_dealloc_region
- * @mem_static: Memory region to be used.
  * @mem_ptr: Memory needed to be deallocated.
  * @return: If NULL memory was successfully deallocated,
  *  otherwise given memory will be returned.
  * This function allocate a memory for a static memory region.
  */
-char *mem_static_dealloc_region(MEM_STATIC *mem_static, char *mem_ptr)
+char *mem_static_dealloc_region(char *mem_ptr)
 {
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(mem_static);
-
     /* Return same memory as we don't support memory deallocation for
      * static memory. */
     return (mem_ptr);
