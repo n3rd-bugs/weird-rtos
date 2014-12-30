@@ -14,9 +14,14 @@
 #include <os_target.h>
 #include <string.h>
 
+#ifdef CONFIG_MEMGR_STATIC
+
 /*
- * mem_static_init
- * This function initializes a static memory pool.
+ * mem_static_init_region
+ * @mem_static: Static memory descriptor to be initialized.
+ * @start: Start of the memory.
+ * @end: End of the memory.
+ * This function initializes a static memory region.
  */
 void mem_static_init_region(MEM_STATIC *mem_static, char *start, char *end)
 {
@@ -24,20 +29,22 @@ void mem_static_init_region(MEM_STATIC *mem_static, char *start, char *end)
     /* Clear the memory structure. */
     memset(mem_static, 0, sizeof(MEM_STATIC));
 
-    /* Initialize memory pool. */
+    /* Initialize memory region. */
     mem_static->current_ptr = start;
-    mem_static->mem_end_ptr = end;
+    mem_static->end_ptr = end;
 
 #ifdef CONFIG_MEMGR_STATS
     mem_static->mem_size = (uint32_t)(end - start);
 #endif
 
-} /* mem_static_init */
+} /* mem_static_init_region */
 
 /*
- * mem_static_alloc
+ * mem_static_alloc_region
+ * @mem_static: Memory region to be used to allocate this memory.
+ * @size: Size of required memory in bytes.
  * @return: Pointer to the newly allocated memory region.
- * This function allocate a memory for a static memory pool.
+ * This function allocate a memory for a static memory region.
  */
 char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
 {
@@ -46,7 +53,7 @@ char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
     /* Disable interrupts. */
     DISABLE_INTERRUPTS();
 
-    if ( (mem_static->current_ptr + size) < (mem_static->mem_end_ptr) )
+    if ( (mem_static->current_ptr + size) < (mem_static->end_ptr) )
     {
         /* Return current memory pointer. */
         new_mem = mem_static->current_ptr;
@@ -64,10 +71,12 @@ char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
 } /* mem_static_alloc_region */
 
 /*
- * mem_static_dealloc
+ * mem_static_dealloc_region
+ * @mem_static: Memory region to be used.
+ * @mem_ptr: Memory needed to be deallocated.
  * @return: If NULL memory was successfully deallocated,
  *  otherwise given memory will be returned.
- * This function allocate a memory for a static memory pool.
+ * This function allocate a memory for a static memory region.
  */
 char *mem_static_dealloc_region(MEM_STATIC *mem_static, char *mem_ptr)
 {
@@ -80,3 +89,4 @@ char *mem_static_dealloc_region(MEM_STATIC *mem_static, char *mem_ptr)
 
 } /* mem_static_alloc_region */
 
+#endif /* CONFIG_MEMGR_STATIC */

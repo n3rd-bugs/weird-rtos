@@ -19,9 +19,9 @@
 /* Type definitions. */
 typedef struct _mem_static
 {
-    /* Required data to maintain a simple static memory pool. */
+    /* Required data to maintain a simple static memory region. */
     char        *current_ptr;
-    char        *mem_end_ptr;
+    char        *end_ptr;
 
 #ifdef CONFIG_MEMGR_STATS
     /* Total memory size.  */

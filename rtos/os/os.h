@@ -50,6 +50,8 @@
 #define YIELD_MANUAL            0x02
 #define YIELD_CANNOT_RUN        0x03
 
+#define ALLIGN(n)               ( n > 4 ? n & (~(0x3)) : 4 )
+
 /* Exported variables. */
 extern TASK *current_task;
 
