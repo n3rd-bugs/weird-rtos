@@ -13,7 +13,7 @@
 
 /* Proof-of-concept:
  *  This memory manager works on static page scheme.
- *  Each page is initialized with a configurable size and maximum allocation
+ *  Each page is initialized with a static size and a maximum allocation
  *  size.
  *  A memory can be allocated from a page if:
  *   1. The page has a hole large enough to store that memory.
@@ -23,18 +23,21 @@
  *  MEM_STRICT_ALLOC is set.
  *
  * Memory hole management:
- *  A single page can be configured to work in three possible configuration
- *   1. Descending hole list, this will work perfectly for the pages which
- *      are configured for static sizes. This will require least amount of
- *      time when allocating and deallocating a memory.
+ *  A page can be configured to work in one of the three possible
+ *  configurations:
+ *   1. Descending hole list, the hole list will be sorted with the largest
+ *      hole first, this will work perfectly for the pages which are
+ *      configured for static size allocation. Also this will require least
+ *      amount of time when allocating and deallocating a memory.
  *   2. Ascending hole list, this will require more time then the last one
  *      and should be used over a smaller page delta, this will cause least
- *      fragmentation by allocating the smallest hole first.
+ *      fragmentation by allocating the smallest holes first.
  *   3. No sorting, this is generic configuration and will allocate the
  *      last freed memory.
  *
  * Cons:
- *  This will causes more fragmentation if not setup properly.
+ *  This memory management will causes more than normal fragmentation if not
+ *  setup properly.
  *
  * Pros:
  *  This is highly predictable and once configured properly user will never
