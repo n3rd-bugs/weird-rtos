@@ -28,6 +28,9 @@ static TASK *last_task;
 
 /*
  * os_stack_init
+ * @tcb: Task control block needed to be initialized.
+ * @task_entry: Task entry function.
+ * @argv: Arguments to be passed to the entry function.
  * This function is responsible for initializing stack for a tack.
  */
 void os_stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)

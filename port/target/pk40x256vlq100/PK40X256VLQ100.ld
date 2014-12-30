@@ -1,14 +1,15 @@
 ENTRY(system_entry)
 
-heap_size   = 0;
-stack_size  = 0x800;
+__heap_size   = 0x800;
+__stack_size  = 0x800;
 
 MEMORY
 {
-    m_interrupts    (RX): ORIGIN = 0x1FFF0000, LENGTH = 0x000001E0
+    m_interrupts    (RX): ORIGIN = 0x00000000, LENGTH = 0x000001E0
     m_flash_config  (RX): ORIGIN = 0x00000400, LENGTH = 0x00000010
-    m_text          (RX): ORIGIN = 0x20000000, LENGTH = 0x00010000
-    m_data          (RW): ORIGIN = 0x1FFF01E0, LENGTH = 0x0000FE20
+    m_text          (RX): ORIGIN = 0x00000800, LENGTH = 0x0003F800
+    m_data_l        (RW): ORIGIN = 0x1FFF0000, LENGTH = 0x00010000
+    m_data_h        (RW): ORIGIN = 0x20000000, LENGTH = 0x00010000
 }
 
 SECTIONS
@@ -49,7 +50,7 @@ SECTIONS
         . = ALIGN(4);
         *(.data)
         *(.data*)
-    } > m_text
+    } > m_data_l
 
     . = ALIGN(4);
     .bss :
@@ -58,40 +59,30 @@ SECTIONS
         *(.bss)
         *(.bss*)
         *(COMMON)
-    } > m_text
-
-    /* This is memory region for allocation that will be done over a system
-     * reset. */
+    } > m_data_l
+    
     .static_mem :
     {
         PROVIDE ( static_start = . );
-        FILL(0xDEADBEEF);
-        . = ORIGIN(m_text) + LENGTH(m_text) - 1;
+        . = ORIGIN(m_data_l) + LENGTH(m_data_l);
         PROVIDE ( static_end = . );
-
-    } > m_text
-
-    /* This is memory region for dynamic allocations. */
-    .dynamic_mem :
-    {
-        PROVIDE ( dynamic_start = . );
-        FILL(0xDEADBEEF);
-        . = ORIGIN(m_data) + LENGTH(m_data) - (heap_size + stack_size);
-        PROVIDE ( dynamic_end = . );
-    } > m_data
+    } > m_data_l
 
     .heap_stack :
     {
         . = ALIGN(4);
         PROVIDE ( end = . );
-        PROVIDE ( os_stack_end = . );
-        . = . + heap_size;
-        . = . + stack_size;
+        __heap_addr = .;
+        . = . + __heap_size;
+        . = . + __stack_size;
         . = ALIGN(4);
-    } > m_data
-
-    .ARM.attributes 0 :
+        PROVIDE ( os_stack_end = . );
+    } > m_data_h
+    
+    .dynamic_mem :
     {
-        *(.ARM.attributes)
-    }
+        PROVIDE ( dynamic_start = . );
+        . = ORIGIN(m_data_h) + LENGTH(m_data_h);
+        PROVIDE ( dynamic_end = . );
+    } > m_data_h
 }

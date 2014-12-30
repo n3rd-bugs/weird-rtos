@@ -70,6 +70,8 @@ extern uint32_t sys_interrupt_level;
 /* Memory definitions. */
 #define STATIC_MEM_START                ((char *)(&static_start))
 #define STATIC_MEM_END                  ((char *)(&static_end))
+#define DYNAMIC_MEM_START               ((char *)(&dynamic_start))
+#define DYNAMIC_MEM_END                 ((char *)(&dynamic_end))
 
 typedef struct _hardware_stack_farme
 {
@@ -100,6 +102,8 @@ typedef struct _software_stack_farme
 /* Exported variables. */
 extern uint32_t static_start;
 extern uint32_t static_end;
+extern uint32_t dynamic_start;
+extern uint32_t dynamic_end;
 
 /* Function prototypes. */
 void run_first_task();
