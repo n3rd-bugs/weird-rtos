@@ -50,7 +50,8 @@
 #define YIELD_MANUAL            0x02
 #define YIELD_CANNOT_RUN        0x03
 
-#define ALLIGN(n)               ( n > 0x4 ? (n & (~(0x3))) : 0x4 )
+#define ALLIGN_FLOOR(n)         ( n > 0x4 ? (n & (~(0x3))) : 0x4 )
+#define ALLIGN_CEIL(n)          ( n > 0x4 ? ((n & (~(0x3))) + 4) : 0x4 )
 
 /* Exported variables. */
 extern TASK *current_task;

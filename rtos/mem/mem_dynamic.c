@@ -90,7 +90,7 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, u
         if(mem_cfg[i].size != 0)
         {
             /* Add it to total sum. */
-            page_mem_size += ALLIGN(mem_cfg[i].size);
+            page_mem_size += ALLIGN_FLOOR(mem_cfg[i].size);
         }
         else
         {
@@ -106,7 +106,7 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, u
     if (j > 0)
     {
         /* Evenly divide the remaining space for the memory regions that have undefined size. */
-        page_mem_size = ALLIGN(page_mem_size / j);
+        page_mem_size = ALLIGN_CEIL(page_mem_size / j);
     }
 
     /* Initialize memory for all pages. */
@@ -128,7 +128,7 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, u
              * given by caller. */
             if (mem_cfg[i].size != 0)
             {
-                page_size = ALLIGN(mem_cfg[i].size);
+                page_size = ALLIGN_FLOOR(mem_cfg[i].size);
             }
             else
             {
@@ -313,7 +313,7 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 #endif
 
     /* We will always allocate aligned memory. */
-    size = ALLIGN(size + sizeof(MEM_DESC));
+    size = ALLIGN_FLOOR(size + sizeof(MEM_DESC));
 
 #ifdef CONFIG_INCLUDE_SEMAPHORE
     /* Acquire the memory lock. */
