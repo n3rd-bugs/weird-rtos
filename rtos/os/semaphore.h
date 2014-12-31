@@ -13,7 +13,7 @@
 #ifndef _SEMAPHORE_H_
 #define _SEMAPHORE_H_
 
-#include "os.h"
+#include <os.h>
 
 #ifdef CONFIG_INCLUDE_SEMAPHORE
 
@@ -38,6 +38,9 @@ typedef struct _semaphore
 
     /* Type of this semaphore. */
     uint8_t     type;
+
+    /* Padding variable. */
+    uint8_t     pad[1];
 
 } SEMAPHORE;
 

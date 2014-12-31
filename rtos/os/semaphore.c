@@ -10,9 +10,10 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#include <semaphore.h>
+#include <os.h>
 #include <sleep.h>
 #include <sll.h>
+#include <string.h>
 
 #ifdef CONFIG_INCLUDE_SEMAPHORE
 
@@ -26,6 +27,9 @@
  */
 void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t type)
 {
+    /* Clear semaphore memory. */
+    memset(semaphore, 0,  sizeof(SEMAPHORE));
+
     /* Initialize semaphore count. */
     semaphore->count = count;
     semaphore->max_count = max_count;
@@ -100,6 +104,7 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
     uint32_t    status = SUCCESS;
     TASK        *tcb;
+    uint32_t    interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
@@ -142,9 +147,6 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
              * availability or wait timeout. */
             task_waiting();
 
-            /* Disable global interrupts. */
-            DISABLE_INTERRUPTS();
-
             /* Check if we are resumed due to a timeout. */
             if (tcb->status == TASK_RESUME_SLEEP)
             {
@@ -182,8 +184,8 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         }
     }
 
-    /* Enable global interrupts. */
-    ENABLE_INTERRUPTS();
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Return status to the caller. */
     return (status);
@@ -197,7 +199,8 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
  */
 void semaphore_release(SEMAPHORE *semaphore)
 {
-    TASK *tcb;
+    TASK        *tcb;
+    uint32_t    interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
@@ -226,8 +229,8 @@ void semaphore_release(SEMAPHORE *semaphore)
         task_yield();
     }
 
-    /* Enable global interrupts. */
-    ENABLE_INTERRUPTS();
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* semaphore_release */
 

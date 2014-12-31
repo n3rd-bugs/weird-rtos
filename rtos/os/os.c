@@ -48,10 +48,13 @@ void os_process_system_tick()
  * task_yield
  * This function is used to yield the current task. This can be called from any
  * task. Depending on task priority the current task will be preempted or
- * continue to run after this is called.
+ * continue to run after this is called. This function will also enable
+ * interrupts when required.
  */
 void task_yield()
 {
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+
     /* Disable interrupts. */
     DISABLE_INTERRUPTS();
 
@@ -62,8 +65,11 @@ void task_yield()
         ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_MANUAL);
     }
 
-    /* Schedule next task. */
+    /* Schedule next task and enable interrupts. */
     CONTROL_TO_SYSTEM();
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* task_yield */
 
@@ -72,15 +78,24 @@ void task_yield()
  * This called when the current task is waiting for a resource and is needed
  * to be removed from the parent scheduling class, and will be rescheduled by
  * the resource manager. If required user can keep the interrupts disabled when
- * jumping into this function.
+ * jumping into this function. Interrupts will be enabled when control is
+ * needed to be returned to the system.
  */
 void task_waiting()
 {
+    uint32_t    interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable interrupts. */
+    DISABLE_INTERRUPTS();
+
     /* We will not re-enqueue this task as it is suspended and only the
      * suspending component can resume this task. */
 
-    /* Give control back to system. */
+    /* Give control back to system and enable interrupts. */
     CONTROL_TO_SYSTEM();
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* task_waiting */
 

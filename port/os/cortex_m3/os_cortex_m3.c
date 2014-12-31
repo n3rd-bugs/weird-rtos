@@ -156,9 +156,6 @@ void run_first_task()
  */
 void control_to_system()
 {
-    /* Disable interrupts. */
-    DISABLE_INTERRUPTS();
-
     /* Save the task from which we will be switching. */
     last_task = current_task;
 
@@ -172,6 +169,7 @@ void control_to_system()
     ENABLE_INTERRUPTS();
 
 } /* run_first_task */
+
 /*
  * isr_sysclock_handle
  * This is system tick interrupt handle.

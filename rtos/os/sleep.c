@@ -145,6 +145,7 @@ void sleep_remove_from_list(TASK *tcb)
 void sleep(uint32_t ticks)
 {
     TASK *tcb;
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
@@ -158,12 +159,12 @@ void sleep(uint32_t ticks)
     /* Task is being suspended. */
     tcb->status = TASK_SUSPENDED;
 
-    /* Enable interrupts. */
-    ENABLE_INTERRUPTS();
-
     /* Return control to the system.
      * We will resume from here when our required delay has been achieved. */
     task_waiting();
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* sleep */
 

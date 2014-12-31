@@ -24,27 +24,28 @@
 extern uint32_t sys_interrupt_level;
 
 /* Macros to manipulate interrupts. */
-#define DISABLE_INTERRUPTS()                        \
-{                                                   \
-    if (sys_interrupt_level == TRUE)                \
-    {                                               \
-        sys_interrupt_level = FALSE;                \
-        asm("   CPSID   I   ");                     \
-    }                                               \
-}
+#define DISABLE_INTERRUPTS()            {                               \
+                                            asm("   CPSID   I   ");     \
+                                            sys_interrupt_level = 0;    \
+                                        }
 
-#define ENABLE_INTERRUPTS()                         \
-{                                                   \
-    if (sys_interrupt_level == FALSE)               \
-    {                                               \
-        sys_interrupt_level = TRUE;                 \
-        asm("   DSB         ");                     \
-        asm("   ISB         ");                     \
-        asm("   CPSIE   I   ");                     \
-    }                                               \
-}
-
-#define INTERRUPT_LEVEL()               sys_interrupt_level
+#define ENABLE_INTERRUPTS()             {                               \
+                                            sys_interrupt_level = 1;    \
+                                            asm("   DSB         ");     \
+                                            asm("   ISB         ");     \
+                                            asm("   CPSIE   I   ");     \
+                                        }
+#define GET_INTERRUPT_LEVEL()           (sys_interrupt_level)
+#define SET_INTERRUPT_LEVEL(n)          {                               \
+                                            if (n == 0)                 \
+                                            {                           \
+                                                DISABLE_INTERRUPTS();   \
+                                            }                           \
+                                            else                        \
+                                            {                           \
+                                                ENABLE_INTERRUPTS();    \
+                                            }                           \
+                                        }
 
 #define RESTORE_CONTEXT_FIRST()         run_first_task()
 
