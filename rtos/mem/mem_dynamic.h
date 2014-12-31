@@ -97,6 +97,11 @@ struct _mem_page
 /* Region descriptor. */
 struct _mem_dynamic
 {
+#ifdef CONFIG_INCLUDE_SEMAPHORE
+    /* Memory protection lock. */
+    SEMAPHORE       lock;
+#endif
+
     /* Number of pages in this memory region. */
     uint32_t        num_pages;
 

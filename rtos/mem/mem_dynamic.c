@@ -151,6 +151,12 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, u
         mem_dynamic->pages[i].hole_list.head->size = page_size;
     }
 
+#ifdef CONFIG_INCLUDE_SEMAPHORE
+    /* Initialize memory lock. */
+    /* Tasks with higher priority will be given memory first. */
+    semaphore_create(&mem_dynamic->lock, 1, 1, SEMAPHORE_PRIORITY);
+#endif
+
 } /* mem_dynamic_init_region */
 
 /*
@@ -302,9 +308,20 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
     MEM_HOLE *mem_hole = NULL, *max_hole;
     MEM_DESC *new_mem;
     uint32_t remaining_size;
+#ifndef CONFIG_INCLUDE_SEMAPHORE
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+#endif
 
     /* We will always allocate aligned memory. */
     size = ALLIGN(size + sizeof(MEM_DESC));
+
+#ifdef CONFIG_INCLUDE_SEMAPHORE
+    /* Acquire the memory lock. */
+    semaphore_obtain(&mem_dynamic->lock, MAX_WAIT);
+#else
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
+#endif
 
     /* First find a suitable memory page for this size. */
     mem_page = mem_dynamic_search_region(mem_dynamic, size, !(mem_dynamic->flags & MEM_STRICT_ALLOC));
@@ -344,55 +361,70 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
                 }
             }
         }
-    }
 
-    if (mem_hole)
-    {
-        /* If we have some remaining space on this memory hole. */
-        remaining_size = mem_hole->size - size;
-
-        /* Initialize a new memory descriptor. */
-        new_mem = (MEM_DESC *)mem_hole;
-        new_mem->page = mem_page;
-        new_mem->size = size;
-
-        /* No need to assign the physical previous memory. */
-
-        /* Check if remaining memory can be defined a single memory hole. */
-        if (remaining_size > sizeof(MEM_HOLE))
+        if (mem_hole)
         {
-            /* Create a new hole at the end of the allocated memory. */
-            mem_hole = (MEM_HOLE *)((char *)mem_hole + size);
-            mem_hole->size = remaining_size;
-            mem_hole->phy_prev = (MEM_HOLE *)new_mem;
+            /* If we have some remaining space on this memory hole. */
+            remaining_size = mem_hole->size - size;
 
-            /* Check if we need to maintain a descending list. */
-            if (mem_page->flags & MEM_PAGE_DEC)
+            /* Initialize a new memory descriptor. */
+            new_mem = (MEM_DESC *)mem_hole;
+            new_mem->page = mem_page;
+            new_mem->size = size;
+
+            /* No need to assign the physical previous memory. */
+
+            /* Check if remaining memory can be defined a single memory hole. */
+            if (remaining_size > sizeof(MEM_HOLE))
             {
-                /* Push a new hole in the list for this page in descending manner. */
-                sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_descending, OFFSETOF(MEM_HOLE, next));
-            }
+                /* Create a new hole at the end of the allocated memory. */
+                mem_hole = (MEM_HOLE *)((char *)mem_hole + size);
+                mem_hole->size = remaining_size;
+                mem_hole->phy_prev = (MEM_HOLE *)new_mem;
 
-            /* Check if we need to maintain a ascending list. */
-            else if (mem_page->flags & MEM_PAGE_ASC)
-            {
-                /* Push a new hole in the list for this page in ascending manner. */
-                sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_ascending, OFFSETOF(MEM_HOLE, next));
-            }
+                /* Check if we need to maintain a descending list. */
+                if (mem_page->flags & MEM_PAGE_DEC)
+                {
+                    /* Push a new hole in the list for this page in descending manner. */
+                    sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_descending, OFFSETOF(MEM_HOLE, next));
+                }
 
-            /* We are not sorting the memory list. */
+                /* Check if we need to maintain a ascending list. */
+                else if (mem_page->flags & MEM_PAGE_ASC)
+                {
+                    /* Push a new hole in the list for this page in ascending manner. */
+                    sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_ascending, OFFSETOF(MEM_HOLE, next));
+                }
+
+                /* We are not sorting the memory list. */
+                else
+                {
+                    /* Push a new hole in the list for this page. */
+                    sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_none, OFFSETOF(MEM_HOLE, next));
+                }
+            }
             else
             {
-                /* Push a new hole in the list for this page. */
-                sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_none, OFFSETOF(MEM_HOLE, next));
+                /* Just add the remaining memory to the original memory. */
+                new_mem->size += remaining_size;
+            }
 
-                max_hole = mem_hole;
-                mem_hole = mem_page->hole_list.head;
+            /* Return this memory. */
+            mem_ptr =  (char *)(new_mem + 1);
 
-                /* Try to find biggest memory hole. */
+            /* Check if we are not using any sorting. */
+            if ( ((mem_page->flags & (MEM_PAGE_ASC | MEM_PAGE_DEC)) == 0) &&
+
+                 /* Check if we need to search and update the max hole. */
+                 (mem_page->max_hole == NULL) )
+            {
+                /* Go through all the memory holes. */
+                max_hole = mem_hole = mem_page->hole_list.head;
+
+                /* Try to find the biggest memory hole. */
                 while (mem_hole)
                 {
-                    /* If this node has greater size then the last node. */
+                    /* If this node has greater size then the saved node. */
                     if (mem_hole->size > max_hole->size)
                     {
                         /* Save this node. */
@@ -407,15 +439,15 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
                 mem_page->max_hole = max_hole;
             }
         }
-        else
-        {
-            /* Just add the remaining memory to the original memory. */
-            new_mem->size += remaining_size;
-        }
-
-        /* Return this memory. */
-        mem_ptr =  (char *)(new_mem + 1);
     }
+
+#ifdef CONFIG_INCLUDE_SEMAPHORE
+    /* Release the memory lock. */
+    semaphore_release(&mem_dynamic->lock);
+#else
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+#endif
 
     /* Return allocated memory. */
     return (mem_ptr);
@@ -431,106 +463,137 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
  */
 char *mem_dynamic_dealloc_region(char *mem_ptr)
 {
-    MEM_DESC *mem_desc = ((MEM_DESC *)mem_ptr) - 1;
-    MEM_PAGE *mem_page  = mem_desc->page;
-    MEM_DYNAMIC *mem_dynamic = mem_page->mem_region;
-    MEM_HOLE *mem_hole = (MEM_HOLE *)mem_desc, *neighbor_hole;
-    uint32_t size = mem_desc->size;
+    MEM_DESC *mem_desc;
+    MEM_PAGE *mem_page;;
+    MEM_DYNAMIC *mem_dynamic;
+    MEM_HOLE *mem_hole, *neighbor_hole;
+    uint32_t size;
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
-    /* First initialize a new memory hole. */
-    mem_hole->size = size;
+    /* Lock the scheduler. */
+    DISABLE_INTERRUPTS();
 
-    /* Process next neighbor. */
-    neighbor_hole = (MEM_HOLE *)((char *)mem_hole + mem_hole->size);
-
-    /* Check if a next node could exist after this and is also free. */
-    if ( ( (char *)neighbor_hole < mem_page->base_end ) &&
-
-         /* If this is not a memory descriptor than it's a hole. */
-         ( ((MEM_DESC *)neighbor_hole)->page !=  mem_page ) )
+    /* If a valid memory was given. */
+    if (mem_desc)
     {
-        /* Also add the size for next hole. */
-        mem_hole->size += neighbor_hole->size;
+        /* Get the memory descriptor. */
+        mem_desc = ((MEM_DESC *)mem_ptr) - 1;
+        mem_page  = mem_desc->page;
+        mem_dynamic = mem_page->mem_region;
+        mem_hole = (MEM_HOLE *)mem_desc;
+        size = mem_desc->size;
 
-        /* If there is another memory after this hole. */
-        if ( ((char *)neighbor_hole + neighbor_hole->size) < mem_page->base_end )
+#ifdef CONFIG_INCLUDE_SEMAPHORE
+        /* Acquire the memory lock. */
+        semaphore_obtain(&mem_dynamic->lock, MAX_WAIT);
+
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
+#endif
+
+        /* First initialize a new memory hole. */
+        mem_hole->size = size;
+
+        /* Process next neighbor. */
+        neighbor_hole = (MEM_HOLE *)((char *)mem_hole + mem_hole->size);
+
+        /* Check if a next node could exist after this and is also free. */
+        if ( ( (char *)neighbor_hole < mem_page->base_end ) &&
+
+             /* If this is not a memory descriptor than it's a hole. */
+             ( ((MEM_DESC *)neighbor_hole)->page !=  mem_page ) )
         {
-            /* Update the physical previous. */
-            ((MEM_HOLE *)((char *)neighbor_hole + neighbor_hole->size))->phy_prev = mem_hole;
+            /* Also add the size for next hole. */
+            mem_hole->size += neighbor_hole->size;
+
+            /* If there is another memory after this hole. */
+            if ( ((char *)neighbor_hole + neighbor_hole->size) < mem_page->base_end )
+            {
+                /* Update the physical previous. */
+                ((MEM_HOLE *)((char *)neighbor_hole + neighbor_hole->size))->phy_prev = mem_hole;
+            }
+
+            /* Check if this is also the max hole. */
+            if (neighbor_hole == mem_page->max_hole)
+            {
+                /* Update the max hole. */
+                mem_page->max_hole = mem_hole;
+            }
+
+            /* Remove this node from the memory list. */
+            sll_remove(&mem_page->hole_list, neighbor_hole, OFFSETOF(MEM_HOLE, next));
         }
 
-        /* Check if this is also the max hole. */
-        if (neighbor_hole == mem_page->max_hole)
+        /* Process previous neighbor. */
+        neighbor_hole = mem_hole->phy_prev;
+
+        /* Check if a node can exist before this memory and is also free. */
+        if ( (neighbor_hole) &&
+
+             /* If this is not a memory descriptor than it's a hole. */
+             (((MEM_DESC *)neighbor_hole)->page !=  mem_page ) )
         {
-            /* Update the max hole. */
+            /* Merge this hole with previous hole. */
+            neighbor_hole->size += mem_hole->size;
+
+            /* If there is another memory after new hole. */
+            if ( ((char *)neighbor_hole + neighbor_hole->size) < mem_page->base_end )
+            {
+                /* Update the physical previous. */
+                ((MEM_HOLE *)((char *)neighbor_hole + neighbor_hole->size))->phy_prev = neighbor_hole;
+            }
+
+            /* Check if new hole is also the max hole. */
+            if (mem_hole == mem_page->max_hole)
+            {
+                /* Update the max hole. */
+                mem_page->max_hole = neighbor_hole;
+            }
+
+            /* Remove this node from the memory list. */
+            sll_remove(&mem_page->hole_list, mem_hole, OFFSETOF(MEM_HOLE, next));
+
+            /* We have merged the new hole with previous memory. */
+            mem_hole = neighbor_hole;
+        }
+
+        /* If we are sorting this page in descending manner. */
+        if (mem_page->flags & MEM_PAGE_DEC)
+        {
+            /* Push this hole on the page. */
+            sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_descending, OFFSETOF(MEM_HOLE, next));
+        }
+
+        /* If we are sorting this page in ascending manner. */
+        else if (mem_page->flags & MEM_PAGE_ASC)
+        {
+            /* Push this hole on the page. */
+            sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_ascending, OFFSETOF(MEM_HOLE, next));
+        }
+
+        /* We are not sorting this page. */
+        else
+        {
+            /* Push a new hole in the list for this page. */
+            sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_none, OFFSETOF(MEM_HOLE, next));
+        }
+
+        /* If this node has greater size then the largest hole or there is no
+         * max hole in the page list. */
+        if ( (mem_page->max_hole == NULL) ||
+             (mem_page->max_hole->size > mem_hole->size) )
+        {
+            /* Update the largest hole. */
             mem_page->max_hole = mem_hole;
         }
 
-        /* Remove this node from the memory list. */
-        sll_remove(&mem_page->hole_list, neighbor_hole, OFFSETOF(MEM_HOLE, next));
-    }
-
-    /* Process previous neighbor. */
-    neighbor_hole = mem_hole->phy_prev;
-
-    /* Check if a node can exist before this memory and is also free. */
-    if ( (neighbor_hole) &&
-
-         /* If this is not a memory descriptor than it's a hole. */
-         (((MEM_DESC *)neighbor_hole)->page !=  mem_page ) )
-    {
-        /* Merge this hole with previous hole. */
-        neighbor_hole->size += mem_hole->size;
-
-        /* If there is another memory after new hole. */
-        if ( ((char *)neighbor_hole + neighbor_hole->size) < mem_page->base_end )
-        {
-            /* Update the physical previous. */
-            ((MEM_HOLE *)((char *)neighbor_hole + neighbor_hole->size))->phy_prev = neighbor_hole;
-        }
-
-        /* Check if new hole is also the max hole. */
-        if (mem_hole == mem_page->max_hole)
-        {
-            /* Update the max hole. */
-            mem_page->max_hole = neighbor_hole;
-        }
-
-        /* Remove this node from the memory list. */
-        sll_remove(&mem_page->hole_list, mem_hole, OFFSETOF(MEM_HOLE, next));
-
-        /* We have merged the new hole with previous memory. */
-        mem_hole = neighbor_hole;
-    }
-
-    /* If we are sorting this page in descending manner. */
-    if (mem_page->flags & MEM_PAGE_DEC)
-    {
-        /* Push this hole on the page. */
-        sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_descending, OFFSETOF(MEM_HOLE, next));
-    }
-
-    /* If we are sorting this page in ascending manner. */
-    else if (mem_page->flags & MEM_PAGE_ASC)
-    {
-        /* Push this hole on the page. */
-        sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_ascending, OFFSETOF(MEM_HOLE, next));
-    }
-
-    /* We are not sorting this page. */
-    else
-    {
-        /* Push a new hole in the list for this page. */
-        sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_none, OFFSETOF(MEM_HOLE, next));
-    }
-
-    /* If this node has greater size then the largest hole or there is no
-     * max hole in the page list. */
-    if ( (mem_page->max_hole == NULL) ||
-         (mem_page->max_hole->size > mem_hole->size) )
-    {
-        /* Update the largest hole. */
-        mem_page->max_hole = mem_hole;
+#ifdef CONFIG_INCLUDE_SEMAPHORE
+        /* Release the memory lock. */
+        semaphore_release(&mem_dynamic->lock);
+#else
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
+#endif
     }
 
     /* Return memory pointer. */

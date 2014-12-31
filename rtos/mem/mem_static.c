@@ -49,6 +49,7 @@ void mem_static_init_region(MEM_STATIC *mem_static, char *start, char *end)
 char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
 {
     uint8_t *new_mem = NULL;
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Disable interrupts. */
     DISABLE_INTERRUPTS();
@@ -62,8 +63,8 @@ char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
         mem_static->current_ptr += size;
     }
 
-    /* Enable interrupts. */
-    ENABLE_INTERRUPTS();
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Return allocated memory. */
     return (new_mem);
