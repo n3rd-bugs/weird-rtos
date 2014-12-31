@@ -16,6 +16,8 @@
 
 #include <config.h>
 
+#ifdef CONFIG_MEMGR
+
 /* Memory manager configuration. */
 #define CONFIG_MEMGR_STATIC
 #define CONFIG_MEMGR_DYNAMIC
@@ -49,6 +51,8 @@ void mem_init();
 #ifdef CONFIG_MEMGR_DYNAMIC
 #define mem_dynamic_alloc(size)     mem_dynamic_alloc_region(&mem_dynamic, size)
 #define mem_dynamic_dealloc(mem)    mem_dynamic_dealloc_region(mem)
+#endif
+
 #endif
 
 #endif /* MEM_H */

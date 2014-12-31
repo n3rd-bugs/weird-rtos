@@ -51,6 +51,8 @@
 #include <string.h>
 #include <sll.h>
 
+#ifdef CONFIG_MEMGR_DYNAMIC
+
 /*
  * mem_dynamic_init_region
  * @mem_dynamic: The dynamic memory region descriptor to be populated.
@@ -600,3 +602,5 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
     return (NULL);
 
 } /* mem_dynamic_alloc_region */
+
+#endif
