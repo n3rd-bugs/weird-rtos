@@ -14,6 +14,9 @@
 #include <os.h>
 #include <os_avr.h>
 
+/* System interrupt management. */
+uint32_t sys_interrupt_level;
+
 /*
  * ISR(TIMER1_COMPA_vect, ISR_NAKED)
  * This is timer interrupt that will be called at each system tick.

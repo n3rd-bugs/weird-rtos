@@ -22,9 +22,31 @@
 #define SYS_CLK_DIV         1
 #define SYS_FREQ            (OSC_FREQ / SYS_CLK_DIV)
 
-/* Macro to enable and disable interrupts. */
-#define DISABLE_INTERRUPTS()    asm volatile ( "cli" :: );
-#define ENABLE_INTERRUPTS()     asm volatile ( "sei" :: );
+/* System interrupt level. */
+extern uint32_t sys_interrupt_level;
+
+/* Macros to manipulate interrupts. */
+#define ENABLE_INTERRUPTS()             {                               \
+                                            sys_interrupt_level = 1;    \
+                                            asm("   SEI         ");     \
+                                        }
+
+#define DISABLE_INTERRUPTS()            {                               \
+                                            asm("   CLI         ");     \
+                                            sys_interrupt_level = 0;    \
+                                        }
+
+#define GET_INTERRUPT_LEVEL()           (sys_interrupt_level)
+#define SET_INTERRUPT_LEVEL(n)          {                               \
+                                            if (n == 0)                 \
+                                            {                           \
+                                                DISABLE_INTERRUPTS();   \
+                                            }                           \
+                                            else                        \
+                                            {                           \
+                                                ENABLE_INTERRUPTS();    \
+                                            }                           \
+                                        }
 
 /* Critical section management. */
 #define ENTRE_CRITICAL()    asm volatile ( "in      __tmp_reg__, __SREG__" :: );    \
