@@ -16,12 +16,37 @@
 
 #include <os.h>
 
+/* Dynamic memory configuration. */
+#define MEM_BNDRY_CHECK
+#define MEM_FREE_CHECK
+#define MEM_ID_CHECK
+
 /* Memory page configuration flags. */
 #define MEM_PAGE_DEC        0x0001
 #define MEM_PAGE_ASC        0x0002
 
 /* Memory region allocation configuration flags. */
 #define MEM_STRICT_ALLOC    0x0001
+
+#ifdef MEM_BNDRY_CHECK
+#define MEM_BNDRY_PATTERN   "MMMM"
+#define MEM_BNDRY_LENGTH    strlen("MMMM")
+#endif
+
+#ifdef MEM_FREE_CHECK
+#define MEM_FREE_PATTERN   'F'
+#endif
+
+#ifdef MEM_ID_CHECK
+#define MEM_FREE_ID         0xAABBCCDD
+#define MEM_ALLOCATED_ID    0x99884433
+#endif
+
+#ifndef MEM_BNDRY_CHECK
+#define MEM_DYN_MIN_MEM     (sizeof(MEM_ALOC))
+#else
+#define MEM_DYN_MIN_MEM     (sizeof(MEM_ALOC) + (MEM_BNDRY_LENGTH * 2))
+#endif
 
 /* Per page configuration. */
 typedef struct _mem_dyn_cfg
@@ -37,34 +62,44 @@ typedef struct _mem_dyn_cfg
 } MEM_DYN_CFG;
 
 /* Type definitions. */
-typedef struct _mem_hole    MEM_HOLE;
+typedef struct _mem_desc    MEM_DESC;
+typedef struct _mem_free    MEM_FREE;
 typedef struct _mem_page    MEM_PAGE;
 typedef struct _mem_dynamic MEM_DYNAMIC;
 
 /* Single memory descriptor. */
 typedef struct _mem_desc
 {
+#ifdef MEM_ID_CHECK
+    /* ID for this memory. */
+    uint32_t        id;
+#endif
+
     /* Size of this memory. */
     uint32_t        size;
 
     /* Physically previous node. */
-    MEM_HOLE        *phy_prev;
+    MEM_DESC        *phy_prev;
+} MEM_DESC;
+
+/* Allocated memory descriptor. */
+typedef struct _mem_allocated
+{
+    /* Memory descriptor. */
+    MEM_DESC        descriptor;
 
     /* Memory page to which this memory will be returned. */
     MEM_PAGE        *page;
-} MEM_DESC;
+} MEM_ALOC;
 
-/* Single memory hole descriptor. */
-struct _mem_hole
+/* Free memory descriptor. */
+struct _mem_free
 {
-    /* Size of this hole. */
-    uint32_t        size;
+    /* Memory descriptor. */
+    MEM_DESC        descriptor;
 
-    /* Physically previous node. */
-    MEM_HOLE        *phy_prev;
-
-    /* Memory hole table. */
-    MEM_HOLE        *next;
+    /* Free memory list maintained according to page configuration. */
+    MEM_FREE        *next;
 };
 
 /* Page descriptor. */
@@ -80,15 +115,15 @@ struct _mem_page
     /* Maximum allocation size for this page. */
     uint32_t    max_alloc;
 
-    /* Memory hole list. */
-    struct _hole_list
+    /* Free memory list. */
+    struct _free_list
     {
-        MEM_HOLE    *head;
-        MEM_HOLE    *tail;
-    } hole_list;
+        MEM_FREE    *head;
+        MEM_FREE    *tail;
+    } free_list;
 
-    /* Biggest memory hole on this page. */
-    MEM_HOLE    *max_hole;
+    /* Largest free memory on this page. */
+    MEM_FREE    *free;
 
     /* Configuration flags for this page. */
     uint32_t    flags;

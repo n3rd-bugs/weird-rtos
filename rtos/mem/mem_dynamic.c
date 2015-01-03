@@ -11,40 +11,41 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 
-/* Proof-of-concept:
- *  This memory manager works on static page scheme.
- *  Each page is initialized with a static size and a maximum allocation
- *  size.
+/* Proof-Of-Concept:
+ *  This memory manager works on static page scheme. Each page is initialized
+ *  with a static size and a maximum allocation size.
  *  A memory can be allocated from a page if:
- *   1. The page has a hole large enough to store that memory.
+ *   1. The page has a free memory large enough to store that memory.
  *   2. The maximum allocation size for this page is equal to or greater
  *      than the required size.
  *  These two conditions are ORed by default by can be ANDed if
  *  MEM_STRICT_ALLOC is set.
  *
- * Memory hole management:
+ * Free memory management:
  *  A page can be configured to work in one of the three possible
  *  configurations:
- *   1. Descending hole list, the hole list will be sorted with the largest
- *      hole first, this will work perfectly for the pages which are
- *      configured for static size allocation. Also this will require least
- *      amount of time when allocating and deallocating a memory.
- *   2. Ascending hole list, this will require more time then the last one
- *      and should be used over a smaller page delta, this will cause least
- *      fragmentation by allocating the smallest holes first.
- *   3. No sorting, this is generic configuration and will allocate the
- *      last freed memory.
+ *   1. Descending free list, the free list will be sorted with the largest
+ *      free memory first, first memory found will be used, so it will
+ *      always be the list head.
+ *   2. Ascending free list, the free list will be sorted with smallest free
+ *      memory first, this way always the smallest free memory that can satisfy
+ *      our need will be used.
+ *   3. No sorting, this is generic configuration, the list will not be sorted
+ *      and first memory that can satisfy our requirement will be used.
+ *
+ * Per memory overhead:
+ *  For each allocated memory MEM_ALOC structure will be used. In minimal
+ *  configuration this will become around 12 bytes.
  *
  * Cons:
- *  This memory management will causes more than normal fragmentation if not
- *  setup properly.
+ *  This memory management will causes more than normal fragmentation, and
+ *  this behavior will increase if not setup properly.
  *
  * Pros:
- *  This is highly predictable and once configured properly user will never
- *  run out of memory due to fragmentation.
- *  [No results to support this statement, this is only theoretical]
- *
- * TODO: Document test results after running them :P.
+ *  This is highly predictable and once configured properly user can
+ *  deterministically manage dynamic memory.
+ *  The memory search is optimized using pages, user can define pages with
+ *  same allocation size if he wants the memory to be evenly allocated.
  */
 
 #include <os.h>
@@ -68,6 +69,7 @@
 void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, uint32_t num_pages, MEM_DYN_CFG *mem_cfg, uint32_t flags)
 {
     uint32_t i, j, page_mem_size, page_size, mem_size = (uint32_t)(end - start);
+    MEM_FREE *mem_free;
 
     /* Clear memory region identifier. */
     memset(mem_dynamic, 0, sizeof(MEM_DYNAMIC));
@@ -116,10 +118,10 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, u
     {
         /* Initialize max memory that can be allocated for this page. */
         mem_dynamic->pages[i].max_alloc = mem_cfg[i].max_alloc + sizeof(MEM_DESC);
+#ifdef MEM_BNDRY_CHECK
+        mem_dynamic->pages[i].max_alloc += (MEM_BNDRY_LENGTH * 2);
+#endif
         mem_dynamic->pages[i].base_start = start;
-        mem_dynamic->pages[i].max_hole =
-        mem_dynamic->pages[i].hole_list.head =
-        mem_dynamic->pages[i].hole_list.tail = (MEM_HOLE *)start;
         mem_dynamic->pages[i].flags = mem_cfg[i].flags;
         mem_dynamic->pages[i].mem_region = mem_dynamic;
 
@@ -136,21 +138,35 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, u
             {
                 page_size = page_mem_size;
             }
-
-            /* Move past memory for this region and assign memory boundary. */
-            start += page_size;
-            mem_dynamic->pages[i].base_end = start;
         }
         else
         {
             /* Just give remaining memory to last page. */
-            mem_dynamic->pages[i].base_end = end;
+            page_size = ALLIGN_CEIL((uint32_t)(end - start));
         }
 
-        /* Initialize memory hole list for this page. */
-        mem_dynamic->pages[i].hole_list.head->phy_prev =
-        mem_dynamic->pages[i].hole_list.head->next = NULL;
-        mem_dynamic->pages[i].hole_list.head->size = page_size;
+        /* Initialize a free memory. */
+        mem_free = (MEM_FREE *)start;
+        mem_free->descriptor.phy_prev = NULL;
+        mem_free->descriptor.size = page_size;
+#ifdef MEM_ID_CHECK
+        mem_free->descriptor.id = MEM_FREE_ID;
+#endif
+        mem_free->next = NULL;
+
+        /* Initialize free memory list for this page. */
+        mem_dynamic->pages[i].free =
+        mem_dynamic->pages[i].free_list.head =
+        mem_dynamic->pages[i].free_list.tail = mem_free;
+
+#ifdef MEM_FREE_CHECK
+        /* Fill in the pattern that is expected if this is a free memory. */
+        memset((mem_free + 1), MEM_FREE_PATTERN, page_size - sizeof(MEM_FREE));
+#endif
+
+        /* Move past assigned memory and set the boundary for this page. */
+        start += page_size;
+        mem_dynamic->pages[i].base_end = start;
     }
 
 #ifdef CONFIG_INCLUDE_SEMAPHORE
@@ -179,8 +195,8 @@ MEM_PAGE *mem_dynamic_search_region(MEM_DYNAMIC *mem_dynamic, uint32_t size, uin
     for (i = 0; i < mem_dynamic->num_pages; i++)
     {
         /* Check if we have required space on this page. */
-        if ( (mem_dynamic->pages[i].max_hole) &&
-             (size <= mem_dynamic->pages[i].max_hole->size) )
+        if ( (mem_dynamic->pages[i].free) &&
+             (size <= mem_dynamic->pages[i].free->descriptor.size) )
         {
             /* Check if page configuration allows this allocation. */
             if (mem_dynamic->pages[i].max_alloc >= size)
@@ -209,93 +225,107 @@ MEM_PAGE *mem_dynamic_search_region(MEM_DYNAMIC *mem_dynamic, uint32_t size, uin
 
 /*
  * mem_dynamic_sort_descending
- * @node: An existing memory hole on the page.
- * @hole: New hole needed to be inserted.
- * @return: If new hole is needed to be inserted before the given hole.
- * This is hole sorting function that is used by SLL routines to maintain
- * the hole list for a page. this will maintain a page with a descending
+ * @node: An existing free memory on the page.
+ * @mem: New free memory needed to be inserted.
+ * @return: If new memory is needed to be inserted before the given.
+ * This is memory sorting function that is used by SLL routines to maintain
+ * the memory list for a page. this will maintain a page in a descending
  * memory sizes.
  */
-static uint8_t mem_dynamic_sort_descending(void *node, void *hole)
+static uint8_t mem_dynamic_sort_descending(void *node, void *mem)
 {
     uint8_t insert = FALSE;
 
-    /* If memory hole has less size than this hole then insert
-     * new hole before it. */
-    if (((MEM_HOLE *)node)->size < ((MEM_HOLE *)hole)->size)
+    /* If this is larger free memory. */
+    if (((MEM_DESC *)node)->size < ((MEM_DESC *)mem)->size)
     {
-        /* Do insert this hole. */
+        /* Do insert this memory. */
         insert = TRUE;
     }
 
-    /* Return if we need to insert this hole before the given hole. */
+    /* Return if we need to insert this memory before the given. */
     return (insert);
 
 } /* mem_dynamic_sort_descending */
 /*
  * mem_dynamic_sort_ascending
- * @node: An existing memory hole on the page.
- * @hole: New hole needed to be inserted.
- * @return: If new hole is needed to be inserted before the given hole.
- * This is hole sorting function that is used by SLL routines to maintain
- * the hole list for a page. this will maintain a page with a ascending
+ * @node: An existing free memory on the page.
+ * @mem: New free memory needed to be inserted.
+ * @return: If new memory is needed to be inserted before the given.
+ * This is memory sorting function that is used by SLL routines to maintain
+ * the memory list for a page. this will maintain a page in a ascending
  * memory sizes.
  */
-static uint8_t mem_dynamic_sort_ascending(void *node, void *hole)
+static uint8_t mem_dynamic_sort_ascending(void *node, void *mem)
 {
     uint8_t insert = FALSE;
 
-    /* If memory hole has less greater than or equal to this hole then insert
-     * new hole before it. */
-    if (((MEM_HOLE *)node)->size >= ((MEM_HOLE *)hole)->size)
+    /* If this is smaller free memory. */
+    if (((MEM_DESC *)node)->size >= ((MEM_DESC *)mem)->size)
     {
-        /* Do insert this hole. */
+        /* Do insert this memory. */
         insert = TRUE;
     }
 
-    /* Return if we need to insert this hole before the given hole. */
+    /* Return if we need to insert this memory before the given. */
     return (insert);
 
 } /* mem_dynamic_sort_ascending */
-/*
- * mem_dynamic_sort_none
- * @node: An existing memory hole on the page.
- * @hole: New hole needed to be inserted.
- * @return: If new hole is needed to be inserted before the given hole.
- * This is hole sorting function that is used by SLL routines to maintain
- * the hole list for a page. this is for no sorting.
- */
-static uint8_t mem_dynamic_sort_none(void *node, void *hole)
-{
-    UNUSED_PARAM(node);
-    UNUSED_PARAM(hole);
 
-    /* Always return true to push this memory. */
-    return (TRUE);
-
-} /* mem_dynamic_sort_none */
 /*
  * mem_dynamic_match_size
- * @node: An existing memory hole on the page.
+ * @node: An existing free memory on the page.
  * @param: Pointer to required size.
- * @return: If new hole matches the required criteria.
- * This is match function to find a suitable hole on a memory page with given
- * size.
+ * @return: If given free memory matches the required criteria.
+ * This is match function to find a suitable free memory on a page for the
+ * given size.
  */
 static uint8_t mem_dynamic_match_size(void *node, void *param)
 {
     uint8_t match = FALSE;
 
-    /* Check if we can use this hole */
-    if ( ((MEM_HOLE *)node)->size >= *((uint32_t *)param) )
+#ifdef MEM_ID_CHECK
+    /* Verify the free memory id. */
+    OS_ASSERT(((MEM_DESC *)node)->id != MEM_FREE_ID);
+#endif
+
+    /* Check if this memory matches the requirement. */
+    if ( ((MEM_DESC *)node)->size >= *((uint32_t *)param) )
     {
+        /* This free memory can be used. */
         match = TRUE;
     }
 
-    /* Check if this hole matches the requirement. */
+    /* Return if we can use this memory. */
     return (match);
 
 } /* mem_dynamic_match_size */
+
+/*
+ * mem_dynamic_get_max
+ * @node: An existing free memory on the page.
+ * @param: Max memory region.
+ * @return: FALSE.
+ * This is search function to set the largest free memory on a page.
+ */
+static uint8_t mem_dynamic_get_max(void *node, void *param)
+{
+#ifdef MEM_ID_CHECK
+    /* Verify the free memory id. */
+    OS_ASSERT(((MEM_DESC *)node)->id != MEM_FREE_ID);
+#endif
+
+    /* Check if this memory has larger free memory. */
+    if ( ((MEM_DESC *)node)->size >= (*(MEM_DESC **)param)->size )
+    {
+        /* Save this node. */
+        *((MEM_DESC **)param) = node;
+    }
+
+    /* This is a search function always return false. */
+    return (FALSE);
+
+} /* mem_dynamic_get_max */
 
 /*
  * mem_dynamic_alloc_region
@@ -307,15 +337,22 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 {
     char *mem_ptr = NULL;
     MEM_PAGE *mem_page;
-    MEM_HOLE *mem_hole = NULL, *max_hole;
-    MEM_DESC *new_mem;
+    MEM_FREE *mem_free;
     uint32_t remaining_size;
 #ifndef CONFIG_INCLUDE_SEMAPHORE
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 #endif
+#ifdef MEM_FREE_CHECK
+    char *mem_loc, *mem_end;
+#endif
 
     /* We will always allocate aligned memory. */
-    size = ALLIGN_FLOOR(size + sizeof(MEM_DESC));
+    size = ALLIGN_CEIL(size + sizeof(MEM_DESC));
+
+#ifdef MEM_BNDRY_CHECK
+    /* Add space for memory underflow and overflow.  */
+    size = ALLIGN_CEIL(size + (MEM_BNDRY_LENGTH * 2));
+#endif
 
 #ifdef CONFIG_INCLUDE_SEMAPHORE
     /* Acquire the memory lock. */
@@ -333,112 +370,142 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
     {
         if (mem_page->flags & MEM_PAGE_DEC)
         {
-            /* Allocate this memory on the first hole. */
-            mem_hole = sll_pop(&mem_page->hole_list, OFFSETOF(MEM_HOLE, next));
-
-            /* Update the maximum hole on this page. */
-            mem_page->max_hole = mem_page->hole_list.head;
+            /* Allocate this memory on the first free memory. */
+            mem_free = sll_pop(&mem_page->free_list, OFFSETOF(MEM_FREE, next));
         }
 
         else
         {
-            /* Go through all the list and find a hole that can store this memory. */
-            mem_hole = sll_search_pop(&mem_page->hole_list, mem_dynamic_match_size, &size, OFFSETOF(MEM_HOLE, next));
-
-            /* Check if this was also the biggest hole. */
-            if (mem_hole == mem_page->max_hole)
-            {
-                /* If this page is sorted in ascending order. */
-                if (mem_page->flags & MEM_PAGE_ASC)
-                {
-                    /* The largest memory is always at the end of the list. */
-                    mem_page->max_hole = mem_page->hole_list.tail;
-                }
-                else
-                {
-                    /* Clear the max hole. */
-                    mem_page->max_hole = NULL;
-
-                    /* We will search and save max hole later. */
-                }
-            }
+            /* Go through all the list and find a free memory. */
+            mem_free = sll_search_pop(&mem_page->free_list, mem_dynamic_match_size, &size, OFFSETOF(MEM_FREE, next));
         }
 
-        if (mem_hole)
+        /* Check if we are going to use the biggest free memory. */
+        if (mem_free == mem_page->free)
         {
-            /* If we have some remaining space on this memory hole. */
-            remaining_size = mem_hole->size - size;
+            /* Clear the largest free, we will search and set it later. */
+            mem_page->free = NULL;
+        }
+
+        if (mem_free)
+        {
+#ifdef MEM_ID_CHECK
+            /* Verify the free memory id. */
+            OS_ASSERT(mem_free->descriptor.id != MEM_FREE_ID);
+#endif
+
+#ifdef MEM_FREE_CHECK
+            /* Verify that this memory is intact. */
+            mem_loc = (char *)(mem_free + 1);
+            mem_end = (char *)mem_free + mem_free->descriptor.size;
+
+            while (mem_loc < mem_end)
+            {
+                OS_ASSERT(*mem_loc != MEM_FREE_PATTERN);
+                mem_loc ++;
+            }
+#endif
+
+            /* If we have some remaining space in this free memory. */
+            remaining_size = mem_free->descriptor.size - size;
 
             /* Initialize a new memory descriptor. */
-            new_mem = (MEM_DESC *)mem_hole;
-            new_mem->page = mem_page;
-            new_mem->size = size;
+            ((MEM_ALOC *)mem_free)->page = mem_page;
+#ifdef MEM_ID_CHECK
+            ((MEM_ALOC *)mem_free)->descriptor.id = MEM_ALLOCATED_ID;
+#endif
 
-            /* No need to assign the physical previous memory. */
+            /* Save the memory pointer. */
+            mem_ptr =  ((char *)mem_free);
 
-            /* Check if remaining memory can be defined a single memory hole. */
-            if (remaining_size > sizeof(MEM_HOLE))
+            /* Check if remaining memory can be defined a single free memory. */
+            if (remaining_size > MEM_DYN_MIN_MEM)
             {
-                /* Create a new hole at the end of the allocated memory. */
-                mem_hole = (MEM_HOLE *)((char *)mem_hole + size);
-                mem_hole->size = remaining_size;
-                mem_hole->phy_prev = (MEM_HOLE *)new_mem;
+                /* Split this memory into two parts. */
+                mem_free->descriptor.size = size;
+
+                /* Create a new free memory at the end of the allocated memory. */
+                mem_free = (MEM_FREE *)((char *)mem_free + size);
+                mem_free->descriptor.phy_prev = (MEM_DESC *)mem_free;
+                mem_free->descriptor.size = remaining_size;
+#ifdef MEM_ID_CHECK
+                /* Set free memory ID for this memory. */
+                mem_free->descriptor.id = MEM_FREE_ID;
+#endif
+
+                /* Check if there is a node after this memory. */
+                if ( ((char *)mem_free + remaining_size) < mem_page->base_end)
+                {
+                    /* Update physical previous for next memory node. */
+                    ((MEM_DESC *)((char *)mem_free + remaining_size))->phy_prev = (MEM_DESC *)mem_free;
+                }
 
                 /* Check if we need to maintain a descending list. */
                 if (mem_page->flags & MEM_PAGE_DEC)
                 {
-                    /* Push a new hole in the list for this page in descending manner. */
-                    sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_descending, OFFSETOF(MEM_HOLE, next));
+                    /* Push a new free memory in the list for this page. */
+                    sll_insert(&mem_page->free_list, mem_free, mem_dynamic_sort_descending, OFFSETOF(MEM_FREE, next));
                 }
 
                 /* Check if we need to maintain a ascending list. */
                 else if (mem_page->flags & MEM_PAGE_ASC)
                 {
-                    /* Push a new hole in the list for this page in ascending manner. */
-                    sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_ascending, OFFSETOF(MEM_HOLE, next));
+                    /* Push a new free memory in the list for this page. */
+                    sll_insert(&mem_page->free_list, mem_free, mem_dynamic_sort_ascending, OFFSETOF(MEM_FREE, next));
                 }
 
                 /* We are not sorting the memory list. */
                 else
                 {
-                    /* Push a new hole in the list for this page. */
-                    sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_none, OFFSETOF(MEM_HOLE, next));
+                    /* Push a new free memory in the list for this page. */
+                    sll_push(&mem_page->free_list, mem_free, OFFSETOF(MEM_FREE, next));
                 }
             }
-            else
+
+#ifdef MEM_BNDRY_CHECK
+            /* Get the memory needed to be initialized. */
+            mem_free = (MEM_FREE *)mem_ptr;
+#endif
+
+            /* Adjust the pointer and return memory after the descriptor. */
+            mem_ptr += sizeof(MEM_ALOC);
+
+#ifdef MEM_BNDRY_CHECK
+            /* Put a predefined pattern on memory boundaries. */
+            memset((char *)mem_ptr, 'A', mem_free->descriptor.size - sizeof(MEM_ALOC));
+            memcpy((char *)mem_ptr, MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH);
+            memcpy((char *)mem_ptr + (mem_free->descriptor.size - (MEM_BNDRY_LENGTH + sizeof(MEM_ALOC))), MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH);
+
+            /* Adjust the pointer and return the memory after the pattern. */
+            mem_ptr += MEM_BNDRY_LENGTH;
+#endif
+
+            /* Check if we need to assign largest free. */
+            if (mem_page->free == NULL)
             {
-                /* Just add the remaining memory to the original memory. */
-                new_mem->size += remaining_size;
-            }
-
-            /* Return this memory. */
-            mem_ptr =  (char *)(new_mem + 1);
-
-            /* Check if we are not using any sorting. */
-            if ( ((mem_page->flags & (MEM_PAGE_ASC | MEM_PAGE_DEC)) == 0) &&
-
-                 /* Check if we need to search and update the max hole. */
-                 (mem_page->max_hole == NULL) )
-            {
-                /* Go through all the memory holes. */
-                max_hole = mem_hole = mem_page->hole_list.head;
-
-                /* Try to find the biggest memory hole. */
-                while (mem_hole)
+                /* If this page is sorted on descending sizes. */
+                if (mem_page->flags & MEM_PAGE_DEC)
                 {
-                    /* If this node has greater size then the saved node. */
-                    if (mem_hole->size > max_hole->size)
-                    {
-                        /* Save this node. */
-                        max_hole = mem_hole;
-                    }
-
-                    /* Get the next memory hole. */
-                    mem_hole = mem_hole->next;
+                    /* The largest memory is always at the start of the list. */
+                    mem_page->free = mem_page->free_list.head;
                 }
 
-                /* Update the largest hole for this page. */
-                mem_page->max_hole = max_hole;
+                /* If this page is sorted on ascending sizes. */
+                else if (mem_page->flags & MEM_PAGE_ASC)
+                {
+                    /* The largest memory is always at the end of the list. */
+                    mem_page->free = mem_page->free_list.tail;
+                }
+
+                /* If this is not a sorted page. */
+                else if (!(mem_page->flags & MEM_PAGE_DEC))
+                {
+                    /* Initialize free memory. */
+                    mem_page->free = mem_page->free_list.head;
+
+                    /* Search and save the largest memory. */
+                    sll_search_pop(&mem_page->free_list, mem_dynamic_get_max, &(mem_page->free), OFFSETOF(MEM_FREE, next));
+                }
             }
         }
     }
@@ -465,133 +532,161 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
  */
 char *mem_dynamic_dealloc_region(char *mem_ptr)
 {
-    MEM_DESC *mem_desc;
-    MEM_PAGE *mem_page;;
-    MEM_DYNAMIC *mem_dynamic;
-    MEM_HOLE *mem_hole, *neighbor_hole;
-    uint32_t size;
+    MEM_PAGE *mem_page;
+    MEM_FREE *mem_free, *neighbor;
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Lock the scheduler. */
     DISABLE_INTERRUPTS();
 
     /* If a valid memory was given. */
-    if (mem_desc)
+    if (mem_ptr)
     {
-        /* Get the memory descriptor. */
-        mem_desc = ((MEM_DESC *)mem_ptr) - 1;
-        mem_page  = mem_desc->page;
-        mem_dynamic = mem_page->mem_region;
-        mem_hole = (MEM_HOLE *)mem_desc;
-        size = mem_desc->size;
+#ifdef MEM_BNDRY_CHECK
+        /* Adjust the pointer to it's actual location. */
+        mem_ptr -= MEM_BNDRY_LENGTH;
+#endif
+
+        /* Initialize a new free memory. */
+        mem_free = ((MEM_FREE *)mem_ptr) - 1;
 
 #ifdef CONFIG_INCLUDE_SEMAPHORE
         /* Acquire the memory lock. */
-        semaphore_obtain(&mem_dynamic->lock, MAX_WAIT);
+        semaphore_obtain(&((MEM_ALOC *)mem_free)->page->mem_region->lock, MAX_WAIT);
 
         /* Restore old interrupt level. */
         SET_INTERRUPT_LEVEL(interrupt_level);
 #endif
 
-        /* First initialize a new memory hole. */
-        mem_hole->size = size;
+#ifdef MEM_ID_CHECK
+        /* Validate free memory id. */
+        OS_ASSERT(mem_free->descriptor.id != MEM_ALLOCATED_ID);
+#endif
 
-        /* Process next neighbor. */
-        neighbor_hole = (MEM_HOLE *)((char *)mem_hole + mem_hole->size);
+        /* Get memory page information from free memory descriptor. */
+        mem_page  = ((MEM_ALOC *)mem_free)->page;
 
-        /* Check if a next node could exist after this and is also free. */
-        if ( ( (char *)neighbor_hole < mem_page->base_end ) &&
+#ifdef MEM_BNDRY_CHECK
+        /* Verify that memory boundary patterns are intact. */
+        OS_ASSERT(memcmp(mem_ptr, MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH));
+        OS_ASSERT(memcmp(mem_ptr + (mem_free->descriptor.size - (MEM_BNDRY_LENGTH + sizeof(MEM_ALOC))), MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH));
+#endif
+        /* Check if next memory can also be merged in this memory. */
+        neighbor = (MEM_FREE *)((char *)mem_free + mem_free->descriptor.size);
 
-             /* If this is not a memory descriptor than it's a hole. */
-             ( ((MEM_DESC *)neighbor_hole)->page !=  mem_page ) )
+        /* Check if a memory can exist after the given descriptor. */
+        if ( ( (char *)neighbor < mem_page->base_end ) &&
+
+             /* If this is not an allocated memory than it's free. */
+             ( ((MEM_ALOC *)neighbor)->page !=  mem_page ) )
         {
-            /* Also add the size for next hole. */
-            mem_hole->size += neighbor_hole->size;
+#ifdef MEM_ID_CHECK
+            /* Verify that this is a free memory. */
+            OS_ASSERT(neighbor->descriptor.id != MEM_FREE_ID);
+#endif
 
-            /* If there is another memory after this hole. */
-            if ( ((char *)neighbor_hole + neighbor_hole->size) < mem_page->base_end )
+            /* Remove neighbor from the free memory list. */
+            sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next));
+
+            /* Append neighbor to given memory. */
+            mem_free->descriptor.size += neighbor->descriptor.size;
+
+            /* If there is another memory after this. */
+            if ( ((char *)mem_free + mem_free->descriptor.size) < mem_page->base_end )
             {
-                /* Update the physical previous. */
-                ((MEM_HOLE *)((char *)neighbor_hole + neighbor_hole->size))->phy_prev = mem_hole;
+                /* Update the next memory. */
+                ((MEM_DESC *)((char *)mem_free + mem_free->descriptor.size))->phy_prev = (MEM_DESC *)mem_free;
             }
 
-            /* Check if this is also the max hole. */
-            if (neighbor_hole == mem_page->max_hole)
+            /* Check if neighbor is also the biggest free memory. */
+            if (neighbor == mem_page->free)
             {
-                /* Update the max hole. */
-                mem_page->max_hole = mem_hole;
+                /* Update the biggest free. */
+                mem_page->free = mem_free;
             }
-
-            /* Remove this node from the memory list. */
-            sll_remove(&mem_page->hole_list, neighbor_hole, OFFSETOF(MEM_HOLE, next));
         }
 
         /* Process previous neighbor. */
-        neighbor_hole = mem_hole->phy_prev;
+        neighbor = (MEM_FREE *)mem_free->descriptor.phy_prev;
 
         /* Check if a node can exist before this memory and is also free. */
-        if ( (neighbor_hole) &&
+        if ( (neighbor != NULL) &&
 
-             /* If this is not a memory descriptor than it's a hole. */
-             (((MEM_DESC *)neighbor_hole)->page !=  mem_page ) )
+             /* If this is not allocated than it's a free memory. */
+             (((MEM_ALOC *)neighbor)->page !=  mem_page ) )
         {
-            /* Merge this hole with previous hole. */
-            neighbor_hole->size += mem_hole->size;
+#ifdef MEM_ID_CHECK
+            /* Verify free id for this memory. */
+            OS_ASSERT(neighbor->descriptor.id != MEM_FREE_ID);
+#endif
 
-            /* If there is another memory after new hole. */
-            if ( ((char *)neighbor_hole + neighbor_hole->size) < mem_page->base_end )
+            /* Remove the neighbor from the free memory list. */
+            sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next));
+
+            /* If we need to update the next memory. */
+            if ( ((char *)mem_free + mem_free->descriptor.size) < mem_page->base_end )
             {
-                /* Update the physical previous. */
-                ((MEM_HOLE *)((char *)neighbor_hole + neighbor_hole->size))->phy_prev = neighbor_hole;
+                /* Update the next memory. */
+                ((MEM_DESC *)((char *)mem_free + mem_free->descriptor.size))->phy_prev = (MEM_DESC *)neighbor;
             }
 
-            /* Check if new hole is also the max hole. */
-            if (mem_hole == mem_page->max_hole)
+            /* Check if this free memory is also the largest one. */
+            if (mem_free == mem_page->free)
             {
-                /* Update the max hole. */
-                mem_page->max_hole = neighbor_hole;
+                /* Update the biggest free for this page. */
+                mem_page->free = neighbor;
             }
 
-            /* Remove this node from the memory list. */
-            sll_remove(&mem_page->hole_list, mem_hole, OFFSETOF(MEM_HOLE, next));
+            /* Merge new free memory in previous memory. */
+            neighbor->descriptor.size += mem_free->descriptor.size;
 
-            /* We have merged the new hole with previous memory. */
-            mem_hole = neighbor_hole;
+            /* Use the neighbor as new memory has has been merged in it. */
+            mem_free = neighbor;
         }
+
+#ifdef MEM_ID_CHECK
+        /* Set ID for new free memory. */
+        mem_free->descriptor.id = MEM_FREE_ID;
+#endif
+
+#ifdef MEM_FREE_CHECK
+        /* Fill in the pattern that is expected if this is a free memory. */
+        memset((mem_free + 1), MEM_FREE_PATTERN, mem_free->descriptor.size - sizeof(MEM_FREE));
+#endif
 
         /* If we are sorting this page in descending manner. */
         if (mem_page->flags & MEM_PAGE_DEC)
         {
-            /* Push this hole on the page. */
-            sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_descending, OFFSETOF(MEM_HOLE, next));
+            /* Push this free memory on the page. */
+            sll_insert(&mem_page->free_list, mem_free, mem_dynamic_sort_descending, OFFSETOF(MEM_FREE, next));
         }
 
         /* If we are sorting this page in ascending manner. */
         else if (mem_page->flags & MEM_PAGE_ASC)
         {
-            /* Push this hole on the page. */
-            sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_ascending, OFFSETOF(MEM_HOLE, next));
+            /* Push this free memory on the page. */
+            sll_insert(&mem_page->free_list, mem_free, mem_dynamic_sort_ascending, OFFSETOF(MEM_FREE, next));
         }
 
         /* We are not sorting this page. */
         else
         {
-            /* Push a new hole in the list for this page. */
-            sll_insert(&mem_page->hole_list, mem_hole, mem_dynamic_sort_none, OFFSETOF(MEM_HOLE, next));
+            /* Push this free memory on the page. */
+            sll_push(&mem_page->free_list, mem_free, OFFSETOF(MEM_FREE, next));
         }
 
-        /* If this node has greater size then the largest hole or there is no
-         * max hole in the page list. */
-        if ( (mem_page->max_hole == NULL) ||
-             (mem_page->max_hole->size > mem_hole->size) )
+        /* If this page has no free memory or the largest free is smaller
+         * than this memory. */
+        if ( (mem_page->free == NULL) ||
+             (mem_free->descriptor.size > mem_page->free->descriptor.size) )
         {
-            /* Update the largest hole. */
-            mem_page->max_hole = mem_hole;
+            /* Update the largest free. */
+            mem_page->free = mem_free;
         }
 
 #ifdef CONFIG_INCLUDE_SEMAPHORE
         /* Release the memory lock. */
-        semaphore_release(&mem_dynamic->lock);
+        semaphore_release(&mem_page->mem_region->lock);
 #else
         /* Restore old interrupt level. */
         SET_INTERRUPT_LEVEL(interrupt_level);
