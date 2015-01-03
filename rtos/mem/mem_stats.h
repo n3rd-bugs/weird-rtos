@@ -11,8 +11,14 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 
+#ifndef MEM_STATS_H
+#define MEM_STATS_H
+
 #include <os.h>
 
+#ifdef CONFIG_MEMGR_STATIC
+
+/* Information level flags. */
 #define STAT_MEM_GENERAL        0x01
 #define STAT_MEM_PAGE_INFO      0x02
 
@@ -20,3 +26,7 @@
 #ifdef CONFIG_MEMGR_DYNAMIC
 void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level);
 #endif
+
+#endif /* CONFIG_MEMGR_STATIC */
+
+#endif /* MEM_STATS_H */

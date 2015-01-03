@@ -13,19 +13,19 @@
 
 #include <os.h>
 #include <serial.h>
-#include <mem_stats.h>
 
 #ifdef CONFIG_MEMGR_STATS
 
 #ifdef CONFIG_MEMGR_DYNAMIC
 /*
  * mem_dynamic_print_usage
- * @mem_dynamic: The memory region needed to be checked.
- * This function will check if any of the allocated memory has overflow.
+ * @mem_dynamic: The memory region.
+ * @level: Flags to specify level of required information.
+ * This function will print the information about a given dynamic region.
  */
 void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
 {
-    uint32_t start, end, i, free, total_free;
+    uint32_t start, end, i, free, total_free = 0;
     MEM_FREE *free_mem;
 #ifndef CONFIG_INCLUDE_SEMAPHORE
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
@@ -45,6 +45,7 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
         start = (uint32_t)mem_dynamic->pages[0].base_start;
         end = (uint32_t)mem_dynamic->pages[mem_dynamic->num_pages - 1].base_end;
 
+        /* Print general information about this memory region. */
         serial_printf("Memory Region Information:\r\n");
         serial_printf("Start\t\t: 0x%X\r\n", start);
         serial_printf("End\t\t: 0x%X\r\n", end);
@@ -54,24 +55,26 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
     /* Page information.  */
     if ((level & STAT_MEM_PAGE_INFO) || (level & STAT_MEM_GENERAL))
     {
+        /* If we are only printing page information. */
         if (!(level & STAT_MEM_GENERAL))
         {
             serial_printf("Memory Page(s) Information:\r\n");
         }
 
+        /* If we need to print page information. */
         if (level & STAT_MEM_PAGE_INFO)
         {
             serial_printf("P[n]\tStart\t\tEnd\t\tFree\r\n");
         }
 
-        total_free = 0;
-
+        /* Go through all the pages in this memory region. */
         for (i = 0; i < mem_dynamic->num_pages; i++)
         {
             /* Calculate free memory on this page. */
             free = 0;
             free_mem = mem_dynamic->pages[i].free_list.head;
 
+            /* Go through free memory list. */
             while (free_mem)
             {
                 free += free_mem->descriptor.size;
@@ -81,6 +84,7 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
             /* Add it to total free. */
             total_free += free;
 
+            /* If we need to print per page information. */
             if (level & STAT_MEM_PAGE_INFO)
             {
                 printf("[%d]\t0x%X\t0x%X\t%d\r\n", i,
@@ -90,6 +94,7 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
             }
         }
 
+        /* Print total number of bytes free in this memory region. */
         printf("Total Free\t: %d\r\n", total_free);
     }
 
@@ -103,6 +108,6 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
 
 } /* mem_dynamic_print_usage */
 
-#endif
+#endif /* CONFIG_MEMGR_DYNAMIC */
 
-#endif
+#endif /* CONFIG_MEMGR_STATS */

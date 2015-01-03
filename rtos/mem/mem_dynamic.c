@@ -304,7 +304,7 @@ static uint8_t mem_dynamic_match_size(void *node, void *param)
 /*
  * mem_dynamic_get_max
  * @node: An existing free memory on the page.
- * @param: Max memory region.
+ * @param: Pointer to largest free memory descriptor.
  * @return: FALSE.
  * This is search function to set the largest free memory on a page.
  */

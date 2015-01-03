@@ -31,6 +31,10 @@
 #include <mem_dynamic.h>
 #endif
 
+#ifdef CONFIG_MEMGR_STATS
+#include <mem_stats.h>
+#endif
+
 /* Exported variable definitions. */
 #ifdef CONFIG_MEMGR_STATIC
 extern MEM_STATIC mem_static;
@@ -53,6 +57,6 @@ void mem_init();
 #define mem_dynamic_dealloc(mem)    mem_dynamic_dealloc_region((char *)mem)
 #endif
 
-#endif
+#endif /* CONFIG_MEMGR */
 
 #endif /* MEM_H */
