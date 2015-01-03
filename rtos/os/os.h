@@ -18,6 +18,7 @@
 #include <os_target.h>
 #include <tasks.h>
 #include <scheduler.h>
+#include <assert.h>
 #ifdef CONFIG_INCLUDE_SEMAPHORE
 #include <semaphore.h>
 #endif
@@ -50,14 +51,16 @@
 #define YIELD_MANUAL            0x02
 #define YIELD_CANNOT_RUN        0x03
 
-#define ALLIGN_FLOOR(n)         ( n > 0x4 ? (n & (~(0x3))) : 0x4 )
-#define ALLIGN_CEIL(n)          ( n > 0x4 ? ((n & (~(0x3))) + 4) : 0x4 )
+/* Alignment manipulation macros. */
+#define ALLIGN_FLOOR(n)         ( (n) > 0x4 ? ((n) & (~(0x3))) : 0x4 )
+#define ALLIGN_CEIL(n)          ( (n) > 0x4 ? (((n) & (~(0x3))) + 4) : 0x4 )
 
 /* Exported variables. */
 extern TASK *current_task;
 
 /* Public function prototypes. */
 void os_run();
+void task_yield();
 
 /* External function prototypes. */
 void sleep(uint32_t ticks);
@@ -65,7 +68,6 @@ void sleep(uint32_t ticks);
 
 /* Internal functions should not be called from user applications. */
 void os_process_system_tick();
-void task_yield();
 void task_waiting();
 
 void set_current_task(TASK *tcb);
