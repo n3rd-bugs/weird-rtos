@@ -8,8 +8,8 @@ MEMORY
     m_interrupts    (RX): ORIGIN = 0x00000000, LENGTH = 0x000001E0
     m_flash_config  (RX): ORIGIN = 0x00000400, LENGTH = 0x00000010
     m_text          (RX): ORIGIN = 0x00000800, LENGTH = 0x0003F800
-    m_data_l        (RW): ORIGIN = 0x1FFF0000, LENGTH = 0x00010000
-    m_data_h        (RW): ORIGIN = 0x20000000, LENGTH = 0x00010000
+    m_data_l        (RW): ORIGIN = 0x1FFF8000, LENGTH = 0x00008000
+    m_data_h        (RW): ORIGIN = 0x20000000, LENGTH = 0x00008000
 }
 
 SECTIONS
@@ -60,13 +60,6 @@ SECTIONS
         *(.bss*)
         *(COMMON)
     } > m_data_l
-    
-    .static_mem :
-    {
-        PROVIDE ( static_start = . );
-        . = ORIGIN(m_data_l) + LENGTH(m_data_l);
-        PROVIDE ( static_end = . );
-    } > m_data_l
 
     .heap_stack :
     {
@@ -77,12 +70,19 @@ SECTIONS
         . = . + __stack_size;
         . = ALIGN(4);
         PROVIDE ( os_stack_end = . );
-    } > m_data_h
+    } > m_data_l
+    
+    .static_mem :
+    {
+        PROVIDE ( static_start = . );
+        . = ORIGIN(m_data_l) + LENGTH(m_data_l);
+        PROVIDE ( static_end = . );
+    } > m_data_l
     
     .dynamic_mem :
     {
         PROVIDE ( dynamic_start = . );
-        . = ORIGIN(m_data_h) + LENGTH(m_data_h);
+        . = ORIGIN(m_data_h) + ( LENGTH(m_data_h) - (__heap_size + __stack_size) );
         PROVIDE ( dynamic_end = . );
     } > m_data_h
 }
