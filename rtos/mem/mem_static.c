@@ -48,7 +48,7 @@ void mem_static_init_region(MEM_STATIC *mem_static, char *start, char *end)
  */
 char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
 {
-    uint8_t *new_mem = NULL;
+    char *new_mem = NULL;
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Disable interrupts. */
@@ -80,6 +80,9 @@ char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
  */
 char *mem_static_dealloc_region(char *mem_ptr)
 {
+    /* This should never be called. */
+    OS_ASSERT(TRUE);
+
     /* Return same memory as we don't support memory deallocation for
      * static memory. */
     return (mem_ptr);
