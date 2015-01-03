@@ -218,10 +218,10 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
         [sp] "=r" (last_task->tos)
         );
 
-#ifdef CONFIG_INCLUDE_TASK_STATS
+#ifdef CONFIG_TASK_STATS
         /* Break the task stack pattern. */
         *(last_task->tos - 1) = 0x00;
-#endif /* CONFIG_INCLUDE_TASK_STATS */
+#endif /* CONFIG_TASK_STATS */
     }
 
     /* Load context for new task. */
@@ -263,7 +263,9 @@ ISR_FUN isr_clock64_tick(void)
  */
 ISR_FUN cpu_interrupt(void)
 {
-    ;
+    /* Assert the system. */
+    OS_ASSERT(TRUE);
+
 } /* cpu_interrupt */
 /*
  * nmi_interrupt
@@ -271,7 +273,9 @@ ISR_FUN cpu_interrupt(void)
  */
 ISR_FUN nmi_interrupt(void)
 {
-    ;
+    /* Assert the system. */
+    OS_ASSERT(TRUE);
+
 } /* nmi_interrupt */
 /*
  * hard_fault_interrupt
@@ -279,5 +283,7 @@ ISR_FUN nmi_interrupt(void)
  */
 ISR_FUN hard_fault_interrupt(void)
 {
-    ;
+    /* Assert the system. */
+    OS_ASSERT(TRUE);
+
 } /* hard_fault_interrupt */
