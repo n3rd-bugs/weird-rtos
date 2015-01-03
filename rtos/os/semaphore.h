@@ -15,7 +15,7 @@
 
 #include <os.h>
 
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
 
 /* Some status definitions. */
 #define SEMAPHORE_TIMEOUT   -700
@@ -49,6 +49,6 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
 uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait);
 void semaphore_release(SEMAPHORE *semaphore);
 
-#endif /* CONFIG_INCLUDE_SEMAPHORE */
+#endif /* CONFIG_SEMAPHORE */
 
 #endif /* _SEMAPHORE_H_ */

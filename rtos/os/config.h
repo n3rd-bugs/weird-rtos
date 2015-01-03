@@ -13,20 +13,9 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-/* Stack will be filled with this character. */
-#define CONFIG_STACK_FILL                   'A'
-#define CONFIG_PERIODIC_PIORITY             0
-#define CONFIG_SLEEP_PIORITY                254
-#define CONFIG_APERIODIC_PIORITY            255
-
-/* Scheduler configuration. */
-#define CONFIG_INCLUDE_TASK_STATS
-#define CONFIG_INCLUDE_APERIODIC_TASKS
-#define CONFIG_INCLUDE_PERIODIC_TASKS
-
 /* Helper API configuration. */
-#define CONFIG_INCLUDE_SLEEP
-#define CONFIG_INCLUDE_SEMAPHORE
+#define CONFIG_SLEEP
+#define CONFIG_SEMAPHORE
 
 /* Memory manger. */
 #define CONFIG_MEMGR

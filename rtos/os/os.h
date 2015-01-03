@@ -19,7 +19,7 @@
 #include <tasks.h>
 #include <scheduler.h>
 #include <assert.h>
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
 #include <semaphore.h>
 #endif
 #ifdef CONFIG_MEMGR

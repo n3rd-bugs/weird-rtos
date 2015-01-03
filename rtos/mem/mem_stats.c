@@ -27,17 +27,17 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
 {
     uint32_t start, end, i, free, total_free = 0;
     MEM_FREE *free_mem;
-#ifndef CONFIG_INCLUDE_SEMAPHORE
+#ifndef CONFIG_SEMAPHORE
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 #endif
 
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
     /* Obtain the memory lock. */
     semaphore_obtain(&mem_dynamic->lock, MAX_WAIT);
 #else
     /* Lock the scheduler. */
     DISABLE_INTERRUPTS();
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
     /* Memory general information.  */
     if (level & STAT_MEM_GENERAL)
@@ -98,13 +98,13 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
         printf("Total Free\t: %d\r\n", total_free);
     }
 
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
     /* Release the memory lock. */
     semaphore_release(&mem_dynamic->lock);
 #else
     /* Restore old interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
 } /* mem_dynamic_print_usage */
 

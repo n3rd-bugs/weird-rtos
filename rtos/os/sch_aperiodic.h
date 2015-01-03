@@ -15,11 +15,11 @@
 
 #include <os.h>
 
-#ifdef CONFIG_INCLUDE_APERIODIC_TASKS
+#ifdef CONFIG_APERIODIC_TASKS
 
 /* Aperiodic scheduling class definition. */
 extern SCHEDULER aperiodic_scheduler;
 
-#endif /* CONFIG_INCLUDE_APERIODIC_TASKS */
+#endif /* CONFIG_APERIODIC_TASKS */
 
 #endif /* _SCH_APERIODIC_H_ */

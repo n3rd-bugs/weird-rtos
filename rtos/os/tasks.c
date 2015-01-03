@@ -30,7 +30,7 @@ void task_create(TASK *tcb, char *name, char *stack, uint32_t stack_size, TASK_E
     /* Clear the task structure. */
     memset(tcb, 0, sizeof(TASK));
 
-#ifdef CONFIG_INCLUDE_TASK_STATS
+#ifdef CONFIG_TASK_STATS
     /* If user has provided a task name. */
     if (name != 0)
     {
@@ -43,11 +43,11 @@ void task_create(TASK *tcb, char *name, char *stack, uint32_t stack_size, TASK_E
     tcb->stack_start = stack;
 
     /* Fill the task stack with a pre-defined constant. */
-    memset(stack, CONFIG_STACK_FILL, stack_size);
+    memset(stack, CONFIG_STACK_PATTERN, stack_size);
 #else
     /* Remove some warnings. */
     UNUSED_PARAM(name);
-#endif /* CONFIG_INCLUDE_TASK_STATS */
+#endif /* CONFIG_TASK_STATS */
 
     /* Adjust task's stack pointer. */
     TOS_SET(tcb->tos, stack, stack_size);
@@ -55,9 +55,9 @@ void task_create(TASK *tcb, char *name, char *stack, uint32_t stack_size, TASK_E
     /* Initialize task's stack. */
     os_stack_init(tcb, entry, argv);
 
-#ifdef CONFIG_INCLUDE_TASK_STATS
+#ifdef CONFIG_TASK_STATS
     /* Break the task stack pattern. */
     *(tcb->tos) = 0x00;
-#endif /* CONFIG_INCLUDE_TASK_STATS */
+#endif /* CONFIG_TASK_STATS */
 
 } /* task_create */

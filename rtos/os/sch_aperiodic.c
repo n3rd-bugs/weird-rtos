@@ -14,7 +14,7 @@
 #include <sch_aperiodic.h>
 #include <sll.h>
 
-#ifdef CONFIG_INCLUDE_APERIODIC_TASKS
+#ifdef CONFIG_APERIODIC_TASKS
 
 /*
  * sch_aperiodic_task_sort
@@ -124,4 +124,4 @@ SCHEDULER aperiodic_scheduler =
     .class          = TASK_APERIODIC
 };
 
-#endif /* CONFIG_INCLUDE_APERIODIC_TASKS */
+#endif /* CONFIG_APERIODIC_TASKS */

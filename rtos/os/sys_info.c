@@ -14,7 +14,7 @@
 #include <sys_info.h>
 #include <serial.h>
 
-#ifdef CONFIG_INCLUDE_TASK_STATS
+#ifdef CONFIG_TASK_STATS
 
 /*
  * util_task_calc_free_stack
@@ -30,7 +30,7 @@ uint32_t util_task_calc_free_stack(TASK *tcb)
 
     /* Calculate the number of bytes intact on this task's
      * stack. */
-    while (tcb->stack_start[free] == CONFIG_STACK_FILL)
+    while (tcb->stack_start[free] == CONFIG_STACK_PATTERN)
     {
         free ++;
     }
@@ -77,4 +77,4 @@ void util_print_sys_info()
 
 } /* util_print_sys_info */
 
-#endif /* CONFIG_INCLUDE_TASK_STATS */
+#endif /* CONFIG_TASK_STATS */

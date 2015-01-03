@@ -169,11 +169,11 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, u
         mem_dynamic->pages[i].base_end = start;
     }
 
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
     /* Initialize memory lock. */
     /* Tasks with higher priority will be given memory first. */
     semaphore_create(&mem_dynamic->lock, 1, 1, SEMAPHORE_PRIORITY);
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
 } /* mem_dynamic_init_region */
 
@@ -339,12 +339,12 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
     MEM_PAGE *mem_page;
     MEM_FREE *mem_free;
     uint32_t remaining_size;
-#ifndef CONFIG_INCLUDE_SEMAPHORE
+#ifndef CONFIG_SEMAPHORE
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 #endif
 #ifdef MEM_FREE_CHECK
     char *mem_loc, *mem_end;
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
     /* We will always allocate aligned memory. */
     size = ALLIGN_CEIL(size + sizeof(MEM_DESC));
@@ -354,13 +354,13 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
     size = ALLIGN_CEIL(size + (MEM_BNDRY_LENGTH * 2));
 #endif
 
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
     /* Acquire the memory lock. */
     semaphore_obtain(&mem_dynamic->lock, MAX_WAIT);
 #else
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
     /* First find a suitable memory page for this size. */
     mem_page = mem_dynamic_search_region(mem_dynamic, size, !(mem_dynamic->flags & MEM_STRICT_ALLOC));
@@ -510,13 +510,13 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
         }
     }
 
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
     /* Release the memory lock. */
     semaphore_release(&mem_dynamic->lock);
 #else
     /* Restore old interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
     /* Return allocated memory. */
     return (mem_ptr);
@@ -550,13 +550,13 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
         /* Initialize a new free memory. */
         mem_free = ((MEM_FREE *)mem_ptr) - 1;
 
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
         /* Acquire the memory lock. */
         semaphore_obtain(&((MEM_ALOC *)mem_free)->page->mem_region->lock, MAX_WAIT);
 
         /* Restore old interrupt level. */
         SET_INTERRUPT_LEVEL(interrupt_level);
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
 #ifdef MEM_ID_CHECK
         /* Validate free memory id. */
@@ -684,13 +684,13 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
             mem_page->free = mem_free;
         }
 
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
         /* Release the memory lock. */
         semaphore_release(&mem_page->mem_region->lock);
 #else
         /* Restore old interrupt level. */
         SET_INTERRUPT_LEVEL(interrupt_level);
-#endif
+#endif /* CONFIG_SEMAPHORE */
     }
 
     /* Return memory pointer. */
@@ -698,4 +698,4 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
 
 } /* mem_dynamic_alloc_region */
 
-#endif
+#endif /* CONFIG_MEMGR_DYNAMIC */

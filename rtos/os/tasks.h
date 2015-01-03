@@ -16,6 +16,10 @@
 #include <stdint.h>
 #include <config.h>
 
+/* Task configuration. */
+#define CONFIG_TASK_STATS
+#define CONFIG_STACK_PATTERN    'A'
+
 /* These defines different task flags. */
 #define TASK_DONT_PREEMPT   0x01    /* This will disable task preemption. */
 
@@ -23,23 +27,23 @@
 typedef struct _task TASK;
 struct _task
 {
-#ifdef CONFIG_INCLUDE_TASK_STATS
+#ifdef CONFIG_TASK_STATS
     /* Name for this task. */
     char        name[8];
-#endif /* CONFIG_INCLUDE_TASK_STATS */
+#endif /* CONFIG_TASK_STATS */
 
     /* Task list member. */
     TASK        *next;
 
-#ifdef CONFIG_INCLUDE_SLEEP
+#ifdef CONFIG_SLEEP
     /* Link list member for sleeping tasks. */
     TASK        *next_sleep;
 #endif
 
-#ifdef CONFIG_INCLUDE_TASK_STATS
+#ifdef CONFIG_TASK_STATS
     /* Global task list member. */
     TASK        *next_global;
-#endif /* CONFIG_INCLUDE_TASK_STATS */
+#endif /* CONFIG_TASK_STATS */
 
     /* This holds current stack pointer of this task. */
     char        *tos;
@@ -50,15 +54,15 @@ struct _task
     /* If suspended this will hold task suspension data. */
     void        *suspend_data;
 
-#ifdef CONFIG_INCLUDE_TASK_STATS
+#ifdef CONFIG_TASK_STATS
     /* This is start of the stack pointer for this task. */
     char        *stack_start;
 
     /* Task stack size. */
     uint64_t    scheduled;
-#endif /* CONFIG_INCLUDE_TASK_STATS */
+#endif /* CONFIG_TASK_STATS */
 
-#ifdef CONFIG_INCLUDE_SLEEP
+#ifdef CONFIG_SLEEP
     /* The system tick at which this task is needed to be rescheduled. */
     uint64_t    tick_sleep;
 #endif
@@ -73,10 +77,10 @@ struct _task
     /* Current task status. */
     uint32_t    status;
 
-#ifdef CONFIG_INCLUDE_TASK_STATS
+#ifdef CONFIG_TASK_STATS
     /* Task stack size. */
     uint32_t    stack_size;
-#endif /* CONFIG_INCLUDE_TASK_STATS */
+#endif /* CONFIG_TASK_STATS */
 
     /* Task scheduler class identifier. */
     uint8_t     class;

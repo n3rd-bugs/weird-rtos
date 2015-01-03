@@ -15,11 +15,11 @@
 
 #include <os.h>
 
-#ifdef CONFIG_INCLUDE_PERIODIC_TASKS
+#ifdef CONFIG_PERIODIC_TASKS
 
 /* Periodic scheduling class definition. */
 extern SCHEDULER periodic_scheduler;
 
-#endif /* CONFIG_INCLUDE_PERIODIC_TASKS */
+#endif /* CONFIG_PERIODIC_TASKS */
 
 #endif /* _SCH_PERIODIC_H_ */

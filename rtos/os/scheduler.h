@@ -15,16 +15,25 @@
 
 #include <os.h>
 
+/* Scheduler configurations. */
+#define CONFIG_APERIODIC_TASKS
+#define CONFIG_PERIODIC_TASKS
+
+/* Scheduler priority configurations. */
+#define CONFIG_PERIODIC_PIORITY     0
+#define CONFIG_SLEEP_PIORITY        254
+#define CONFIG_APERIODIC_PIORITY    255
+
 /* These defines different scheduler classes. */
-#define TASK_APERIODIC   0x01
-#define TASK_PERIODIC    0x02
-#define TASK_IDLE        0x03
+#define TASK_APERIODIC              0x01
+#define TASK_PERIODIC               0x02
+#define TASK_IDLE                   0x03
 
 /* Some task resume status. */
-#define TASK_SUSPENDED          0
-#define TASK_RESUME_NORMAL      1
-#define TASK_RESUME_SLEEP       2
-#define TASK_RESUME_SEMAPHORE   3
+#define TASK_SUSPENDED              0
+#define TASK_RESUME_NORMAL          1
+#define TASK_RESUME_SLEEP           2
+#define TASK_RESUME_SEMAPHORE       3
 
 /* Scheduler class definition. */
 typedef struct _scheduler SCHEDULER;

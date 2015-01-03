@@ -79,20 +79,20 @@ void scheduler_init()
     memset(&scheduler_list, 0, sizeof(scheduler_list));
     memset(&sch_task_list, 0, sizeof(sch_task_list));
 
-#ifdef CONFIG_INCLUDE_APERIODIC_TASKS
+#ifdef CONFIG_APERIODIC_TASKS
     /* Add aperiodic scheduler. */
     sll_insert(&scheduler_list, &aperiodic_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
-#endif /* CONFIG_INCLUDE_APERIODIC_TASKS */
+#endif /* CONFIG_APERIODIC_TASKS */
 
-#ifdef CONFIG_INCLUDE_PERIODIC_TASKS
+#ifdef CONFIG_PERIODIC_TASKS
     /* Add periodic scheduler. */
     sll_insert(&scheduler_list, &periodic_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
-#endif /* CONFIG_INCLUDE_PERIODIC_TASKS */
+#endif /* CONFIG_PERIODIC_TASKS */
 
-#ifdef CONFIG_INCLUDE_SLEEP
+#ifdef CONFIG_SLEEP
     /* Add scheduler for sleeping tasks. */
     sll_insert(&scheduler_list, &sleep_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
-#endif /* CONFIG_INCLUDE_SLEEP */
+#endif /* CONFIG_SLEEP */
 
     /* Initialize idle task's control block and stack. */
     task_create(&__idle_task, "Idle", __idle_task_stack, 128, &__idle_task_entry, (void *)0x00);
@@ -159,10 +159,10 @@ TASK *scheduler_get_next_task()
         tcb_hp = &__idle_task;
     }
 
-#ifdef CONFIG_INCLUDE_TASK_STATS
+#ifdef CONFIG_TASK_STATS
     /* Increment the number of times this task was scheduled. */
     tcb_hp->scheduled ++;
-#endif /* CONFIG_INCLUDE_TASK_STATS */
+#endif /* CONFIG_TASK_STATS */
 
     /* Return the task to run. */
     return (tcb_hp);
@@ -210,9 +210,9 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
         }
     }
 
-#ifdef CONFIG_INCLUDE_TASK_STATS
+#ifdef CONFIG_TASK_STATS
     /* Append this task to the global task list. */
     sll_append(&sch_task_list, tcb, OFFSETOF(TASK, next_global));
-#endif /* CONFIG_INCLUDE_TASK_STATS */
+#endif /* CONFIG_TASK_STATS */
 
 } /* scheduler_task_add */

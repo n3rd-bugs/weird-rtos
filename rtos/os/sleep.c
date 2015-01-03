@@ -14,7 +14,7 @@
 #include <os.h>
 #include <sll.h>
 
-#ifdef CONFIG_INCLUDE_SLEEP
+#ifdef CONFIG_SLEEP
 
 /*
  * sleep_task_sort
@@ -184,4 +184,4 @@ SCHEDULER sleep_scheduler =
     .priority       = CONFIG_SLEEP_PIORITY
 };
 
-#endif /* CONFIG_INCLUDE_SLEEP */
+#endif /* CONFIG_SLEEP */

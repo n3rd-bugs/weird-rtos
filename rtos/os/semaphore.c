@@ -15,7 +15,7 @@
 #include <sll.h>
 #include <string.h>
 
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
 
 /*
  * semaphore_create
@@ -118,6 +118,7 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
             /* Save the current task pointer. */
             tcb = get_current_task();
 
+#ifdef CONFIG_SLEEP
             /* Check if we need to wait for a finite time. */
             if (wait != (uint32_t)(MAX_WAIT))
             {
@@ -125,6 +126,7 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
                  * the allowed time the task will be resumed. */
                 sleep_add_to_list(tcb, wait);
             }
+#endif /* CONFIG_SLEEP */
 
             /* If this is a FIFO semaphore. */
             if (semaphore->type == SEMAPHORE_FIFO)
@@ -219,8 +221,10 @@ void semaphore_release(SEMAPHORE *semaphore)
         /* Task is resuming from a semaphore. */
         tcb->status = TASK_RESUME_SEMAPHORE;
 
+#ifdef CONFIG_SLEEP
         /* Remove this task from sleeping tasks. */
         sleep_remove_from_list(tcb);
+#endif /* CONFIG_SLEEP */
 
         /* Try to reschedule this task. */
         ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
@@ -234,4 +238,4 @@ void semaphore_release(SEMAPHORE *semaphore)
 
 } /* semaphore_release */
 
-#endif /* CONFIG_INCLUDE_SEMAPHORE */
+#endif /* CONFIG_SEMAPHORE */

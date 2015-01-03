@@ -132,7 +132,7 @@ struct _mem_page
 /* Region descriptor. */
 struct _mem_dynamic
 {
-#ifdef CONFIG_INCLUDE_SEMAPHORE
+#ifdef CONFIG_SEMAPHORE
     /* Memory protection lock. */
     SEMAPHORE       lock;
 #endif
