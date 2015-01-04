@@ -140,10 +140,10 @@ void run_first_task()
 
     __asm volatile
     (
-    " ldr r0, =0xE000ED08   \n" /* Use the NVIC offset register to locate the stack. */
-    " ldr r0, [r0]          \n"
-    " ldr r0, [r0]          \n"
-    " msr msp, r0           \n" /* Set the msp back to the start of the stack. */
+    "   LDR     R0, =0xE000ED08   \n"
+    "   LDR     R0, [R0]          \n"
+    "   LDR     R0, [R0]          \n"
+    "   MSR     MSP, R0           \n"
     );
 
     /* Enable interrupts. */

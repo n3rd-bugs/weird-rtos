@@ -150,17 +150,18 @@ void system_entry(void)
     SCB_VTOR = (uint32_t)(&system_isr_table);
 
     __asm (
-    "mov    r0,%0\n\t"
-    "cmp    r0,#0\n\t"
-    "beq    skip_sp\n\t"
-    "mov    sp,r0\n\t"
-    "sub    sp,#4\n\t"
-    "mov    r0,#0\n\t"
-    "mvn    r0,r0\n\t"
-    "str    r0,[sp,#0]\n\t"
-    "add    sp,#4\n\t"
-    "skip_sp:\n\t"
-    ::"r"(&os_stack_end));
+    "   MOV    R0, %[sp]    \r\n"
+    "   CMP    R0, #0       \r\n"
+    "   BEQ    skip_sp      \r\n"
+    "   mov    SP, R0       \r\n"
+    "   sub    SP, #4       \r\n"
+    "   mov    R0, #0       \r\n"
+    "   mvn    R0, R0       \r\n"
+    "   str    R0, [SP,#0]  \r\n"
+    "   add    SP, #4       \r\n"
+    " skip_sp:              \r\n"
+    ::
+    [sp] "r" (&os_stack_end));
 
     /* Disable watch dog timer. */
     wdt_disbale();
@@ -170,6 +171,9 @@ void system_entry(void)
 
     /* Initialize system clock. */
     current_tick = 0;
+
+    /* We are not running any task until OS initializes. */
+    set_current_task(NULL);
 
     ENABLE_INTERRUPTS();
 
