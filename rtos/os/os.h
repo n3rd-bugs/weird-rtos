@@ -25,6 +25,9 @@
 #ifdef CONFIG_MEMGR
 #include <mem.h>
 #endif
+#ifdef CONFIG_FS
+#include <fs.h>
+#endif
 
 /* Some return codes. */
 #define SUCCESS             0

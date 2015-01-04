@@ -13,12 +13,26 @@
 #ifndef _SERIAL_H_
 #define _SERIAL_H_
 
+#include <os.h>
+
+typedef struct _UART_CON
+{
+    /* For now it only has console file data. */
+    CONSOLE     console;
+
+#ifdef CONFIG_SEMAPHORE
+    /* UART lock. */
+    SEMAPHORE   lock;
+#endif
+
+} UART_CON;
+
 /* Some configurations. */
 #define BAUD_RATE       115200
 
 /* Function prototypes. */
-int serial_puts(const char *buf, int nbytes);
-int serial_printf(char *format, ...);
+uint32_t serial_puts(void *priv_data, char *buf, uint32_t nbytes);
+uint32_t serial_printf(char *format, ...);
 void serial_init();
 
 #ifdef printf

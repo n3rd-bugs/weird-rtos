@@ -1,7 +1,7 @@
 /*
- * config.h
+ * pipe.c
  *
- * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
+ * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
  * Standard MIT License apply on this source code, with the inclusion of below
  * clause.
@@ -10,17 +10,9 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
 
-/* Helper API configuration. */
-#define CONFIG_SLEEP
-#define CONFIG_SEMAPHORE
+#include <os.h>
 
-/* Memory manger. */
-#define CONFIG_MEMGR
+#ifdef FS_PIPE
 
-/* File system. */
-#define CONFIG_FS
-
-#endif /* _CONFIG_H_ */
+#endif /* FS_PIPE */
