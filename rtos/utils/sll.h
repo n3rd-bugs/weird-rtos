@@ -33,7 +33,9 @@ void sll_push(void *list, void *node, int offset);
 void *sll_pop(void *list, int offset);
 void sll_append(void *list, void *node, int offset);
 void sll_insert(void *list, void *node, uint8_t (*sort)(void *, void *), int offset);
+void *sll_search(void *list, void **prev_node, uint8_t (*match)(void *, void *), void *param, int offset);
 void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *param, int offset);
+void sll_remove_node(void *list, void *node, void *prev_node, int offset);
 void sll_remove(void *list, void *node, int offset);
 
 #endif /* _SLL_H_ */

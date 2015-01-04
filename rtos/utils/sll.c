@@ -142,15 +142,17 @@ void sll_insert(void *list, void *node, uint8_t (*sort)(void *, void *), int off
 } /* sll_insert */
 
 /*
- * sll_search_pop
+ * sll_search
  * @list: List that is needed to be searched.
- * @match: Function that will be called with a node to see if this is the
- *  required to remove.
+ * @prev_node: If not NULL previous node entry will be returned here.
+ * @match: Function that will be called for for each node to see if this is
+ *  required.
  * @offset: Offset of the "next" member in a node structure.
- * @return: Node that was removed form the list.
- * This function will search for a particular node.
+ * @return: If not NULL, required node will be returned.
+ * This function will search for a particular node, as defined in the match
+ * routine.
  */
-void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *param, int offset)
+void *sll_search(void *list, void **prev_node, uint8_t (*match)(void *, void *), void *param, int offset)
 {
     void *list_node = ((SLL_HEAD *)list)->head;
     void *node = NULL;
@@ -160,18 +162,14 @@ void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *param, 
         /* Check if we need to remove the first node. */
         if (match(list_node, param) == TRUE)
         {
+            if (prev_node != NULL)
+            {
+                /* No previous entry. */
+                *prev_node = NULL;
+            }
+
             /* Return this node. */
             node = list_node;
-
-            /* Update the list head. */
-            ((SLL_HEAD *)list)->head = ((SLL_NODE *)((char *)node + offset))->next;
-
-            /* Check if this is the only node in the list. */
-            if (((SLL_HEAD *)list)->head == NULL)
-            {
-                /* Clear the list. */
-                ((SLL_HEAD *)list)->tail = NULL;
-            }
         }
 
         else
@@ -186,18 +184,14 @@ void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *param, 
             /* Check if we have found a node to be removed. */
             if (((SLL_NODE *)((char *)list_node + offset))->next != NULL)
             {
-                /* Save the node to be removed. */
-                node = ((SLL_NODE *)((char *)list_node + offset))->next;
-
-                /* Update the previous entry in the link list. */
-                ((SLL_NODE *)((char *)list_node + offset))->next = ((SLL_NODE *)((char *)node + offset))->next;
-
-                /* Check if we are removing a node from the end of the list. */
-                if (((SLL_NODE *)((char *)node + offset))->next == NULL)
+                if (prev_node != NULL)
                 {
-                    /* We are removing a node from the tail, update the tail. */
-                    ((SLL_HEAD *)list)->tail = list_node;
+                    /* Return previous node. */
+                    *prev_node = list_node;
                 }
+
+                /* Return required node. */
+                node = ((SLL_NODE *)((char *)list_node + offset))->next;
             }
         }
     }
@@ -205,7 +199,72 @@ void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *param, 
     /* Return the removed node. */
     return (node);
 
+} /* sll_search */
+
+/*
+ * sll_search_pop
+ * @list: List that is needed to be searched.
+ * @match: Function that will be called with a node to see if this is the
+ *  required to remove.
+ * @offset: Offset of the "next" member in a node structure.
+ * @return: Node that was removed form the list.
+ * This function will search for a particular node.
+ */
+void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *param, int offset)
+{
+    void *list_node;
+    void *node = sll_search(list, &list_node, match, param, offset);
+
+    /* If a node was found. */
+    if (node != NULL)
+    {
+        /* Remove this node. */
+        sll_remove_node(list, node, list_node, offset);
+    }
+
+    /* Return the removed node. */
+    return (node);
+
 } /* sll_search_pop */
+
+/*
+ * sll_remove_node
+ * @list: List that is needed to be updated.
+ * @node: Node that is needed to be removed.
+ * @prev_node: Previous node.
+ * @offset: Offset of the "next" member in a node structure.
+ * This function removes a particular node from the given list.
+ */
+void sll_remove_node(void *list, void *node, void *prev_node, int offset)
+{
+    /* Check if we are removing a node from the list's head. */
+    if (((SLL_HEAD *)list)->head == node)
+    {
+        /* Update the list head. */
+        ((SLL_HEAD *)list)->head = ((SLL_NODE *)((char *)node + offset))->next;
+
+        /* Check if this is the only node in the list. */
+        if (((SLL_NODE *)((char *)node + offset))->next == NULL)
+        {
+            /* Clear the list. */
+            ((SLL_HEAD *)list)->tail = NULL;
+        }
+    }
+
+    else
+    {
+        /* Update the previous entry in the link list. */
+        ((SLL_NODE *)((char *)prev_node + offset))->next = ((SLL_NODE *)((char *)node + offset))->next;
+
+        /* Check if we are removing a node from the end of the list. */
+        if (((SLL_NODE *)((char *)node + offset))->next == NULL)
+        {
+            /* We are removing a node from the tail, update the tail. */
+            ((SLL_HEAD *)list)->tail = prev_node;
+        }
+    }
+
+} /* sll_remove_node */
 
 /*
  * sll_remove
@@ -224,15 +283,8 @@ void sll_remove(void *list, void *node, int offset)
         /* Check if we are removing a node from the list's head. */
         if (list_node == node)
         {
-            /* Update the list head. */
-            ((SLL_HEAD *)list)->head = ((SLL_NODE *)((char *)node + offset))->next;
-
-            /* Check if this is the only node in the list. */
-            if (((SLL_NODE *)((char *)node + offset))->next == NULL)
-            {
-                /* Clear the list. */
-                ((SLL_HEAD *)list)->tail = NULL;
-            }
+            /* Remove this node. */
+            sll_remove_node(list, node, NULL, offset);
         }
 
         else
@@ -248,15 +300,8 @@ void sll_remove(void *list, void *node, int offset)
             /* Check if we have actually found this node in the given list. */
             if (((SLL_NODE *)((char *)list_node + offset))->next != NULL)
             {
-                /* Update the previous entry in the link list. */
-                ((SLL_NODE *)((char *)list_node + offset))->next = ((SLL_NODE *)((char *)node + offset))->next;
-
-                /* Check if we are removing a node from the end of the list. */
-                if (((SLL_NODE *)((char *)node + offset))->next == NULL)
-                {
-                    /* We are removing a node from the tail, update the tail. */
-                    ((SLL_HEAD *)list)->tail = list_node;
-                }
+                /* Remove this node. */
+                sll_remove_node(list, node, list_node, offset);
             }
         }
     }
