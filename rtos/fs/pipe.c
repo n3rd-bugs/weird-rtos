@@ -12,7 +12,348 @@
  */
 
 #include <os.h>
+#include <string.h>
+#include <sll.h>
 
 #ifdef FS_PIPE
+
+/* Pipe FS data. */
+PIPE_DATA pipe_data;
+
+/* Internal function prototypes. */
+void *pipe_open(char *name, uint32_t flags);
+uint32_t pipe_write(void *fd, char *data, uint32_t nbytes);
+uint32_t pipe_read(void *fd, char *buffer, uint32_t size);
+
+/* File system definition. */
+FS pipe_fs =
+{
+        /* Pipe file system root node. */
+        .name = "\\pipe",
+
+        /* File manipulation API. */
+        .open = pipe_open,
+};
+
+/*
+ * pipe_init
+ * This function will initialize debug console.
+ */
+void pipe_init()
+{
+    /* Clear the console data. */
+    memset(&pipe_data, 0, sizeof(PIPE_DATA));
+
+#ifdef CONFIG_SEMAPHORE
+    /* Create a semaphore to protect global console data. */
+    semaphore_create(&pipe_data.lock, 1, 1, SEMAPHORE_PRIORITY);
+#endif
+
+    /* Register console with file system. */
+    fs_register(&pipe_fs);
+
+} /* pipe_init */
+
+/*
+ * pipe_create
+ * @pipe: Pipe data to be registered.
+ * This function will initialize and register a pipe.
+ */
+void pipe_create(PIPE *pipe)
+{
+    NODE_PARAM param;
+
+#ifndef CONFIG_SEMAPHORE
+    /* Lock the scheduler. */
+    scheduler_lock();
+#else
+    /* Create a semaphore to protect pipe data. */
+    semaphore_create(&pipe->lock, 1, 1, SEMAPHORE_PRIORITY);
+
+    /* Obtain the global data lock. */
+    semaphore_obtain(&pipe_data.lock, MAX_WAIT);
+#endif
+
+    /* First check if this node can be registered. */
+
+    /* Initialize a search parameter. */
+    param.name = pipe->fs.name;
+    param.priv = (void *)NULL;
+
+    /* First find a file system to which this call can be forwarded. */
+    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(CONSOLE, fs.next));
+
+    if (param.priv == NULL)
+    {
+        /* Initialize PIPE data. */
+        pipe->free = pipe->message = 0;
+        ((MSG_DATA *)(pipe->data))->flags = 0;
+
+        /* Initialize FS structure. */
+        pipe->fs.read = &pipe_read;
+        pipe->fs.close = NULL;
+        pipe->fs.ioctl = NULL;
+        pipe->fs.open = NULL;
+        pipe->fs.write = &pipe_write;
+
+        /* Just push this file system in the list. */
+        sll_push(&pipe_data.list, pipe, OFFSETOF(PIPE, fs.next));
+    }
+
+#ifdef CONFIG_SEMAPHORE
+    /* Release the global data lock. */
+    semaphore_release(&pipe_data.lock);
+#else
+    /* Enable scheduling. */
+    scheduler_unlock();
+#endif
+} /* pipe_create */
+
+/*
+ * pipe_open
+ * @name: Pipe name.
+ * @flags: Open flags.
+ * This function will open a pipe node.
+ */
+void *pipe_open(char *name, uint32_t flags)
+{
+    NODE_PARAM param;
+    void *fd = NULL;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(flags);
+
+#ifdef CONFIG_SEMAPHORE
+    /* Obtain the global data lock. */
+    semaphore_obtain(&pipe_data.lock, MAX_WAIT);
+#endif
+
+    /* Initialize a search parameter. */
+    param.name = name;
+    param.priv = (void *)fd;
+
+    /* First find a file system to which this call can be forwarded. */
+    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(CONSOLE, fs.next));
+
+    /* If a node was found. */
+    if (param.priv)
+    {
+        /* Use this FD, we will update it if required. */
+        fd = param.priv;
+    }
+
+#ifdef CONFIG_SEMAPHORE
+    /* Release the global data lock. */
+    semaphore_release(&pipe_data.lock);
+#endif
+
+    if (fd != NULL)
+    {
+        /* Check if we need to call the underlying function to get a new file
+         * descriptor. */
+        if (((CONSOLE *)fd)->fs.open != NULL)
+        {
+            /* Call the underlying API to get the file descriptor. */
+            fd = ((CONSOLE *)fd)->fs.open(name, flags);
+        }
+    }
+
+    /* Return the file descriptor. */
+    return (fd);
+
+} /* pipe_open */
+
+/*
+ * pipe_write
+ * @fd: File descriptor.
+ * @data: Data to be written.
+ * @nbytes: Number of bytes.
+ * @return: Number of bytes written on this pipe.
+ * This function will write data on pipe.
+ */
+uint32_t pipe_write(void *fd, char *data, uint32_t nbytes)
+{
+    PIPE *pipe = (PIPE *)fd;
+    uint32_t required_space, part_size;
+    MSG_DATA *message;
+
+#ifdef CONFIG_SEMAPHORE
+    /* Obtain data lock for this pipe. */
+    semaphore_obtain(&pipe->lock, MAX_WAIT);
+#else
+    /* Lock scheduler. */
+    scheduler_lock();
+#endif
+
+    /* Calculate required space. */
+    required_space = ALLIGN_CEIL(nbytes) + sizeof(MSG_DATA);
+
+    /* Get the current message. */
+    message = (MSG_DATA *)(&pipe->data[pipe->message]);
+
+    /* First check if we can push more data on pipe. */
+    if ( (!(message->flags & PIPE_MSG_VALID)) ||
+         ((pipe->free > pipe->message) &&
+          ((pipe->free + required_space) < (pipe->size + pipe->message))) ||
+          ((pipe->free < pipe->message) &&
+           ((pipe->free + required_space) < pipe->message)) )
+    {
+        /* Push the message header. */
+        message = (MSG_DATA *)(&pipe->data[pipe->free]);
+        message->flags = 0;
+        message->size = nbytes;
+
+        /* Move past the message header. */
+        pipe->free += sizeof(MSG_DATA);
+
+        /* After putting the header we could be at the end on the
+         * assigned space. */
+        if (pipe->free == pipe->size)
+        {
+            pipe->free = 0;
+        }
+
+        /* Check if we need to split the data. */
+        if (((pipe->free + nbytes) > pipe->size))
+        {
+            /* First part is always the data remaining in the pipe data buffer. */
+            part_size = pipe->size - pipe->free;
+        }
+        else
+        {
+            /* No need to split just put all the data in one go. */
+            part_size = nbytes;
+        }
+
+        /* Now put the message data. */
+        memcpy(&pipe->data[pipe->free], data, part_size);
+        memcpy(pipe->data, (data + part_size), (nbytes - part_size));
+
+        /* Increment the free pointer. */
+        pipe->free += ALLIGN_CEIL(nbytes);
+
+        /* Check if we need to roll over the free. */
+        if (pipe->free > pipe->size)
+        {
+            /* Roll over the current free. */
+            pipe->free %= pipe->size;
+        }
+
+        /* There should be enough space to store a message header here. */
+        else if (pipe->free + sizeof(MSG_DATA) > pipe->size)
+        {
+            /* Roll over the buffer. */
+            pipe->free = 0;
+        }
+
+        /* Set the message flag as valid. */
+        message->flags |= PIPE_MSG_VALID;
+    }
+    else
+    {
+        /* Nothing was written on the pipe. */
+        nbytes = 0;
+    }
+
+#ifdef CONFIG_SEMAPHORE
+    /* Release data lock for this pipe. */
+    semaphore_release(&pipe->lock);
+#else
+    /* Enable scheduling. */
+    scheduler_unlock();
+#endif
+
+    /* Return number of bytes. */
+    return (nbytes);
+
+} /* pipe_write */
+
+/*
+ * pipe_read
+ * @fd: File descriptor.
+ * @buffer: Buffer in which data will be read.
+ * @size: Size of buffer.
+ * @return: Number of bytes read from the pipe.
+ * This function will read data from a pipe.
+ */
+uint32_t pipe_read(void *fd, char *buffer, uint32_t size)
+{
+    PIPE *pipe = (PIPE *)fd;
+    MSG_DATA *message;
+    uint32_t nbytes = 0, message_size;
+    uint32_t part_size;
+
+#ifdef CONFIG_SEMAPHORE
+    /* Obtain data lock for this pipe. */
+    semaphore_obtain(&pipe->lock, MAX_WAIT);
+#else
+    /* Lock scheduler. */
+    scheduler_lock();
+#endif
+
+    /* Get the current message. */
+    message = (MSG_DATA *)(&pipe->data[pipe->message]);
+
+    /* First check if we have a valid message on the queue. */
+    if ((message->flags & PIPE_MSG_VALID) && (size >= message->size))
+    {
+        /* Calculate message data length and actual message size. */
+        nbytes = message->size;
+        message_size = sizeof(MSG_DATA) + nbytes;
+
+        /* Check if we need to split the data. */
+        if ((pipe->message + message_size) > pipe->size)
+        {
+            /* First part is always the data remaining in the pipe data buffer. */
+            part_size = pipe->size - (pipe->message + sizeof(MSG_DATA));
+        }
+        else
+        {
+            /* No need to split just put all the data in one go. */
+            part_size = nbytes;
+        }
+
+        /* Copy data for the pipe in to the giver buffer. */
+        memcpy(buffer, (char *)(message + 1), part_size);
+        memcpy(buffer + part_size, pipe->data, nbytes - part_size);
+
+        /* Discard this message. */
+        pipe->message += sizeof(MSG_DATA) + ALLIGN_CEIL(message->size);
+
+        /* Check if we need to roll over the message. */
+        if (pipe->message > pipe->size)
+        {
+            /* Roll over the current message. */
+            pipe->message %= pipe->size;
+        }
+
+        /* There should be enough space to store a message header here. */
+        else if (pipe->message + sizeof(MSG_DATA) > pipe->size)
+        {
+            /* Roll over the buffer. */
+            pipe->message = 0;
+        }
+
+        /* If there are no more messages. */
+        if (pipe->message == pipe->free)
+        {
+            /* Clear and reset this pipe. */
+            pipe->message = pipe->free = 0;
+            ((MSG_DATA *)(pipe->data))->flags = 0;
+        }
+    }
+
+#ifdef CONFIG_SEMAPHORE
+    /* Release data lock for this pipe. */
+    semaphore_release(&pipe->lock);
+#else
+    /* Enable scheduling. */
+    scheduler_unlock();
+#endif
+
+    /* Return number of bytes. */
+    return (nbytes);
+
+} /* pipe_read */
 
 #endif /* FS_PIPE */
