@@ -23,7 +23,7 @@ typedef struct _mem_static
     char        *current_ptr;
     char        *end_ptr;
 
-#ifdef CONFIG_MEMGR_STATS
+#ifdef MEMGR_STATS
     /* Total memory size.  */
     uint32_t    mem_size;
 #endif

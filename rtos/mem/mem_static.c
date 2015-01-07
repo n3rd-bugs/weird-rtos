@@ -14,7 +14,7 @@
 #include <os_target.h>
 #include <string.h>
 
-#ifdef CONFIG_MEMGR_STATIC
+#ifdef MEMGR_STATIC
 
 /*
  * mem_static_init_region
@@ -33,7 +33,7 @@ void mem_static_init_region(MEM_STATIC *mem_static, char *start, char *end)
     mem_static->current_ptr = start;
     mem_static->end_ptr = end;
 
-#ifdef CONFIG_MEMGR_STATS
+#ifdef MEMGR_STATS
     mem_static->mem_size = (uint32_t)(end - start);
 #endif
 
@@ -49,10 +49,9 @@ void mem_static_init_region(MEM_STATIC *mem_static, char *start, char *end)
 char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
 {
     char *new_mem = NULL;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
-    /* Disable interrupts. */
-    DISABLE_INTERRUPTS();
+    /* Lock the scheduler. */
+    scheduler_lock();
 
     if ( (mem_static->current_ptr + size) < (mem_static->end_ptr) )
     {
@@ -63,8 +62,8 @@ char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
         mem_static->current_ptr += size;
     }
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 
     /* Return allocated memory. */
     return (new_mem);
@@ -89,4 +88,4 @@ char *mem_static_dealloc_region(char *mem_ptr)
 
 } /* mem_static_alloc_region */
 
-#endif /* CONFIG_MEMGR_STATIC */
+#endif /* MEMGR_STATIC */

@@ -55,8 +55,9 @@
 #define YIELD_CANNOT_RUN        0x03
 
 /* Alignment manipulation macros. */
-#define ALLIGN_FLOOR(n)         ( (n) > 0x4 ? ((n) & (~(0x3))) : 0x4 )
-#define ALLIGN_CEIL(n)          ( (n) > 0x4 ? (((n) & (~(0x3))) + 4) : 0x4 )
+#define ALLIGN_SIZE             (0x4)
+#define ALLIGN_FLOOR(n)         (((n) % ALLIGN_SIZE) ? ((n) & ~(0x3)) : (n))
+#define ALLIGN_CEIL(n)          (((n) % ALLIGN_SIZE) ? ((n) & ~(0x3)) + ALLIGN_SIZE : (n))
 
 /* Exported variables. */
 extern TASK *current_task;

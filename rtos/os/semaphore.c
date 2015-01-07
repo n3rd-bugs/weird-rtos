@@ -104,10 +104,9 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
     uint32_t    status = SUCCESS;
     TASK        *tcb;
-    uint32_t    interrupt_level = GET_INTERRUPT_LEVEL();
 
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
+    /* Lock the scheduler. */
+    scheduler_lock();
 
     /* Check if this semaphore is not available. */
     if (semaphore->count == 0)
@@ -186,8 +185,8 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         }
     }
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 
     /* Return status to the caller. */
     return (status);
@@ -202,10 +201,12 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 void semaphore_release(SEMAPHORE *semaphore)
 {
     TASK        *tcb;
-    uint32_t    interrupt_level = GET_INTERRUPT_LEVEL();
 
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
+    /* Lock the scheduler. */
+    scheduler_lock();
+
+    /* Semaphore double release. */
+    OS_ASSERT(semaphore->count >= semaphore->max_count);
 
     /* Increment the semaphore count. */
     if (semaphore->count < semaphore->max_count)
@@ -233,8 +234,8 @@ void semaphore_release(SEMAPHORE *semaphore)
         task_yield();
     }
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 
 } /* semaphore_release */
 

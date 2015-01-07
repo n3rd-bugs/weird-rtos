@@ -13,11 +13,11 @@
 #include <os.h>
 #include <os_target.h>
 
-#ifdef CONFIG_MEMGR_STATIC
+#ifdef MEMGR_STATIC
 MEM_STATIC mem_static;
 #endif
 
-#ifdef CONFIG_MEMGR_DYNAMIC
+#ifdef MEMGR_DYNAMIC
 MEM_DYNAMIC mem_dynamic;
 
 /* Total number of pages in dynamic memory. */
@@ -47,12 +47,12 @@ MEM_DYN_CFG mem_dyn_cfg [NUM_PAGES] =
 void mem_init()
 {
 
-#ifdef CONFIG_MEMGR_STATIC
+#ifdef MEMGR_STATIC
     /* Initialize global static memory region. */
     mem_static_init_region(&mem_static, STATIC_MEM_START, STATIC_MEM_END);
 #endif
 
-#ifdef CONFIG_MEMGR_DYNAMIC
+#ifdef MEMGR_DYNAMIC
     /* Initialize global static memory region. */
     mem_dynamic_init_region(&mem_dynamic, DYNAMIC_MEM_START, DYNAMIC_MEM_END, NUM_PAGES, mem_dyn_cfg, MEM_FLAGS);
 #endif

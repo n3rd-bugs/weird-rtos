@@ -14,9 +14,9 @@
 #include <os.h>
 #include <serial.h>
 
-#ifdef CONFIG_MEMGR_STATS
+#ifdef MEMGR_STATS
 
-#ifdef CONFIG_MEMGR_DYNAMIC
+#ifdef MEMGR_DYNAMIC
 /*
  * mem_dynamic_print_usage
  * @mem_dynamic: The memory region.
@@ -27,16 +27,13 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
 {
     uint32_t start, end, i, free, total_free = 0;
     MEM_FREE *free_mem;
-#ifndef CONFIG_SEMAPHORE
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
-#endif
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the memory lock. */
     semaphore_obtain(&mem_dynamic->lock, MAX_WAIT);
 #else
     /* Lock the scheduler. */
-    DISABLE_INTERRUPTS();
+    scheduler_lock();
 #endif /* CONFIG_SEMAPHORE */
 
     /* Memory general information.  */
@@ -102,12 +99,12 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
     /* Release the memory lock. */
     semaphore_release(&mem_dynamic->lock);
 #else
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 #endif /* CONFIG_SEMAPHORE */
 
 } /* mem_dynamic_print_usage */
 
-#endif /* CONFIG_MEMGR_DYNAMIC */
+#endif /* MEMGR_DYNAMIC */
 
-#endif /* CONFIG_MEMGR_STATS */
+#endif /* MEMGR_STATS */

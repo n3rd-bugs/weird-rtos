@@ -52,7 +52,7 @@
 #include <string.h>
 #include <sll.h>
 
-#ifdef CONFIG_MEMGR_DYNAMIC
+#ifdef MEMGR_DYNAMIC
 
 /*
  * mem_dynamic_init_region
@@ -110,7 +110,7 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, u
     if (j > 0)
     {
         /* Evenly divide the remaining space for the memory regions that have undefined size. */
-        page_mem_size = ALLIGN_CEIL(page_mem_size / j);
+        page_mem_size = ALLIGN_FLOOR(page_mem_size / j);
     }
 
     /* Initialize memory for all pages. */
@@ -142,7 +142,7 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, u
         else
         {
             /* Just give remaining memory to last page. */
-            page_size = ALLIGN_CEIL((uint32_t)(end - start));
+            page_size = ALLIGN_FLOOR((uint32_t)(end - start));
         }
 
         /* Initialize a free memory. */
@@ -339,27 +339,24 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
     MEM_PAGE *mem_page;
     MEM_FREE *mem_free;
     uint32_t remaining_size;
-#ifndef CONFIG_SEMAPHORE
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
-#endif
 #ifdef MEM_FREE_CHECK
     char *mem_loc, *mem_end;
 #endif /* CONFIG_SEMAPHORE */
 
     /* We will always allocate aligned memory. */
-    size = ALLIGN_CEIL(size + sizeof(MEM_DESC));
+    size = ALLIGN_CEIL(size + sizeof(MEM_ALOC));
 
 #ifdef MEM_BNDRY_CHECK
     /* Add space for memory underflow and overflow.  */
-    size = ALLIGN_CEIL(size + (MEM_BNDRY_LENGTH * 2));
+    size += ALLIGN_CEIL(MEM_BNDRY_LENGTH * 2);
 #endif
 
 #ifdef CONFIG_SEMAPHORE
     /* Acquire the memory lock. */
     semaphore_obtain(&mem_dynamic->lock, MAX_WAIT);
 #else
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
+    /* Lock the scheduler. */
+    scheduler_lock();
 #endif /* CONFIG_SEMAPHORE */
 
     /* First find a suitable memory page for this size. */
@@ -514,8 +511,8 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
     /* Release the memory lock. */
     semaphore_release(&mem_dynamic->lock);
 #else
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 #endif /* CONFIG_SEMAPHORE */
 
     /* Return allocated memory. */
@@ -534,10 +531,9 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
 {
     MEM_PAGE *mem_page;
     MEM_FREE *mem_free, *neighbor;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Lock the scheduler. */
-    DISABLE_INTERRUPTS();
+    scheduler_lock();
 
     /* If a valid memory was given. */
     if (mem_ptr)
@@ -554,8 +550,8 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
         /* Acquire the memory lock. */
         semaphore_obtain(&((MEM_ALOC *)mem_free)->page->mem_region->lock, MAX_WAIT);
 
-        /* Restore old interrupt level. */
-        SET_INTERRUPT_LEVEL(interrupt_level);
+        /* Enable scheduling. */
+        scheduler_unlock();
 #endif /* CONFIG_SEMAPHORE */
 
 #ifdef MEM_ID_CHECK
@@ -688,8 +684,8 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
         /* Release the memory lock. */
         semaphore_release(&mem_page->mem_region->lock);
 #else
-        /* Restore old interrupt level. */
-        SET_INTERRUPT_LEVEL(interrupt_level);
+        /* Enable scheduling. */
+        scheduler_unlock();
 #endif /* CONFIG_SEMAPHORE */
     }
 
@@ -698,4 +694,4 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
 
 } /* mem_dynamic_alloc_region */
 
-#endif /* CONFIG_MEMGR_DYNAMIC */
+#endif /* MEMGR_DYNAMIC */
