@@ -70,6 +70,8 @@ extern TASK_LIST sch_task_list;
 /* Function prototypes. */
 void scheduler_init();
 TASK *scheduler_get_next_task();
-void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t param, uint8_t flags);
+void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t param);
+void scheduler_lock();
+void scheduler_unlock();
 
 #endif /* _SCHEDULER_H_ */

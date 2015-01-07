@@ -96,7 +96,7 @@ void scheduler_init()
 
     /* Initialize idle task's control block and stack. */
     task_create(&__idle_task, "Idle", __idle_task_stack, 128, &__idle_task_entry, (void *)0x00);
-    scheduler_task_add(&__idle_task, TASK_IDLE, 0, 0, 0);
+    scheduler_task_add(&__idle_task, TASK_IDLE, 0, 0);
 } /* scheduler_init */
 
 /*
@@ -176,11 +176,10 @@ TASK *scheduler_get_next_task()
  * @priority: Priority for this task.
  * @param: Scheduling parameter if any.
  *  In case of periodic task this defines the task period in system ticks.
- * @flags: Task flags if any.
  * This function adds a task in the system, the task must be initialized before
  * adding.
  */
-void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t param, uint8_t flags)
+void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t param)
 {
     /* Get the first scheduler from the scheduler list. */
     SCHEDULER *scheduler = scheduler_list.head;
@@ -195,7 +194,6 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
             tcb->class              = class;
             tcb->priority           = priority;
             tcb->scheduler_data_1   = param;
-            tcb->flags              = flags;
 
             /* Enqueue this task in the required scheduler. */
             scheduler->yield(tcb, YIELD_INIT);
@@ -216,3 +214,35 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
 #endif /* CONFIG_TASK_STATS */
 
 } /* scheduler_task_add */
+
+/*
+ * scheduler_lock
+ * This function will disable preemption for this task so that it cannot be
+ * preempted.
+ */
+void scheduler_lock()
+{
+    /* Check if we have a current task. */
+    if (current_task != NULL)
+    {
+        /* Set the flag on the current task to disable scheduling. */
+        current_task->flags |= TASK_DONT_PREEMPT;
+    }
+
+} /* scheduler_lock */
+
+/*
+ * scheduler_unlock
+ * This function will enable preemption for this task so that it can be
+ * preempted.
+ */
+void scheduler_unlock()
+{
+    /* Check if we have a current task. */
+    if (current_task != NULL)
+    {
+        /* Clear the flag on the current task to enable scheduling. */
+        current_task->flags &= ~(TASK_DONT_PREEMPT);
+    }
+
+} /* scheduler_unlock */
