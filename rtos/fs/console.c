@@ -23,7 +23,7 @@
 CONSOLE_DATA console_data;
 
 /* Function prototypes. */
-void *console_open (char *, uint32_t);
+void *console_open(char *, uint32_t);
 
 /* File system definition. */
 FS console_fs =
@@ -33,6 +33,9 @@ FS console_fs =
 
         /* File manipulation API. */
         .open = console_open,
+
+        /* Close, read, write and IOCTL will be populated by
+         * the underlying device. */
 };
 
 /*
@@ -62,9 +65,8 @@ void console_init()
 void console_register(CONSOLE *console)
 {
 #ifndef CONFIG_SEMAPHORE
-    /* Disable global interrupts. */
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
-    DISABLE_INTERRUPTS();
+    /* Lock the scheduler. */
+    scheduler_lock();
 #else
     /* Obtain the global data lock. */
     semaphore_obtain(&console_data.lock, MAX_WAIT);
@@ -77,8 +79,8 @@ void console_register(CONSOLE *console)
     /* Release the global data lock. */
     semaphore_release(&console_data.lock);
 #else
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 #endif
 }
 
@@ -88,7 +90,7 @@ void console_register(CONSOLE *console)
  * @flags: Open flags.
  * This function will open a console node.
  */
-void *console_open (char *name, uint32_t flags)
+void *console_open(char *name, uint32_t flags)
 {
     NODE_PARAM param;
     void *fd = NULL;
@@ -104,9 +106,6 @@ void *console_open (char *name, uint32_t flags)
 
     /* First find a file system to which this call can be forwarded. */
     sll_search(&console_data.list, NULL, fs_sreach_node, &param, OFFSETOF(CONSOLE, fs.next));
-
-    /* Release the global data lock. */
-    semaphore_release(&console_data.lock);
 
     /* If a node was found. */
     if (param.priv)

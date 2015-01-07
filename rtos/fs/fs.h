@@ -25,9 +25,6 @@
 #define FS_PIPE
 #define FS_CONSOLE
 
-/* Information flags. */
-#define FS_PATH_PARTIAL     0x00010000
-
 /* File descriptor definitions. */
 typedef int32_t FD;
 
@@ -43,10 +40,10 @@ struct _fs
 
     /* File operations. */
     void        *(*open) (char *, uint32_t);
-    void        (*close) (void *);
+    void        (*close) (void **);
     uint32_t    (*write) (void *, char *, uint32_t);
     uint32_t    (*read) (void *, char *, uint32_t);
-    uint32_t    (*ioctl) (void *, char *, uint32_t);
+    uint32_t    (*ioctl) (void *, uint32_t, void *);
 };
 
 /* File system list. */
@@ -93,10 +90,10 @@ void fs_init();
 
 /* File APIs. */
 FD fs_open(char *, uint32_t);
-void fs_close(FD);
+void fs_close(FD *);
 
-uint32_t fs_write(FD, char *, uint32_t);
 uint32_t fs_read(FD, char *, uint32_t);
+uint32_t fs_write(FD, char *, uint32_t);
 uint32_t fs_ioctl(FD, uint32_t, void *);
 
 /* File system functions. */

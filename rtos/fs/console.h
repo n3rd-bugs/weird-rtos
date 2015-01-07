@@ -18,12 +18,11 @@
 #ifdef FS_CONSOLE
 
 /* Console file system. */
-typedef struct _console CONSOLE;
-struct _console
+ typedef struct _console
 {
     /* For now it only has FS data. */
     FS      fs;
-};
+} CONSOLE;
 
 /* Console data. */
 typedef struct _console_data

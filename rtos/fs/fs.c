@@ -41,6 +41,11 @@ void fs_init()
     console_init();
 #endif
 
+#ifdef FS_PIPE
+    /* Initialize PIPE file system. */
+    pipe_init();
+#endif
+
 } /* fs_init */
 
 /*
@@ -52,9 +57,8 @@ void fs_init()
 void fs_register(FS *file_system)
 {
 #ifndef CONFIG_SEMAPHORE
-    /* Disable global interrupts. */
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
-    DISABLE_INTERRUPTS();
+    /* Lock the scheduler. */
+    scheduler_lock();
 #else
     /* Obtain the global data lock. */
     semaphore_obtain(&file_data.lock, MAX_WAIT);
@@ -67,8 +71,8 @@ void fs_register(FS *file_system)
     /* Release the global data lock. */
     semaphore_release(&file_data.lock);
 #else
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 #endif
 
 } /* fs_register */
@@ -150,7 +154,7 @@ uint8_t fs_sreach_node(void *node, void *param)
  * @name: File name to open.
  * @flags: Open flags.
  * This function opens a named node with given flags. The name should not
- * end with a '\'.
+ * end with a '\\'.
  */
 FD fs_open(char *name, uint32_t flags)
 {
@@ -202,17 +206,62 @@ FD fs_open(char *name, uint32_t flags)
 } /* fs_open */
 
 /*
- * fs_write
- * @fd: Console descriptor.
+ * fs_close
+ * @fd: Pointer to file descriptor.
+ * This function will close a file descriptor.
+ */
+void fs_close(FD *fd)
+{
+    /* Check if a close function was registered with this descriptor. */
+    if (((FS *)fd)->close != NULL)
+    {
+        /* Transfer call to underlying API. */
+        ((FS *)fd)->close((void **)fd);
+    }
+
+    else
+    {
+        /* Clear the file descriptor. */
+        *fd = (FD)NULL;
+    }
+
+} /* fs_close */
+
+/*
+ * fs_read
+ * @fd: File descriptor.
  * @buffer: Data buffer.
  * @nbytes: Number of bytes to write.
- * This function will write data on the console.
+ * This function will read data from a file descriptor.
+ */
+uint32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
+{
+    uint32_t read = 0;
+
+    /* Check if a read function was registered with this descriptor. */
+    if (((FS *)fd)->read != NULL)
+    {
+        /* Transfer call to underlying API. */
+        read = ((FS *)fd)->read((void *)fd, buffer, nbytes);
+    }
+
+    /* Return number of bytes read. */
+    return (read);
+
+} /* fs_read */
+
+/*
+ * fs_write
+ * @fd: File descriptor.
+ * @buffer: Data buffer.
+ * @nbytes: Number of bytes to write.
+ * This function will write data on a file descriptor.
  */
 uint32_t fs_write(FD fd, char *buffer, uint32_t nbytes)
 {
     uint32_t written = 0;
 
-    /* Check if a write function was registered with this console. */
+    /* Check if a write function was registered with this descriptor. */
     if (((FS *)fd)->write != NULL)
     {
         /* Transfer call to underlying API. */
@@ -223,5 +272,27 @@ uint32_t fs_write(FD fd, char *buffer, uint32_t nbytes)
     return (written);
 
 } /* fs_write */
+
+/*
+ * fs_ioctl
+ * @fd: File descriptor.
+ * @cmd: IOCTL command needed to be executed.
+ * @param: IOCTL command parameter if any.
+ * This function will execute a command on a file descriptor.
+ */
+uint32_t fs_ioctl(FD fd, uint32_t cmd, void *param)
+{
+    uint32_t ret = 0;
+
+    /* Check if an IOCTL function was registered with this descriptor. */
+    if (((FS *)fd)->ioctl != NULL)
+    {
+        /* Transfer call to underlying API. */
+        ret = ((FS *)fd)->ioctl((void *)fd, cmd, param);
+    }
+
+    return (ret);
+
+} /* fs_ioctl */
 
 #endif /* CONFIG_FS */
