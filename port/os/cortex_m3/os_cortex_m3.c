@@ -162,8 +162,12 @@ void control_to_system()
     /* Process and get the next task in this task's context. */
     current_task = scheduler_get_next_task();
 
-    /* Schedule a context switch. */
-    PEND_SV();
+    /* Check if we need to switch context. */
+    if (current_task != last_task)
+    {
+        /* Schedule a context switch. */
+        PEND_SV();
+    }
 
     /* Enable interrupts. */
     ENABLE_INTERRUPTS();
