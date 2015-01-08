@@ -53,23 +53,30 @@ void os_process_system_tick()
  */
 void task_yield()
 {
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+    uint32_t interrupt_level;
 
-    /* Disable interrupts. */
-    DISABLE_INTERRUPTS();
+    OS_ASSERT(current_task == NULL);
 
-    /* If current task has a scheduler defined. */
-    if (current_task->scheduler != NULL)
+    /* Check if we can actually yield the current task. */
+    if (!(current_task->flags & TASK_DONT_PREEMPT))
     {
-        /* Re-enqueue/schedule this task in the scheduler. */
-        ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_MANUAL);
+        /* Disable interrupts. */
+        interrupt_level = GET_INTERRUPT_LEVEL();
+        DISABLE_INTERRUPTS();
+
+        /* If current task has a scheduler defined. */
+        if (current_task->scheduler != NULL)
+        {
+            /* Re-enqueue/schedule this task in the scheduler. */
+            ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_MANUAL);
+        }
+
+        /* Schedule next task and enable interrupts. */
+        CONTROL_TO_SYSTEM();
+
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
     }
-
-    /* Schedule next task and enable interrupts. */
-    CONTROL_TO_SYSTEM();
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* task_yield */
 
@@ -83,7 +90,7 @@ void task_yield()
  */
 void task_waiting()
 {
-    uint32_t    interrupt_level = GET_INTERRUPT_LEVEL();
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Disable interrupts. */
     DISABLE_INTERRUPTS();
