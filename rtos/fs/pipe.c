@@ -21,6 +21,8 @@
 PIPE_DATA pipe_data;
 
 /* Internal function prototypes. */
+static void pipe_lock(void *fd);
+static void pipe_unlock(void *fd);
 void *pipe_open(char *name, uint32_t flags);
 uint32_t pipe_write(void *fd, char *data, uint32_t nbytes);
 uint32_t pipe_read(void *fd, char *buffer, uint32_t size);
@@ -90,11 +92,17 @@ void pipe_create(PIPE *pipe)
         ((MSG_DATA *)(pipe->data))->flags = 0;
 
         /* Initialize FS structure. */
-        pipe->fs.read = &pipe_read;
-        pipe->fs.close = NULL;
-        pipe->fs.ioctl = NULL;
         pipe->fs.open = NULL;
+        pipe->fs.close = NULL;
+        pipe->fs.read = &pipe_read;
         pipe->fs.write = &pipe_write;
+        pipe->fs.ioctl = NULL;
+        memset(&pipe->fs.task_list, 0, sizeof(struct _fs_task_list));
+        pipe->fs.flags = FS_BLOCK;
+        pipe->fs.timeout = MAX_WAIT;
+        pipe->fs.should_resume = NULL;
+        pipe->fs.get_lock = pipe_lock;
+        pipe->fs.release_lock = pipe_unlock;
 
         /* Just push this file system in the list. */
         sll_push(&pipe_data.list, pipe, OFFSETOF(PIPE, fs.next));
@@ -108,6 +116,38 @@ void pipe_create(PIPE *pipe)
     scheduler_unlock();
 #endif
 } /* pipe_create */
+
+/*
+ * pipe_lock
+ * @fd: File descriptor for the pipe.
+ * This function will get the lock for a given pipe.
+ */
+static void pipe_lock(void *fd)
+{
+#ifdef CONFIG_SEMAPHORE
+    /* Obtain data lock for this pipe. */
+    semaphore_obtain(&((PIPE *)fd)->lock, MAX_WAIT);
+#else
+    /* Lock scheduler. */
+    scheduler_lock();
+#endif
+} /* pipe_lock */
+
+/*
+ * pipe_unlock
+ * @fd: File descriptor for the pipe.
+ * This function will release the lock for a given pipe.
+ */
+static void pipe_unlock(void *fd)
+{
+#ifdef CONFIG_SEMAPHORE
+    /* Release data lock for this pipe. */
+    semaphore_release(&((PIPE *)fd)->lock);
+#else
+    /* Enable scheduling. */
+    scheduler_unlock();
+#endif
+} /* pipe_unlock */
 
 /*
  * pipe_open
@@ -177,14 +217,6 @@ uint32_t pipe_write(void *fd, char *data, uint32_t nbytes)
     uint32_t required_space, part_size;
     MSG_DATA *message;
 
-#ifdef CONFIG_SEMAPHORE
-    /* Obtain data lock for this pipe. */
-    semaphore_obtain(&pipe->lock, MAX_WAIT);
-#else
-    /* Lock scheduler. */
-    scheduler_lock();
-#endif
-
     /* Calculate required space. */
     required_space = ALLIGN_CEIL(nbytes) + sizeof(MSG_DATA);
 
@@ -248,20 +280,15 @@ uint32_t pipe_write(void *fd, char *data, uint32_t nbytes)
 
         /* Set the message flag as valid. */
         message->flags |= PIPE_MSG_VALID;
+
+        /* We have a message in this pipe. */
+        fd_data_available(fd, NULL);
     }
     else
     {
         /* Nothing was written on the pipe. */
         nbytes = 0;
     }
-
-#ifdef CONFIG_SEMAPHORE
-    /* Release data lock for this pipe. */
-    semaphore_release(&pipe->lock);
-#else
-    /* Enable scheduling. */
-    scheduler_unlock();
-#endif
 
     /* Return number of bytes. */
     return (nbytes);
@@ -282,14 +309,6 @@ uint32_t pipe_read(void *fd, char *buffer, uint32_t size)
     MSG_DATA *message;
     uint32_t nbytes = 0, message_size;
     uint32_t part_size;
-
-#ifdef CONFIG_SEMAPHORE
-    /* Obtain data lock for this pipe. */
-    semaphore_obtain(&pipe->lock, MAX_WAIT);
-#else
-    /* Lock scheduler. */
-    scheduler_lock();
-#endif
 
     /* Get the current message. */
     message = (MSG_DATA *)(&pipe->data[pipe->message]);
@@ -340,16 +359,11 @@ uint32_t pipe_read(void *fd, char *buffer, uint32_t size)
             /* Clear and reset this pipe. */
             pipe->message = pipe->free = 0;
             ((MSG_DATA *)(pipe->data))->flags = 0;
+
+            /* Tell the file system that this pipe is now flushed */
+            fd_data_flushed(fd);
         }
     }
-
-#ifdef CONFIG_SEMAPHORE
-    /* Release data lock for this pipe. */
-    semaphore_release(&pipe->lock);
-#else
-    /* Enable scheduling. */
-    scheduler_unlock();
-#endif
 
     /* Return number of bytes. */
     return (nbytes);
