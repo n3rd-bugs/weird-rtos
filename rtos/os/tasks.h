@@ -101,5 +101,6 @@ typedef void TASK_ENTRY (void *argv);
 
 /* Function prototypes. */
 void task_create(TASK *tcb, char *name, char *stack, uint32_t stack_size, TASK_ENTRY *entry, void *argv);
+uint8_t task_priority_sort(void *node, void *task);
 
 #endif /* _TASKS_H_ */

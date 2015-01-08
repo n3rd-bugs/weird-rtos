@@ -44,52 +44,6 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
 } /* semaphore_create */
 
 /*
- * semaphore_fifo_sort
- * @node: Existing task in the semaphore task list.
- * @task: New task being added in the semaphore task list.
- * @return: TRUE if the new task is needed be scheduled before the existing node
- *  in the list.
- * This is sorting function called by SLL routines to sort the task list for
- * the FIFO semaphores.
- */
-static uint8_t semaphore_fifo_sort(void *node, void *task)
-{
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(node);
-    UNUSED_PARAM(task);
-
-    /* Always return false so that the new task is placed at the end
-     * of the list. */
-    return (FALSE);
-
-} /* semaphore_fifo_sort. */
-
-/*
- * semaphore_priority_sort
- * @node: Existing task in the semaphore task list.
- * @task: New task being added in the semaphore task list.
- * @return: TRUE if the new task is needed be scheduled before the existing node
- *  in the list.
- * This is sorting function called by SLL routines to sort the task list for
- * the priority based semaphores.
- */
-static uint8_t semaphore_priority_sort(void *node, void *task)
-{
-    uint8_t schedule = FALSE;
-
-    /* Check f this node has lower priority than the new task. */
-    if (((TASK *)node)->priority > ((TASK *)task)->priority)
-    {
-        /* Schedule the new task before this node. */
-        schedule = TRUE;
-    }
-
-    /* Return if we need to schedule this task before the given node. */
-    return (schedule);
-
-} /* semaphore_priority_sort. */
-
-/*
  * semaphore_obtain
  * @semaphore: Semaphore control block that is needed to be acquired.
  * @wait: The number of ticks to wait for this semaphore, MAX_WAIT should be
@@ -130,15 +84,15 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
             /* If this is a FIFO semaphore. */
             if (semaphore->type == SEMAPHORE_FIFO)
             {
-                /* Add this task on the semaphore's task list. */
-                sll_insert(&semaphore->tasks, tcb, &semaphore_fifo_sort, OFFSETOF(TASK, next));
+                /* Add this task at the end of task list. */
+                sll_append(&semaphore->tasks, tcb, OFFSETOF(TASK, next));
             }
 
             /* If this is a priority based semaphore. */
             else if (semaphore->type == SEMAPHORE_PRIORITY)
             {
                 /* Add this task on the semaphore's task list. */
-                sll_insert(&semaphore->tasks, tcb, &semaphore_priority_sort, OFFSETOF(TASK, next));
+                sll_insert(&semaphore->tasks, tcb, &task_priority_sort, OFFSETOF(TASK, next));
             }
 
             /* Task is being suspended. */
@@ -220,7 +174,7 @@ void semaphore_release(SEMAPHORE *semaphore)
     if (tcb != NULL)
     {
         /* Task is resuming from a semaphore. */
-        tcb->status = TASK_RESUME_SEMAPHORE;
+        tcb->status = TASK_RESUME;
 
 #ifdef CONFIG_SLEEP
         /* Remove this task from sleeping tasks. */
