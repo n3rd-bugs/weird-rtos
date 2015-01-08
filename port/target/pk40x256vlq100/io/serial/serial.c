@@ -30,11 +30,7 @@ UART_CON uart_1 =
         .name = "uart1",
 
         /* Console manipulation APIs. */
-        .open = NULL,
-        .close = NULL,
-        .read = NULL,
         .write = &serial_puts,
-        .ioctl = NULL,
     }
 };
 #endif

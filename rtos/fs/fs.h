@@ -28,6 +28,11 @@
 /* File descriptor definitions. */
 typedef int32_t FD;
 
+/* File system specific flags. */
+#define FS_BLOCK            0x0001000
+#define FS_PRIORITY_SORT    0x0002000
+#define FS_DATA_AVAILABLE   0x0000001
+
 /* File system descriptor. */
 typedef struct _fs FS;
 struct _fs
@@ -44,7 +49,34 @@ struct _fs
     uint32_t    (*write) (void *, char *, uint32_t);
     uint32_t    (*read) (void *, char *, uint32_t);
     uint32_t    (*ioctl) (void *, uint32_t, void *);
+
+    /* Driver operations. */
+    void        (*get_lock) (void *);
+    void        (*release_lock) (void *);
+    uint32_t    (*should_resume) (void *, void *, void *);
+
+    /* File system specific flags. */
+    uint32_t    flags;
+
+    /* This will hold the timeout if blocking mode is used. */
+    uint32_t    timeout;
+
+    struct _fs_task_list
+    {
+        /* Link-list for the tasks waiting for data. */
+        TASK        *head;
+        TASK        *tail;
+    } task_list;
 };
+
+/* This holds the resumption criteria for a task waiting on an FS. */
+/* This parameter structure should be at head of the parameter passed in when
+ * data is available. */
+typedef struct _fs_param
+{
+    void        *fs;
+    void        *param;
+} FS_PARAM;
 
 /* File system list. */
 typedef struct _fs_data
@@ -98,6 +130,8 @@ uint32_t fs_ioctl(FD, uint32_t, void *);
 
 /* File system functions. */
 void fs_register(FS *file_system);
+void fd_data_available(void *fs, FS_PARAM *param);
+void fd_data_flushed(void *fs);
 
 /* Helper APIs. */
 uint8_t fs_sreach_directory(void *node, void *param);
