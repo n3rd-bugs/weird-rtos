@@ -96,7 +96,7 @@ static TASK *sch_aperiodic_get_task()
     if (tcb != NULL)
     {
         /* Task is being resumed. */
-        tcb->status = TASK_RESUME_NORMAL;
+        tcb->status = TASK_RESUME;
     }
 
     /* Return the task to be scheduled. */

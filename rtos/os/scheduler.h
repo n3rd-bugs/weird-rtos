@@ -31,9 +31,11 @@
 
 /* Some task resume status. */
 #define TASK_SUSPENDED              0
-#define TASK_RESUME_NORMAL          1
-#define TASK_RESUME_SLEEP           2
-#define TASK_RESUME_SEMAPHORE       3
+#define TASK_RESUME                 1
+#define TASK_SUSP_SLEEP             2
+#define TASK_SUSP_SEMAPHORE         3
+#define TASK_SUSP_FILE              4
+#define TASK_RESUME_SLEEP           5
 
 /* Scheduler class definition. */
 typedef struct _scheduler SCHEDULER;

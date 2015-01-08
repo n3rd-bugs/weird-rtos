@@ -135,7 +135,7 @@ static TASK *sch_periodic_get_task()
         tcb = (TASK *)sll_pop(&periodic_scheduler.ready_tasks, OFFSETOF(TASK, next));
 
         /* Task is being resumed. */
-        tcb->status = TASK_RESUME_NORMAL;
+        tcb->status = TASK_RESUME;
     }
 
     /* Return the task that is needed to run next. */
