@@ -252,12 +252,16 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
  */
 ISR_FUN isr_clock64_tick(void)
 {
+    OS_ISR_ENTER();
+
     /* Timer roll over. */
     clock_64_high_32++;
 
     /* Clear the interrupt flag. */
     PIT_TFLG0 |= PIT_TFLG_TIF_MASK;
     PIT_TCTRL0 = (PIT_TCTRL_TEN_MASK | PIT_TCTRL_TIE_MASK);
+
+    OS_ISR_EXIT();
 
 } /* isr_clock64_tick */
 

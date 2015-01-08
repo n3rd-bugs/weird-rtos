@@ -62,6 +62,13 @@
 /* Exported variables. */
 extern TASK *current_task;
 
+/* ISR routines. */
+#define OS_ISR_ENTER();         TASK *task_save = current_task;         \
+                                current_task = NULL;
+
+
+#define OS_ISR_EXIT();          current_task = task_save;
+
 /* Public function prototypes. */
 void os_run();
 void task_yield();
