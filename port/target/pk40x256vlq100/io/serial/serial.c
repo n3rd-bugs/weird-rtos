@@ -153,6 +153,13 @@ void serial_init()
     UART_C4_REG(UART1_BASE_PTR) = temp | UART_C4_BRFA(brfa);
     UART_C2_REG(UART1_BASE_PTR) |= (UART_C2_TE_MASK | UART_C2_RE_MASK );
 
+    /* Enable clock for PORTE. */
+    SIM_SCGC5 = SIM_SCGC5_PORTE_MASK;
+
+    /* Set MUX for TX and RX pins. */
+    PORTE_PCR0 = PORT_PCR_MUX(3) | PORT_PCR_DSE_MASK;
+    PORTE_PCR1 = PORT_PCR_MUX(3) | PORT_PCR_DSE_MASK;
+
 #ifdef FS_CONSOLE
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect this console data. */
