@@ -59,9 +59,12 @@ void pipe_init()
 /*
  * pipe_create
  * @pipe: Pipe data to be registered.
+ * @name: Name of the pipe being created.
+ * @buffer: Buffer to be used to store the pipe data.
+ * @size: Size of buffer.
  * This function will initialize and register a pipe.
  */
-void pipe_create(PIPE *pipe)
+void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
 {
     NODE_PARAM param;
 
@@ -69,9 +72,6 @@ void pipe_create(PIPE *pipe)
     /* Lock the scheduler. */
     scheduler_lock();
 #else
-    /* Create a semaphore to protect pipe data. */
-    semaphore_create(&pipe->lock, 1, 1, SEMAPHORE_PRIORITY);
-
     /* Obtain the global data lock. */
     semaphore_obtain(&pipe_data.lock, MAX_WAIT);
 #endif
@@ -79,19 +79,25 @@ void pipe_create(PIPE *pipe)
     /* First check if this node can be registered. */
 
     /* Initialize a search parameter. */
-    param.name = pipe->fs.name;
+    param.name = name;
     param.priv = (void *)NULL;
 
-    /* First find a file system to which this call can be forwarded. */
+    /* First check if these is no other pipe with same name. */
     sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(CONSOLE, fs.next));
 
     if (param.priv == NULL)
     {
+        /* Clear pipe data. */
+        memset(pipe, 0, sizeof(PIPE));
+
         /* Initialize PIPE data. */
+        pipe->data = buffer;
+        pipe->size = size;
         pipe->free = pipe->message = 0;
         ((MSG_DATA *)(pipe->data))->flags = 0;
 
         /* Initialize FS structure. */
+        pipe->fs.name = name;
         pipe->fs.open = NULL;
         pipe->fs.close = NULL;
         pipe->fs.read = &pipe_read;
@@ -103,6 +109,11 @@ void pipe_create(PIPE *pipe)
         pipe->fs.should_resume = NULL;
         pipe->fs.get_lock = pipe_lock;
         pipe->fs.release_lock = pipe_unlock;
+
+#ifdef CONFIG_SEMAPHORE
+        /* Create a semaphore to protect pipe data. */
+        semaphore_create(&pipe->lock, 1, 1, SEMAPHORE_PRIORITY);
+#endif
 
         /* Just push this file system in the list. */
         sll_push(&pipe_data.list, pipe, OFFSETOF(PIPE, fs.next));
