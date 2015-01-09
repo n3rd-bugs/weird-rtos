@@ -57,6 +57,9 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
 uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
     uint32_t    status = SUCCESS;
+#ifdef CONFIG_SLEEP
+    uint32_t    last_tick = current_system_tick();
+#endif /* CONFIG_SLEEP */
     TASK        *tcb;
 
     /* Lock the scheduler. */
@@ -71,47 +74,63 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
             /* Save the current task pointer. */
             tcb = get_current_task();
 
-#ifdef CONFIG_SLEEP
-            /* Check if we need to wait for a finite time. */
-            if (wait != (uint32_t)(MAX_WAIT))
+            /* There is never a surety that if semaphore is released it will be
+             * picked up by a waiting task as scheduler might decide to run
+             * some other higher/same priority task and it might acquire the
+             * semaphore before the waiting task acquires it. */
+            /* This is not a bug and happen in a RTOS where different types of
+             * schedulers are present. */
+            do
             {
-                /* Add the current task to the sleep list, if not available in
-                 * the allowed time the task will be resumed. */
-                sleep_add_to_list(tcb, wait);
-            }
+#ifdef CONFIG_SLEEP
+                /* Check if we need to wait for a finite time. */
+                if (wait!= (uint32_t)(MAX_WAIT))
+                {
+                    /* Add the current task to the sleep list, if not available in
+                     * the allowed time the task will be resumed. */
+                    sleep_add_to_list(tcb, wait - (current_system_tick() - last_tick));
+
+                    /* Save when we suspended last time. */
+                    last_tick = current_system_tick();
+                }
 #endif /* CONFIG_SLEEP */
 
-            /* If this is a FIFO semaphore. */
-            if (semaphore->type == SEMAPHORE_FIFO)
-            {
-                /* Add this task at the end of task list. */
-                sll_append(&semaphore->tasks, tcb, OFFSETOF(TASK, next));
-            }
+                /* If this is a FIFO semaphore. */
+                if (semaphore->type == SEMAPHORE_FIFO)
+                {
+                    /* Add this task at the end of task list. */
+                    sll_append(&semaphore->tasks, tcb, OFFSETOF(TASK, next));
+                }
 
-            /* If this is a priority based semaphore. */
-            else if (semaphore->type == SEMAPHORE_PRIORITY)
-            {
-                /* Add this task on the semaphore's task list. */
-                sll_insert(&semaphore->tasks, tcb, &task_priority_sort, OFFSETOF(TASK, next));
-            }
+                /* If this is a priority based semaphore. */
+                else if (semaphore->type == SEMAPHORE_PRIORITY)
+                {
+                    /* Add this task on the semaphore's task list. */
+                    sll_insert(&semaphore->tasks, tcb, &task_priority_sort, OFFSETOF(TASK, next));
+                }
 
-            /* Task is being suspended. */
-            tcb->status = TASK_SUSPENDED;
+                /* Task is being suspended. */
+                tcb->status = TASK_SUSPENDED;
 
-            /* Suspend and wait for being resumed by either semaphore
-             * availability or wait timeout. */
-            task_waiting();
+                /* Suspend and wait for being resumed by either semaphore
+                 * availability or wait timeout. */
+                task_waiting();
 
-            /* Check if we are resumed due to a timeout. */
-            if (tcb->status == TASK_RESUME_SLEEP)
-            {
-                /* Return an error that we failed to get the semaphore in the
-                 * given timeout. */
-                status = SEMAPHORE_TIMEOUT;
+                /* Check if we are resumed due to a timeout. */
+                if (tcb->status == TASK_RESUME_SLEEP)
+                {
+                    /* Return an error that we failed to get the semaphore in the
+                     * given timeout. */
+                    status = SEMAPHORE_TIMEOUT;
 
-                /* Remove this task from the semaphore's task's list. */
-                sll_remove(&semaphore->tasks, tcb, OFFSETOF(TASK, next));
-            }
+                    /* Remove this task from the semaphore's task's list. */
+                    sll_remove(&semaphore->tasks, tcb, OFFSETOF(TASK, next));
+
+                    /* Break and return error. */
+                    break;
+                }
+
+            } while (semaphore->count == 0);
         }
 
         /* We are not waiting for this semaphore to be free. */
@@ -127,6 +146,9 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         /* Check if this semaphore is available. */
         if (semaphore->count > 0)
         {
+            /* Save the owner for this semaphore. */
+            semaphore->owner = tcb;
+
             /* Decrease the semaphore count. */
             semaphore->count --;
         }
@@ -167,6 +189,9 @@ void semaphore_release(SEMAPHORE *semaphore)
     {
         semaphore->count ++;
     }
+
+    /* Clear the owner task. */
+    semaphore->owner = NULL;
 
     /* Get the first task that can be resumed now. */
     tcb = (TASK *)sll_pop(&semaphore->tasks, OFFSETOF(TASK, next));

@@ -238,6 +238,9 @@ void fs_close(FD *fd)
 uint32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
 {
     uint32_t read = 0;
+#ifdef CONFIG_SLEEP
+    uint32_t last_tick = current_system_tick();
+#endif
     TASK *tcb = get_current_task();
 
     if (((FS *)fd)->get_lock)
@@ -265,53 +268,76 @@ uint32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
             }
 #endif /* CONFIG_SLEEP */
 
-            /* If we need to sort the list on priority. */
-            if (((FS *)fd)->flags & FS_PRIORITY_SORT)
+            /* There is never a surety that if some data is available and
+             * picked up by a waiting task as scheduler might decide to run
+             * some other higher/same priority task and data can get consumed
+             * by it before this waiting task can get it. */
+            /* This is not a bug and happen in a RTOS where different types of
+             * schedulers are present. */
+            do
             {
-                /* Add this task on the file descriptor task list. */
-                sll_insert(&((FS *)fd)->task_list, tcb, &task_priority_sort, OFFSETOF(TASK, next));
-            }
+#ifdef CONFIG_SLEEP
+                /* Check if we need to wait for a finite time. */
+                if (((FS *)fd)->timeout != (uint32_t)(MAX_WAIT))
+                {
+                    /* Add the current task to the sleep list, if not available in
+                     * the allowed time the task will be resumed. */
+                    sleep_add_to_list(tcb, ((FS *)fd)->timeout - (current_system_tick() - last_tick));
 
-            else
-            {
-                /* Add this task at the end of task list. */
-                sll_append(&((FS *)fd)->task_list, tcb, OFFSETOF(TASK, next));
-            }
+                    /* Save when we suspended last time. */
+                    last_tick = current_system_tick();
+                }
+#endif /* CONFIG_SLEEP */
 
-            /* We need to suspend so disable preemption and release the lock
-             * this way releasing the lock will not pass the control to
-             * next task. */
+                /* If we need to sort the list on priority. */
+                if (((FS *)fd)->flags & FS_PRIORITY_SORT)
+                {
+                    /* Add this task on the file descriptor task list. */
+                    sll_insert(&((FS *)fd)->task_list, tcb, &task_priority_sort, OFFSETOF(TASK, next));
+                }
 
-            /* Disable preemption. */
-            scheduler_lock();
+                else
+                {
+                    /* Add this task at the end of task list. */
+                    sll_append(&((FS *)fd)->task_list, tcb, OFFSETOF(TASK, next));
+                }
 
-            if (((FS *)fd)->release_lock)
-            {
-                /* Release lock for this file descriptor. */
-                ((FS *)fd)->release_lock((void *)fd);
-            }
+                /* We need to suspend so disable preemption and release the lock
+                 * this way releasing the lock will not pass the control to
+                 * next task. */
 
-            /* Task is being suspended. */
-            tcb->status = TASK_SUSPENDED;
+                /* Disable preemption. */
+                scheduler_lock();
 
-            /* Wait for either being resumed by some data or timeout. */
-            task_waiting();
+                if (((FS *)fd)->release_lock)
+                {
+                    /* Release lock for this file descriptor. */
+                    ((FS *)fd)->release_lock((void *)fd);
+                }
 
-            /* Check if we are resumed due to a timeout. */
-            if (tcb->status == TASK_RESUME_SLEEP)
-            {
-                /* Remove this task from the file descriptor task list. */
-                sll_remove(&((FS *)fd)->task_list, tcb, OFFSETOF(TASK, next));
-            }
+                /* Task is being suspended. */
+                tcb->status = TASK_SUSPENDED;
 
-            /* Enable preemption. */
-            scheduler_unlock();
+                /* Wait for either being resumed by some data or timeout. */
+                task_waiting();
 
-            if (((FS *)fd)->get_lock)
-            {
-                /* Get lock for this file descriptor. */
-                ((FS *)fd)->get_lock((void *)fd);
-            }
+                /* Check if we are resumed due to a timeout. */
+                if (tcb->status == TASK_RESUME_SLEEP)
+                {
+                    /* Remove this task from the file descriptor task list. */
+                    sll_remove(&((FS *)fd)->task_list, tcb, OFFSETOF(TASK, next));
+                }
+
+                /* Enable preemption. */
+                scheduler_unlock();
+
+                if (((FS *)fd)->get_lock)
+                {
+                    /* Get lock for this file descriptor. */
+                    ((FS *)fd)->get_lock((void *)fd);
+                }
+
+            } while (!(((FS *)fd)->flags & FS_DATA_AVAILABLE));
         }
 
         /* Check if some data is available. */

@@ -30,6 +30,9 @@ typedef struct _semaphore
     /* Lists of tasks waiting for this semaphore. */
     TASK_LIST   tasks;
 
+    /* Current owner of this semaphore if any. */
+    TASK        *owner;
+
     /* Current semaphore count. */
     uint8_t     count;
 
