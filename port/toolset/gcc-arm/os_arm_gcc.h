@@ -1,5 +1,5 @@
 /*
- * os_gcc.h
+ * os_arm_gcc.h
  *
  * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
  *
@@ -12,8 +12,14 @@
  */
 
 /* This macro is used to tell compiler to not manage stack for it. */
+
+#ifndef OS_ARM_GCC_H
+#define OS_ARM_GCC_H
+
 #define STACK_LESS          __attribute__ (( naked ))
 
 #define ISR_FUN             void __attribute__ ((interrupt))
 #define NAKED_ISR_FUN       void __attribute__ ((interrupt, naked))
 #define NAKED_FUN           void __attribute__ ((naked))
+
+#endif /* OS_ARM_GCC_H */
