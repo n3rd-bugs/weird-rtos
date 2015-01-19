@@ -20,6 +20,9 @@
 /* Aperiodic scheduling class definition. */
 extern SCHEDULER aperiodic_scheduler;
 
+/* Function prototypes. */
+SCHEDULER *sch_aperiodic_get_scheduler();
+
 #endif /* CONFIG_APERIODIC_TASKS */
 
 #endif /* _SCH_APERIODIC_H_ */

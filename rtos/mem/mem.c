@@ -25,7 +25,7 @@ MEM_DYNAMIC mem_dynamic;
 #define MEM_FLAGS       0//MEM_STRICT_ALLOC
 
 /* Dynamic memory allocation configuration. */
-MEM_DYN_CFG mem_dyn_cfg [NUM_PAGES] =
+const MEM_DYN_CFG mem_dyn_cfg [NUM_PAGES] =
 {
         { 0x000000FE, 0x00000000, MEM_PAGE_ASC },
         { 0x000000FE, 0x00000000, MEM_PAGE_ASC },

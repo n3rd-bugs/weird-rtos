@@ -104,24 +104,40 @@ static TASK *sch_aperiodic_get_task()
 
 } /* sch_aperiodic_get_task */
 
-/* This defines members for aperiodic scheduling class. */
-SCHEDULER aperiodic_scheduler =
+/* Global scheduler definition. */
+SCHEDULER aperiodic_scheduler;
+
+/*
+ * sch_aperiodic_get_scheduler
+ * @return: Scheduler control block to be used.
+ * This function returns the aperiodic scheduler control block.
+ */
+SCHEDULER *sch_aperiodic_get_scheduler()
 {
-    /* List of tasks that are enqueued to run. */
-    .ready_tasks    = {NULL, NULL},
+    /* This defines members for aperiodic scheduling class. */
+    aperiodic_scheduler =
+    (SCHEDULER)
+    {
+        /* List of tasks that are enqueued to run. */
+        .ready_tasks    = {NULL, NULL},
 
-    /* Function that will return the next task that is needed to run. */
-    .get_task       = &sch_aperiodic_get_task,
+        /* Function that will return the next task that is needed to run. */
+        .get_task       = &sch_aperiodic_get_task,
 
-    /* Function that will yield/re-enqueue a given task. */
-    .yield          = &sch_aperiodic_task_yield,
+        /* Function that will yield/re-enqueue a given task. */
+        .yield          = &sch_aperiodic_task_yield,
 
-    /* Priority for this scheduler, this must be minimal as in normal cases
-     * there will always be a task that is needed to be run. */
-    .priority       = CONFIG_APERIODIC_PIORITY,
+        /* Priority for this scheduler, this must be minimal as in normal cases
+         * there will always be a task that is needed to be run. */
+        .priority       = CONFIG_APERIODIC_PIORITY,
 
-    /* ID specific for this class. */
-    .class          = TASK_APERIODIC
-};
+        /* ID specific for this class. */
+        .class          = TASK_APERIODIC
+    };
+
+    /* Return pointer to the scheduler control block. */
+    return (&aperiodic_scheduler);
+
+} /* sch_aperiodic_get_scheduler */
 
 #endif /* CONFIG_APERIODIC_TASKS */

@@ -20,6 +20,9 @@
 /* Periodic scheduling class definition. */
 extern SCHEDULER periodic_scheduler;
 
+/* Function prototypes. */
+SCHEDULER *sch_periodic_get_scheduler();
+
 #endif /* CONFIG_PERIODIC_TASKS */
 
 #endif /* _SCH_PERIODIC_H_ */

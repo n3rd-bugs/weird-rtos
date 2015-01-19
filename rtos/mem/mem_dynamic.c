@@ -66,7 +66,7 @@
  *      small memory region.
  * This function initializes a dynamic memory region.
  */
-void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, uint32_t num_pages, MEM_DYN_CFG *mem_cfg, uint32_t flags)
+void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, uint32_t num_pages, const MEM_DYN_CFG *mem_cfg, uint32_t flags)
 {
     uint32_t i, j, page_mem_size, page_size, mem_size = (uint32_t)(end - start);
     MEM_FREE *mem_free;

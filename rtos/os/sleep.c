@@ -167,20 +167,36 @@ void sleep(uint32_t ticks)
 
 } /* sleep */
 
-/* This defines members for sleep scheduling class. */
-SCHEDULER sleep_scheduler =
+/* Global scheduler definition. */
+SCHEDULER sleep_scheduler;
+
+/*
+ * sleep_get_scheduler
+ * @return: Scheduler control block to be used.
+ * This function returns the sleep scheduler control block.
+ */
+SCHEDULER *sleep_get_scheduler()
 {
-    /* List of tasks that are enqueued to run. */
-    .ready_tasks    = {NULL, NULL},
+    /* This defines members for sleep scheduling class. */
+    sleep_scheduler =
+    (SCHEDULER)
+    {
+        /* List of tasks that are enqueued to run. */
+        .ready_tasks    = {NULL, NULL},
 
-    /* Function that will return the next task that is needed to run. */
-    .get_task       = &sleep_process_system_tick,
+        /* Function that will return the next task that is needed to run. */
+        .get_task       = &sleep_process_system_tick,
 
-    /* Function that will re-enqueue a given task. */
-    .yield          = &sleep_task_re_enqueue,
+        /* Function that will re-enqueue a given task. */
+        .yield          = &sleep_task_re_enqueue,
 
-    /* Priority for this scheduler, this should be less than aperiodic tasks. */
-    .priority       = CONFIG_SLEEP_PIORITY
-};
+        /* Priority for this scheduler, this should be less than aperiodic tasks. */
+        .priority       = CONFIG_SLEEP_PIORITY
+    };
+
+    /* Return pointer to the scheduler control block. */
+    return (&sleep_scheduler);
+
+} /* sleep_get_scheduler */
 
 #endif /* CONFIG_SLEEP */

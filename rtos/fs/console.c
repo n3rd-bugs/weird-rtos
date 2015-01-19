@@ -26,17 +26,7 @@ CONSOLE_DATA console_data;
 void *console_open(char *, uint32_t);
 
 /* File system definition. */
-FS console_fs =
-{
-        /* Console file system root node. */
-        .name = "\\console",
-
-        /* File manipulation API. */
-        .open = console_open,
-
-        /* Close, read, write and IOCTL will be populated by
-         * the underlying device. */
-};
+FS console_fs;
 
 /*
  * console_init
@@ -51,6 +41,13 @@ void console_init()
     /* Create a semaphore to protect global console data. */
     semaphore_create(&console_data.lock, 1, 1, SEMAPHORE_PRIORITY);
 #endif
+
+    /* Clear the console fs. */
+    memset(&console_fs, 0, sizeof(FS));
+
+    /* Initialize console data. */
+    console_fs.name = "\\console";
+    console_fs.open = console_open;
 
     /* Register console with file system. */
     fs_register(&console_fs);

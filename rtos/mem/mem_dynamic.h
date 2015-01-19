@@ -149,7 +149,7 @@ struct _mem_dynamic
 };
 
 /* FUnction prototypes. */
-void mem_dynamic_init_region(MEM_DYNAMIC *, char *, char *, uint32_t, MEM_DYN_CFG *, uint32_t);
+void mem_dynamic_init_region(MEM_DYNAMIC *, char *, char *, uint32_t, const MEM_DYN_CFG *, uint32_t);
 char *mem_dynamic_alloc_region(MEM_DYNAMIC *, uint32_t);
 char *mem_dynamic_dealloc_region(char *);
 
