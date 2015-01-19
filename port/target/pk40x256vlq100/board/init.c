@@ -86,11 +86,11 @@ void sysclock_init()
      * PRDIV=1 selects a divide by 2. */
     MCG_C5 = MCG_C5_PRDIV(1);
 
-    /* Set the VDIV field to 1, which is x24, giving 4 x 25  = 100 MHz
+    /* Set the VDIV field to 0, which is x24, giving 4 x 24  = 96 MHz
      * the PLLS bit is set to enable the PLL the clock monitor is enabled,
      * CME=1 to cause a reset if crystal fails LOLIE can be optionally set
      * to enable the loss of lock interrupt */
-    MCG_C6 = MCG_C6_CME_MASK | MCG_C6_PLLS_MASK | MCG_C6_VDIV(1);
+    MCG_C6 = MCG_C6_CME_MASK | MCG_C6_PLLS_MASK | MCG_C6_VDIV(0);
 
     /* Wait until the source of the PLLS clock has switched to the PLL. */
     while (!(MCG_S & MCG_S_PLLST_MASK))
@@ -106,14 +106,14 @@ void sysclock_init()
 
     /* Set up the SIM clock dividers BEFORE switching to the PLL to ensure the
      * system clock speeds are in spec.
-     * core = PLL (100MHz).
-     * bus = PLL/2 (50MHz).
-     * flexbus = PLL/2 (50MHz).
-     * flash = PLL/4 (25MHz). */
+     * core = PLL (96MHz).
+     * bus = PLL/2 (48MHz).
+     * flexbus = PLL/2 (48MHz).
+     * flash = PLL/4 (12MHz). */
     SIM_CLKDIV1 = SIM_CLKDIV1_OUTDIV1(0) |
                   SIM_CLKDIV1_OUTDIV2(1) |
                   SIM_CLKDIV1_OUTDIV3(1) |
-                  SIM_CLKDIV1_OUTDIV4(3);
+                  SIM_CLKDIV1_OUTDIV4(2);
 
     /* Transition into PEE by setting CLKS to 0
      * previous MCG_C1 settings remain the same, just need to set CLKS to 0. */
