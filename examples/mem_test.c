@@ -164,10 +164,6 @@ int main(void)
     uint32_t    *ctx_time;
     int         i;
 
-    SIM_SCGC5 = SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTE_MASK;
-    PORTE_PCR0 = PORT_PCR_MUX(3) | PORT_PCR_DSE_MASK;
-    PORTE_PCR1 = PORT_PCR_MUX(3) | PORT_PCR_DSE_MASK;
-
     /* Initialize file system. */
     fs_init();
 

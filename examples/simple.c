@@ -121,13 +121,13 @@ int main(void)
     task_create(&task_cb_6, "TSK_6", stack_6, 128, &semaphore_task, (void *)0x02);
     task_create(&task_cb_7, "TSK_7", stack_7, 128, &semaphore_task, (void *)0x03);
 
-    scheduler_task_add(&task_cb_1, TASK_APERIODIC, 2, 0, 0);
-    scheduler_task_add(&task_cb_2, TASK_PERIODIC, 1, 500, TASK_DONT_PREEMPT);
-    scheduler_task_add(&task_cb_3, TASK_APERIODIC, 2, 0, 0);
-    scheduler_task_add(&task_cb_4, TASK_APERIODIC, 2, 0, 0);
-    scheduler_task_add(&task_cb_5, TASK_PERIODIC, 2, 1000, 0);
-    scheduler_task_add(&task_cb_6, TASK_APERIODIC, 2, 0, 0);
-    scheduler_task_add(&task_cb_7, TASK_APERIODIC, 2, 0, 0);
+    scheduler_task_add(&task_cb_1, TASK_APERIODIC, 2, 0);
+    scheduler_task_add(&task_cb_2, TASK_PERIODIC, 1, 500);
+    scheduler_task_add(&task_cb_3, TASK_APERIODIC, 2, 0);
+    scheduler_task_add(&task_cb_4, TASK_APERIODIC, 2, 0);
+    scheduler_task_add(&task_cb_5, TASK_PERIODIC, 2, 1000);
+    scheduler_task_add(&task_cb_6, TASK_APERIODIC, 2, 0);
+    scheduler_task_add(&task_cb_7, TASK_APERIODIC, 2, 0);
 
     os_run();
 
