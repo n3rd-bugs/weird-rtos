@@ -10,10 +10,9 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#include <MK40DZ10.h>
-#include <isr.h>
-#include <os_target.h>
+
 #include <os.h>
+#include <isr.h>
 
 /* System entry function. */
 extern void system_entry(void);

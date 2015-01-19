@@ -15,7 +15,7 @@
 #define ISR_H
 
 #include <stdint.h>
-#include <MK40DZ10.h>
+#include <os.h>
 
 /* ISR callback definition. */
 typedef void (*const isr)(void);

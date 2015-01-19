@@ -15,7 +15,6 @@
 #define OS_PK40X256VLQ100_H
 
 #include <os.h>
-#include <MK40DZ10.h>
 
 /* Required definitions for scheduling. */
 #define CORTEX_M4_PEND_SV_REG           (SCB_ICSR)

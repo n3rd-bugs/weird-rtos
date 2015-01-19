@@ -11,7 +11,6 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 
-#include <MK40DZ10.h>
 #include <isr.h>
 #include <os.h>
 
