@@ -16,7 +16,6 @@
 #include <mem_stats.h>
 #include <serial.h>
 #include <string.h>
-#include <MK40DZ10.h>
 #include <sll.h>
 #include <stdlib.h>
 #include <path.h>
