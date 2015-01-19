@@ -13,8 +13,7 @@
 #ifndef OS_CORTEX_M3_H
 #define OS_CORTEX_M3_H
 
-#include <os_gcc.h>
-#include <MK40DZ10.h>
+#include <os.h>
 
 /* Peripheral clock configuration. */
 #define SYS_FREQ                100000000
@@ -52,8 +51,8 @@ extern uint32_t sys_interrupt_level;
 #define PEND_SV()                       {                                           \
                                             asm("   DSB    ");                      \
                                             asm("   ISB    ");                      \
-                                            SCB_ICSR |= SCB_ICSR_PENDSVSET_MASK;    \
-                                            SYST_CSR &= ~(SysTick_CSR_TICKINT_MASK);\
+                                            CORTEX_M3_PEND_SV_REG |= CORTEX_M3_PEND_SV_MAST;     \
+                                            CORTEX_M3_SYS_TICK_REG &= ~(CORTEX_M3_SYS_TICK_MASK);\
                                         }
 
 #define CONTROL_TO_SYSTEM()             control_to_system()
@@ -65,9 +64,6 @@ extern uint32_t sys_interrupt_level;
 
 #define INITIAL_XPSR                    0x01000000
 
-#define current_system_tick64()         pit_get_clock()
-#define current_system_tick64_usec()    (pit_get_clock() / PCLK_FREQ)
-
 /* Memory definitions. */
 #define STATIC_MEM_START                ((char *)(&static_start))
 #define STATIC_MEM_END                  ((char *)(&static_end))
@@ -76,26 +72,26 @@ extern uint32_t sys_interrupt_level;
 
 typedef struct _hardware_stack_farme
 {
-  uint32_t r0;
-  uint32_t r1;
-  uint32_t r2;
-  uint32_t r3;
-  uint32_t r12;
-  uint32_t lr;
-  uint32_t pc;
-  uint32_t psr;
+    uint32_t r0;
+    uint32_t r1;
+    uint32_t r2;
+    uint32_t r3;
+    uint32_t r12;
+    uint32_t lr;
+    uint32_t pc;
+    uint32_t psr;
 } hardware_stack_farme;
 
 typedef struct _software_stack_farme
 {
-  uint32_t r4;
-  uint32_t r5;
-  uint32_t r6;
-  uint32_t r7;
-  uint32_t r8;
-  uint32_t r9;
-  uint32_t r10;
-  uint32_t r11;
+    uint32_t r4;
+    uint32_t r5;
+    uint32_t r6;
+    uint32_t r7;
+    uint32_t r8;
+    uint32_t r9;
+    uint32_t r10;
+    uint32_t r11;
 } software_stack_farme;
 
 #define TOS_SET(tos, sp, size)      (tos = (sp + size))
@@ -109,7 +105,6 @@ extern uint32_t dynamic_end;
 /* Function prototypes. */
 void run_first_task();
 void control_to_system();
-uint64_t pit_get_clock();
 
 /* System interrupt definitions. */
 ISR_FUN cpu_interrupt(void);

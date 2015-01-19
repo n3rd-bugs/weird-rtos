@@ -18,8 +18,6 @@
  * FALSE: Interrupt Disabled */
 uint32_t sys_interrupt_level = TRUE;
 
-uint32_t clock_64_high_32 = 0;
-
 /* Local variable definitions. */
 /* We need to keep this to save the stack pointer for the task we are
  * switching from. */
@@ -58,69 +56,6 @@ void os_stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
 } /* os_stack_init */
 
 /*
- * system_tick_Init
- * This is responsible for initializing system timer tick. This will not
- * enable the interrupt as it will be enabled after first context switch.
- */
-void system_tick_Init()
-{
-    /* Configure system tick to interrupt at the requested rate. */
-    SYST_RVR = ( PCLK_FREQ / OS_TICKS_PER_SEC ) - 0x1;
-
-    /* Enable system tick, enable system tick interrupt and use CPU clock
-     * as it's source. */
-    SYST_CSR = ( SysTick_CSR_ENABLE_MASK    |
-                 SysTick_CSR_CLKSOURCE_MASK);
-
-    /* PIT Configuration. */
-    /* Enable global PIT clock. */
-    SIM_SCGC6 = SIM_SCGC6_PIT_MASK;
-
-    /* Enable PIT clock and run in debug mode. */
-    PIT_MCR = PIT_MCR_FRZ_MASK;
-
-    /* Disable timer. */
-    PIT_TCTRL0 &= (~PIT_TCTRL_TEN_MASK);
-
-    /* Set timer's count down value. */
-    PIT_LDVAL0 = (uint32_t)(0xFFFFFFFF);
-
-    /* If interrupt flag is already set. */
-    if (PIT_TFLG0 & PIT_TFLG_TIF_MASK)
-    {
-        /* Clear the interrupt flag. */
-        PIT_TFLG0 |= PIT_TFLG_TIF_MASK;
-    }
-
-    /* Enable timer and it's interrupt. */
-    PIT_TCTRL0 = (PIT_TCTRL_TEN_MASK | PIT_TCTRL_TIE_MASK);
-
-    /* Enable PIT interrupt. */
-    NVICISER2 |= (1 << ((INT_PIT0 - 0x10) % 32));
-
-} /* system_tick_Init */
-
-/*
- * pit_get_clock
- * This returns value of a 64-bit hardware timer running at peripheral frequency.
- */
-uint64_t pit_get_clock()
-{
-    /* Load the soft-clock value. */
-    uint64_t c_val = (uint32_t)clock_64_high_32;
-
-    /* Make it higher word. */
-    c_val = (c_val << 31);
-
-    /* Load the hard-clock value. */
-    c_val += (uint32_t)(0xFFFFFFFF - PIT_CVAL0);
-
-    /* Return the  */
-    return (c_val);
-
-} /* pit_get_clock */
-
-/*
  * run_first_task
  * This is responsible for running first task.
  */
@@ -134,6 +69,11 @@ void run_first_task()
 
     /* Set default interrupt level as disabled. */
     sys_interrupt_level = FALSE;
+
+    /* Set PendSV and System Tick interrupt priorities to avoid nested
+     * interrupts. */
+    CORTEX_M3_INT_PEND_SV_PRI_REG = CORTEX_M3_INT_SYS_PRI;
+    CORTEX_M3_INT_SYS_TICK_PRI_REG = CORTEX_M3_INT_SYS_PRI;
 
     /* Schedule a context switch. */
     PEND_SV();
@@ -239,31 +179,12 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
     );
 
     /* Just enable system tick interrupt. */
-    SYST_CSR |= (SysTick_CSR_TICKINT_MASK);
+    CORTEX_M3_SYS_TICK_REG |= CORTEX_M3_SYS_TICK_MASK;
 
     /* Enable interrupts and return from this function. */
     RETURN_ENABLING_INTERRUPTS();
 
 } /* isr_pendsv_handle */
-
-/*
- * isr_servicecall_handle
- * This pendSV interrupt handle.
- */
-ISR_FUN isr_clock64_tick(void)
-{
-    OS_ISR_ENTER();
-
-    /* Timer roll over. */
-    clock_64_high_32++;
-
-    /* Clear the interrupt flag. */
-    PIT_TFLG0 |= PIT_TFLG_TIF_MASK;
-    PIT_TCTRL0 = (PIT_TCTRL_TEN_MASK | PIT_TCTRL_TIE_MASK);
-
-    OS_ISR_EXIT();
-
-} /* isr_clock64_tick */
 
 /*
  * cpu_interrupt
@@ -275,6 +196,7 @@ ISR_FUN cpu_interrupt(void)
     OS_ASSERT(TRUE);
 
 } /* cpu_interrupt */
+
 /*
  * nmi_interrupt
  * NMI interrupt callback.
@@ -285,6 +207,7 @@ ISR_FUN nmi_interrupt(void)
     OS_ASSERT(TRUE);
 
 } /* nmi_interrupt */
+
 /*
  * hard_fault_interrupt
  * Hard fault interrupt callback.
