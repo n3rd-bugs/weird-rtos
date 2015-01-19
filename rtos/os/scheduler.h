@@ -57,6 +57,9 @@ struct _scheduler
 
     /* Scheduler class identifier. */
     uint8_t     class;
+
+    /* Padding variable. */
+    uint8_t     pad[2];
 };
 
 /* Scheduler list structure. */

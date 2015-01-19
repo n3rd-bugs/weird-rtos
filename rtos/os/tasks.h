@@ -21,7 +21,7 @@
 #define CONFIG_STACK_PATTERN    'A'
 
 /* These defines different task flags. */
-#define TASK_DONT_PREEMPT   0x01    /* This will disable task preemption. */
+#define TASK_DONT_PREEMPT   (uint8_t)(0x01)     /* This will disable task preemption. */
 
 /* This holds information about a single task. */
 typedef struct _task TASK;
@@ -58,8 +58,12 @@ struct _task
     /* This is start of the stack pointer for this task. */
     char        *stack_start;
 
-    /* Task stack size. */
+    /* This defines task priority. */
+    uint32_t    priority;
+
+    /* Number of times this task was scheduled. */
     uint64_t    scheduled;
+
 #endif /* CONFIG_TASK_STATS */
 
 #ifdef CONFIG_SLEEP
@@ -70,9 +74,6 @@ struct _task
     /* This holds scheduler parameters for this task. */
     uint64_t    scheduler_data_1;
     uint64_t    scheduler_data_2;
-
-    /* This defines task priority. */
-    uint32_t    priority;
 
     /* Current task status. */
     uint32_t    status;
@@ -87,6 +88,9 @@ struct _task
 
     /* Task flags as configured by scheduler. */
     uint8_t     flags;
+
+    /* Padding variable. */
+    uint8_t     pad[2];
 };
 
 /* This defines a task list. */
