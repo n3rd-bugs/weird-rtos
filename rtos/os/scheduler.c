@@ -81,17 +81,17 @@ void scheduler_init()
 
 #ifdef CONFIG_APERIODIC_TASKS
     /* Add aperiodic scheduler. */
-    sll_insert(&scheduler_list, sch_aperiodic_get_scheduler(), &scheduler_sort, OFFSETOF(SCHEDULER, next));
+    sll_insert(&scheduler_list, &aperiodic_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
 #endif /* CONFIG_APERIODIC_TASKS */
 
 #ifdef CONFIG_PERIODIC_TASKS
     /* Add periodic scheduler. */
-    sll_insert(&scheduler_list, sch_periodic_get_scheduler(), &scheduler_sort, OFFSETOF(SCHEDULER, next));
+    sll_insert(&scheduler_list, &periodic_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
 #endif /* CONFIG_PERIODIC_TASKS */
 
 #ifdef CONFIG_SLEEP
     /* Add scheduler for sleeping tasks. */
-    sll_insert(&scheduler_list, sleep_get_scheduler(), &scheduler_sort, OFFSETOF(SCHEDULER, next));
+    sll_insert(&scheduler_list, &sleep_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
 #endif /* CONFIG_SLEEP */
 
     /* Initialize idle task's control block and stack. */

@@ -28,30 +28,30 @@ uint32_t pipe_write(void *fd, char *data, uint32_t nbytes);
 uint32_t pipe_read(void *fd, char *buffer, uint32_t size);
 
 /* File system definition. */
-FS pipe_fs;
+FS pipe_fs =
+{
+        /* Pipe file system root node. */
+        .name = "\\pipe",
+
+        /* File manipulation API. */
+        .open = pipe_open,
+};
 
 /*
  * pipe_init
- * This function will initialize pipe sub file system.
+ * This function will initialize debug console.
  */
 void pipe_init()
 {
-    /* Clear the pipe global data. */
+    /* Clear the console data. */
     memset(&pipe_data, 0, sizeof(PIPE_DATA));
 
 #ifdef CONFIG_SEMAPHORE
-    /* Create a semaphore to protect global pipe data. */
+    /* Create a semaphore to protect global console data. */
     semaphore_create(&pipe_data.lock, 1, 1, SEMAPHORE_PRIORITY);
 #endif
 
-    /* Clear PIPE file system data. */
-    memset(&pipe_fs, 0, sizeof(FS));
-
-    /* Initialize PIPE file system data. */
-    pipe_fs.name = "\\pipe";
-    pipe_fs.open = pipe_open;
-
-    /* Register pipe with file system. */
+    /* Register console with file system. */
     fs_register(&pipe_fs);
 
 } /* pipe_init */
@@ -83,7 +83,7 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
     param.priv = (void *)NULL;
 
     /* First check if these is no other pipe with same name. */
-    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(PIPE, fs.next));
+    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(CONSOLE, fs.next));
 
     if (param.priv == NULL)
     {
@@ -184,7 +184,7 @@ void *pipe_open(char *name, uint32_t flags)
     param.priv = (void *)fd;
 
     /* First find a file system to which this call can be forwarded. */
-    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(PIPE, fs.next));
+    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(CONSOLE, fs.next));
 
     /* If a node was found. */
     if (param.priv)
@@ -202,10 +202,10 @@ void *pipe_open(char *name, uint32_t flags)
     {
         /* Check if we need to call the underlying function to get a new file
          * descriptor. */
-        if (((PIPE *)fd)->fs.open != NULL)
+        if (((CONSOLE *)fd)->fs.open != NULL)
         {
             /* Call the underlying API to get the file descriptor. */
-            fd = ((PIPE *)fd)->fs.open(name, flags);
+            fd = ((CONSOLE *)fd)->fs.open(name, flags);
         }
     }
 

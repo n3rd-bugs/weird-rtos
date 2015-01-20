@@ -26,7 +26,7 @@
 #define TOOL_ARM_GCC        0x01
 
 /* RTOS configuration. */
-#define PLAT_TARGET         PLAT_STM32F407_DISC
+#define PLAT_TARGET         PLAT_PK40X256VLQ100
 #define RTOS_TARGET         TARGET_CORTEX_M4
 #define TOOL_TARGET         TOOL_ARM_GCC
 
@@ -48,7 +48,7 @@
 #endif
 
 /* Platform includes. */
-#if (PLAT_TARGET == PLAT_STM32F407_DISC)
+#if (PLAT_TARGET == PLAT_STM32F407_DISCOVERY)
 #include <os_stm32f407.h>
 #endif
 #if (PLAT_TARGET == PLAT_PK40X256VLQ100)

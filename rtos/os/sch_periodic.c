@@ -143,39 +143,23 @@ static TASK *sch_periodic_get_task()
 
 } /* sch_periodic_get_task */
 
-/* Global scheduler definition. */
-SCHEDULER periodic_scheduler;
-
-/*
- * sch_periodic_get_scheduler
- * @return: Scheduler control block to be used.
- * This function returns the periodic scheduler control block.
- */
-SCHEDULER *sch_periodic_get_scheduler()
+/* This defines members for aperiodic scheduling class. */
+SCHEDULER periodic_scheduler =
 {
-    /* This defines members for aperiodic scheduling class. */
-    periodic_scheduler =
-    (SCHEDULER)
-    {
-        /* List of tasks that are enqueued to run. */
-        .ready_tasks    = {NULL, NULL},
+    /* List of tasks that are enqueued to run. */
+    .ready_tasks    = {NULL, NULL},
 
-        /* Function that will return the next task that is needed to run. */
-        .get_task       = &sch_periodic_get_task,
+    /* Function that will return the next task that is needed to run. */
+    .get_task       = &sch_periodic_get_task,
 
-        /* Function that will yield/re-enqueue a given task. */
-        .yield          = &sch_periodic_task_yield,
+    /* Function that will yield/re-enqueue a given task. */
+    .yield          = &sch_periodic_task_yield,
 
-        /* Priority for this scheduler. */
-        .priority       = CONFIG_PERIODIC_PIORITY,
+    /* Priority for this scheduler. */
+    .priority       = CONFIG_PERIODIC_PIORITY,
 
-        /* ID specific for this class. */
-        .class          = TASK_PERIODIC
-    };
-
-    /* Return pointer to the scheduler control block. */
-    return (&periodic_scheduler);
-
-} /* sch_periodic_get_scheduler */
+    /* ID specific for this class. */
+    .class          = TASK_PERIODIC
+};
 
 #endif /* CONFIG_PERIODIC_TASKS */
