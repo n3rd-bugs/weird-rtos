@@ -47,7 +47,7 @@ SECTIONS
     . = ALIGN(4);
     .bss :
     {
-         _sbss = .;
+        _sbss = .;
 
         *(.bss)
         *(.bss*)
