@@ -136,6 +136,36 @@ void system_entry(void)
     SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));
 #endif
 
+    /* Initialize BSS. */
+    asm (
+    "   movs    r1, #0          \r\n"
+    "   b       BSS_INIT        \r\n"
+
+    "INIT_STATIC:\r\n"
+    "   ldr     r3, =_sidata    \r\n"
+    "   ldr     r3, [r3, r1]    \r\n"
+    "   str     r3, [r0, r1]    \r\n"
+    "   adds    r1, r1, #4      \r\n"
+
+    "BSS_INIT:\r\n"
+    "   ldr     r0, =_sdata     \r\n"
+    "   ldr     r3, =_edata     \r\n"
+    "   adds    r2, r0, r1      \r\n"
+    "   cmp     r2, r3          \r\n"
+    "   bcc     INIT_STATIC     \r\n"
+    "   ldr     r2, =_sbss      \r\n"
+    "   b       CLEAR_BSS       \r\n"
+
+    "CLEAR_REGION:              \r\n"
+    "   movs    r3, #0          \r\n"
+    "   str     r3, [r2], #4    \r\n"
+
+    "CLEAR_BSS:                 \r\n"
+    "   ldr     r3, = _ebss     \r\n"
+    "   cmp     r2, r3          \r\n"
+    "   bcc     CLEAR_REGION    \r\n"
+    );
+
     /* Initialize system clock. */
     sysclock_init();
 
