@@ -28,6 +28,27 @@ void wdt_disbale()
  */
 void sysclock_init()
 {
+
+    /* Reset the RCC clock configuration to the default reset state. */
+
+    /* Set HSION bit */
+    RCC->CR |= (uint32_t)0x00000001;
+
+    /* Reset CFGR register */
+    RCC->CFGR = 0x00000000;
+
+    /* Reset HSEON, CSSON and PLLON bits */
+    RCC->CR &= (uint32_t)0xFEF6FFFF;
+
+    /* Reset PLLCFGR register */
+    RCC->PLLCFGR = 0x24003010;
+
+    /* Reset HSEBYP bit */
+    RCC->CR &= (uint32_t)0xFFFBFFFF;
+
+    /* Disable all interrupts */
+    RCC->CIR = 0x00000000;
+
     /* Enable HSE */
     RCC->CR |= ((uint32_t)RCC_CR_HSEON);
 
@@ -93,34 +114,28 @@ void system_entry(void)
 {
     extern uint64_t current_tick;
 
-    /* Reset the RCC clock configuration to the default reset state. */
+    /* Adjust system vector table pointer. */
+    SCB->VTOR = (uint32_t)(&system_isr_table);
 
-    /* Set HSION bit */
-    RCC->CR |= (uint32_t)0x00000001;
-
-    /* Reset CFGR register */
-    RCC->CFGR = 0x00000000;
-
-    /* Reset HSEON, CSSON and PLLON bits */
-    RCC->CR &= (uint32_t)0xFEF6FFFF;
-
-    /* Reset PLLCFGR register */
-    RCC->PLLCFGR = 0x24003010;
-
-    /* Reset HSEBYP bit */
-    RCC->CR &= (uint32_t)0xFFFBFFFF;
-
-    /* Disable all interrupts */
-    RCC->CIR = 0x00000000;
-
-    /* Vector Table Relocation in Internal FLASH */
-    SCB->VTOR = FLASH_BASE;
-
-    /* Disable watch dog timer. */
-    wdt_disbale();
+    __asm (
+    "   MOV    R0, %[sp]    \r\n"
+    "   CMP    R0, #0       \r\n"
+    "   BEQ    skip_sp      \r\n"
+    "   mov    SP, R0       \r\n"
+    "   sub    SP, #4       \r\n"
+    "   mov    R0, #0       \r\n"
+    "   mvn    R0, R0       \r\n"
+    "   str    R0, [SP,#0]  \r\n"
+    "   add    SP, #4       \r\n"
+    " skip_sp:              \r\n"
+    ::
+    [sp] "r" (&sys_stack_start));
 
     /* Initialize system clock. */
     sysclock_init();
+
+    /* Disable watch dog timer. */
+    wdt_disbale();
 
     /* Initialize system clock. */
     current_tick = 0;

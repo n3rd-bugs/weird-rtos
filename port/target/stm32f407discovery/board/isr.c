@@ -10,7 +10,6 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-
 #include <os.h>
 #include <isr.h>
 
@@ -18,11 +17,11 @@
 extern void system_entry(void);
 
 /* Initial vector table definition. */
-__attribute__ ((section (".isr_vector"))) VECTOR_TABLE system_isr_table =
+__attribute__ ((section (".vectortable"))) VECTOR_TABLE system_isr_table =
 {
     .callback =
     {
-        (isr)&os_stack_end,         /* -0x10  Top of Stack          */
+        (isr)&sys_stack_start,      /* -0x10  Top of Stack          */
         (isr)&system_entry,         /* -0x0F  Reset Handler         */
         (isr)&nmi_interrupt,        /* -0x0E  NMI Handler           */
         (isr)&hard_fault_interrupt, /* -0x0D  Hard Fault Handler    */

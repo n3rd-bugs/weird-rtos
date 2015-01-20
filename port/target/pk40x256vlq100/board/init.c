@@ -160,7 +160,7 @@ void system_entry(void)
     "   add    SP, #4       \r\n"
     " skip_sp:              \r\n"
     ::
-    [sp] "r" (&os_stack_end));
+    [sp] "r" (&sys_stack_start));
 
     /* Disable watch dog timer. */
     wdt_disbale();

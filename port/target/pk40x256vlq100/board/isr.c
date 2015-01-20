@@ -23,7 +23,7 @@ __attribute__ ((section (".vectortable"))) VECTOR_TABLE system_isr_table =
     .callback =
     {
         /* ISR name                         No.   Address      Pri Name                     */
-        (isr)&os_stack_end,         /*  0x00  0x00000000   -   INT_Initial_Stack_Pointer    */
+        (isr)&sys_stack_start,      /*  0x00  0x00000000   -   INT_Initial_Stack_Pointer    */
         (isr)&system_entry,         /*  0x01  0x00000004   -   INT_Initial_Program_Counter  */
         (isr)&nmi_interrupt,        /*  0x02  0x00000008   -2  INT_NMI                      */
         (isr)&hard_fault_interrupt, /*  0x03  0x0000000C   -1  INT_Hard_Fault               */

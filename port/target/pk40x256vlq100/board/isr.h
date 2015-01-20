@@ -27,7 +27,7 @@ typedef struct {
 } VECTOR_TABLE;
 
 /* Exported variables. */
-extern uint32_t os_stack_end;
+extern uint32_t sys_stack_start;
 extern VECTOR_TABLE system_isr_table;
 
 #endif /* ISR_H */
