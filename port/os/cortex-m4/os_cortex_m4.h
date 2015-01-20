@@ -15,10 +15,6 @@
 
 #include <os.h>
 
-/* Peripheral clock configuration. */
-#define SYS_FREQ                168000000
-#define PCLK_FREQ               24000000
-
 /* System interrupt level. */
 extern uint32_t sys_interrupt_level;
 
@@ -83,9 +79,7 @@ typedef struct _hardware_stack_farme
 
 typedef struct _software_stack_farme
 {
-#if (CORTEX_M4_FPU == TRUE)
     uint32_t r14;
-#endif
     uint32_t r4;
     uint32_t r5;
     uint32_t r6;

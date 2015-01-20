@@ -15,10 +15,6 @@
 
 #include <os.h>
 
-/* Peripheral clock configuration. */
-#define SYS_FREQ                100000000
-#define PCLK_FREQ               50000000
-
 /* System interrupt level. */
 extern uint32_t sys_interrupt_level;
 
