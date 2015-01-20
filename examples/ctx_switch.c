@@ -16,7 +16,6 @@
 #include <sys_info.h>
 #include <serial.h>
 #include <string.h>
-#include <MK40DZ10.h>
 
 #define NUM_DEMO_TASK       5
 #define DEMO_STACK_SIZE     128
