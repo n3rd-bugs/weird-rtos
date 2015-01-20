@@ -31,47 +31,47 @@ void sysclock_init()
 
     /* Reset the RCC clock configuration to the default reset state. */
 
-    /* Set HSION bit */
+    /* Set HSION bit. */
     RCC->CR |= (uint32_t)0x00000001;
 
-    /* Reset CFGR register */
+    /* Reset CFGR register. */
     RCC->CFGR = 0x00000000;
 
-    /* Reset HSEON, CSSON and PLLON bits */
+    /* Reset HSEON, CSSON and PLLON bits. */
     RCC->CR &= (uint32_t)0xFEF6FFFF;
 
-    /* Reset PLLCFGR register */
+    /* Reset PLLCFGR register. */
     RCC->PLLCFGR = 0x24003010;
 
-    /* Reset HSEBYP bit */
+    /* Reset HSEBYP bit. */
     RCC->CR &= (uint32_t)0xFFFBFFFF;
 
-    /* Disable all interrupts */
+    /* Disable all interrupts. */
     RCC->CIR = 0x00000000;
 
-    /* Enable HSE */
+    /* Enable HSE. */
     RCC->CR |= ((uint32_t)RCC_CR_HSEON);
 
-    /* Wait while HSE is not enabled.  */
+    /* Wait while HSE is not enabled. */
     while ((RCC->CR & RCC_CR_HSERDY) == 0)
     {
         ;
     }
 
-    /* Enable high performance mode, System frequency up to 168 MHz */
+    /* Enable high performance mode, System frequency up to 168 MHz. */
     RCC->APB1ENR |= RCC_APB1ENR_PWREN;
     PWR->CR |= PWR_CR_PMODE;
 
-    /* HCLK = SYSCLK / 1*/
+    /* HCLK = SYSCLK / 1. */
     RCC->CFGR |= RCC_CFGR_HPRE_DIV1;
 
-    /* PCLK2 = HCLK / 2*/
+    /* PCLK2 = HCLK / 2. */
     RCC->CFGR |= RCC_CFGR_PPRE2_DIV2;
 
-    /* PCLK1 = HCLK / 4*/
+    /* PCLK1 = HCLK / 4. */
     RCC->CFGR |= RCC_CFGR_PPRE1_DIV4;
 
-    /* Configure the main PLL */
+    /* Configure the main PLL. */
     /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLL_M) * PLL_N. */
     RCC->PLLCFGR = (8) | ((336) << 6);
 
@@ -81,23 +81,23 @@ void sysclock_init()
     /* USB OTG FS, SDIO and RNG Clock =  PLL_VCO / PLLQ. */
     RCC->PLLCFGR |= ((7) << 24);
 
-    /* Enable the main PLL */
+    /* Enable the main PLL. */
     RCC->CR |= RCC_CR_PLLON;
 
-    /* Wait till the main PLL is ready */
+    /* Wait till the main PLL is ready. */
     while((RCC->CR & RCC_CR_PLLRDY) == 0)
     {
         ;
     }
 
-    /* Configure Flash prefetch, Instruction cache, Data cache and wait state */
+    /* Configure Flash prefetch, Instruction cache, Data cache and wait state. */
     FLASH->ACR = FLASH_ACR_ICEN |FLASH_ACR_DCEN |FLASH_ACR_LATENCY_5WS;
 
-    /* Select the main PLL as system clock source */
+    /* Select the main PLL as system clock source. */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_SW));
     RCC->CFGR |= RCC_CFGR_SW_PLL;
 
-    /* Wait till the main PLL is used as system clock source */
+    /* Wait till the main PLL is used as system clock source. */
     while ((RCC->CFGR & (uint32_t)RCC_CFGR_SWS ) != RCC_CFGR_SWS_PLL);
     {
         ;
@@ -130,6 +130,11 @@ void system_entry(void)
     " skip_sp:              \r\n"
     ::
     [sp] "r" (&sys_stack_start));
+
+#if (CORTEX_M4_FPU == TRUE)
+    /* Enable FPU co-processor. */
+    SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));
+#endif
 
     /* Initialize system clock. */
     sysclock_init();

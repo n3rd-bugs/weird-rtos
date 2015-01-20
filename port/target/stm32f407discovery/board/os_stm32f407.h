@@ -30,7 +30,7 @@
 #define CORTEX_M4_INT_SYS_TICK_PRI_REG  (SCB->SHP[11])
 #define CORTEX_M4_INT_SYS_PRI           (0xFF)
 
-#define CORTEX_M4_FPU                   (FALSE)
+#define CORTEX_M4_FPU                   (TRUE)
 
 /* Function prototypes. */
 uint64_t pit_get_clock();

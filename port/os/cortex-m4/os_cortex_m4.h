@@ -83,6 +83,9 @@ typedef struct _hardware_stack_farme
 
 typedef struct _software_stack_farme
 {
+#if (CORTEX_M4_FPU == TRUE)
+    uint32_t r14;
+#endif
     uint32_t r4;
     uint32_t r5;
     uint32_t r6;
@@ -91,7 +94,6 @@ typedef struct _software_stack_farme
     uint32_t r9;
     uint32_t r10;
     uint32_t r11;
-    uint32_t r14;
 } software_stack_farme;
 
 #define TOS_SET(tos, sp, size)      (tos = (sp + size))
