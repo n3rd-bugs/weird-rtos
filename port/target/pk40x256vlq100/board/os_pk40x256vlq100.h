@@ -15,11 +15,6 @@
 #define OS_PK40X256VLQ100_H
 
 #include <os.h>
-#include <MK40DZ10.h>
-
-/* Peripheral clock configuration. */
-#define SYS_FREQ                900000000
-#define PCLK_FREQ               48000000
 
 /* Required definitions for scheduling. */
 #define CORTEX_M4_PEND_SV_REG           (SCB_ICSR)
@@ -29,8 +24,6 @@
 #define CORTEX_M4_SYS_TICK_MASK         (SysTick_CSR_TICKINT_MASK)
 #define CORTEX_M4_INT_SYS_TICK_PRI_REG  (NVICIP15)
 #define CORTEX_M4_INT_SYS_PRI           (0xFF)
-
-#define CORTEX_M4_FPU                   (FALSE)
 
 /* Platform dependent macros. */
 #define current_system_tick64()         pit_get_clock()

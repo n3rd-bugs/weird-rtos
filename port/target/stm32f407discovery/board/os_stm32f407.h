@@ -17,9 +17,9 @@
 #include <os.h>
 #include <stm32f407xx.h>
 
-/* Peripheral clock configuration. */
-#define SYS_FREQ                168000000
-#define PCLK_FREQ               24000000
+/* 64-bit clock management. */
+#define current_system_tick64()         pit_get_clock()
+#define current_system_tick64_usec()    (pit_get_clock() / PCLK_FREQ)
 
 /* Required definitions for scheduling. */
 #define CORTEX_M4_PEND_SV_REG           (SCB->ICSR)
@@ -31,10 +31,6 @@
 #define CORTEX_M4_INT_SYS_PRI           (0xFF)
 
 #define CORTEX_M4_FPU                   (TRUE)
-
-/* 64-bit clock management. */
-#define current_system_tick64()         pit_get_clock()
-#define current_system_tick64_usec()    (pit_get_clock() / PCLK_FREQ)
 
 /* Function prototypes. */
 uint64_t pit_get_clock();

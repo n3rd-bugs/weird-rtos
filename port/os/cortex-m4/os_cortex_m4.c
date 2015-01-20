@@ -55,7 +55,9 @@ void os_stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
     tcb->tos -= sizeof(software_stack_farme);
 
     init_soft_stack_frame = (software_stack_farme *)(tcb->tos);
+#if (CORTEX_M4_FPU == TRUE)
     init_soft_stack_frame->r14 = 0xFFFFFFFD;
+#endif
 
 #ifdef CONFIG_TASK_STATS
     /* Break the task stack pattern. */
@@ -171,8 +173,8 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
         "   TST         R14, #0x10              \r\n"
         "   IT          eq                      \r\n"
         "   VSTMDBEQ    %[sp]!, {S16 - S31}     \r\n"
-#endif
         "   STMDB       %[sp]!, {R14}           \r\n"
+#endif
         :
         [sp] "=r" (last_task->tos)
         );
@@ -186,8 +188,8 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
     /* Load context for new task. */
     asm volatile
     (
-    "   LDMIA       %[sp]!, {R14}           \r\n"
 #if (CORTEX_M4_FPU == TRUE)
+    "   LDMIA       %[sp]!, {R14}           \r\n"
     "   TST         R14, #0x10              \r\n"
     "   IT          eq                      \r\n"
     "   VLDMIAEQ    %[sp]!, {S16 - S31}     \r\n"
