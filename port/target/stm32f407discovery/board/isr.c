@@ -17,7 +17,7 @@
 extern void system_entry(void);
 
 /* Initial vector table definition. */
-__attribute__ ((section (".vectortable"))) VECTOR_TABLE system_isr_table =
+__attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
 {
     .callback =
     {
@@ -65,7 +65,7 @@ __attribute__ ((section (".vectortable"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x19  TIM1 Update and TIM10     */
         (isr)&cpu_interrupt,        /*  0x1A  TIM1 Trigger and Commutation and TIM1     */
         (isr)&cpu_interrupt,        /*  0x1B  TIM1 Capture Compare      */
-        (isr)&cpu_interrupt,        /*  0x1C  TIM2                  */
+        (isr)&isr_clock64_tick,     /*  0x1C  TIM2                  */
         (isr)&cpu_interrupt,        /*  0x1D  TIM3                  */
         (isr)&cpu_interrupt,        /*  0x1E  TIM4                  */
         (isr)&cpu_interrupt,        /*  0x1F  I2C1 Event            */

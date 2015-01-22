@@ -17,7 +17,7 @@ SECTIONS
     . = ALIGN(4);
     .interrupts :
     {
-        KEEP(*(.vectortable))
+        KEEP(*(.system_isr_table))
     } > m_interrupts
 
     . = ALIGN(4);

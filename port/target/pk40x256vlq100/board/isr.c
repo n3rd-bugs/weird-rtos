@@ -18,7 +18,7 @@
 extern void system_entry(void);
 
 /* Initial vector table definition. */
-__attribute__ ((section (".vectortable"))) VECTOR_TABLE system_isr_table =
+__attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
 {
     .callback =
     {
