@@ -98,15 +98,11 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
 
         /* Initialize FS structure. */
         pipe->fs.name = name;
-        pipe->fs.open = NULL;
-        pipe->fs.close = NULL;
         pipe->fs.read = &pipe_read;
         pipe->fs.write = &pipe_write;
-        pipe->fs.ioctl = NULL;
         memset(&pipe->fs.task_list, 0, sizeof(struct _fs_task_list));
         pipe->fs.flags = FS_BLOCK;
         pipe->fs.timeout = MAX_WAIT;
-        pipe->fs.should_resume = NULL;
         pipe->fs.get_lock = pipe_lock;
         pipe->fs.release_lock = pipe_unlock;
 
