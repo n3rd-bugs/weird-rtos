@@ -10,11 +10,9 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#include <stdio.h>
 #include <os.h>
 #include <sys_info.h>
 #include <mem_stats.h>
-#include <serial.h>
 #include <string.h>
 #include <sll.h>
 #include <stdlib.h>
@@ -164,17 +162,14 @@ int main(void)
     uint32_t    *ctx_time;
     int         i;
 
-    /* Initialize file system. */
-    fs_init();
-
-    /* Initialize serial console. */
-    serial_init(PCLK_FREQ, 115200);
-
     /* Initialize scheduler. */
     scheduler_init();
 
     /* Initialize memory. */
     mem_init();
+
+    /* Initialize file system. */
+    fs_init();
 
     /* Allocate memory for stats. */
     ctx_time = (uint32_t *)mem_static_alloc((sizeof(uint32_t) * NUM_DEMO_TASK));
