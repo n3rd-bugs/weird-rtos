@@ -23,9 +23,10 @@
 #define MAX_ISR_CYCLES      10000
 #define MAX_TIMER_TICKS     (NUM_DEMO_TASK * MAX_ISR_CYCLES)
 
-#define MEM_MAX_ALLOC       (0x6EC4 / 2)
-#define MAX_ALLOC           0x10
-#define MEM_PER_TASK        (MEM_MAX_ALLOC / NUM_DEMO_TASK)
+/* For now we will keep 12KB for the memory allocation data. */
+#define MEM_TOTAL_ALLOC     ((DYNAMIC_MEM_END - DYNAMIC_MEM_START) - (1024 * 12))
+#define MAX_ALLOC           (0x400)
+#define MEM_PER_TASK        (MEM_TOTAL_ALLOC / NUM_DEMO_TASK)
 
 typedef struct _mem_test_node MEM_TEST_NODE;
 struct _mem_test_node

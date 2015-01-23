@@ -12,12 +12,8 @@
  *
  * This is an example of how to create the tasks and using different components.
  */
-
-#include <avr/io.h>
-#include <stdio.h>
 #include <os.h>
 #include <sys_info.h>
-#include <serial.h>
 
 char    stack_1[192];
 TASK    task_cb_1;
@@ -104,8 +100,6 @@ int main(void)
     PORTD = PORTB = 0x00;
     DDRD  = 0xF0;
     DDRB  = 0xFF;
-
-    serial_init();
 
     stdout = &serial_fd;
 

@@ -10,15 +10,11 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-
-#include <stdio.h>
 #include <os.h>
 #include <sys_info.h>
-#include <serial.h>
-#include <string.h>
 
 #define NUM_DEMO_TASK       5
-#define DEMO_STACK_SIZE     128
+#define DEMO_STACK_SIZE     256
 
 void    ctx_sample_task(void *argv);
 void    stat_task(void *argv);
@@ -69,25 +65,17 @@ int main(void)
     uint32_t    *ctx_time;
     int         i;
 
-    /* System clock initialization */
-    SIM_SCGC5 = SIM_SCGC5_PORTA_MASK | SIM_SCGC5_PORTE_MASK;
-
-    PORTE_PCR4 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;
-    PORTA_PCR8 = PORT_PCR_MUX(1) | PORT_PCR_DSE_MASK;
-    GPIOE_PDDR |= (1<<4);
-    GPIOA_PDDR |= (1<<8);
-
-    serial_init(PCLK_FREQ, 115200);
-
-    PORTE_PCR0 = PORT_PCR_MUX(3) | PORT_PCR_DSE_MASK;
-    PORTE_PCR1 = PORT_PCR_MUX(3) | PORT_PCR_DSE_MASK;
-
+    /* Initialize scheduler. */
     scheduler_init();
 
+    /* Initialize memory. */
     mem_init();
 
-    ctx_time = (uint32_t *)mem_static_alloc((sizeof(uint32_t) * NUM_DEMO_TASK));
+    /* Initialize file system. */
+    fs_init();
 
+    /* Allocate memory for task stats. */
+    ctx_time = (uint32_t *)mem_static_alloc((sizeof(uint32_t) * NUM_DEMO_TASK));
     for (i = 0; i < NUM_DEMO_TASK; i++)
     {
         ctx_task_cb[i] = (TASK *)mem_static_alloc(sizeof(TASK) + DEMO_STACK_SIZE);
