@@ -18,13 +18,12 @@
 #include <stdlib.h>
 #include <path.h>
 
-#define NUM_DEMO_TASK       5
-#define DEMO_STACK_SIZE     300
+#define NUM_DEMO_TASK       32
+#define DEMO_STACK_SIZE     512
 #define MAX_ISR_CYCLES      10000
 #define MAX_TIMER_TICKS     (NUM_DEMO_TASK * MAX_ISR_CYCLES)
 
-/* For now we will keep 12KB for the memory allocation data. */
-#define MEM_TOTAL_ALLOC     ((DYNAMIC_MEM_END - DYNAMIC_MEM_START) - (1024 * 12))
+#define MEM_TOTAL_ALLOC     (DYNAMIC_MEM_END - DYNAMIC_MEM_START)
 #define MAX_ALLOC           (0x400)
 #define MEM_PER_TASK        (MEM_TOTAL_ALLOC / NUM_DEMO_TASK)
 
