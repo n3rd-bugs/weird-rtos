@@ -126,6 +126,9 @@ void set_current_task(TASK *tcb)
  */
 TASK *get_current_task()
 {
+    /* Assert if current task is null. */
+    OS_ASSERT(current_task == NULL);
+
     /* Return the current task's control block. */
    return (current_task);
 

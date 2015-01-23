@@ -241,7 +241,7 @@ uint32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
 #ifdef CONFIG_SLEEP
     uint32_t last_tick = current_system_tick();
 #endif
-    TASK *tcb = get_current_task();
+    TASK *tcb;
 
     if (((FS *)fd)->get_lock)
     {
@@ -258,6 +258,9 @@ uint32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
             (((FS *)fd)->flags & FS_BLOCK) &&
             (current_task))
         {
+            /* Get executing task. */
+            tcb = get_current_task();
+
 #ifdef CONFIG_SLEEP
             /* Check if we need to wait for a finite time. */
             if (((FS *)fd)->timeout != (uint32_t)(MAX_WAIT))
