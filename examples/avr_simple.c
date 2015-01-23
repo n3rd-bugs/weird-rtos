@@ -1,5 +1,5 @@
 /*
- * simple.h
+ * avr_simple.h
  *
  * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
  *
@@ -101,9 +101,11 @@ int main(void)
     DDRD  = 0xF0;
     DDRB  = 0xFF;
 
-    stdout = &serial_fd;
-
+    /* Initialize scheduler. */
     scheduler_init();
+
+    /* Initialize file system. */
+    fs_init();
 
     semaphore_create(&semaphore, 1, 1, SEMAPHORE_FIFO);
 
