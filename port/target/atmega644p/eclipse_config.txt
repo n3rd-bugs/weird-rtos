@@ -1,0 +1,11 @@
+C Includes:
+"${workspace_loc:/${ProjName}/rtos/os}"
+"${workspace_loc:/${ProjName}/rtos/utils}"
+"${workspace_loc:/${ProjName}/rtos/mem}"
+"${workspace_loc:/${ProjName}/rtos/console}"
+"${workspace_loc:/${ProjName}/rtos/fs}"
+"${workspace_loc:/${ProjName}/port/os}"
+"${workspace_loc:/${ProjName}/port/os/avr}"
+"${workspace_loc:/${ProjName}/port/toolset/gcc-avr}"
+"${workspace_loc:/${ProjName}/port/target/atmega644p/board}"
+"${workspace_loc:/${ProjName}/port/target/atmega644p/io/serial}"
