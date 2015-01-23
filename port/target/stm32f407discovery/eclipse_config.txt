@@ -9,7 +9,7 @@ C Includes:
 "${workspace_loc:/${ProjName}/port/os/cortex-m4}"
 "${workspace_loc:/${ProjName}/port/target/stm32f407discovery/board}"
 "${workspace_loc:/${ProjName}/port/target/stm32f407discovery/generic}"
-"${workspace_loc:/${ProjName}/port/target/stm32f407discovery/io/usart}"
+"${workspace_loc:/${ProjName}/port/target/stm32f407discovery/io/serial}"
 
 Extra Linker Flags:
 --specs=nosys.specs

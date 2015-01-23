@@ -94,7 +94,7 @@ uint32_t uart_pk40x256vlq100_printf(char *format, ...)
     n = fs_write(debug_fd, buf, n);
 #else
     /* Print the result on the UART. */
-    n = serial_puts(NULL, buf, n);
+    n = uart_pk40x256vlq100_puts(NULL, buf, n);
 #endif
 
     /* Destroy the argument list. */

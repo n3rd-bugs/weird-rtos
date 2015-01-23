@@ -15,7 +15,6 @@
 
 #include <os.h>
 
-/* Configure printf. */
 /* Hook-up the STDIO printf function. */
 #ifdef printf
 #undef printf
