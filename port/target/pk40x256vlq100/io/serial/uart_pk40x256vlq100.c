@@ -1,5 +1,5 @@
 /*
- * serial.c
+ * uart_pk40x256vlq100.c
  *
  * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
  *
@@ -11,54 +11,42 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 
+#include <stdio.h>
 #include <os.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdarg.h>
-#include <serial.h>
 
 #ifdef FS_CONSOLE
 /* Debug file descriptor. */
 FD debug_fd;
 
-/* UART console data. */
-UART_CON uart_1 =
+/* Console data. */
+CONSOLE uart_1 =
 {
-    .console.fs =
+    .fs =
     {
         /* Name of this port. */
         .name = "uart1",
 
         /* Console manipulation APIs. */
-        .write = &serial_puts,
+        .write = &uart_pk40x256vlq100_puts,
     }
 };
 #endif
 
 /*
- * serial_puts
+ * uart_pk40x256vlq100_puts
  * @priv_data: For now it is unused.
  * @buf: String needed to be printed.
  * @nbytes: Number of bytes to be printed from the string.
  * This function prints a string on the UART1.
  */
-uint32_t serial_puts(void *priv_data, char *buf, uint32_t nbytes)
+uint32_t uart_pk40x256vlq100_puts(void *priv_data, char *buf, uint32_t nbytes)
 {
     uint32_t to_print = nbytes;
 
-#ifdef FS_CONSOLE
-#ifndef CONFIG_SEMAPHORE
     /* Remove some compiler warnings. */
     UNUSED_PARAM(priv_data);
-#else
-    /* For now just emulate this. */
-    if (priv_data != NULL)
-    {
-        /* Obtain the UART lock. */
-        semaphore_obtain(&((UART_CON *)priv_data)->lock, MAX_WAIT);
-    }
-#endif
-#endif
 
     /* While we have some data to be printed. */
     while(nbytes > 0)
@@ -79,27 +67,17 @@ uint32_t serial_puts(void *priv_data, char *buf, uint32_t nbytes)
         buf++;
     }
 
-#ifdef FS_CONSOLE
-#ifdef CONFIG_SEMAPHORE
-    if (priv_data != NULL)
-    {
-        /* Release the UART lock. */
-        semaphore_release(&((UART_CON *)priv_data)->lock);
-    }
-#endif
-#endif
-
     /* Return number of bytes printed. */
     return (to_print - nbytes);
 
-} /* serial_puts */
+} /* uart_pk40x256vlq100_puts */
 
 /*
- * serial_printf
+ * uart_pk40x256vlq100_printf
  * @format: Formated string to be printed on UART.
  * This function prints a formated string on the UART1.
  */
-uint32_t serial_printf(char *format, ...)
+uint32_t uart_pk40x256vlq100_printf(char *format, ...)
 {
     uint32_t n = 0;
     char buf[100];
@@ -125,14 +103,14 @@ uint32_t serial_printf(char *format, ...)
     /* Return number of bytes printed on UART. */
     return (n);
 
-} /* serial_printf */
+} /* uart_pk40x256vlq100_printf */
 
 /*
- * serial_init
+ * uart_pk40x256vlq100_init
  * This function initializes UART1 so that user can use serial_printf for
  * printing data on it.
  */
-void serial_init()
+void uart_pk40x256vlq100_init()
 {
     uint16_t ubd, brfa;
     uint8_t temp;
@@ -161,18 +139,11 @@ void serial_init()
     PORTE_PCR1 = PORT_PCR_MUX(3) | PORT_PCR_DSE_MASK;
 
 #ifdef FS_CONSOLE
-#ifdef CONFIG_SEMAPHORE
-    /* Create a semaphore to protect this console data. */
-    memset(&uart_1.lock, 0, sizeof(SEMAPHORE));
-    semaphore_create(&uart_1.lock, 1, 1, SEMAPHORE_PRIORITY);
-#endif
-
     /* Register this serial port with console. */
-    console_register(&uart_1.console);
+    console_register(&uart_1);
 
     /* Set debug file descriptor. */
     debug_fd = fs_open("\\console\\uart1", 0);
-
 #endif /* FS_CONSOLE */
 
-} /* serial_init */
+} /* uart_pk40x256vlq100_init */

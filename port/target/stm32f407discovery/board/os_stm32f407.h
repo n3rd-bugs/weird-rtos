@@ -16,10 +16,11 @@
 
 #include <os.h>
 #include <stm32f407xx.h>
+#include <usart_stm32f407.h>
 
 /* Peripheral clock configuration. */
 #define SYS_FREQ                168000000
-#define PCLK_FREQ               24000000
+#define PCLK_FREQ               84000000
 
 /* Required definitions for scheduling. */
 #define CORTEX_M4_PEND_SV_REG           (SCB->ICSR)

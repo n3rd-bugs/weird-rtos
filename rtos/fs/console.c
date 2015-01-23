@@ -13,7 +13,6 @@
 
 #include <os.h>
 #include <string.h>
-#include <serial.h>
 #include <path.h>
 #include <sll.h>
 
@@ -24,6 +23,8 @@ CONSOLE_DATA console_data;
 
 /* Function prototypes. */
 void *console_open(char *, uint32_t);
+static void console_unlock(void *fd);
+static void console_lock(void *fd);
 
 /* File system definition. */
 FS console_fs =
@@ -55,6 +56,11 @@ void console_init()
     /* Register console with file system. */
     fs_register(&console_fs);
 
+#ifdef DEBUG_CONSOLE_INIT
+    /* Initialize DEBUG console. */
+    DEBUG_CONSOLE_INIT();
+#endif
+
 } /* console_init */
 
 /*
@@ -70,10 +76,18 @@ void console_register(CONSOLE *console)
 #else
     /* Obtain the global data lock. */
     semaphore_obtain(&console_data.lock, MAX_WAIT);
+
+    /* Create a semaphore to protect this console device. */
+    memset(&console->lock, 0, sizeof(SEMAPHORE));
+    semaphore_create(&console->lock, 1, 1, SEMAPHORE_PRIORITY);
 #endif
 
     /* Just push this file system in the list. */
     sll_push(&console_data.list, console, OFFSETOF(CONSOLE, fs.next));
+
+    /* Initialize console FS data. */
+    console->fs.get_lock = console_lock;
+    console->fs.release_lock = console_unlock,
 
 #ifdef CONFIG_SEMAPHORE
     /* Release the global data lock. */
@@ -134,5 +148,37 @@ void *console_open(char *name, uint32_t flags)
     return (fd);
 
 } /* console_open */
+
+/*
+ * console_lock
+ * @fd: File descriptor for the console.
+ * This function will get the lock for a given console.
+ */
+static void console_lock(void *fd)
+{
+#ifdef CONFIG_SEMAPHORE
+    /* Obtain data lock for this console. */
+    semaphore_obtain(&((CONSOLE *)fd)->lock, MAX_WAIT);
+#else
+    /* Lock scheduler. */
+    scheduler_lock();
+#endif
+} /* console_lock */
+
+/*
+ * console_unlock
+ * @fd: File descriptor for the console.
+ * This function will release the lock for a given console.
+ */
+static void console_unlock(void *fd)
+{
+#ifdef CONFIG_SEMAPHORE
+    /* Release data lock for this console. */
+    semaphore_release(&((CONSOLE *)fd)->lock);
+#else
+    /* Enable scheduling. */
+    scheduler_unlock();
+#endif
+} /* console_unlock */
 
 #endif /* FS_CONSOLE */

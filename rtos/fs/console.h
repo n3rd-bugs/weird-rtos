@@ -22,6 +22,11 @@
 {
     /* For now it only has FS data. */
     FS      fs;
+
+#ifdef CONFIG_SEMAPHORE
+    /* Data lock. */
+    SEMAPHORE   lock;
+#endif
 } CONSOLE;
 
 /* Console data. */
@@ -40,6 +45,11 @@ typedef struct _console_data
 #endif
 
 } CONSOLE_DATA;
+
+/* This is needed to be implemented by a board port. */
+#ifndef serial_printf
+#define serial_printf(...)
+#endif
 
 /* Function prototypes. */
 void console_init();

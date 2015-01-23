@@ -16,6 +16,7 @@
 
 #include <os.h>
 #include <MK40DZ10.h>
+#include <uart_pk40x256vlq100.h>
 
 /* Peripheral clock configuration. */
 #define SYS_FREQ                900000000

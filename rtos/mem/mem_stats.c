@@ -12,7 +12,6 @@
  */
 
 #include <os.h>
-#include <serial.h>
 
 #ifdef MEMGR_STATS
 
@@ -43,10 +42,10 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
         end = (uint32_t)mem_dynamic->pages[mem_dynamic->num_pages - 1].base_end;
 
         /* Print general information about this memory region. */
-        serial_printf("Memory Region Information:\r\n");
-        serial_printf("Start\t\t: 0x%X\r\n", start);
-        serial_printf("End\t\t: 0x%X\r\n", end);
-        serial_printf("Total Size\t: %d\r\n", (end - start));
+        printf("Memory Region Information:\r\n");
+        printf("Start\t\t: 0x%X\r\n", start);
+        printf("End\t\t: 0x%X\r\n", end);
+        printf("Total Size\t: %d\r\n", (end - start));
     }
 
     /* Page information.  */
@@ -55,13 +54,13 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
         /* If we are only printing page information. */
         if (!(level & STAT_MEM_GENERAL))
         {
-            serial_printf("Memory Page(s) Information:\r\n");
+            printf("Memory Page(s) Information:\r\n");
         }
 
         /* If we need to print page information. */
         if (level & STAT_MEM_PAGE_INFO)
         {
-            serial_printf("P[n]\tStart\t\tEnd\t\tFree\r\n");
+            printf("P[n]\tStart\t\tEnd\t\tFree\r\n");
         }
 
         /* Go through all the pages in this memory region. */

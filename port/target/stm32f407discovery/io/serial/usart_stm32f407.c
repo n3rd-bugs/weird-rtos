@@ -1,5 +1,5 @@
 /*
- * serial.c
+ * usart_stm32f407.c
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -11,54 +11,42 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 
+#include <stdio.h>
 #include <os.h>
 #include <string.h>
-#include <stdio.h>
 #include <stdarg.h>
-#include <serial.h>
 
 #ifdef FS_CONSOLE
 /* Debug file descriptor. */
 FD debug_fd;
 
-/* UART console data. */
-UART_CON uart_1 =
+/* Console data. */
+CONSOLE usart_1 =
 {
-    .console.fs =
+    .fs =
     {
         /* Name of this port. */
-        .name = "uart1",
+        .name = "usart1",
 
         /* Console manipulation APIs. */
-        .write = &serial_puts,
+        .write = &usart_stm32f407_puts,
     }
 };
 #endif
 
 /*
- * serial_puts
+ * usart_stm32f407_puts
  * @priv_data: For now it is unused.
  * @buf: String needed to be printed.
  * @nbytes: Number of bytes to be printed from the string.
  * This function prints a string on the UART1.
  */
-uint32_t serial_puts(void *priv_data, char *buf, uint32_t nbytes)
+uint32_t usart_stm32f407_puts(void *priv_data, char *buf, uint32_t nbytes)
 {
     uint32_t to_print = nbytes;
 
-#ifdef FS_CONSOLE
-#ifndef CONFIG_SEMAPHORE
     /* Remove some compiler warnings. */
     UNUSED_PARAM(priv_data);
-#else
-    /* For now just emulate this. */
-    if (priv_data != NULL)
-    {
-        /* Obtain the UART lock. */
-        semaphore_obtain(&((UART_CON *)priv_data)->lock, MAX_WAIT);
-    }
-#endif
-#endif
 
     /* While we have some data to be printed. */
     while (nbytes > 0)
@@ -79,27 +67,17 @@ uint32_t serial_puts(void *priv_data, char *buf, uint32_t nbytes)
         buf++;
     }
 
-#ifdef FS_CONSOLE
-#ifdef CONFIG_SEMAPHORE
-    if (priv_data != NULL)
-    {
-        /* Release the UART lock. */
-        semaphore_release(&((UART_CON *)priv_data)->lock);
-    }
-#endif
-#endif
-
     /* Return number of bytes printed. */
     return (to_print - nbytes);
 
-} /* serial_puts */
+} /* usart_stm32f407_puts */
 
 /*
- * serial_printf
- * @format: Formated string to be printed on UART.
- * This function prints a formated string on the UART1.
+ * usart_stm32f407_printf
+ * @format: Formated string to be printed on USART.
+ * This function prints a formated string on the USART1.
  */
-uint32_t serial_printf(char *format, ...)
+uint32_t usart_stm32f407_printf(char *format, ...)
 {
     uint32_t n = 0;
     char buf[100];
@@ -116,7 +94,7 @@ uint32_t serial_printf(char *format, ...)
     n = fs_write(debug_fd, buf, n);
 #else
     /* Print the result on the UART. */
-    n = serial_puts(NULL, buf, n);
+    n = usart_stm32f407_puts(NULL, buf, n);
 #endif
 
     /* Destroy the argument list. */
@@ -125,14 +103,13 @@ uint32_t serial_printf(char *format, ...)
     /* Return number of bytes printed on UART. */
     return (n);
 
-} /* serial_printf */
+} /* usart_stm32f407_printf */
 
 /*
- * serial_init
- * This function initializes UART1 so that user can use serial_printf for
- * printing data on it.
+ * usart_stm32f407_init
+ * This function initializes UART1 for STM32F407.
  */
-void serial_init()
+void usart_stm32f407_init()
 {
     uint32_t temp, integral, fractional;
 
@@ -175,7 +152,7 @@ void serial_init()
     USART1->CR3 &= ~((USART_CR3_RTSE | USART_CR3_CTSE));
 
     /* Calculate and set the baud rate parameters. */
-    integral = ((25 * PCLK_FREQ) / (4 * 115200));
+    integral = ((25 * PCLK_FREQ) / (4 * BAUD_RATE));
     temp = (integral / 100) << 4;
     fractional = integral - (100 * (temp >> 4));
     temp |= ((((fractional * 16) + 50) / 100)) & (0x0F);
@@ -185,22 +162,13 @@ void serial_init()
     USART1->CR1 |= USART_CR1_UE;
 
 #ifdef FS_CONSOLE
-#ifdef CONFIG_SEMAPHORE
-    /* Create a semaphore to protect this console data. */
-    memset(&uart_1.lock, 0, sizeof(SEMAPHORE));
-    semaphore_create(&uart_1.lock, 1, 1, SEMAPHORE_PRIORITY);
-#endif
 
-    /* Initialize console data. */
-    uart_1.console.fs.name = "uart1";
-    uart_1.console.fs.write = &serial_puts;
-
-    /* Register this serial port with console. */
-    console_register(&uart_1.console);
+    /* Register serial port with console. */
+    console_register(&usart_1);
 
     /* Set debug file descriptor. */
-    debug_fd = fs_open("\\console\\uart1", 0);
+    debug_fd = fs_open("\\console\\usart1", 0);
 
 #endif /* FS_CONSOLE */
 
-} /* serial_init */
+} /* usart_stm32f407_init */

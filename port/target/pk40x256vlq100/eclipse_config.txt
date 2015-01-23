@@ -9,7 +9,7 @@ C Includes:
 "${workspace_loc:/${ProjName}/port/os/cortex-m4}"
 "${workspace_loc:/${ProjName}/port/target/pk40x256vlq100/board}"
 "${workspace_loc:/${ProjName}/port/target/pk40x256vlq100/generic}"
-"${workspace_loc:/${ProjName}/port/target/pk40x256vlq100/io/serial}"
+"${workspace_loc:/${ProjName}/port/target/pk40x256vlq100/io/uart}"
 
 Extra Linker Flags:
 --specs=nosys.specs

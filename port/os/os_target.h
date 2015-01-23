@@ -19,11 +19,13 @@
 #define TARGET_CORTEX_M4    0x3
 
 /* Target platform definitions. */
-#define PLAT_PK40X256VLQ100 0x01
-#define PLAT_STM32F407_DISC 0x02
+#define PLAT_ATMEGA644P     0x01
+#define PLAT_PK40X256VLQ100 0x02
+#define PLAT_STM32F407_DISC 0x03
 
 /* Target toolset configuration. */
-#define TOOL_ARM_GCC        0x01
+#define TOOL_AVR_GCC        0x01
+#define TOOL_ARM_GCC        0x02
 
 /* RTOS configuration. */
 #define PLAT_TARGET         PLAT_STM32F407_DISC
@@ -31,29 +33,30 @@
 #define TOOL_TARGET         TOOL_ARM_GCC
 
 /* Toolset includes. */
-#if (TOOL_TARGET == TOOL_ARM_GCC)
+#if (TOOL_TARGET == TOOL_AVR_GCC)
+#include <os_avr_gcc.h>
+#elif (TOOL_TARGET == TOOL_ARM_GCC)
 #include <os_arm_gcc.h>
 #endif
-#include <tasks.h>
 
 /* Processor includes. */
 #if (RTOS_TARGET == TARGET_AVR)
 #include <os_avr.h>
-#endif
-#if (RTOS_TARGET == TARGET_CORTEX_M3)
+#elif (RTOS_TARGET == TARGET_CORTEX_M3)
 #include <os_cortex_m3.h>
-#endif
-#if (RTOS_TARGET == TARGET_CORTEX_M4)
+#elif (RTOS_TARGET == TARGET_CORTEX_M4)
 #include <os_cortex_m4.h>
 #endif
 
 /* Platform includes. */
-#if (PLAT_TARGET == PLAT_STM32F407_DISC)
+#if (PLAT_TARGET == PLAT_ATMEGA644P)
+#elif (PLAT_TARGET == PLAT_STM32F407_DISC)
 #include <os_stm32f407.h>
-#endif
-#if (PLAT_TARGET == PLAT_PK40X256VLQ100)
+#elif (PLAT_TARGET == PLAT_PK40X256VLQ100)
 #include <os_pk40x256vlq100.h>
 #endif
+
+#include <tasks.h>
 
 /* Following functions must be implemented by target porting layer. */
 void system_tick_Init();

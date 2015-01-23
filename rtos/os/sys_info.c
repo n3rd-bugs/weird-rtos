@@ -12,7 +12,6 @@
  */
 #include <os.h>
 #include <sys_info.h>
-#include <serial.h>
 
 #ifdef CONFIG_TASK_STATS
 
