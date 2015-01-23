@@ -68,7 +68,7 @@ typedef struct _mem_page    MEM_PAGE;
 typedef struct _mem_dynamic MEM_DYNAMIC;
 
 /* Single memory descriptor. */
-typedef struct _mem_desc
+struct _mem_desc
 {
 #ifdef MEM_ID_CHECK
     /* ID for this memory. */
@@ -80,7 +80,7 @@ typedef struct _mem_desc
 
     /* Physically previous node. */
     MEM_DESC        *phy_prev;
-} MEM_DESC;
+};
 
 /* Allocated memory descriptor. */
 typedef struct _mem_allocated

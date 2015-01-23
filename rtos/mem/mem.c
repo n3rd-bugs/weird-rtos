@@ -13,6 +13,8 @@
 #include <os.h>
 #include <os_target.h>
 
+#ifdef CONFIG_MEMGR
+
 #ifdef MEMGR_STATIC
 MEM_STATIC mem_static;
 #endif
@@ -59,5 +61,4 @@ void mem_init()
 
 } /* mem_init */
 
-
-
+#endif /* CONFIG_MEMGR */

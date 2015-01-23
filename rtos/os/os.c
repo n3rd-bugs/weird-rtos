@@ -14,7 +14,7 @@
 #include <os_target.h>
 
 /* This will hold the control block for the currently running. */
-TASK *current_task;
+TASK *current_task = NULL;
 
 /* This is used for time keeping in the system. */
 uint64_t current_tick = 0;

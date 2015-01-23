@@ -166,9 +166,6 @@ extern uint32_t sys_interrupt_level;
 
 #define CONTROL_TO_SYSTEM()             control_to_system()
 
-/* This macro tells the compiler to not manage the stack for a given function. */
-#define STACK_LESS                      __attribute__ (( naked ))
-
 /* Return statements for the functions which are stack less. */
 #define RETURN_ENABLING_INTERRUPTS()    asm volatile ( "reti" )
 #define RETURN_FUNCTION()               asm volatile ( "ret" )

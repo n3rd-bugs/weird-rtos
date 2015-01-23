@@ -26,7 +26,7 @@
 #define FS_CONSOLE
 
 /* File descriptor definitions. */
-typedef int32_t FD;
+typedef void *FD;
 
 /* File system specific flags. */
 #define FS_BLOCK            0x0001000

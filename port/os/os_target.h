@@ -28,9 +28,9 @@
 #define TOOL_ARM_GCC        0x02
 
 /* RTOS configuration. */
-#define PLAT_TARGET         PLAT_STM32F407_DISC
-#define RTOS_TARGET         TARGET_CORTEX_M4
-#define TOOL_TARGET         TOOL_ARM_GCC
+#define PLAT_TARGET         PLAT_ATMEGA644P
+#define RTOS_TARGET         TARGET_AVR
+#define TOOL_TARGET         TOOL_AVR_GCC
 
 /* Toolset includes. */
 #if (TOOL_TARGET == TOOL_AVR_GCC)
@@ -50,6 +50,7 @@
 
 /* Platform includes. */
 #if (PLAT_TARGET == PLAT_ATMEGA644P)
+#include <os_atmega644p.h>
 #elif (PLAT_TARGET == PLAT_STM32F407_DISC)
 #include <os_stm32f407.h>
 #elif (PLAT_TARGET == PLAT_PK40X256VLQ100)
