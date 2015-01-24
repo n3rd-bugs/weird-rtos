@@ -141,7 +141,6 @@ uint8_t fs_sreach_node(void *node, void *param);
 #ifdef FS_PIPE
 #include <pipe.h>
 #endif
-
 #ifdef FS_CONSOLE
 #include <console.h>
 #endif

@@ -19,10 +19,10 @@
 #ifdef FS_CONSOLE
 
 /* Console data. */
-CONSOLE_DATA console_data;
+static CONSOLE_DATA console_data;
 
 /* Function prototypes. */
-void *console_open(char *, uint32_t);
+static void *console_open(char *, uint32_t);
 static void console_unlock(void *fd);
 static void console_lock(void *fd);
 
@@ -104,7 +104,7 @@ void console_register(CONSOLE *console)
  * @flags: Open flags.
  * This function will open a console node.
  */
-void *console_open(char *name, uint32_t flags)
+static void *console_open(char *name, uint32_t flags)
 {
     NODE_PARAM param;
     void *fd = NULL;

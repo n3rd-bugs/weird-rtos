@@ -18,10 +18,10 @@
 
 #ifdef FS_CONSOLE
 /* Debug file descriptor. */
-FD debug_fd;
+static FD debug_fd = NULL;
 
 /* Console data. */
-CONSOLE usart_1 =
+static CONSOLE usart_1 =
 {
     .fs =
     {
@@ -87,6 +87,9 @@ uint32_t uart_atmega644p_printf(char *format, ...)
     n = vsnprintf(buf, 100, format, vl);
 
 #ifdef FS_CONSOLE
+    /* Assert if debug FD is not yet initialized. */
+    OS_ASSERT(debug_fd == NULL);
+
     /* Use the debug FD. */
     n = fs_write(debug_fd, buf, n);
 #else

@@ -18,14 +18,14 @@
 #ifdef FS_PIPE
 
 /* Pipe FS data. */
-PIPE_DATA pipe_data;
+static PIPE_DATA pipe_data;
 
 /* Internal function prototypes. */
 static void pipe_lock(void *fd);
 static void pipe_unlock(void *fd);
-void *pipe_open(char *name, uint32_t flags);
-uint32_t pipe_write(void *fd, char *data, uint32_t nbytes);
-uint32_t pipe_read(void *fd, char *buffer, uint32_t size);
+static void *pipe_open(char *name, uint32_t flags);
+static uint32_t pipe_write(void *fd, char *data, uint32_t nbytes);
+static uint32_t pipe_read(void *fd, char *buffer, uint32_t size);
 
 /* File system definition. */
 FS pipe_fs =
@@ -39,19 +39,19 @@ FS pipe_fs =
 
 /*
  * pipe_init
- * This function will initialize debug console.
+ * This function will initialize pipe file system.
  */
 void pipe_init()
 {
-    /* Clear the console data. */
+    /* Clear the pipe data. */
     memset(&pipe_data, 0, sizeof(PIPE_DATA));
 
 #ifdef CONFIG_SEMAPHORE
-    /* Create a semaphore to protect global console data. */
+    /* Create a semaphore to protect global pipe data. */
     semaphore_create(&pipe_data.lock, 1, 1, SEMAPHORE_PRIORITY);
 #endif
 
-    /* Register console with file system. */
+    /* Register pipe with file system. */
     fs_register(&pipe_fs);
 
 } /* pipe_init */
@@ -83,7 +83,7 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
     param.priv = (void *)NULL;
 
     /* First check if these is no other pipe with same name. */
-    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(CONSOLE, fs.next));
+    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(PIPE, fs.next));
 
     if (param.priv == NULL)
     {
@@ -162,7 +162,7 @@ static void pipe_unlock(void *fd)
  * @flags: Open flags.
  * This function will open a pipe node.
  */
-void *pipe_open(char *name, uint32_t flags)
+static void *pipe_open(char *name, uint32_t flags)
 {
     NODE_PARAM param;
     void *fd = NULL;
@@ -180,7 +180,7 @@ void *pipe_open(char *name, uint32_t flags)
     param.priv = (void *)fd;
 
     /* First find a file system to which this call can be forwarded. */
-    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(CONSOLE, fs.next));
+    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(PIPE, fs.next));
 
     /* If a node was found. */
     if (param.priv)
@@ -198,10 +198,10 @@ void *pipe_open(char *name, uint32_t flags)
     {
         /* Check if we need to call the underlying function to get a new file
          * descriptor. */
-        if (((CONSOLE *)fd)->fs.open != NULL)
+        if (((PIPE *)fd)->fs.open != NULL)
         {
             /* Call the underlying API to get the file descriptor. */
-            fd = ((CONSOLE *)fd)->fs.open(name, flags);
+            fd = ((PIPE *)fd)->fs.open(name, flags);
         }
     }
 
@@ -218,7 +218,7 @@ void *pipe_open(char *name, uint32_t flags)
  * @return: Number of bytes written on this pipe.
  * This function will write data on pipe.
  */
-uint32_t pipe_write(void *fd, char *data, uint32_t nbytes)
+static uint32_t pipe_write(void *fd, char *data, uint32_t nbytes)
 {
     PIPE *pipe = (PIPE *)fd;
     uint32_t required_space, part_size;
@@ -310,7 +310,7 @@ uint32_t pipe_write(void *fd, char *data, uint32_t nbytes)
  * @return: Number of bytes read from the pipe.
  * This function will read data from a pipe.
  */
-uint32_t pipe_read(void *fd, char *buffer, uint32_t size)
+static uint32_t pipe_read(void *fd, char *buffer, uint32_t size)
 {
     PIPE *pipe = (PIPE *)fd;
     MSG_DATA *message;

@@ -20,7 +20,7 @@
 #ifdef CONFIG_FS
 
 /* Global variables. */
-FS_DATA file_data;
+static FS_DATA file_data;
 
 /*
  * fs_init
