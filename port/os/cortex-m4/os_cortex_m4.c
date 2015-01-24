@@ -98,6 +98,9 @@ void run_first_task()
     /* Enable interrupts. */
     ENABLE_INTERRUPTS();
 
+    /* Should never get here. */
+    OS_ASSERT(TRUE);
+
 } /* run_first_task */
 
 /*
