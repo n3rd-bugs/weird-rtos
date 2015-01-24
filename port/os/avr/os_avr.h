@@ -95,8 +95,8 @@ extern uint32_t sys_interrupt_level;
                     "push   r29                     \n\t"   \
                     "push   r30                     \n\t"   \
                     "push   r31                     \n\t"   \
-                    "lds    r14, current_task        \n\t"       \
-                    "lds    r15, current_task + 1    \n\t"       \
+                    "lds    r14, current_task       \n\t"   \
+                    "lds    r15, current_task + 1   \n\t"   \
                     "movw   r26, r14                \n\t"   \
                     "ldi    r18, %[tos_offset]      \n\t"   \
                     "add    r26, r18                \n\t"   \
@@ -111,8 +111,8 @@ extern uint32_t sys_interrupt_level;
 /* This macro loads a function's context from the stack. */
 #define RESTORE_CONTEXT()                                   \
     asm volatile (                                          \
-                    "lds    r14, current_task        \n\t"       \
-                    "lds    r15, current_task + 1    \n\t"       \
+                    "lds    r14, current_task       \n\t"   \
+                    "lds    r15, current_task + 1   \n\t"   \
                     "movw   r26, r14                \n\t"   \
                     "ldi    r18, %[tos_offset]      \n\t"   \
                     "add    r26, r18                \n\t"   \
