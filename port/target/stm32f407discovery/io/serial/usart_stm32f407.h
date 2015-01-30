@@ -28,7 +28,7 @@
 #define BAUD_RATE       115200
 
 /* Function prototypes. */
-uint32_t usart_stm32f407_puts(void *priv_data, char *buf, uint32_t nbytes);
+int32_t usart_stm32f407_puts(void *priv_data, char *buf, int32_t nbytes);
 uint32_t usart_stm32f407_printf(char *format, ...);
 void usart_stm32f407_init();
 

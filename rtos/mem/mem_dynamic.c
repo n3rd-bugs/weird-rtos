@@ -353,7 +353,7 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 
 #ifdef CONFIG_SEMAPHORE
     /* Acquire the memory lock. */
-    semaphore_obtain(&mem_dynamic->lock, MAX_WAIT);
+    OS_ASSERT(semaphore_obtain(&mem_dynamic->lock, MAX_WAIT) != SUCCESS);
 #else
     /* Lock the scheduler. */
     scheduler_lock();
@@ -548,7 +548,7 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
 
 #ifdef CONFIG_SEMAPHORE
         /* Acquire the memory lock. */
-        semaphore_obtain(&((MEM_ALOC *)mem_free)->page->mem_region->lock, MAX_WAIT);
+        OS_ASSERT(semaphore_obtain(&((MEM_ALOC *)mem_free)->page->mem_region->lock, MAX_WAIT) != SUCCESS);
 
         /* Enable scheduling. */
         scheduler_unlock();

@@ -54,6 +54,7 @@ typedef struct _console_data
 /* Function prototypes. */
 void console_init();
 void console_register(CONSOLE *console);
+void console_unregister(CONSOLE *console);
 
 #endif /* FS_CONSOLE */
 #endif /* CONSOLE_H */

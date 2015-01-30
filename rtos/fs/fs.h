@@ -25,6 +25,10 @@
 #define FS_PIPE
 #define FS_CONSOLE
 
+
+/* Error definitions. */
+#define FS_NODE_DELETED     -801
+
 /* File descriptor definitions. */
 typedef void *FD;
 
@@ -46,12 +50,12 @@ struct _fs
     /* File operations. */
     void        *(*open) (char *, uint32_t);
     void        (*close) (void **);
-    uint32_t    (*write) (void *, char *, uint32_t);
-    uint32_t    (*read) (void *, char *, uint32_t);
-    uint32_t    (*ioctl) (void *, uint32_t, void *);
+    int32_t     (*write) (void *, char *, int32_t);
+    int32_t     (*read) (void *, char *, uint32_t);
+    int32_t     (*ioctl) (void *, uint32_t, void *);
 
     /* Driver operations. */
-    void        (*get_lock) (void *);
+    int32_t     (*get_lock) (void *);
     void        (*release_lock) (void *);
     uint32_t    (*should_resume) (void *, void *, void *);
 
@@ -124,14 +128,16 @@ void fs_init();
 FD fs_open(char *, uint32_t);
 void fs_close(FD *);
 
-uint32_t fs_read(FD, char *, uint32_t);
-uint32_t fs_write(FD, char *, uint32_t);
-uint32_t fs_ioctl(FD, uint32_t, void *);
+int32_t fs_read(FD, char *, uint32_t);
+int32_t fs_write(FD, char *, uint32_t);
+int32_t fs_ioctl(FD, uint32_t, void *);
 
 /* File system functions. */
 void fs_register(FS *file_system);
+void fs_unregister(FS *file_system);
 void fd_data_available(void *fs, FS_PARAM *param);
 void fd_data_flushed(void *fs);
+void fs_resume_all(void *fd);
 
 /* Helper APIs. */
 uint8_t fs_sreach_directory(void *node, void *param);

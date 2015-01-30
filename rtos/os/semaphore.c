@@ -44,19 +44,57 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
 } /* semaphore_create */
 
 /*
+ * semaphore_destroy
+ * @semaphore: Semaphore control block to be destroyed.
+ * This routine destroy a semaphore. If any of the tasks are waiting on this
+ * semaphore they will be resumed with an error code.
+ */
+void semaphore_destroy(SEMAPHORE *semaphore)
+{
+    /* Get the first task that can be resumed now. */
+    TASK *tcb = (TASK *)sll_pop(&semaphore->tasks, OFFSETOF(TASK, next));
+
+    /* Resume all tasks waiting in this semaphore. */
+    while (tcb != NULL)
+    {
+        /* Task is being resumed because the given semaphore is being deleted. */
+        tcb->status = TASK_RESUME_ERROR;
+
+#ifdef CONFIG_SLEEP
+        /* Remove this task from sleeping tasks. */
+        sleep_remove_from_list(tcb);
+#endif /* CONFIG_SLEEP */
+
+        /* Try to reschedule this task. */
+        ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
+
+        /* Yield the current task and schedule the new task if required. */
+        task_yield();
+
+        /* Get the next task that can be resumed. */
+        tcb = (TASK *)sll_pop(&semaphore->tasks, OFFSETOF(TASK, next));
+    }
+
+    /* Clear the semaphore memory. */
+    memset(semaphore, 0,  sizeof(SEMAPHORE));
+
+} /* semaphore_destroy */
+
+/*
  * semaphore_obtain
  * @semaphore: Semaphore control block that is needed to be acquired.
  * @wait: The number of ticks to wait for this semaphore, MAX_WAIT should be
  *  used if user wants to wait for infinite time for this semaphore.
  * @return: SUCCESS if the semaphore was successfully acquired, SEMAPHORE_BUSY
  *  if the semaphore is busy and cannot be acquired, SEMAPHORE_TIMEOUT if system
- *  has exhausted the given timeout to obtain this semaphore.
+ *  has exhausted the given timeout to obtain this semaphore. SEMAPHORE_DELETED
+ *  is returned if the given semaphore has been deleted.
  * This function is called to acquire a semaphore. User can specify the number
  * of ticks to wait before returning an error.
  */
-uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
+int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
-    uint32_t    status = SUCCESS;
+    int32_t     status = SUCCESS;
 #ifdef CONFIG_SLEEP
     uint32_t    last_tick = current_system_tick();
 #endif /* CONFIG_SLEEP */
@@ -127,6 +165,15 @@ uint32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
                     sll_remove(&semaphore->tasks, tcb, OFFSETOF(TASK, next));
 
                     /* Break and return error. */
+                    break;
+                }
+
+                else if (tcb->status == TASK_RESUME_ERROR)
+                {
+                    /* Given semaphore has been deleted. */
+                    status = SEMAPHORE_DELETED;
+
+                    /* The given context has been deleted. */
                     break;
                 }
 

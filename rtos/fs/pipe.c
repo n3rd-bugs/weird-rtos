@@ -21,11 +21,11 @@
 static PIPE_DATA pipe_data;
 
 /* Internal function prototypes. */
-static void pipe_lock(void *fd);
+static int32_t pipe_lock(void *fd);
 static void pipe_unlock(void *fd);
 static void *pipe_open(char *name, uint32_t flags);
-static uint32_t pipe_write(void *fd, char *data, uint32_t nbytes);
-static uint32_t pipe_read(void *fd, char *buffer, uint32_t size);
+static int32_t pipe_write(void *fd, char *data, int32_t nbytes);
+static int32_t pipe_read(void *fd, char *buffer, uint32_t size);
 
 /* File system definition. */
 FS pipe_fs =
@@ -73,7 +73,7 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
     scheduler_lock();
 #else
     /* Obtain the global data lock. */
-    semaphore_obtain(&pipe_data.lock, MAX_WAIT);
+    OS_ASSERT(semaphore_obtain(&pipe_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
     /* First check if this node can be registered. */
@@ -125,18 +125,60 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
 } /* pipe_create */
 
 /*
+ * pipe_destroy
+ * @pipe: Pipe data to be destroyed.
+ * This function will destroy a pipe. User should not access a pipe
+ * after destroying it.
+ */
+void pipe_destroy(PIPE *pipe)
+{
+#ifndef CONFIG_SEMAPHORE
+    /* Lock the scheduler. */
+    scheduler_lock();
+#else
+    /* Obtain data lock for this pipe. */
+    OS_ASSERT(semaphore_obtain(&pipe->lock, MAX_WAIT) != SUCCESS);
+
+    /* Obtain the global data lock. */
+    if (semaphore_obtain(&pipe_data.lock, MAX_WAIT) == SUCCESS)
+    {
+#endif
+        /* Resume all tasks waiting on this file descriptor. */
+        fs_resume_all((void *)pipe);
+
+        /* Delete the pipe semaphore. */
+        semaphore_destroy(&pipe->lock);
+
+        /* Just remove this pipe from the pipe list. */
+        sll_remove(&pipe_data.list, pipe, OFFSETOF(PIPE, fs.next));
+
+#ifdef CONFIG_SEMAPHORE
+        /* Release the global data lock. */
+        semaphore_release(&pipe_data.lock);
+    }
+#else
+    /* Enable scheduling. */
+    scheduler_unlock();
+#endif
+
+} /* pipe_destroy */
+
+/*
  * pipe_lock
  * @fd: File descriptor for the pipe.
  * This function will get the lock for a given pipe.
  */
-static void pipe_lock(void *fd)
+static int32_t pipe_lock(void *fd)
 {
 #ifdef CONFIG_SEMAPHORE
     /* Obtain data lock for this pipe. */
-    semaphore_obtain(&((PIPE *)fd)->lock, MAX_WAIT);
+    return semaphore_obtain(&((PIPE *)fd)->lock, MAX_WAIT);
 #else
     /* Lock scheduler. */
     scheduler_lock();
+
+    /* Return success. */
+    return (SUCCESS);
 #endif
 } /* pipe_lock */
 
@@ -218,7 +260,7 @@ static void *pipe_open(char *name, uint32_t flags)
  * @return: Number of bytes written on this pipe.
  * This function will write data on pipe.
  */
-static uint32_t pipe_write(void *fd, char *data, uint32_t nbytes)
+static int32_t pipe_write(void *fd, char *data, int32_t nbytes)
 {
     PIPE *pipe = (PIPE *)fd;
     uint32_t required_space, part_size;
@@ -310,11 +352,11 @@ static uint32_t pipe_write(void *fd, char *data, uint32_t nbytes)
  * @return: Number of bytes read from the pipe.
  * This function will read data from a pipe.
  */
-static uint32_t pipe_read(void *fd, char *buffer, uint32_t size)
+static int32_t pipe_read(void *fd, char *buffer, uint32_t size)
 {
     PIPE *pipe = (PIPE *)fd;
     MSG_DATA *message;
-    uint32_t nbytes = 0, message_size;
+    int32_t nbytes = 0, message_size;
     uint32_t part_size;
 
     /* Get the current message. */

@@ -11,6 +11,9 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 
+#ifndef _ASSERT_H_
+#define _ASSERT_H_
+
 #include <os.h>
 
 #define ASSERT_FILE_INFO
@@ -37,3 +40,5 @@
 
 /* Function prototypes. */
 void system_assert(int32_t, char *, uint32_t, TASK *);
+
+#endif /* _ASSERT_H_ */

@@ -24,7 +24,7 @@ static CONSOLE_DATA console_data;
 /* Function prototypes. */
 static void *console_open(char *, uint32_t);
 static void console_unlock(void *fd);
-static void console_lock(void *fd);
+static int32_t console_lock(void *fd);
 
 /* File system definition. */
 FS console_fs =
@@ -75,19 +75,21 @@ void console_register(CONSOLE *console)
     scheduler_lock();
 #else
     /* Obtain the global data lock. */
-    semaphore_obtain(&console_data.lock, MAX_WAIT);
+    OS_ASSERT(semaphore_obtain(&console_data.lock, MAX_WAIT) != SUCCESS);
 
     /* Create a semaphore to protect this console device. */
     memset(&console->lock, 0, sizeof(SEMAPHORE));
     semaphore_create(&console->lock, 1, 1, SEMAPHORE_PRIORITY);
 #endif
 
+    /* This utility is called by drivers for registering consoles for the
+     * applicable devices, so no need to check for name conflicts. */
     /* Just push this file system in the list. */
     sll_push(&console_data.list, console, OFFSETOF(CONSOLE, fs.next));
 
     /* Initialize console FS data. */
     console->fs.get_lock = console_lock;
-    console->fs.release_lock = console_unlock,
+    console->fs.release_lock = console_unlock;
 
 #ifdef CONFIG_SEMAPHORE
     /* Release the global data lock. */
@@ -96,7 +98,46 @@ void console_register(CONSOLE *console)
     /* Enable scheduling. */
     scheduler_unlock();
 #endif
-}
+
+} /* console_register */
+
+/*
+ * console_unregister
+ * @console: Console data.
+ * This function will unregister a console.
+ */
+void console_unregister(CONSOLE *console)
+{
+#ifndef CONFIG_SEMAPHORE
+    /* Lock the scheduler. */
+    scheduler_lock();
+#else
+    /* Obtain the global data lock. */
+    OS_ASSERT(semaphore_obtain(&console_data.lock, MAX_WAIT) != SUCCESS);
+
+    /* Obtain the lock for the console needed to be unregistered. */
+    if (semaphore_obtain(&console->lock, MAX_WAIT) == SUCCESS)
+    {
+#endif
+        /* Resume all tasks waiting on this file descriptor. */
+        fs_resume_all((void *)console);
+
+        /* Delete the console lock. */
+        semaphore_destroy(&console->lock);
+
+        /* Just push this file system in the list. */
+        sll_remove(&console_data.list, console, OFFSETOF(CONSOLE, fs.next));
+
+#ifdef CONFIG_SEMAPHORE
+        /* Release the global data lock. */
+        semaphore_release(&console_data.lock);
+    }
+#else
+    /* Enable scheduling. */
+    scheduler_unlock();
+#endif
+
+} /* console_unregister */
 
 /*
  * console_open
@@ -111,7 +152,7 @@ static void *console_open(char *name, uint32_t flags)
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data lock. */
-    semaphore_obtain(&console_data.lock, MAX_WAIT);
+    OS_ASSERT(semaphore_obtain(&console_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
     /* Initialize a search parameter. */
@@ -154,14 +195,17 @@ static void *console_open(char *name, uint32_t flags)
  * @fd: File descriptor for the console.
  * This function will get the lock for a given console.
  */
-static void console_lock(void *fd)
+static int32_t console_lock(void *fd)
 {
 #ifdef CONFIG_SEMAPHORE
     /* Obtain data lock for this console. */
-    semaphore_obtain(&((CONSOLE *)fd)->lock, MAX_WAIT);
+    return semaphore_obtain(&((CONSOLE *)fd)->lock, MAX_WAIT);
 #else
     /* Lock scheduler. */
     scheduler_lock();
+
+    /* Return success. */
+    return (SUCCESS);
 #endif
 } /* console_lock */
 

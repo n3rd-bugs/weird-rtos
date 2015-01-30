@@ -41,9 +41,9 @@ static CONSOLE usart_1 =
  * @nbytes: Number of bytes to be printed from the string.
  * This function prints a string on the UART1.
  */
-uint32_t usart_stm32f407_puts(void *priv_data, char *buf, uint32_t nbytes)
+int32_t usart_stm32f407_puts(void *priv_data, char *buf, int32_t nbytes)
 {
-    uint32_t to_print = nbytes;
+    int32_t to_print = nbytes;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(priv_data);
@@ -116,10 +116,10 @@ void usart_stm32f407_init()
 {
     uint32_t temp, integral, fractional;
 
-    /* Enable APB peripheral clock. */
+    /* Enable clock for USART1. */
     RCC->APB2ENR |= 0x10;
 
-    /* Enable APB peripheral clock. */
+    /* Enable clock for GPIOB. */
     RCC->AHB1ENR |= 0x02;
 
     /* Set alternate function for the PB6 (TX) and PB7 (RX). */
@@ -137,7 +137,7 @@ void usart_stm32f407_init()
     GPIOB->PUPDR &= ~((GPIO_PUPDR_PUPDR0 << (5 * 2)) | (GPIO_PUPDR_PUPDR0 << (6 * 2)));
     GPIOB->PUPDR |= ((0x01 << (5 * 2)) | (0x01 << (6 * 2)));
 
-    /* Select USART1 as Alternate function for these devices. */
+    /* Select USART1 as Alternate function for these pins. */
     GPIOB->AFR[(0x6 >> 0x03)] &= ~(0xF << (0x6 * 4)) ;
     GPIOB->AFR[(0x7 >> 0x03)] &= ~(0xF << (0x07 * 4)) ;
     GPIOB->AFR[(0x6 >> 0x03)] |= (0x7 << (0x6 * 4));
@@ -161,7 +161,7 @@ void usart_stm32f407_init()
     temp |= ((((fractional * 16) + 50) / 100)) & (0x0F);
     USART1->BRR = temp;
 
-    /* Enable USART. */
+    /* Enable USART1. */
     USART1->CR1 |= USART_CR1_UE;
 
 #ifdef FS_CONSOLE
