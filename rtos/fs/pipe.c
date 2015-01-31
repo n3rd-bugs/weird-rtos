@@ -24,8 +24,6 @@ static PIPE_DATA pipe_data;
 static int32_t pipe_lock(void *fd);
 static void pipe_unlock(void *fd);
 static void *pipe_open(char *name, uint32_t flags);
-static int32_t pipe_write(void *fd, char *data, int32_t nbytes);
-static int32_t pipe_read(void *fd, char *buffer, uint32_t size);
 
 /* File system definition. */
 FS pipe_fs =
@@ -144,7 +142,7 @@ void pipe_destroy(PIPE *pipe)
     {
 #endif
         /* Resume all tasks waiting on this file descriptor. */
-        fs_resume_all((void *)pipe);
+        fs_resume_tasks((void *)pipe, FS_NODE_DELETED, NULL, (uint32_t)-1);
 
         /* Delete the pipe semaphore. */
         semaphore_destroy(&pipe->lock);
@@ -260,7 +258,7 @@ static void *pipe_open(char *name, uint32_t flags)
  * @return: Number of bytes written on this pipe.
  * This function will write data on pipe.
  */
-static int32_t pipe_write(void *fd, char *data, int32_t nbytes)
+int32_t pipe_write(void *fd, char *data, int32_t nbytes)
 {
     PIPE *pipe = (PIPE *)fd;
     uint32_t required_space, part_size;
@@ -274,10 +272,10 @@ static int32_t pipe_write(void *fd, char *data, int32_t nbytes)
 
     /* First check if we can push more data on pipe. */
     if ( (!(message->flags & PIPE_MSG_VALID)) ||
-         ((pipe->free > pipe->message) &&
-          ((pipe->free + required_space) < (pipe->size + pipe->message))) ||
+         (((pipe->free > pipe->message) &&
+           ((pipe->free + required_space) < (pipe->size + pipe->message))) ||
           ((pipe->free < pipe->message) &&
-           ((pipe->free + required_space) < pipe->message)) )
+           ((pipe->free + required_space) < pipe->message))) )
     {
         /* Push the message header. */
         message = (MSG_DATA *)(&pipe->data[pipe->free]);
@@ -330,8 +328,19 @@ static int32_t pipe_write(void *fd, char *data, int32_t nbytes)
         /* Set the message flag as valid. */
         message->flags |= PIPE_MSG_VALID;
 
-        /* We have a message in this pipe. */
-        fd_data_available(fd, NULL);
+        /* Check if we cannot push a message on this PIPE. */
+        if ( (message->flags & PIPE_MSG_VALID) &&
+             (((pipe->free > pipe->message) &&
+               ((pipe->free + sizeof(MSG_DATA)) >= (pipe->size + pipe->message))) ||
+              ((pipe->free < pipe->message) &&
+               ((pipe->free + sizeof(MSG_DATA)) >= pipe->message))) )
+        {
+            /* There is no more space on this PIPE. */
+            fd_space_consumed(fd);
+        }
+
+        /* There is some data available to be read on this file descriptor. */
+        fd_data_available(fd);
     }
     else
     {
@@ -352,7 +361,7 @@ static int32_t pipe_write(void *fd, char *data, int32_t nbytes)
  * @return: Number of bytes read from the pipe.
  * This function will read data from a pipe.
  */
-static int32_t pipe_read(void *fd, char *buffer, uint32_t size)
+int32_t pipe_read(void *fd, char *buffer, uint32_t size)
 {
     PIPE *pipe = (PIPE *)fd;
     MSG_DATA *message;
@@ -412,6 +421,9 @@ static int32_t pipe_read(void *fd, char *buffer, uint32_t size)
             /* Tell the file system that this pipe is now flushed */
             fd_data_flushed(fd);
         }
+
+        /* There is some space available in the PIPE. */
+        fd_space_available(fd);
     }
 
     /* Return number of bytes. */

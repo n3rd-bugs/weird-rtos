@@ -58,7 +58,7 @@ void semaphore_destroy(SEMAPHORE *semaphore)
     while (tcb != NULL)
     {
         /* Task is being resumed because the given semaphore is being deleted. */
-        tcb->status = TASK_RESUME_ERROR;
+        tcb->status = SEMAPHORE_DELETED;
 
 #ifdef CONFIG_SLEEP
         /* Remove this task from sleeping tasks. */
@@ -168,10 +168,10 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
                     break;
                 }
 
-                else if (tcb->status == TASK_RESUME_ERROR)
+                else if (tcb->status != TASK_RESUME)
                 {
                     /* Given semaphore has been deleted. */
-                    status = SEMAPHORE_DELETED;
+                    status = tcb->status;
 
                     /* The given context has been deleted. */
                     break;

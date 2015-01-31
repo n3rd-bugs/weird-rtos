@@ -261,11 +261,12 @@ void fs_close(FD *fd)
 
 /*
  * fs_read
- * @fd: File descriptor.
- * @buffer: Data buffer.
+ * @fd: File descriptor from which data is needed to be read.
+ * @buffer: Buffer in which data is needed to be read.
  * @nbytes: Number of bytes that can be read in the provided buffer.
- * @return: >0: number of bytes actually read in the given buffer,
- *  FS_NODE_DELETED if file node was deleted during waiting for read.
+ * @return: >0 number of bytes actually read in the given buffer,
+ *  FS_NODE_DELETED if file node was deleted during waiting for read,
+ *  FS_READ_TIMEOUT if no data was received before the given timeout.
  * This function will read data from a file descriptor.
  */
 int32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
@@ -274,7 +275,6 @@ int32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
 #ifdef CONFIG_SLEEP
     uint32_t last_tick = current_system_tick();
 #endif
-    TASK *tcb;
 
     if (((FS *)fd)->get_lock)
     {
@@ -288,25 +288,12 @@ int32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
         /* Check if a read function was registered with this descriptor */
         if ((((FS *)fd)->read != NULL))
         {
-            /* Check if we need to block on read for this FS and there is no data on
-             * the socket, and this is being called from a task. */
+            /* Check if we need to block on read for this FS and there is no
+             * data on the descriptor and we are in a task. */
             if ((!(((FS *)fd)->flags & FS_DATA_AVAILABLE)) &&
                 (((FS *)fd)->flags & FS_BLOCK) &&
                 (current_task))
             {
-                /* Get executing task. */
-                tcb = get_current_task();
-
-    #ifdef CONFIG_SLEEP
-                /* Check if we need to wait for a finite time. */
-                if (((FS *)fd)->timeout != (uint32_t)(MAX_WAIT))
-                {
-                    /* Add the current task to the sleep list, if data is not
-                     * available in the allowed time the task will be resumed. */
-                    sleep_add_to_list(tcb, ((FS *)fd)->timeout);
-                }
-    #endif /* CONFIG_SLEEP */
-
                 /* There is never a surety that if some data is available and
                  * picked up by a waiting task as scheduler might decide to run
                  * some other higher/same priority task and data can get consumed
@@ -315,78 +302,25 @@ int32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
                  * schedulers are present. */
                 do
                 {
-    #ifdef CONFIG_SLEEP
-                    /* Check if we need to wait for a finite time. */
-                    if (((FS *)fd)->timeout != (uint32_t)(MAX_WAIT))
+#ifdef CONFIG_SLEEP
+                    if (((FS *)fd)->timeout != (uint32_t)MAX_WAIT)
                     {
-                        /* Add the current task to the sleep list, if not available in
-                         * the allowed time the task will be resumed. */
-                        sleep_add_to_list(tcb, ((FS *)fd)->timeout - (current_system_tick() - last_tick));
+                        /* If called again compensate for the time we have already waited. */
+                        ((FS *)fd)->timeout -= (current_system_tick() - last_tick);
 
                         /* Save when we suspended last time. */
                         last_tick = current_system_tick();
                     }
-    #endif /* CONFIG_SLEEP */
+#endif
 
-                    /* If we need to sort the list on priority. */
-                    if (((FS *)fd)->flags & FS_PRIORITY_SORT)
+                    /* Wait for data on this file descriptor. */
+                    read = fd_suspend_criteria(fd, FS_BLOCK_READ, ((FS *)fd)->timeout);
+
+                    /* If an error has occurred. */
+                    if (read != SUCCESS)
                     {
-                        /* Add this task on the file descriptor task list. */
-                        sll_insert(&((FS *)fd)->task_list, tcb, &task_priority_sort, OFFSETOF(TASK, next));
-                    }
-
-                    else
-                    {
-                        /* Add this task at the end of task list. */
-                        sll_append(&((FS *)fd)->task_list, tcb, OFFSETOF(TASK, next));
-                    }
-
-                    /* We need to suspend so disable preemption and release the lock
-                     * this way releasing the lock will not pass the control to
-                     * next task. */
-
-                    /* Disable preemption. */
-                    scheduler_lock();
-
-                    if (((FS *)fd)->release_lock)
-                    {
-                        /* Release lock for this file descriptor. */
-                        ((FS *)fd)->release_lock((void *)fd);
-                    }
-
-                    /* Task is being suspended. */
-                    tcb->status = TASK_SUSPENDED;
-
-                    /* Wait for either being resumed by some data or timeout. */
-                    task_waiting();
-
-                    /* Check if we are resumed due to a timeout. */
-                    if (tcb->status == TASK_RESUME_SLEEP)
-                    {
-                        /* Remove this task from the file descriptor task list. */
-                        sll_remove(&((FS *)fd)->task_list, tcb, OFFSETOF(TASK, next));
-                    }
-
-                    /* Enable preemption. */
-                    scheduler_unlock();
-
-                    if (tcb->status == TASK_RESUME_ERROR)
-                    {
-                        /* The file node is being deleted. */
-                        read = FS_NODE_DELETED;
+                        /* Break out of this loop. */
                         break;
-                    }
-
-                    if (((FS *)fd)->get_lock)
-                    {
-                        /* Get lock for this file descriptor. */
-                        read = ((FS *)fd)->get_lock((void *)fd);
-
-                        /* If we were not able to get the lock. */
-                        if (read != SUCCESS)
-                        {
-                            break;
-                        }
                     }
 
                 } while (!(((FS *)fd)->flags & FS_DATA_AVAILABLE));
@@ -397,11 +331,17 @@ int32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
             {
                 /* Transfer call to underlying API. */
                 read = ((FS *)fd)->read((void *)fd, buffer, nbytes);
+
+                /* Some data is still available. */
+                if (((FS *)fd)->flags & FS_DATA_AVAILABLE)
+                {
+                    /* Resume any task waiting on this file descriptor. */
+                    fd_handle_criteria(fd, FS_BLOCK_READ);
+                }
             }
         }
 
-        if ((read != SEMAPHORE_DELETED) && (read != FS_NODE_DELETED) &&
-            (((FS *)fd)->release_lock))
+        if ((read != FS_NODE_DELETED) && (((FS *)fd)->release_lock))
         {
             /* Release lock for this file descriptor. */
             ((FS *)fd)->release_lock((void *)fd);
@@ -415,14 +355,17 @@ int32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
 
 /*
  * fs_write
- * @fd: File descriptor.
- * @buffer: Data buffer.
+ * @fd: File descriptor on which data is needed to be written.
+ * @buffer: Data buffer needed to be sent.
  * @nbytes: Number of bytes to write.
  * This function will write data on a file descriptor.
  */
 int32_t fs_write(FD fd, char *buffer, uint32_t nbytes)
 {
     int32_t written = SUCCESS;
+#ifdef CONFIG_SLEEP
+    uint32_t last_tick = current_system_tick();
+#endif
 
     if (((FS *)fd)->get_lock)
     {
@@ -436,8 +379,56 @@ int32_t fs_write(FD fd, char *buffer, uint32_t nbytes)
         /* Check if a write function was registered with this descriptor. */
         if (((FS *)fd)->write != NULL)
         {
-            /* Transfer call to underlying API. */
-            written = ((FS *)fd)->write((void *)fd, buffer, nbytes);
+            /* Check if we need to block on write for this FS and there is no
+             * space in FD and we are in a task. */
+            if ((((FS *)fd)->flags & FS_NO_MORE_SPACE) &&
+                (((FS *)fd)->flags & FS_BLOCK) &&
+                (current_task))
+            {
+                /* There is never a surety that if some space is available and
+                 * consumed up by a waiting task as scheduler might decide to run
+                 * some other higher/same priority task and spaced can get consumed
+                 * by it before this waiting task can get it. */
+                /* This is not a bug and happen in a RTOS where different types of
+                 * schedulers are present. */
+                do
+                {
+#ifdef CONFIG_SLEEP
+                    if (((FS *)fd)->timeout != (uint32_t)MAX_WAIT)
+                    {
+                        /* If called again compensate for the time we have already waited. */
+                        ((FS *)fd)->timeout -= (current_system_tick() - last_tick);
+
+                        /* Save when we suspended last time. */
+                        last_tick = current_system_tick();
+                    }
+#endif
+                    /* Wait for space on this file descriptor. */
+                    written = fd_suspend_criteria(fd, FS_BLOCK_WRITE, ((FS *)fd)->timeout);
+
+                    /* If an error has occurred. */
+                    if (written != SUCCESS)
+                    {
+                        /* Break out of this loop. */
+                        break;
+                    }
+
+                } while (((FS *)fd)->flags & FS_NO_MORE_SPACE);
+            }
+
+            /* Check if some space is available. */
+            if ((written == SUCCESS) && !(((FS *)fd)->flags & FS_NO_MORE_SPACE))
+            {
+                /* Transfer call to underlying API. */
+                written = ((FS *)fd)->write((void *)fd, buffer, nbytes);
+
+                /* Some space is still available. */
+                if (!(((FS *)fd)->flags & FS_NO_MORE_SPACE))
+                {
+                    /* Resume any task waiting on this file descriptor. */
+                    fd_handle_criteria(fd, FS_BLOCK_WRITE);
+                }
+            }
         }
 
         if (((FS *)fd)->release_lock)
@@ -497,15 +488,15 @@ int32_t fs_ioctl(FD fd, uint32_t cmd, void *param)
  * @return: TRUE if we need to resume this task, FALSE if we cannot resume
  *  this task.
  * This is a search function to search a task that satisfy the suspension
- * criteria set by underlying file system.
+ * criteria.
  */
 static uint8_t fd_sreach_task(void *node, void *param)
 {
     FS_PARAM *fs_param = (FS_PARAM *)param;
     uint32_t match = FALSE;
 
-    /* Call the FS function to see if we can resume this task. */
-    if (((FS *)fs_param->fs)->should_resume(fs_param->fs, fs_param->param, ((TASK *)node)->suspend_data))
+    /* Check if the waiting task fulfills our criteria. */
+    if ((FS *)fs_param->flag && ((FS_PARAM *)((TASK *)node)->suspend_data)->flag)
     {
         /* Got an match. */
         match = TRUE;
@@ -517,58 +508,121 @@ static uint8_t fd_sreach_task(void *node, void *param)
 } /* fs_sreach_task */
 
 /*
- * fd_data_available
- * @fd: File descriptor for which new data is available.
- * @param: If required a parameter can be passed to check if a task is eligible
- *  for resumption.
- * This function will set the data available flag for a file descriptor
- * and resume any tasks waiting for it. Caller must have the lock for FS before
- * calling this routine.
+ * fd_suspend_criteria
+ * @fd: File descriptor on which task is needed to be suspended to wait for a
+ *  criteria.
+ * @flag: Flag to specify the criteria.
+ * @timeout: Number of ticks to wait, or use MAX_WAIT to wait indefinitely.
+ * @return: SUCCESS if criteria was successfully achieved, FS_TIMEOUT will be
+ *  returned if a timeout was occurred while waiting for the giver criteria,
+ *  or a status will be returned as returned in the task.
+ * This function will suspend the caller task to wait for a criteria. Caller
+ * must have acquired the FD lock before calling this routine, if required
+ * lock will be released, if successful will be again acquired.
  */
-void fd_data_available(void *fd, FS_PARAM *param)
+int32_t fd_suspend_criteria(void *fd, uint32_t flag, uint32_t timeout)
 {
     TASK *tcb = NULL;
+    FS_PARAM fs_param;
+    uint32_t status = SUCCESS;
 
-    /* Set flag that some data is available. */
-    ((FS *)fd)->flags |= FS_DATA_AVAILABLE;
-
-    /* If a parameter was given. */
-    if (param != NULL)
+#ifdef CONFIG_SLEEP
+    /* Check if we need to wait for a finite time. */
+    if (timeout != (uint32_t)(MAX_WAIT))
     {
-        /* Push this FS on the parameter. */
-        param->fs = fd;
+        /* Add the current task to the sleep list, if not available in
+         * the allowed time the task will be resumed. */
+        sleep_add_to_list(tcb, ((FS *)fd)->timeout - current_system_tick());
+    }
+#endif /* CONFIG_SLEEP */
 
-        /* Search for a task that can be resumed. */
-        tcb = (TASK *)sll_search_pop(&((FS *)fd)->task_list, fd_sreach_task, param, OFFSETOF(TASK, next));
+    /* Get the executing task. */
+    tcb = get_current_task();
+
+    /* If we need to sort the list on priority. */
+    if (((FS *)fd)->flags & FS_PRIORITY_SORT)
+    {
+        /* Add this task on the file descriptor task list. */
+        sll_insert(&((FS *)fd)->task_list, tcb, &task_priority_sort, OFFSETOF(TASK, next));
     }
 
     else
     {
-        /* Get the first task that can be executed. */
-        tcb = (TASK *)sll_pop(&((FS *)fd)->task_list, OFFSETOF(TASK, next));
+        /* Add this task at the end of task list. */
+        sll_append(&((FS *)fd)->task_list, tcb, OFFSETOF(TASK, next));
     }
 
-    /* If we have a task that can be resumed. */
-    if (tcb)
+    /* We need to suspend so disable preemption and release the lock
+     * this way releasing the lock will not pass the control to
+     * next task. */
+
+    /* Disable preemption. */
+    scheduler_lock();
+
+    if (((FS *)fd)->release_lock)
     {
-        /* Task is resuming as some data is now available. */
-        tcb->status = TASK_RESUME;
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
 
-#ifdef CONFIG_SLEEP
-        /* Remove this task from sleeping tasks. */
-        sleep_remove_from_list(tcb);
-#endif /* CONFIG_SLEEP */
+    /* Task is being suspended. */
+    tcb->status = TASK_SUSPENDED;
 
-        /* Try to reschedule this task. */
-        ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
+    /* Assign the suspension data to the task. */
+    fs_param.flag = flag;
+    tcb->suspend_data = (void *)&fs_param;
 
-        /* This function might have been called from an IRQ. */
-        if (current_task)
+    /* Wait for either being resumed by some data or timeout. */
+    task_waiting();
+
+    /* Check if we are resumed due to a timeout. */
+    if (tcb->status == TASK_RESUME_SLEEP)
+    {
+        /* Return an error that we were failed to receive data
+         * before given timeout. */
+        status = FS_TIMEOUT;
+
+        /* Remove this task from the file descriptor task list. */
+        sll_remove(&((FS *)fd)->task_list, tcb, OFFSETOF(TASK, next));
+    }
+
+    else if (tcb->status != TASK_RESUME)
+    {
+        /* Return the error returned by the task. */
+        status = tcb->status;
+    }
+
+    /* Enable preemption. */
+    scheduler_unlock();
+
+    /* If we are not returning an error. */
+    if (status == SUCCESS)
+    {
+        if (((FS *)fd)->get_lock)
         {
-            /* Yield the current task and schedule the new task if required. */
-            task_yield();
+            /* Get lock for this file descriptor. */
+            OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
         }
     }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* fd_suspend_criteria */
+
+/*
+ * fd_data_available
+ * @fd: File descriptor on which some data is available to read.
+ * This function will be called be underlying file system to tell that there
+ * is some data available to be read on this file descriptor.
+ */
+void fd_data_available(void *fd)
+{
+    /* Set flag that some data is available. */
+    ((FS *)fd)->flags |= FS_DATA_AVAILABLE;
+
+    /* Resume a task if any waiting on read on this file descriptor. */
+    fd_handle_criteria(fd, FS_BLOCK_READ);
 
 } /* fd_data_available */
 
@@ -586,41 +640,114 @@ void fd_data_flushed(void *fd)
 } /* fd_data_flushed */
 
 /*
- * fs_resume_all
- * @fs: File system for which all waiting tasks are needed to be resumed.
- * This function will resume all the tasks waiting on an file descriptor with
- * an error.
+ * fd_space_available
+ * @fs: File descriptor for which there is data space is available.
+ * This function will clear the FD flag that is there is some space available
+ * that can now be used, and resume any tasks waiting on this.
  */
-void fs_resume_all(void *fd)
+void fd_space_available(void *fd)
 {
-    /* Get the first task that can be resumed. */
-    TASK *tcb = (TASK *)sll_pop(&((FS *)fd)->task_list, OFFSETOF(TASK, next));
+    /* Set flag that some data is available. */
+    ((FS *)fd)->flags &= ~(FS_NO_MORE_SPACE);
 
-    /* Resume all tasks in this list. */
-    while (tcb)
+    /* Resume a task if any waiting on write for this file descriptor. */
+    fd_handle_criteria(fd, FS_BLOCK_WRITE);
+
+} /* fd_space_available */
+
+/*
+ * fd_space_consumed
+ * @fs: File descriptor for which there is no more space.
+ * This function will set the no space available flag for a given file
+ * descriptor. Caller must have the lock for FS before calling this routine.
+ */
+void fd_space_consumed(void *fd)
+{
+    /* Set the flag that there is no more space in this FD. */
+    ((FS *)fd)->flags |= FS_NO_MORE_SPACE;
+
+} /* fd_space_consumed */
+
+/*
+ * fd_handle_criteria
+ * @fd: File descriptor for which a criteria is needed to be handled.
+ * @flag: Flag to specify a criteria.
+ * This function will update and handle criteria for an FD, also resumes a
+ * task waiting for given criteria.
+ */
+void fd_handle_criteria(void *fd, uint32_t flag)
+{
+    TASK *tcb = NULL;
+    FS_PARAM fs_param;
+
+    /* Update the criteria for this fd. */
+    fs_param.flag = flag;
+
+    /* Resume first task waiting on this file descriptor. */
+    fs_resume_tasks(fd, TASK_RESUME, &fs_param, 1);
+
+} /* fd_handle_criteria */
+
+/*
+ * fs_resume_tasks
+ * @fs: File system for which waiting task(s) is needed to be resumed.
+ * @status: Status to be returned.
+ * @param: Search parameter to be used.
+ * @n: Number of tasks to be resumed from the head.
+ * This function will resume n tasks waiting on a FS.
+ */
+void fs_resume_tasks(void *fd, int32_t status, FS_PARAM *param, uint32_t n)
+{
+    TASK *tcb;
+
+    /* Resume n tasks in this list. */
+    while (n > 0)
     {
-        /* Task is resuming because of an error. */
-        tcb->status = TASK_RESUME_ERROR;
-
-#ifdef CONFIG_SLEEP
-        /* Remove this task from sleeping tasks. */
-        sleep_remove_from_list(tcb);
-#endif /* CONFIG_SLEEP */
-
-        /* Try to reschedule this task. */
-        ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
-
-        /* This function might have been called from an IRQ. */
-        if (current_task)
+        /* If a parameter was given. */
+        if (param != NULL)
         {
-            /* Yield the current task and schedule the new task if required. */
-            task_yield();
+
+            /* Search for a task that can be resumed. */
+            tcb = (TASK *)sll_search_pop(&((FS *)fd)->task_list, fd_sreach_task, param, OFFSETOF(TASK, next));
         }
 
-        /* Get the next task that can be resumed. */
-        tcb = (TASK *)sll_pop(&((FS *)fd)->task_list, OFFSETOF(TASK, next));
+        else
+        {
+            /* Get the first task that can be executed. */
+            tcb = (TASK *)sll_pop(&((FS *)fd)->task_list, OFFSETOF(TASK, next));
+        }
+
+        /* If we have a task to resume. */
+        if (tcb)
+        {
+            /* Task is resuming because of an error. */
+            tcb->status = status;
+
+#ifdef CONFIG_SLEEP
+            /* Remove this task from sleeping tasks. */
+            sleep_remove_from_list(tcb);
+#endif /* CONFIG_SLEEP */
+
+            /* Try to reschedule this task. */
+            ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
+
+            /* This function might have been called from an IRQ. */
+            if (current_task)
+            {
+                /* Yield the current task and schedule the new task if required. */
+                task_yield();
+            }
+
+            /* A task has been processed. */
+            n--;
+        }
+        else
+        {
+            /* No more tasks left break out of this loop. */
+            break;
+        }
     }
 
-} /* fs_resume_all */
+} /* fs_resume_tasks */
 
 #endif /* CONFIG_FS */

@@ -25,17 +25,23 @@
 #define FS_PIPE
 #define FS_CONSOLE
 
-
 /* Error definitions. */
 #define FS_NODE_DELETED     -801
+#define FS_TIMEOUT          -802
 
 /* File descriptor definitions. */
 typedef void *FD;
 
 /* File system specific flags. */
-#define FS_BLOCK            0x0001000
-#define FS_PRIORITY_SORT    0x0002000
-#define FS_DATA_AVAILABLE   0x0000001
+#define FS_BLOCK            0x00010000
+#define FS_PRIORITY_SORT    0x00020000
+#define FS_BUFFERED         0x00040000
+#define FS_DATA_AVAILABLE   0x00000001
+#define FS_NO_MORE_SPACE    0x00000002
+
+/* Suspend flags. */
+#define FS_BLOCK_READ       0x00000001
+#define FS_BLOCK_WRITE      0x00000002
 
 /* File system descriptor. */
 typedef struct _fs FS;
@@ -57,7 +63,6 @@ struct _fs
     /* Driver operations. */
     int32_t     (*get_lock) (void *);
     void        (*release_lock) (void *);
-    uint32_t    (*should_resume) (void *, void *, void *);
 
     /* File system specific flags. */
     uint32_t    flags;
@@ -74,12 +79,9 @@ struct _fs
 };
 
 /* This holds the resumption criteria for a task waiting on an FS. */
-/* This parameter structure should be at head of the parameter passed in when
- * data is available. */
 typedef struct _fs_param
 {
-    void        *fs;
-    void        *param;
+    uint32_t    flag;
 } FS_PARAM;
 
 /* File system list. */
@@ -133,15 +135,19 @@ int32_t fs_write(FD, char *, uint32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
 /* File system functions. */
-void fs_register(FS *file_system);
-void fs_unregister(FS *file_system);
-void fd_data_available(void *fs, FS_PARAM *param);
-void fd_data_flushed(void *fs);
-void fs_resume_all(void *fd);
+void fs_register(FS *);
+void fs_unregister(FS *);
+void fd_data_available(void *);
+void fd_data_flushed(void *);
+void fd_space_available(void *);
+void fd_space_consumed(void *);
+void fd_handle_criteria(void *, uint32_t);
+int32_t fd_suspend_criteria(void *, uint32_t, uint32_t);
+void fs_resume_tasks(void *, int32_t, FS_PARAM *, uint32_t);
 
 /* Helper APIs. */
-uint8_t fs_sreach_directory(void *node, void *param);
-uint8_t fs_sreach_node(void *node, void *param);
+uint8_t fs_sreach_directory(void *, void *);
+uint8_t fs_sreach_node(void *, void *);
 
 /* Include sub modules. */
 #ifdef FS_PIPE

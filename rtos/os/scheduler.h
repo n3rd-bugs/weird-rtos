@@ -36,7 +36,6 @@
 #define TASK_SUSP_SEMAPHORE         3
 #define TASK_SUSP_FILE              4
 #define TASK_RESUME_SLEEP           5
-#define TASK_RESUME_ERROR           6
 
 /* Scheduler class definition. */
 typedef struct _scheduler SCHEDULER;

@@ -56,7 +56,7 @@ typedef struct _pipe
     uint32_t    free;
 } PIPE;
 
-/* Pipe data. */
+/* Pipe data, used to maintain global PIPE data. */
 typedef struct _pipe_data
 {
     /* Pipe list. */
@@ -77,6 +77,10 @@ typedef struct _pipe_data
 void pipe_init();
 void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size);
 void pipe_destroy(PIPE *pipe);
+
+/* If user wants to use a pipe as a circular buffer. */
+int32_t pipe_write(void *fd, char *data, int32_t nbytes);
+int32_t pipe_read(void *fd, char *buffer, uint32_t size);
 
 #endif /* FS_PIPE */
 #endif /* PIPE_H */
