@@ -346,7 +346,7 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
                 /* If there is some space on this file descriptor. */
                 if ((!(((FS *)fd)->flags & FS_NO_MORE_SPACE)) && (((FS *)fd)->space_available))
                 {
-                    /* Some space is still available. */
+                    /* Resume any tasks waiting for space on this file descriptor. */
                     fd_space_available(fd, ((FS *)fd)->space_available(fd));
                 }
             }
@@ -444,7 +444,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                 }
 
                 /* Check if some space is available. */
-                if ((written == SUCCESS) && !(((FS *)fd)->flags & FS_NO_MORE_SPACE))
+                if ((written == SUCCESS) && (!(((FS *)fd)->flags & FS_NO_MORE_SPACE)))
                 {
                     /* Transfer call to underlying API. */
                     written = ((FS *)fd)->write((void *)fd, buffer, nbytes);
@@ -459,6 +459,13 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                     buffer += written;
                 }
 
+                /* If an error has occurred. */
+                else if (written != SUCCESS)
+                {
+                    /* Break out of this loop. */
+                    break;
+                }
+
             } while ((((FS *)fd)->flags & FS_FLUSH_WRITE) && (nbytes > 0));
 
             /* Some data is available. */
@@ -471,7 +478,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
             /* Some space is still available. */
             if (!(((FS *)fd)->flags & FS_NO_MORE_SPACE) && (((FS *)fd)->space_available))
             {
-                /* Some space is still available. */
+                /* Resume any tasks waiting for space on this file descriptor. */
                 fd_space_available(fd, ((FS *)fd)->space_available(fd));
             }
         }
