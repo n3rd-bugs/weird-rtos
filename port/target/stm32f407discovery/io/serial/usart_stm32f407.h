@@ -15,12 +15,6 @@
 
 #include <os.h>
 
-/* Hook-up the STDIO printf function. */
-#ifdef printf
-#undef printf
-#endif
-#define printf usart_stm32f407_printf
-
 /* Used by console file system to initialize DEBUG console. */
 #define DEBUG_CONSOLE_INIT  usart_stm32f407_init
 
@@ -29,7 +23,6 @@
 
 /* Function prototypes. */
 int32_t usart_stm32f407_puts(void *priv_data, char *buf, int32_t nbytes);
-int32_t usart_stm32f407_printf(char *format, ...);
 void usart_stm32f407_init();
 
 #endif /* _USART_STM32F407_H_ */

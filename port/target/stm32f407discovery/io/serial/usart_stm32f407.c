@@ -10,15 +10,12 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-
-#include <stdio.h>
 #include <os.h>
 #include <string.h>
-#include <stdarg.h>
 
 #ifdef FS_CONSOLE
 /* Debug file descriptor. */
-static FD debug_fd = NULL;
+FD debug_usart_fd = NULL;
 
 /* Console data. */
 static CONSOLE usart_1 =
@@ -71,42 +68,6 @@ int32_t usart_stm32f407_puts(void *priv_data, char *buf, int32_t nbytes)
     return (to_print - nbytes);
 
 } /* usart_stm32f407_puts */
-
-/*
- * usart_stm32f407_printf
- * @format: Formated string to be printed on USART.
- * This function prints a formated string on the USART1.
- */
-int32_t usart_stm32f407_printf(char *format, ...)
-{
-    int32_t n = 0;
-    char buf[100];
-    va_list vl;
-
-    /* Arguments start from the format. */
-    va_start(vl, format);
-
-    /* Process the given string and save the result in a temporary buffer. */
-    n = vsnprintf(buf, 100, format, vl);
-
-#ifdef FS_CONSOLE
-    /* Assert if debug FD is not yet initialized. */
-    OS_ASSERT(debug_fd == NULL);
-
-    /* Use the debug FD. */
-    n = fs_write(debug_fd, buf, n);
-#else
-    /* Print the result on the UART. */
-    n = usart_stm32f407_puts(NULL, buf, n);
-#endif
-
-    /* Destroy the argument list. */
-    va_end(vl);
-
-    /* Return number of bytes printed on UART. */
-    return (n);
-
-} /* usart_stm32f407_printf */
 
 /*
  * usart_stm32f407_init
@@ -170,7 +131,7 @@ void usart_stm32f407_init()
     console_register(&usart_1);
 
     /* Set debug file descriptor. */
-    debug_fd = fs_open("\\console\\usart1", 0);
+    debug_usart_fd = fs_open("\\console\\usart1", 0);
 
 #endif /* FS_CONSOLE */
 

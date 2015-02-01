@@ -10,7 +10,9 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
+#include <stdio.h>
 #include <os.h>
+#include <stdarg.h>
 
 /* Used to manage 64 bit system clock. */
 uint32_t clock_64_high_32 = 0;
@@ -89,3 +91,52 @@ uint64_t pit_get_clock()
     return (c_val + (TIM2->CNT));
 
 } /* pit_get_clock */
+
+/*
+ * stm32f407_printf
+ * @format: Formated string to be printed on debug console.
+ * @return: Number of bytes printed.
+ * This function prints a formated string on the debug console.
+ */
+int32_t stm32f407_printf(char *format, ...)
+{
+    int32_t n = 0;
+    char buf[100];
+    va_list vl;
+    extern FD debug_usart_fd;
+#ifdef USB_FUN_CDC_AUTO_CONSOLE
+    extern FD debug_cdc_fd;
+#endif
+
+    /* Arguments start from the format. */
+    va_start(vl, format);
+
+    /* Process the given string and save the result in a temporary buffer. */
+    n = vsnprintf(buf, 100, format, vl);
+
+#ifdef FS_CONSOLE
+    /* Assert if debug FD is not yet initialized. */
+    OS_ASSERT(debug_usart_fd == NULL);
+
+    /* Use the debug FD. */
+    n = fs_write(debug_usart_fd, buf, n);
+
+#ifdef USB_FUN_CDC_AUTO_CONSOLE
+    if (debug_cdc_fd != NULL)
+    {
+        /* Also put a copy on the USB CDC console. */
+        n = fs_write(debug_cdc_fd, buf, n);
+    }
+#endif
+#else
+    /* Print the result on the UART. */
+    n = usart_stm32f407_puts(NULL, buf, n);
+#endif
+
+    /* Destroy the argument list. */
+    va_end(vl);
+
+    /* Return number of bytes printed on UART. */
+    return (n);
+
+} /* stm32f407_printf */

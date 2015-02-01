@@ -391,7 +391,8 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
         /* Check if a write function was registered with this descriptor. */
         if (((FS *)fd)->write != NULL)
         {
-            /* Try to write on the descriptor until all the data is sent. */
+            /* If configured try to write on the descriptor until all the
+             * data is sent. */
             do
             {
                 /* If we are in a task. */
@@ -402,7 +403,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                     (((((FS *)fd)->flags & FS_BLOCK) &&
                       (((FS *)fd)->flags & FS_NO_MORE_SPACE)) ||
 
-                    /* Or we need to flush all the data then we should block
+                    /* If we need to flush all the data then we should block
                      * until we have required space. */
                     ((((FS *)fd)->flags & FS_FLUSH_WRITE) &&
                      (((FS *)fd)->space_available) &&
