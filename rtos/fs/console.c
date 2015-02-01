@@ -90,6 +90,7 @@ void console_register(CONSOLE *console)
     /* Initialize console FS data. */
     console->fs.get_lock = console_lock;
     console->fs.release_lock = console_unlock;
+    console->fs.timeout = MAX_WAIT;
 
 #ifdef CONFIG_SEMAPHORE
     /* Release the global data lock. */

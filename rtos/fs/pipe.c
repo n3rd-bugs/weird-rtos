@@ -21,9 +21,10 @@
 static PIPE_DATA pipe_data;
 
 /* Internal function prototypes. */
-static int32_t pipe_lock(void *fd);
-static void pipe_unlock(void *fd);
-static void *pipe_open(char *name, uint32_t flags);
+static int32_t pipe_lock(void *);
+static void pipe_unlock(void *);
+static int32_t pipe_space_available(void *);
+static void *pipe_open(char *, uint32_t );
 
 /* File system definition. */
 FS pipe_fs =
@@ -103,6 +104,7 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
         pipe->fs.timeout = MAX_WAIT;
         pipe->fs.get_lock = pipe_lock;
         pipe->fs.release_lock = pipe_unlock;
+        pipe->fs.space_available = pipe_space_available;
 
 #ifdef CONFIG_SEMAPHORE
         /* Create a semaphore to protect pipe data. */
@@ -197,6 +199,34 @@ static void pipe_unlock(void *fd)
 } /* pipe_unlock */
 
 /*
+ * pipe_space_available
+ * @fd: File descriptor for the pipe.
+ * This function will calculate number of bytes that can be written on this
+ * PIPE.
+ */
+static int32_t pipe_space_available(void *fd)
+{
+    int32_t space = 0;
+
+    /* Calculate number of bytes available. */
+    if (((PIPE *)fd)->free >= ((PIPE *)fd)->message)
+    {
+        /* Tell FS that we still have this much space available. */
+        space = (int32_t)((((PIPE *)fd)->size + ((PIPE *)fd)->message) - (((PIPE *)fd)->free + sizeof(MSG_DATA)));
+    }
+
+    else
+    {
+        /* Tell FS that we still have this much space available. */
+        space = (int32_t)(((PIPE *)fd)->message - (((PIPE *)fd)->free + sizeof(MSG_DATA)));
+    }
+
+    /* Return number of bytes that can be written on this PIPE. */
+    return (space);
+
+} /* pipe_space_available */
+
+/*
  * pipe_open
  * @name: Pipe name.
  * @flags: Open flags.
@@ -212,7 +242,7 @@ static void *pipe_open(char *name, uint32_t flags)
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data lock. */
-    semaphore_obtain(&pipe_data.lock, MAX_WAIT);
+    OS_ASSERT(semaphore_obtain(&pipe_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
     /* Initialize a search parameter. */
@@ -361,7 +391,7 @@ int32_t pipe_write(void *fd, char *data, int32_t nbytes)
  * @return: Number of bytes read from the pipe.
  * This function will read data from a pipe.
  */
-int32_t pipe_read(void *fd, char *buffer, uint32_t size)
+int32_t pipe_read(void *fd, char *buffer, int32_t size)
 {
     PIPE *pipe = (PIPE *)fd;
     MSG_DATA *message;
@@ -372,10 +402,10 @@ int32_t pipe_read(void *fd, char *buffer, uint32_t size)
     message = (MSG_DATA *)(&pipe->data[pipe->message]);
 
     /* First check if we have a valid message on the queue. */
-    if ((message->flags & PIPE_MSG_VALID) && (size >= message->size))
+    if ((message->flags & PIPE_MSG_VALID) && ((uint32_t)size >= message->size))
     {
         /* Calculate message data length and actual message size. */
-        nbytes = message->size;
+        nbytes = (int32_t)message->size;
         message_size = sizeof(MSG_DATA) + (uint32_t)nbytes;
 
         /* Check if we need to split the data. */
@@ -387,12 +417,12 @@ int32_t pipe_read(void *fd, char *buffer, uint32_t size)
         else
         {
             /* No need to split just put all the data in one go. */
-            part_size = nbytes;
+            part_size = (uint32_t)nbytes;
         }
 
         /* Copy data for the pipe in to the giver buffer. */
         memcpy(buffer, (char *)(message + 1), part_size);
-        memcpy(buffer + part_size, pipe->data, nbytes - part_size);
+        memcpy(buffer + part_size, pipe->data, (uint32_t)nbytes - part_size);
 
         /* Discard this message. */
         pipe->message += sizeof(MSG_DATA) + ALLIGN_CEIL(message->size);
@@ -421,9 +451,6 @@ int32_t pipe_read(void *fd, char *buffer, uint32_t size)
             /* Tell the file system that this pipe is now flushed */
             fd_data_flushed(fd);
         }
-
-        /* There is some space available in the PIPE. */
-        fd_space_available(fd);
     }
 
     /* Return number of bytes. */

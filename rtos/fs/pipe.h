@@ -80,7 +80,7 @@ void pipe_destroy(PIPE *pipe);
 
 /* If user wants to use a pipe as a circular buffer. */
 int32_t pipe_write(void *fd, char *data, int32_t nbytes);
-int32_t pipe_read(void *fd, char *buffer, uint32_t size);
+int32_t pipe_read(void *fd, char *buffer, int32_t size);
 
 #endif /* FS_PIPE */
 #endif /* PIPE_H */

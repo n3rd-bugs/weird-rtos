@@ -36,6 +36,7 @@ typedef void *FD;
 #define FS_BLOCK            0x00010000
 #define FS_PRIORITY_SORT    0x00020000
 #define FS_BUFFERED         0x00040000
+#define FS_FLUSH_WRITE      0x00080000
 #define FS_DATA_AVAILABLE   0x00000001
 #define FS_NO_MORE_SPACE    0x00000002
 
@@ -57,12 +58,13 @@ struct _fs
     void        *(*open) (char *, uint32_t);
     void        (*close) (void **);
     int32_t     (*write) (void *, char *, int32_t);
-    int32_t     (*read) (void *, char *, uint32_t);
+    int32_t     (*read) (void *, char *, int32_t);
     int32_t     (*ioctl) (void *, uint32_t, void *);
 
     /* Driver operations. */
     int32_t     (*get_lock) (void *);
     void        (*release_lock) (void *);
+    int32_t     (*space_available) (void *);
 
     /* File system specific flags. */
     uint32_t    flags;
@@ -82,6 +84,7 @@ struct _fs
 typedef struct _fs_param
 {
     uint32_t    flag;
+    uint32_t    value;
 } FS_PARAM;
 
 /* File system list. */
@@ -130,8 +133,8 @@ void fs_init();
 FD fs_open(char *, uint32_t);
 void fs_close(FD *);
 
-int32_t fs_read(FD, char *, uint32_t);
-int32_t fs_write(FD, char *, uint32_t);
+int32_t fs_read(FD, char *, int32_t);
+int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
 /* File system functions. */
@@ -139,10 +142,10 @@ void fs_register(FS *);
 void fs_unregister(FS *);
 void fd_data_available(void *);
 void fd_data_flushed(void *);
-void fd_space_available(void *);
+void fd_space_available(void *, int32_t);
 void fd_space_consumed(void *);
-void fd_handle_criteria(void *, uint32_t);
-int32_t fd_suspend_criteria(void *, uint32_t, uint32_t);
+void fd_handle_criteria(void *, FS_PARAM *);
+int32_t fd_suspend_criteria(void *, FS_PARAM *, uint32_t);
 void fs_resume_tasks(void *, int32_t, FS_PARAM *, uint32_t);
 
 /* Helper APIs. */

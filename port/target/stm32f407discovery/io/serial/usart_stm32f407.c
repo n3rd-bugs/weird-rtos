@@ -94,7 +94,7 @@ int32_t usart_stm32f407_printf(char *format, ...)
     OS_ASSERT(debug_fd == NULL);
 
     /* Use the debug FD. */
-    n = fs_write(debug_fd, buf, (uint32_t)n);
+    n = fs_write(debug_fd, buf, n);
 #else
     /* Print the result on the UART. */
     n = usart_stm32f407_puts(NULL, buf, n);
