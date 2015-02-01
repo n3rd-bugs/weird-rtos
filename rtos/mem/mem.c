@@ -16,11 +16,11 @@
 #ifdef CONFIG_MEMGR
 
 #ifdef MEMGR_STATIC
-MEM_STATIC mem_static;
+MEM_STATIC mem_static_pool;
 #endif
 
 #ifdef MEMGR_DYNAMIC
-MEM_DYNAMIC mem_dynamic;
+MEM_DYNAMIC mem_dynamic_pool;
 
 /* Total number of pages in dynamic memory. */
 #define NUM_PAGES       10
@@ -51,12 +51,12 @@ void mem_init()
 
 #ifdef MEMGR_STATIC
     /* Initialize global static memory region. */
-    mem_static_init_region(&mem_static, STATIC_MEM_START, STATIC_MEM_END);
+    mem_static_init_region(&mem_static_pool, STATIC_MEM_START, STATIC_MEM_END);
 #endif
 
 #ifdef MEMGR_DYNAMIC
     /* Initialize global static memory region. */
-    mem_dynamic_init_region(&mem_dynamic, DYNAMIC_MEM_START, DYNAMIC_MEM_END, NUM_PAGES, mem_dyn_cfg, MEM_FLAGS);
+    mem_dynamic_init_region(&mem_dynamic_pool, DYNAMIC_MEM_START, DYNAMIC_MEM_END, NUM_PAGES, mem_dyn_cfg, MEM_FLAGS);
 #endif
 
 } /* mem_init */

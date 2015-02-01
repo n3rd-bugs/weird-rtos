@@ -54,6 +54,9 @@
 
 #ifdef MEMGR_DYNAMIC
 
+/* Local function prototypes. */
+static MEM_PAGE *mem_dynamic_search_region(MEM_DYNAMIC *mem_dynamic, uint32_t size, uint8_t force);
+
 /*
  * mem_dynamic_init_region
  * @mem_dynamic: The dynamic memory region descriptor to be populated.
@@ -186,7 +189,7 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, u
  * @return: Memory page that should be used to allocate this memory.
  * This function will search for a page in which this memory can be allocated.
  */
-MEM_PAGE *mem_dynamic_search_region(MEM_DYNAMIC *mem_dynamic, uint32_t size, uint8_t force)
+static MEM_PAGE *mem_dynamic_search_region(MEM_DYNAMIC *mem_dynamic, uint32_t size, uint8_t force)
 {
     MEM_PAGE *ret_page = NULL;
     uint32_t i;

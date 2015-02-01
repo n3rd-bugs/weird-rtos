@@ -33,7 +33,7 @@
 #define SUCCESS             0
 #define FALSE               0
 #define TRUE                1
-#define MAX_WAIT            (-1)
+#define MAX_WAIT            (uint32_t)(-1)
 
 #ifdef NULL
 #undef NULL
@@ -55,9 +55,9 @@
 #define YIELD_CANNOT_RUN        0x03
 
 /* Alignment manipulation macros. */
-#define ALLIGN_SIZE             (0x4)
-#define ALLIGN_FLOOR(n)         (((n) % ALLIGN_SIZE) ? ((n) & ~(0x3)) : (n))
-#define ALLIGN_CEIL(n)          (((n) % ALLIGN_SIZE) ? ((n) & ~(0x3)) + ALLIGN_SIZE : (n))
+#define ALLIGN_SIZE             (uint32_t)(0x4)
+#define ALLIGN_FLOOR(n)         (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(0x3)) : (n))
+#define ALLIGN_CEIL(n)          (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(0x3)) + ALLIGN_SIZE : (n))
 
 /* Exported variables. */
 extern TASK *current_task;

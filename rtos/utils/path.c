@@ -10,8 +10,8 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-
 #include <os.h>
+#include <path.h>
 
 /*
  * util_path_match

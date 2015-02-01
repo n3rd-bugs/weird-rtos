@@ -13,9 +13,6 @@
 #include <os.h>
 #include <isr.h>
 
-/* System entry function. */
-extern void system_entry(void);
-
 /* Initial vector table definition. */
 __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
 {

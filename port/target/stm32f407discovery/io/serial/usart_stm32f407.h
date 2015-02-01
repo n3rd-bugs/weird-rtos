@@ -29,7 +29,7 @@
 
 /* Function prototypes. */
 int32_t usart_stm32f407_puts(void *priv_data, char *buf, int32_t nbytes);
-uint32_t usart_stm32f407_printf(char *format, ...);
+int32_t usart_stm32f407_printf(char *format, ...);
 void usart_stm32f407_init();
 
 #endif /* _USART_STM32F407_H_ */

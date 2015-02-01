@@ -58,7 +58,7 @@ int32_t usart_stm32f407_puts(void *priv_data, char *buf, int32_t nbytes)
         }
 
         /* Put a byte on USART. */
-        USART1->DR = *buf;
+        USART1->DR = ((uint32_t)*buf) & 0xFF;
 
         /* Decrement number of bytes remaining. */
         nbytes --;
@@ -77,9 +77,9 @@ int32_t usart_stm32f407_puts(void *priv_data, char *buf, int32_t nbytes)
  * @format: Formated string to be printed on USART.
  * This function prints a formated string on the USART1.
  */
-uint32_t usart_stm32f407_printf(char *format, ...)
+int32_t usart_stm32f407_printf(char *format, ...)
 {
-    uint32_t n = 0;
+    int32_t n = 0;
     char buf[100];
     va_list vl;
 
@@ -94,7 +94,7 @@ uint32_t usart_stm32f407_printf(char *format, ...)
     OS_ASSERT(debug_fd == NULL);
 
     /* Use the debug FD. */
-    n = fs_write(debug_fd, buf, n);
+    n = fs_write(debug_fd, buf, (uint32_t)n);
 #else
     /* Print the result on the UART. */
     n = usart_stm32f407_puts(NULL, buf, n);
@@ -138,10 +138,10 @@ void usart_stm32f407_init()
     GPIOB->PUPDR |= ((0x01 << (5 * 2)) | (0x01 << (6 * 2)));
 
     /* Select USART1 as Alternate function for these pins. */
-    GPIOB->AFR[(0x6 >> 0x03)] &= ~(0xF << (0x6 * 4)) ;
-    GPIOB->AFR[(0x7 >> 0x03)] &= ~(0xF << (0x07 * 4)) ;
-    GPIOB->AFR[(0x6 >> 0x03)] |= (0x7 << (0x6 * 4));
-    GPIOB->AFR[(0x7 >> 0x03)] |= (0x7 << (0x7 * 4));
+    GPIOB->AFR[(0x6 >> 0x03)] &= ~((uint32_t)(0xF << (0x6 * 4))) ;
+    GPIOB->AFR[(0x7 >> 0x03)] &= ~((uint32_t)(0xF << (0x7 * 4))) ;
+    GPIOB->AFR[(0x6 >> 0x03)] |= (uint32_t)(0x7 << (0x6 * 4));
+    GPIOB->AFR[(0x7 >> 0x03)] |= (uint32_t)(0x7 << (0x7 * 4));
 
     /* Enable RX and TX for this USART, also use 8-bit word length and
      * disable parity bit. */

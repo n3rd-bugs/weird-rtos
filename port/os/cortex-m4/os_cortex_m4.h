@@ -111,4 +111,6 @@ NAKED_ISR_FUN isr_pendsv_handle(void);
 ISR_FUN isr_sysclock_handle(void);
 ISR_FUN isr_clock64_tick(void);
 
+ISR_FUN usb_otg_interrupt(void);
+
 #endif /* OS_CORTEX_M4_H */

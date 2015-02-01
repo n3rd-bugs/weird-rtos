@@ -37,23 +37,23 @@
 
 /* Exported variable definitions. */
 #ifdef MEMGR_STATIC
-extern MEM_STATIC mem_static;
+extern MEM_STATIC mem_static_pool;
 #endif
 
 #ifdef MEMGR_DYNAMIC
-extern MEM_DYNAMIC mem_dynamic;
+extern MEM_DYNAMIC mem_dynamic_pool;
 #endif
 
 /* Function prototypes. */
 void mem_init();
 
 #ifdef MEMGR_STATIC
-#define mem_static_alloc(size)      mem_static_alloc_region(&mem_static, size)
+#define mem_static_alloc(size)      mem_static_alloc_region(&mem_static_pool, size)
 #define mem_static_dealloc(mem)     mem_static_dealloc_region((char *)mem)
 #endif
 
 #ifdef MEMGR_DYNAMIC
-#define mem_dynamic_alloc(size)     mem_dynamic_alloc_region(&mem_dynamic, size)
+#define mem_dynamic_alloc(size)     mem_dynamic_alloc_region(&mem_dynamic_pool, size)
 #define mem_dynamic_dealloc(mem)    mem_dynamic_dealloc_region((char *)mem)
 #endif
 

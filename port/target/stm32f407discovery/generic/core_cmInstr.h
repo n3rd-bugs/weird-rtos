@@ -382,7 +382,7 @@ __attribute__( ( always_inline ) ) static __INLINE int32_t __REVSH(int32_t value
   uint32_t result;
   
   __ASM volatile ("revsh %0, %1" : "=r" (result) : "r" (value) );
-  return(result);
+  return((int32_t)result);
 }
 
 

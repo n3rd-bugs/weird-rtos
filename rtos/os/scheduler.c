@@ -26,6 +26,7 @@ static SCHEDULER_LIST scheduler_list;
 /* Definitions for idle task. */
 static TASK __idle_task;
 static char __idle_task_stack[128];
+static void __idle_task_entry(void *argv);
 
 /*
  * __idle_task_entry
@@ -33,7 +34,7 @@ static char __idle_task_stack[128];
  * This is idle task that will run when there is no task in the system to run
  * at a particular instance.
  */
-void __idle_task_entry(void *argv)
+static void __idle_task_entry(void *argv)
 {
     /* Remove some compiler warnings. */
     UNUSED_PARAM(argv);
@@ -242,7 +243,7 @@ void scheduler_unlock()
     if (current_task != NULL)
     {
         /* Clear the flag on the current task to enable scheduling. */
-        current_task->flags &= ~(TASK_DONT_PREEMPT);
+        current_task->flags &= ((uint8_t)~(TASK_DONT_PREEMPT));
     }
 
 } /* scheduler_unlock */

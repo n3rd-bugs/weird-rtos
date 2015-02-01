@@ -265,7 +265,7 @@ int32_t pipe_write(void *fd, char *data, int32_t nbytes)
     MSG_DATA *message;
 
     /* Calculate required space. */
-    required_space = ALLIGN_CEIL(nbytes) + sizeof(MSG_DATA);
+    required_space = ALLIGN_CEIL((uint32_t)nbytes) + sizeof(MSG_DATA);
 
     /* Get the current message. */
     message = (MSG_DATA *)(&pipe->data[pipe->message]);
@@ -280,7 +280,7 @@ int32_t pipe_write(void *fd, char *data, int32_t nbytes)
         /* Push the message header. */
         message = (MSG_DATA *)(&pipe->data[pipe->free]);
         message->flags = 0;
-        message->size = nbytes;
+        message->size = (uint32_t)nbytes;
 
         /* Move past the message header. */
         pipe->free += sizeof(MSG_DATA);
@@ -293,7 +293,7 @@ int32_t pipe_write(void *fd, char *data, int32_t nbytes)
         }
 
         /* Check if we need to split the data. */
-        if (((pipe->free + nbytes) > pipe->size))
+        if (((pipe->free + (uint32_t)nbytes) > pipe->size))
         {
             /* First part is always the data remaining in the pipe data buffer. */
             part_size = pipe->size - pipe->free;
@@ -301,15 +301,15 @@ int32_t pipe_write(void *fd, char *data, int32_t nbytes)
         else
         {
             /* No need to split just put all the data in one go. */
-            part_size = nbytes;
+            part_size = (uint32_t)nbytes;
         }
 
         /* Now put the message data. */
         memcpy(&pipe->data[pipe->free], data, part_size);
-        memcpy(pipe->data, (data + part_size), (nbytes - part_size));
+        memcpy(pipe->data, (data + part_size), ((uint32_t)nbytes - part_size));
 
         /* Increment the free pointer. */
-        pipe->free += ALLIGN_CEIL(nbytes);
+        pipe->free += ALLIGN_CEIL((uint32_t)nbytes);
 
         /* Check if we need to roll over the free. */
         if (pipe->free > pipe->size)
@@ -365,8 +365,8 @@ int32_t pipe_read(void *fd, char *buffer, uint32_t size)
 {
     PIPE *pipe = (PIPE *)fd;
     MSG_DATA *message;
-    int32_t nbytes = 0, message_size;
-    uint32_t part_size;
+    uint32_t part_size, message_size;
+    int32_t nbytes = 0;
 
     /* Get the current message. */
     message = (MSG_DATA *)(&pipe->data[pipe->message]);
@@ -376,7 +376,7 @@ int32_t pipe_read(void *fd, char *buffer, uint32_t size)
     {
         /* Calculate message data length and actual message size. */
         nbytes = message->size;
-        message_size = sizeof(MSG_DATA) + nbytes;
+        message_size = sizeof(MSG_DATA) + (uint32_t)nbytes;
 
         /* Check if we need to split the data. */
         if ((pipe->message + message_size) > pipe->size)

@@ -121,7 +121,7 @@ uint8_t fs_sreach_directory(void *node, void *param)
 {
     /* Save the required path. */
     char *path = ((DIR_PARAM *)param)->name;
-    uint32_t match = FALSE;
+    uint8_t match = FALSE;
 
     /* Match the file system path. */
     if (util_path_match(((FS *)node)->name, &path) == TRUE)
@@ -164,7 +164,7 @@ uint8_t fs_sreach_node(void *node, void *param)
 {
     /* Save the required path. */
     char *path = ((NODE_PARAM *)param)->name;
-    uint32_t match = FALSE;
+    uint8_t match = FALSE;
 
     /* Match the file system path and this is a exact match. */
     if ( (util_path_match(((FS *)node)->name, &path) == TRUE) && (*path == '\0') )
@@ -271,10 +271,10 @@ void fs_close(FD *fd)
  */
 int32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
 {
-    int32_t read = SUCCESS;
 #ifdef CONFIG_SLEEP
-    uint32_t last_tick = current_system_tick();
+    uint64_t last_tick = current_system_tick();
 #endif
+    int32_t read = SUCCESS;
 
     if (((FS *)fd)->get_lock)
     {
@@ -362,10 +362,10 @@ int32_t fs_read(FD fd, char *buffer, uint32_t nbytes)
  */
 int32_t fs_write(FD fd, char *buffer, uint32_t nbytes)
 {
-    int32_t written = SUCCESS;
 #ifdef CONFIG_SLEEP
-    uint32_t last_tick = current_system_tick();
+    uint64_t last_tick = current_system_tick();
 #endif
+    int32_t written = SUCCESS;
 
     if (((FS *)fd)->get_lock)
     {
@@ -493,7 +493,7 @@ int32_t fs_ioctl(FD fd, uint32_t cmd, void *param)
 static uint8_t fd_sreach_task(void *node, void *param)
 {
     FS_PARAM *fs_param = (FS_PARAM *)param;
-    uint32_t match = FALSE;
+    uint8_t match = FALSE;
 
     /* Check if the waiting task fulfills our criteria. */
     if ((FS *)fs_param->flag && ((FS_PARAM *)((TASK *)node)->suspend_data)->flag)
@@ -524,7 +524,7 @@ int32_t fd_suspend_criteria(void *fd, uint32_t flag, uint32_t timeout)
 {
     TASK *tcb = NULL;
     FS_PARAM fs_param;
-    uint32_t status = SUCCESS;
+    int32_t status = SUCCESS;
 
 #ifdef CONFIG_SLEEP
     /* Check if we need to wait for a finite time. */
@@ -635,7 +635,7 @@ void fd_data_available(void *fd)
 void fd_data_flushed(void *fd)
 {
     /* Clear the data available flag. */
-    ((FS *)fd)->flags &= ~(FS_DATA_AVAILABLE);
+    ((FS *)fd)->flags &= (uint32_t)~(FS_DATA_AVAILABLE);
 
 } /* fd_data_flushed */
 
@@ -648,7 +648,7 @@ void fd_data_flushed(void *fd)
 void fd_space_available(void *fd)
 {
     /* Set flag that some data is available. */
-    ((FS *)fd)->flags &= ~(FS_NO_MORE_SPACE);
+    ((FS *)fd)->flags &= (uint32_t)~(FS_NO_MORE_SPACE);
 
     /* Resume a task if any waiting on write for this file descriptor. */
     fd_handle_criteria(fd, FS_BLOCK_WRITE);
@@ -677,7 +677,6 @@ void fd_space_consumed(void *fd)
  */
 void fd_handle_criteria(void *fd, uint32_t flag)
 {
-    TASK *tcb = NULL;
     FS_PARAM fs_param;
 
     /* Update the criteria for this fd. */

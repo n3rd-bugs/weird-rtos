@@ -21,15 +21,24 @@
 #define CONFIG_STACK_PATTERN    'A'
 
 /* These defines different task flags. */
-#define TASK_DONT_PREEMPT   (uint8_t)(0x01)     /* This will disable task preemption. */
+#define TASK_DONT_PREEMPT   0x01        /* Don't preempt this task. */
 
 /* This holds information about a single task. */
 typedef struct _task TASK;
 struct _task
 {
+    /* This holds scheduler parameters for this task. */
+    uint64_t    scheduler_data_1;
+    uint64_t    scheduler_data_2;
+
+#ifdef CONFIG_SLEEP
+    /* The system tick at which this task is needed to be rescheduled. */
+    uint64_t    tick_sleep;
+#endif
+
 #ifdef CONFIG_TASK_STATS
-    /* Name for this task. */
-    char        name[8];
+    /* Number of times this task was scheduled. */
+    uint64_t    scheduled;
 #endif /* CONFIG_TASK_STATS */
 
     /* Task list member. */
@@ -58,39 +67,31 @@ struct _task
     /* This is start of the stack pointer for this task. */
     char        *stack_start;
 
+    /* Name for this task. */
+    char        name[8];
+
     /* This defines task priority. */
     uint32_t    priority;
 
-    /* Number of times this task was scheduled. */
-    uint64_t    scheduled;
-
 #endif /* CONFIG_TASK_STATS */
 
-#ifdef CONFIG_SLEEP
-    /* The system tick at which this task is needed to be rescheduled. */
-    uint64_t    tick_sleep;
-#endif
-
-    /* This holds scheduler parameters for this task. */
-    uint64_t    scheduler_data_1;
-    uint64_t    scheduler_data_2;
-
     /* Current task status. */
-    uint32_t    status;
+    int32_t     status;
 
 #ifdef CONFIG_TASK_STATS
     /* Task stack size. */
     uint32_t    stack_size;
+
 #endif /* CONFIG_TASK_STATS */
+
+    /* Padding variable (need to be 64-bit aligned). */
+    uint8_t     pad[6];
 
     /* Task scheduler class identifier. */
     uint8_t     class;
 
     /* Task flags as configured by scheduler. */
     uint8_t     flags;
-
-    /* Padding variable. */
-    uint8_t     pad[2];
 };
 
 /* This defines a task list. */
