@@ -15,7 +15,6 @@
 
 #include <stdint.h>
 #include <config.h>
-#include <os_target.h>
 #include <tasks.h>
 #include <scheduler.h>
 #include <assert.h>
@@ -28,6 +27,10 @@
 #ifdef CONFIG_FS
 #include <fs.h>
 #endif
+#ifdef CONFIG_USB
+#include <usb.h>
+#endif
+#include <os_target.h>
 
 /* Some return codes. */
 #define SUCCESS             0
@@ -45,8 +48,13 @@
 #define OS_TICK64_PER_SEC   1000000
 
 /* Some useful macros. */
-#define OFFSETOF(type, field)   ((int) &(((type *) 0)->field))
-#define UNUSED_PARAM(x)         (void)(x)
+#define OFFSETOF(type, field)       ((int) &(((type *) 0)->field))
+#define UNUSED_PARAM(x)             (void)(x)
+#define MASK_N_BITS(x)              ((uint32_t)((1 << x) - 1))
+#define OS_READ_REG32(x)            (*(uint32_t *)x)
+#define OS_WRITE_REG32(x, v)        (*(uint32_t *)x = v)
+#define OS_MASK_REG32(x, clr, set)  OS_WRITE_REG32(x, (((OS_READ_REG32(x)) & (uint32_t)(~clr)) | set))
+#define MIN(a, b)                   (((a) < (b)) ? (a) : (b))
 
 /* Defines the origin from which this task is being yielded.  */
 #define YIELD_INIT              0x00

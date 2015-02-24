@@ -96,7 +96,7 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
     int32_t     status = SUCCESS;
 #ifdef CONFIG_SLEEP
-    uint32_t    last_tick = current_system_tick();
+    uint64_t    last_tick = current_system_tick();
 #endif /* CONFIG_SLEEP */
     TASK        *tcb;
 
