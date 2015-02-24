@@ -13,6 +13,8 @@
 
 #include <os.h>
 
+#ifdef USB_FUNCTION
+
 /* Internal function prototypes. */
 static uint32_t usb_fun_cdc_init(void *, uint8_t);
 static uint32_t usb_fun_cdc_deinit(void *, uint8_t);
@@ -729,3 +731,4 @@ uint8_t *usb_fun_cdc_iface_descriptor(uint8_t speed, uint8_t *desc_buffer, uint1
     return (desc_buffer);
 
 } /* usb_fun_cdc_iface_descriptor */
+#endif /* USB_FUNCTION */

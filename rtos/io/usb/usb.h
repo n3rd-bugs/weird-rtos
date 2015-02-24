@@ -20,6 +20,8 @@
 #error "File system is needed to manage underlying USB devices."
 #endif
 
+#ifdef CONFIG_USB
+
 /* USB configuration. */
 #define USB_FUNCTION
 
@@ -101,5 +103,6 @@ void usb_init();
 #ifdef USB_FUNCTION
 #include <usb_function.h>
 #endif
+#endif /* CONFIG_USB */
 
 #endif /* _USB_H_ */
