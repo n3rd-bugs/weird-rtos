@@ -162,7 +162,7 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
                     status = SEMAPHORE_TIMEOUT;
 
                     /* Remove this task from the semaphore's task's list. */
-                    sll_remove(&semaphore->tasks, tcb, OFFSETOF(TASK, next));
+                    OS_ASSERT(sll_remove(&semaphore->tasks, tcb, OFFSETOF(TASK, next)) != tcb);
 
                     /* Break and return error. */
                     break;

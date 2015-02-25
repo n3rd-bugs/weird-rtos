@@ -585,7 +585,7 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
 #endif
 
             /* Remove neighbor from the free memory list. */
-            sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next));
+            OS_ASSERT(sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next)) != neighbor);
 
             /* Append neighbor to given memory. */
             mem_free->descriptor.size += neighbor->descriptor.size;
@@ -620,7 +620,7 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
 #endif
 
             /* Remove the neighbor from the free memory list. */
-            sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next));
+            OS_ASSERT(sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next)) != neighbor);
 
             /* If we need to update the next memory. */
             if ( ((char *)mem_free + mem_free->descriptor.size) < mem_page->base_end )

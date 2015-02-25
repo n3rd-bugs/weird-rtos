@@ -271,9 +271,10 @@ void sll_remove_node(void *list, void *node, void *prev_node, int offset)
  * @list: List that is needed to be updated.
  * @node: Node that is needed to be removed.
  * @offset: Offset of the "next" member in a node structure.
+ * @return: Returns node if it was removed otherwise null is returned.
  * This function removes a particular node from the given list.
  */
-void sll_remove(void *list, void *node, int offset)
+void *sll_remove(void *list, void *node, int offset)
 {
     void *list_node = ((SLL_HEAD *)list)->head;
 
@@ -285,6 +286,9 @@ void sll_remove(void *list, void *node, int offset)
         {
             /* Remove this node. */
             sll_remove_node(list, node, NULL, offset);
+
+            /* Return this node. */
+            list_node = node;
         }
 
         else
@@ -302,8 +306,20 @@ void sll_remove(void *list, void *node, int offset)
             {
                 /* Remove this node. */
                 sll_remove_node(list, node, list_node, offset);
+
+                /* Return this node. */
+                list_node = node;
+            }
+
+            else
+            {
+                /* Return null. */
+                list_node = NULL;
             }
         }
     }
+
+    /* Return the node removed. */
+    return (list_node);
 
 } /* sll_remove */
