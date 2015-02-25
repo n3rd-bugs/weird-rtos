@@ -33,12 +33,13 @@
 typedef void *FD;
 
 /* File system specific flags. */
+#define FS_DATA_AVAILABLE   0x00000001
+#define FS_NO_MORE_SPACE    0x00000002
+#define FS_CHAIN_HEAD       0x00000004
 #define FS_BLOCK            0x00010000
 #define FS_PRIORITY_SORT    0x00020000
 #define FS_BUFFERED         0x00040000
 #define FS_FLUSH_WRITE      0x00080000
-#define FS_DATA_AVAILABLE   0x00000001
-#define FS_NO_MORE_SPACE    0x00000002
 
 /* Suspend flags. */
 #define FS_BLOCK_READ       0x00000001
@@ -78,6 +79,25 @@ struct _fs
         TASK        *head;
         TASK        *tail;
     } task_list;
+
+    union _fs_fd_chain
+    {
+        struct _fs_fd_list
+        {
+            /* Link-list for connected file systems. */
+            FD          *head;
+            FD          *tail;
+        } fd_list;
+
+        struct _fs_fd_node
+        {
+            /* Next file descriptor. */
+            FD          *next;
+
+            /* File descriptor that will act as list head. */
+            FD          *head;
+        } fd_node;
+    } fd_chain;
 };
 
 /* This holds the resumption criteria for a task waiting on an FS. */
@@ -136,6 +156,10 @@ void fs_close(FD *);
 int32_t fs_read(FD, char *, int32_t);
 int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
+
+void fs_connect(FD, FD);
+void fs_destroy_chain(FD);
+void fs_disconnect(FD);
 
 /* File system functions. */
 void fs_register(FS *);

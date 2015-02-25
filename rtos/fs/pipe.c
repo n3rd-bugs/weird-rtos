@@ -132,15 +132,19 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
  */
 void pipe_destroy(PIPE *pipe)
 {
+    /* This could be a file descriptor chain, so destroy it. */
+    fs_destroy_chain((FD)&pipe->fs);
+
 #ifndef CONFIG_SEMAPHORE
     /* Lock the scheduler. */
     scheduler_lock();
 #else
-    /* Obtain data lock for this pipe. */
-    OS_ASSERT(semaphore_obtain(&pipe->lock, MAX_WAIT) != SUCCESS);
 
     /* Obtain the global data lock. */
-    if (semaphore_obtain(&pipe_data.lock, MAX_WAIT) == SUCCESS)
+    OS_ASSERT(semaphore_obtain(&pipe_data.lock, MAX_WAIT) != SUCCESS);
+
+    /* Obtain data lock for this pipe. */
+    if (semaphore_obtain(&pipe->lock, MAX_WAIT) == SUCCESS)
     {
 #endif
         /* Resume all tasks waiting on this file descriptor. */
@@ -150,12 +154,14 @@ void pipe_destroy(PIPE *pipe)
         semaphore_destroy(&pipe->lock);
 
         /* Just remove this pipe from the pipe list. */
-        sll_remove(&pipe_data.list, pipe, OFFSETOF(PIPE, fs.next));
+        OS_ASSERT(sll_remove(&pipe_data.list, pipe, OFFSETOF(PIPE, fs.next)) != pipe);
 
 #ifdef CONFIG_SEMAPHORE
-        /* Release the global data lock. */
-        semaphore_release(&pipe_data.lock);
     }
+
+    /* Release the global data lock. */
+    semaphore_release(&pipe_data.lock);
+
 #else
     /* Enable scheduling. */
     scheduler_unlock();

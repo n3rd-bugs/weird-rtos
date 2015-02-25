@@ -109,6 +109,9 @@ void console_register(CONSOLE *console)
  */
 void console_unregister(CONSOLE *console)
 {
+    /* This could be a file descriptor chain, so destroy it. */
+    fs_destroy_chain((FD)&console->fs);
+
 #ifndef CONFIG_SEMAPHORE
     /* Lock the scheduler. */
     scheduler_lock();
@@ -126,13 +129,14 @@ void console_unregister(CONSOLE *console)
         /* Delete the console lock. */
         semaphore_destroy(&console->lock);
 
-        /* Just push this file system in the list. */
-        sll_remove(&console_data.list, console, OFFSETOF(CONSOLE, fs.next));
+        /* Just remove this console from console list. */
+        OS_ASSERT(sll_remove(&console_data.list, console, OFFSETOF(CONSOLE, fs.next)) != console);
 
 #ifdef CONFIG_SEMAPHORE
-        /* Release the global data lock. */
-        semaphore_release(&console_data.lock);
     }
+
+    /* Release the global data lock. */
+    semaphore_release(&console_data.lock);
 #else
     /* Enable scheduling. */
     scheduler_unlock();

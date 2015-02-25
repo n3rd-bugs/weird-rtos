@@ -96,8 +96,11 @@ void fs_unregister(FS *file_system)
     OS_ASSERT(semaphore_obtain(&file_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
+    /* This could be a file descriptor chain, so destroy it. */
+    fs_destroy_chain((FD)file_system);
+
     /* Just remove this file system from the list. */
-    sll_remove(&file_data.list, file_system, OFFSETOF(FS, next));
+    OS_ASSERT(sll_remove(&file_data.list, file_system, OFFSETOF(FS, next)) != file_system);
 
 #ifdef CONFIG_SEMAPHORE
     /* Release the global data lock. */
@@ -108,6 +111,153 @@ void fs_unregister(FS *file_system)
 #endif
 
 } /* fs_unregister */
+
+/*
+ * fs_connect
+ * @fd: File descriptor needed to be connected.
+ * @fd_head: Descriptor that will be defined as a head file descriptor.
+ * This function will connect a file descriptor to another file descriptor that
+ * will act as chain's head.
+ */
+void fs_connect(FD fd, FD fd_head)
+{
+    if (((FS *)fd)->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        ((FS *)fd)->get_lock((void *)fd);
+    }
+
+    /* Given file descriptor should not be a chain head. */
+    OS_ASSERT(((FS *)fd)->flags & FS_CHAIN_HEAD);
+
+    /* Given file descriptor should not be a part of a chain. */
+    OS_ASSERT(((FS *)fd)->fd_chain.fd_node.head != 0);
+
+    /* Save the list head. */
+    ((FS *)fd)->fd_chain.fd_node.head = fd_head;
+
+    if (((FS *)fd)->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
+
+    if (((FS *)fd_head)->get_lock)
+    {
+        /* Get lock for head file descriptor. */
+        ((FS *)fd_head)->get_lock((void *)fd_head);
+    }
+
+    /* If head file descriptor is not a chain head. */
+    if (!(((FS *)fd_head)->flags & FS_CHAIN_HEAD))
+    {
+        /* Initialize chain head. */
+        ((FS *)fd_head)->flags |= FS_CHAIN_HEAD;
+    }
+
+    /* Push this node on the list head. */
+    sll_push(&((FS *)fd_head)->fd_chain.fd_list, fd, OFFSETOF(FS, fd_chain.fd_node.next));
+
+    if (((FS *)fd_head)->release_lock)
+    {
+        /* Release lock for head file descriptor. */
+        ((FS *)fd_head)->release_lock((void *)fd_head);
+    }
+
+} /* fs_connect */
+
+/*
+ * fs_destroy_chain
+ * @fd: File descriptor chain needed to be destroyed.
+ * This function will destroy a descriptor chain. All file descriptors are
+ * capable of becoming a chain head so this function should be called when a
+ * file descriptor is being destroyed.
+ */
+void fs_destroy_chain(FD fd)
+{
+    FS *fs;
+
+    if (((FS *)fd)->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        ((FS *)fd)->get_lock((void *)fd);
+    }
+
+    /* Get a file descriptor from list. */
+    fs = (FS *)sll_pop(&((FS *)fd)->fd_chain.fd_list, OFFSETOF(FS, fd_chain.fd_node.next));
+
+    /* While we have file descriptor in the chain. */
+    while (fs != NULL)
+    {
+        if (fs->get_lock)
+        {
+            /* Get lock for head file descriptor. */
+            fs->get_lock((void *)fs);
+        }
+
+        /* Remove this file descriptor from the list. */
+        fs->fd_chain.fd_node.head = NULL;
+
+        if (fs->release_lock)
+        {
+            /* Release lock for head file descriptor. */
+            fs->release_lock((void *)fs);
+        }
+
+        /* Get next file descriptor. */
+        fs = (FS *)sll_pop(&((FS *)fd)->fd_chain.fd_list, OFFSETOF(FS, fd_chain.fd_node.next));
+    }
+
+    if (((FS *)fd)->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
+
+} /* fs_destroy_chain */
+
+/*
+ * fs_disconnect
+ * @fd: File descriptor needed to be disconnected.
+ * This function will disconnect a file descriptor from it's head.
+ */
+void fs_disconnect(FD fd)
+{
+    if (((FS *)fd)->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        ((FS *)fd)->get_lock((void *)fd);
+    }
+
+    /* Given file descriptor should not be a chain head. */
+    OS_ASSERT(((FS *)fd)->flags & FS_CHAIN_HEAD);
+
+    /* If we are part of a file descriptor chain. */
+    if (((FS *)fd)->fd_chain.fd_node.head != NULL)
+    {
+        if (((FS *)((FS *)fd)->fd_chain.fd_node.head)->get_lock)
+        {
+            /* Get lock for head file descriptor. */
+            ((FS *)((FS *)fd)->fd_chain.fd_node.head)->get_lock((void *)((FS *)fd)->fd_chain.fd_node.head);
+        }
+
+        /* We must have removed this file descriptor from it's list. */
+        OS_ASSERT(sll_remove(&((FS *)((FS *)fd)->fd_chain.fd_node.head)->fd_chain.fd_list, fd, OFFSETOF(FS, fd_chain.fd_node.next)) != fd);
+
+        if (((FS *)((FS *)fd)->fd_chain.fd_node.head)->release_lock)
+        {
+            /* Release lock for head file descriptor. */
+            ((FS *)((FS *)fd)->fd_chain.fd_node.head)->release_lock((void *)((FS *)fd)->fd_chain.fd_node.head);
+        }
+    }
+
+    if (((FS *)fd)->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
+
+} /* fs_disconnect */
 
 /*
  * fs_sreach_directory
@@ -245,17 +395,14 @@ FD fs_open(char *name, uint32_t flags)
 void fs_close(FD *fd)
 {
     /* Check if a close function was registered with this descriptor. */
-    if (((FS *)fd)->close != NULL)
+    if (((FS *)(*fd))->close != NULL)
     {
         /* Transfer call to underlying API. */
-        ((FS *)fd)->close((void **)fd);
+        ((FS *)(*fd))->close((void **)fd);
     }
 
-    else
-    {
-        /* Clear the file descriptor. */
-        *fd = (FD)NULL;
-    }
+    /* Clear the file descriptor. */
+    *fd = (FD)NULL;
 
 } /* fs_close */
 
@@ -275,16 +422,16 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
     uint64_t last_tick = current_system_tick();
 #endif
     FS_PARAM param;
-    int32_t read = SUCCESS;
+    int32_t read = 0, status = SUCCESS;
 
     if (((FS *)fd)->get_lock)
     {
         /* Get lock for this file descriptor. */
-        read = ((FS *)fd)->get_lock((void *)fd);
+        status = ((FS *)fd)->get_lock((void *)fd);
     }
 
     /* If lock was successfully obtained. */
-    if (read == SUCCESS)
+    if (status == SUCCESS)
     {
         /* Check if a read function was registered with this descriptor */
         if ((((FS *)fd)->read != NULL))
@@ -318,10 +465,10 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
                     param.value = 0;
 
                     /* Wait for data on this file descriptor. */
-                    read = fd_suspend_criteria(fd, &param, ((FS *)fd)->timeout);
+                    status = fd_suspend_criteria(fd, &param, ((FS *)fd)->timeout);
 
                     /* If an error has occurred. */
-                    if (read != SUCCESS)
+                    if (status != SUCCESS)
                     {
                         /* Break out of this loop. */
                         break;
@@ -331,7 +478,7 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
             }
 
             /* Check if some data is available. */
-            if ((read == SUCCESS) && (((FS *)fd)->flags & FS_DATA_AVAILABLE))
+            if ((status == SUCCESS) && (((FS *)fd)->flags & FS_DATA_AVAILABLE))
             {
                 /* Transfer call to underlying API. */
                 read = ((FS *)fd)->read((void *)fd, buffer, nbytes);
@@ -352,7 +499,7 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
             }
         }
 
-        if ((read != FS_NODE_DELETED) && (((FS *)fd)->release_lock))
+        if ((status != FS_NODE_DELETED) && (((FS *)fd)->release_lock))
         {
             /* Release lock for this file descriptor. */
             ((FS *)fd)->release_lock((void *)fd);
@@ -369,6 +516,8 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
  * @fd: File descriptor on which data is needed to be written.
  * @buffer: Data buffer needed to be sent.
  * @nbytes: Number of bytes to write.
+ * @return: Returns number of bytes written, if this descriptor is part of a
+ * chain average number of bytes written will be returned.
  * This function will write data on a file descriptor.
  */
 int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
@@ -377,121 +526,170 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
     uint64_t last_tick = current_system_tick();
 #endif
     FS_PARAM param;
-    int32_t written = SUCCESS;
+    int32_t status = SUCCESS, written = 0;
+    int32_t n_fd = 0, nbytes_fd = nbytes;
+    char *buffer_start = buffer;
+    FD next_fd = NULL;
+    uint8_t is_list = FALSE;
 
-    if (((FS *)fd)->get_lock)
+    do
     {
-        /* Get lock for this file descriptor. */
-        written = ((FS *)fd)->get_lock((void *)fd);
-    }
+        /* Initialize loop variables. */
+        nbytes = nbytes_fd;
+        buffer = buffer_start;
 
-    /* If lock was successfully obtained. */
-    if (written == SUCCESS)
-    {
-        /* Check if a write function was registered with this descriptor. */
-        if (((FS *)fd)->write != NULL)
+        if (((FS *)fd)->get_lock)
         {
-            /* If configured try to write on the descriptor until all the
-             * data is sent. */
-            do
+            /* Get lock for this file descriptor. */
+            status = ((FS *)fd)->get_lock((void *)fd);
+        }
+
+        /* If lock was successfully obtained. */
+        if (status == SUCCESS)
+        {
+            /* Check if a write function was registered with this descriptor. */
+            if (((FS *)fd)->write != NULL)
             {
-                /* If we are in a task. */
-                if ((current_task) &&
-
-                    /* Check if we can block on write for this FD and there
-                     * is no space. */
-                    (((((FS *)fd)->flags & FS_BLOCK) &&
-                      (((FS *)fd)->flags & FS_NO_MORE_SPACE)) ||
-
-                    /* If we need to flush all the data then we should block
-                     * until we have required space. */
-                    ((((FS *)fd)->flags & FS_FLUSH_WRITE) &&
-                     (((FS *)fd)->space_available) &&
-                     ((((FS *)fd)->space_available)(fd) < nbytes))))
+                /* If configured try to write on the descriptor until all the
+                 * data is sent. */
+                do
                 {
-                    /* There is never a surety that if some space is available and
-                     * consumed up by a waiting task as scheduler might decide to run
-                     * some other higher/same priority task and spaced can get consumed
-                     * by it before this waiting task can get it. */
-                    /* This is not a bug and happen in a RTOS where different types of
-                     * schedulers are present. */
-                    do
+                    /* If we are in a task. */
+                    if ((current_task) &&
+
+                        /* Check if we can block on write for this FD and there
+                         * is no space. */
+                        (((((FS *)fd)->flags & FS_BLOCK) &&
+                          (((FS *)fd)->flags & FS_NO_MORE_SPACE)) ||
+
+                        /* If we need to flush all the data then we should block
+                         * until we have required space. */
+                        ((((FS *)fd)->flags & FS_FLUSH_WRITE) &&
+                         (((FS *)fd)->space_available) &&
+                         ((((FS *)fd)->space_available)(fd) < nbytes))))
                     {
-#ifdef CONFIG_SLEEP
-                        if (((FS *)fd)->timeout != (uint32_t)MAX_WAIT)
+                        /* There is never a surety that if some space is available and
+                         * consumed up by a waiting task as scheduler might decide to run
+                         * some other higher/same priority task and spaced can get consumed
+                         * by it before this waiting task can get it. */
+                        /* This is not a bug and happen in a RTOS where different types of
+                         * schedulers are present. */
+                        do
                         {
-                            /* If called again compensate for the time we have already waited. */
-                            ((FS *)fd)->timeout -= (uint32_t)(current_system_tick() - last_tick);
+    #ifdef CONFIG_SLEEP
+                            if (((FS *)fd)->timeout != (uint32_t)MAX_WAIT)
+                            {
+                                /* If called again compensate for the time we have already waited. */
+                                ((FS *)fd)->timeout -= (uint32_t)(current_system_tick() - last_tick);
 
-                            /* Save when we suspended last time. */
-                            last_tick = current_system_tick();
-                        }
-#endif
-                        /* Initialize suspend criteria. */
-                        param.flag = FS_BLOCK_WRITE;
-                        param.value = (uint32_t)nbytes;
+                                /* Save when we suspended last time. */
+                                last_tick = current_system_tick();
+                            }
+    #endif
+                            /* Initialize suspend criteria. */
+                            param.flag = FS_BLOCK_WRITE;
+                            param.value = (uint32_t)nbytes;
 
-                        /* Wait for space on this file descriptor. */
-                        written = fd_suspend_criteria(fd, &param, ((FS *)fd)->timeout);
+                            /* Wait for space on this file descriptor. */
+                            status = fd_suspend_criteria(fd, &param, ((FS *)fd)->timeout);
 
-                        /* If an error has occurred. */
-                        if (written != SUCCESS)
+                            /* If an error has occurred. */
+                            if (status != SUCCESS)
+                            {
+                                /* Break out of this loop. */
+                                break;
+                            }
+
+                        } while (((FS *)fd)->flags & FS_NO_MORE_SPACE);
+                    }
+
+                    /* Check if some space is available. */
+                    if ((status == SUCCESS) && (!(((FS *)fd)->flags & FS_NO_MORE_SPACE)))
+                    {
+                        /* Transfer call to underlying API. */
+                        status = ((FS *)fd)->write((void *)fd, buffer, nbytes);
+
+                        if (status <= 0)
                         {
-                            /* Break out of this loop. */
                             break;
                         }
 
-                    } while (((FS *)fd)->flags & FS_NO_MORE_SPACE);
-                }
+                        /* Decrement number of bytes remaining. */
+                        nbytes -= status;
+                        buffer += status;
+                        written += status;
+                    }
 
-                /* Check if some space is available. */
-                if ((written == SUCCESS) && (!(((FS *)fd)->flags & FS_NO_MORE_SPACE)))
-                {
-                    /* Transfer call to underlying API. */
-                    written = ((FS *)fd)->write((void *)fd, buffer, nbytes);
-
-                    if (written <= 0)
+                    /* If an error has occurred. */
+                    else if (status != SUCCESS)
                     {
+                        /* Break out of this loop. */
                         break;
                     }
 
-                    /* Decrement number of bytes remaining. */
-                    nbytes -= written;
-                    buffer += written;
-                }
+                } while ((((FS *)fd)->flags & FS_FLUSH_WRITE) && (nbytes > 0));
 
-                /* If an error has occurred. */
-                else if (written != SUCCESS)
+                /* Some data is available. */
+                if (((FS *)fd)->flags & FS_DATA_AVAILABLE)
                 {
-                    /* Break out of this loop. */
-                    break;
+                    /* Resume any task waiting on this file descriptor. */
+                    fd_data_available(fd);
                 }
 
-            } while ((((FS *)fd)->flags & FS_FLUSH_WRITE) && (nbytes > 0));
-
-            /* Some data is available. */
-            if (((FS *)fd)->flags & FS_DATA_AVAILABLE)
-            {
-                /* Resume any task waiting on this file descriptor. */
-                fd_data_available(fd);
+                /* Some space is still available. */
+                if (!(((FS *)fd)->flags & FS_NO_MORE_SPACE) && (((FS *)fd)->space_available))
+                {
+                    /* Resume any tasks waiting for space on this file descriptor. */
+                    fd_space_available(fd, ((FS *)fd)->space_available(fd));
+                }
             }
 
-            /* Some space is still available. */
-            if (!(((FS *)fd)->flags & FS_NO_MORE_SPACE) && (((FS *)fd)->space_available))
+            /* If call was made on list head. */
+            if (((FS *)fd)->flags & FS_CHAIN_HEAD)
             {
-                /* Resume any tasks waiting for space on this file descriptor. */
-                fd_space_available(fd, ((FS *)fd)->space_available(fd));
+                /* We should not be in a list. */
+                OS_ASSERT(is_list == TRUE);
+
+                /* We are in a list. */
+                is_list = TRUE;
+
+                /* Pick-up the list head. */
+                next_fd = ((FS *)fd)->fd_chain.fd_list.head;
+            }
+
+            else if (is_list == TRUE)
+            {
+                /* Pick-up the next file descriptor. */
+                next_fd = ((FS *)fd)->fd_chain.fd_node.next;
+            }
+
+            if (((FS *)fd)->release_lock)
+            {
+                /* Release lock for this file descriptor. */
+                ((FS *)fd)->release_lock((void *)fd);
             }
         }
 
-        if (((FS *)fd)->release_lock)
+        /* Check if we need to process a file descriptor in the chain. */
+        if (next_fd != NULL)
         {
-            /* Release lock for this file descriptor. */
-            ((FS *)fd)->release_lock((void *)fd);
+            /* Pick the next file descriptor. */
+            fd = next_fd;
+
+            /* Increment number of file descriptor processed. */
+            n_fd++;
         }
+
+    } while (next_fd != NULL);
+
+    /* If we have written on more than one file descriptor. */
+    if (n_fd > 1)
+    {
+        /* Calculate average number of bytes written. */
+        written /= n_fd;
     }
 
-    /* Return number of bytes written. */
+    /* Return total number of bytes written. */
     return (written);
 
 } /* fs_write */
@@ -634,7 +832,7 @@ int32_t fd_suspend_criteria(void *fd, FS_PARAM *param, uint32_t timeout)
         status = FS_TIMEOUT;
 
         /* Remove this task from the file descriptor task list. */
-        sll_remove(&((FS *)fd)->task_list, tcb, OFFSETOF(TASK, next));
+        OS_ASSERT(sll_remove(&((FS *)fd)->task_list, tcb, OFFSETOF(TASK, next)) != tcb);
     }
 
     else if (tcb->status != TASK_RESUME)
