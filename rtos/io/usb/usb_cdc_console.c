@@ -14,11 +14,6 @@
 
 #ifdef USB_CDC_CONSOLE
 
-#ifdef USB_FUN_CDC_AUTO_CONSOLE
-/* USB CDC console debug file descriptor. */
-FD debug_cdc_fd = NULL;
-#endif
-
 /* Internal function prototypes. */
 static int32_t usb_cdc_fun_space_available(void *);
 static int32_t usb_cdc_fun_console_read(void *, char *, int32_t);
@@ -47,11 +42,6 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons)
     /* These pipes must be accessed with interrupts disabled. */
     pipe_create(&cdc_cons->rx_pipe, cdc_cons->rx_pipe.fs.name, cdc_cons->rx_pipe_buffer, USB_CDC_CONSOLE_RX_PIPE_SIZE);
     pipe_create(&cdc_cons->tx_pipe, cdc_cons->tx_pipe.fs.name, cdc_cons->tx_pipe_buffer, USB_CDC_CONSOLE_TX_PIPE_SIZE);
-
-#ifdef USB_FUN_CDC_AUTO_CONSOLE
-    /* Assign the debug FD. */
-    debug_cdc_fd = (FD)cdc_cons;
-#endif
 
 } /* usb_cdc_console_register */
 

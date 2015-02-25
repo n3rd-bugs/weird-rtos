@@ -104,9 +104,6 @@ int32_t stm32f407_printf(char *format, ...)
     char buf[100];
     va_list vl;
     extern FD debug_usart_fd;
-#ifdef USB_FUN_CDC_AUTO_CONSOLE
-    extern FD debug_cdc_fd;
-#endif
 
     /* Arguments start from the format. */
     va_start(vl, format);
@@ -120,14 +117,6 @@ int32_t stm32f407_printf(char *format, ...)
 
     /* Use the debug FD. */
     n = fs_write(debug_usart_fd, buf, n);
-
-#ifdef USB_FUN_CDC_AUTO_CONSOLE
-    if (debug_cdc_fd != NULL)
-    {
-        /* Also put a copy on the USB CDC console. */
-        n = fs_write(debug_cdc_fd, buf, n);
-    }
-#endif
 #else
     /* Print the result on the UART. */
     n = usart_stm32f407_puts(NULL, buf, n);

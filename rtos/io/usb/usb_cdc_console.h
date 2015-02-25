@@ -15,8 +15,6 @@
 
 #include <os.h>
 
-#define USB_FUN_CDC_AUTO_CONSOLE
-
 #ifdef USB_CDC_CONSOLE
 #ifndef FS_CONSOLE
 #error "Console FS is needed for using USB CDC device."

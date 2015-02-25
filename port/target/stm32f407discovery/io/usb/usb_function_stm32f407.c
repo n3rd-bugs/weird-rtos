@@ -33,6 +33,8 @@ ISR_FUN usb_otg_interrupt()
  */
 void usb_function_stm32f407_init()
 {
+    extern FD debug_usart_fd;
+
     memset(&USB_CDC_Device, 0, sizeof(USB_FUN_CDC_DEV));
 
     /* Initialize BSP. */
@@ -50,6 +52,9 @@ void usb_function_stm32f407_init()
     USB_CDC_Device.cdc_console.rx_pipe.fs.name = "cdcrx0";
     USB_CDC_Device.cdc_console.tx_pipe.fs.name = "cdctx0";
     usb_cdc_console_register(&USB_CDC_Device.cdc_console);
+
+    /* Connect this descriptor to the UART file descriptor. */
+    fs_connect((FD)&USB_CDC_Device.cdc_console, debug_usart_fd);
 
 } /* usb_function_stm32f407_init */
 
