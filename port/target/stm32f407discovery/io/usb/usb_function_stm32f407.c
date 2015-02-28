@@ -15,17 +15,21 @@
 
 #ifdef USB_FUNCTION
 
-/* Needs to be 32-bit aligned. */
-USB_FUN_CDC_DEV USB_CDC_Device __attribute__ ((aligned (0x10)));
+#ifdef USB_FUNCTION_CDC_ACM
+/* Needs to be word aligned. */
+USB_FUN_CDC_ACM_DEV USB_CDC_Device __attribute__ ((aligned (0x10)));
+#endif
 
 ISR_FUN usb_otg_interrupt()
 {
     OS_ISR_ENTER();
 
+#ifdef USB_FUNCTION_CDC_ACM
     usb_function_stm32f407_interrupt_handler (&USB_CDC_Device.usb);
+#endif
 
     OS_ISR_EXIT();
-}
+} /* usb_otg_interrupt */
 
 /*
  * usb_function_stm32f407_init
@@ -33,15 +37,16 @@ ISR_FUN usb_otg_interrupt()
  */
 void usb_function_stm32f407_init()
 {
+#ifdef USB_FUNCTION_CDC_ACM
     extern FD debug_usart_fd;
 
-    memset(&USB_CDC_Device, 0, sizeof(USB_FUN_CDC_DEV));
+    memset(&USB_CDC_Device, 0, sizeof(USB_FUN_CDC_ACM_DEV));
 
     /* Initialize BSP. */
     usb_stm32f407_hw_initilaize((USB_STM32F407_HANDLE *)&USB_CDC_Device);
 
     /* Initialize USB function device. */
-    usb_function_init((USB_STM32F407_HANDLE *)&USB_CDC_Device, &usb_fun_cdc_cb);
+    usb_function_init((USB_STM32F407_HANDLE *)&USB_CDC_Device, &usb_fun_cdc_acm_cb);
 
     /* Enable interrupts. */
     usb_stm32f407_enable_interrupt((USB_STM32F407_HANDLE *)&USB_CDC_Device);
@@ -55,6 +60,7 @@ void usb_function_stm32f407_init()
 
     /* Connect this descriptor to the UART file descriptor. */
     fs_connect((FD)&USB_CDC_Device.cdc_console, debug_usart_fd);
+#endif
 
 } /* usb_function_stm32f407_init */
 

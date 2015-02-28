@@ -89,7 +89,7 @@ uint32_t usb_fun_std_interface_request(USB_STM32F407_HANDLE *usb_device, USB_SET
     case USB_FUN_STATE_CONFIGURED:
 
         /* Verify the endpoint number. */
-        if (LOBYTE(req->wIndex) <= USBD_ITF_MAX_NUM)
+        if (LOBYTE(req->wIndex) <= USB_FUN_ITF_MAX_NUM)
         {
             /* Process this request. */
             usb_device->device.class_cb->setup(usb_device, req);
@@ -523,7 +523,7 @@ static void usb_fun_set_config(USB_STM32F407_HANDLE *usb_device, USB_SETUP_REQ *
     cfgidx = (uint8_t)(req->wValue);
 
     /* If this is a valid index. */
-    if (cfgidx > USBD_CFG_MAX_NUM)
+    if (cfgidx > USB_FUN_CFG_MAX_NUM)
     {
         /* Should not happen return an error. */
         usb_fun_control_error(usb_device, req);

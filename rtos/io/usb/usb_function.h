@@ -18,8 +18,7 @@
 #ifdef USB_FUNCTION
 
 /* USB function configurations. */
-#define USB_FUNCTION_CDC
-#define USB_CDC_CONSOLE
+//#define USB_FUNCTION_CDC_ACM
 
 /* USB Configuration. */
 //#define USB_SUPPORT_STRING_DESC
@@ -80,6 +79,10 @@
 #define USB_FEATURE_EP_HALT             0
 #define USB_FEATURE_REMOTE_WAKEUP       1
 #define USB_FEATURE_TEST_MODE           2
+
+/* User configurations. */
+#define USB_FUN_CFG_MAX_NUM             1
+#define USB_FUN_ITF_MAX_NUM             1
 
 /* Helper macros. */
 #define SWAPBYTE(addr)                  ((uint16_t)(*((uint8_t *)(addr)) + (*((uint8_t *)(addr) + 1) << 8)))
@@ -145,8 +148,8 @@ extern USB_FUN_REQ_CB *usb_function_requset_cb;
 /* Function prototypes. */
 void usb_function_init(USB_STM32F407_HANDLE *, USB_FUN_CB *);
 
-#ifdef USB_FUNCTION_CDC
-#include <usb_fun_cdc.h>
+#ifdef USB_FUNCTION_CDC_ACM
+#include <usb_fun_cdc_acm.h>
 #endif
 
 #endif /* USB_FUNCTION */

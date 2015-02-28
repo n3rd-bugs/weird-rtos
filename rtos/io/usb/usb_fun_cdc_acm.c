@@ -1,5 +1,5 @@
 /*
- * usb_fun_cdc.c
+ * usb_fun_cdc_acm.c
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -13,28 +13,28 @@
 
 #include <os.h>
 
-#ifdef USB_FUNCTION
+#ifdef USB_FUNCTION_CDC_ACM
 
 /* Internal function prototypes. */
-static uint32_t usb_fun_cdc_init(void *, uint8_t);
-static uint32_t usb_fun_cdc_deinit(void *, uint8_t);
-static uint32_t usb_fun_cdc_setup (void *, USB_SETUP_REQ *);
-static uint32_t usb_fun_cdc_ep0_rx_ready(void *);
-static uint32_t usb_fun_cdc_data_in(void *, uint8_t);
-static uint32_t usb_fun_cdc_data_out(void *, uint8_t);
-static uint32_t usb_fun_cdc_sof(void *);
-static uint8_t *usb_fun_cdc_get_cfg_desc(uint8_t, uint16_t *);
-static uint8_t *usb_fun_cdc_get_other_cfg_desc(uint8_t, uint16_t *);
-static uint8_t *usb_fun_cdc_device_descriptor(uint8_t, uint16_t *);
-static uint8_t *usb_fun_cdc_langid_descriptor(uint8_t, uint16_t *);
-static uint8_t *usb_fun_cdc_manufacturer_descriptor(uint8_t, uint8_t *, uint16_t *);
-static uint8_t *usb_fun_cdc_product_descriptor(uint8_t, uint8_t *, uint16_t *);
-static uint8_t *usb_fun_cdc_serial_number_descriptor(uint8_t, uint8_t *, uint16_t *);
-static uint8_t *usb_fun_cdc_config_descriptor(uint8_t, uint8_t *, uint16_t *);
-static uint8_t *usb_fun_cdc_iface_descriptor(uint8_t, uint8_t *, uint16_t *);
+static uint32_t usb_fun_cdc_acm_init(void *, uint8_t);
+static uint32_t usb_fun_cdc_acm_deinit(void *, uint8_t);
+static uint32_t usb_fun_cdc_acm_setup (void *, USB_SETUP_REQ *);
+static uint32_t usb_fun_cdc_acm_ep0_rx_ready(void *);
+static uint32_t usb_fun_cdc_acm_data_in(void *, uint8_t);
+static uint32_t usb_fun_cdc_acm_data_out(void *, uint8_t);
+static uint32_t usb_fun_cdc_acm_sof(void *);
+static uint8_t *usb_fun_cdc_acm_get_cfg_desc(uint8_t, uint16_t *);
+static uint8_t *usb_fun_cdc_acm_get_other_cfg_desc(uint8_t, uint16_t *);
+static uint8_t *usb_fun_cdc_acm_device_descriptor(uint8_t, uint16_t *);
+static uint8_t *usb_fun_cdc_acm_langid_descriptor(uint8_t, uint16_t *);
+static uint8_t *usb_fun_cdc_acm_manufacturer_descriptor(uint8_t, uint8_t *, uint16_t *);
+static uint8_t *usb_fun_cdc_acm_product_descriptor(uint8_t, uint8_t *, uint16_t *);
+static uint8_t *usb_fun_cdc_acm_serial_number_descriptor(uint8_t, uint8_t *, uint16_t *);
+static uint8_t *usb_fun_cdc_acm_config_descriptor(uint8_t, uint8_t *, uint16_t *);
+static uint8_t *usb_fun_cdc_acm_iface_descriptor(uint8_t, uint8_t *, uint16_t *);
 
 /* USB standard device descriptor. */
-static uint8_t usb_fun_cdc_device_desc[USB_DEVICE_DESC_SIZE] __attribute__ ((aligned (4))) =
+static uint8_t usb_fun_cdc_acm_device_desc[USB_DEVICE_DESC_SIZE] __attribute__ ((aligned (4))) =
 {
     0x12,                       /* Descriptor length. */
     USB_DEVICE_DESC_TYPE,       /* Descriptor type. */
@@ -44,16 +44,16 @@ static uint8_t usb_fun_cdc_device_desc[USB_DEVICE_DESC_SIZE] __attribute__ ((ali
     0x00,                       /* Device sub class. */
     0x00,                       /* Device protocol. */
     USB_STM32F407_MAX_EP0_SIZE, /* Max packet size. */
-    LOBYTE(USB_FUN_CDC_VID),    /* Vendor ID. */
-    HIBYTE(USB_FUN_CDC_VID),    /* Vendor ID. */
-    LOBYTE(USB_FUN_CDC_PID),    /* Product ID. */
-    HIBYTE(USB_FUN_CDC_PID),    /* Product ID. */
+    LOBYTE(USB_FUN_CDC_ACM_VID),    /* Vendor ID. */
+    HIBYTE(USB_FUN_CDC_ACM_VID),    /* Vendor ID. */
+    LOBYTE(USB_FUN_CDC_ACM_PID),    /* Product ID. */
+    HIBYTE(USB_FUN_CDC_ACM_PID),    /* Product ID. */
     0x00,
     0x02,
     USB_DEV_IDX_MFC_STR,        /* Index of manufacturer string. */
     USB_DEV_IDX_PRODUCT_STR,    /* Index of product string. */
     USB_DEV_IDX_SERIAL_STR,     /* Index of serial number string. */
-    USBD_CFG_MAX_NUM            /* Number of configurations. */
+    USB_FUN_CFG_MAX_NUM            /* Number of configurations. */
 };
 
 /* USB standard language ID descriptor. */
@@ -61,12 +61,12 @@ static uint8_t usb_fun_langid_desc[USB_LANGID_DESC_SIZE] __attribute__ ((aligned
 {
     USB_LANGID_DESC_SIZE,
     USB_DESC_TYPE_STRING,
-    LOBYTE(USB_FUN_CDC_LANGID_STR),
-    HIBYTE(USB_FUN_CDC_LANGID_STR),
+    LOBYTE(USB_FUN_CDC_ACM_LANGID_STR),
+    HIBYTE(USB_FUN_CDC_ACM_LANGID_STR),
 };
 
 /* USB standard configuration descriptor. */
-static uint8_t usb_fun_cdc_cfg_desc[USB_CDC_CONFIG_DESC_SIZ] __attribute__ ((aligned (4))) =
+static uint8_t usb_fun_cdc_acm_cfg_desc[USB_CDC_CONFIG_DESC_SIZ] __attribute__ ((aligned (4))) =
 {
     /* Configuration Descriptor. */
     0x09,   /* bLength: Configuration Descriptor size. */
@@ -161,7 +161,7 @@ static uint8_t usb_fun_cdc_cfg_desc[USB_CDC_CONFIG_DESC_SIZ] __attribute__ ((ali
     0x00                               /* bInterval: ignore for Bulk transfer */
 };
 
-static uint8_t usb_fun_cdc_other_cfg[USB_CDC_CONFIG_DESC_SIZ] __attribute__ ((aligned (4))) =
+static uint8_t usb_fun_cdc_acm_other_cfg[USB_CDC_CONFIG_DESC_SIZ] __attribute__ ((aligned (4))) =
 {
     0x09,   /* bLength: Configuration Descriptor size */
     USB_DESC_TYPE_SPEED_CONFIG,
@@ -256,46 +256,46 @@ static uint8_t usb_fun_cdc_other_cfg[USB_CDC_CONFIG_DESC_SIZ] __attribute__ ((al
 /* USB CDC function descriptor callbacks. */
 static USB_FUN_DESC_CB usb_cdc_desc_cb =
 {
-    .get_device_desc = &usb_fun_cdc_device_descriptor,
-    .get_lang_id_desc = &usb_fun_cdc_langid_descriptor,
-    .get_mfg_str_desc = &usb_fun_cdc_manufacturer_descriptor,
-    .get_product_str_desc = &usb_fun_cdc_product_descriptor,
-    .get_serial_number_str_desc = &usb_fun_cdc_serial_number_descriptor,
-    .get_cfg_str_desc = &usb_fun_cdc_config_descriptor,
-    .get_iface_str_desc = &usb_fun_cdc_iface_descriptor,
+    .get_device_desc = &usb_fun_cdc_acm_device_descriptor,
+    .get_lang_id_desc = &usb_fun_cdc_acm_langid_descriptor,
+    .get_mfg_str_desc = &usb_fun_cdc_acm_manufacturer_descriptor,
+    .get_product_str_desc = &usb_fun_cdc_acm_product_descriptor,
+    .get_serial_number_str_desc = &usb_fun_cdc_acm_serial_number_descriptor,
+    .get_cfg_str_desc = &usb_fun_cdc_acm_config_descriptor,
+    .get_iface_str_desc = &usb_fun_cdc_acm_iface_descriptor,
 };
 
 /* USB CDC function layer callbacks. */
-USB_FUN_CB usb_fun_cdc_cb =
+USB_FUN_CB usb_fun_cdc_acm_cb =
 {
     /* Initialization routines. */
-    .init = &usb_fun_cdc_init,
-    .deinit = &usb_fun_cdc_deinit,
+    .init = &usb_fun_cdc_acm_init,
+    .deinit = &usb_fun_cdc_acm_deinit,
 
     /* Endpoint management. */
-    .setup = &usb_fun_cdc_setup,
-    .ep0_rx_ready = &usb_fun_cdc_ep0_rx_ready,
-    .data_in = &usb_fun_cdc_data_in,
-    .data_out = &usb_fun_cdc_data_out,
-    .sof = &usb_fun_cdc_sof,
+    .setup = &usb_fun_cdc_acm_setup,
+    .ep0_rx_ready = &usb_fun_cdc_acm_ep0_rx_ready,
+    .data_in = &usb_fun_cdc_acm_data_in,
+    .data_out = &usb_fun_cdc_acm_data_out,
+    .sof = &usb_fun_cdc_acm_sof,
 
     /* Configuration API. */
-    .get_config_descriptor = &usb_fun_cdc_get_cfg_desc,
-    .get_other_config_descriptor = &usb_fun_cdc_get_other_cfg_desc,
+    .get_config_descriptor = &usb_fun_cdc_acm_get_cfg_desc,
+    .get_other_config_descriptor = &usb_fun_cdc_acm_get_other_cfg_desc,
 
     .desc_cb = &usb_cdc_desc_cb,
 };
 
 /*
- * usb_fun_cdc_init
+ * usb_fun_cdc_acm_init
  * @usb_device: USB device instance.
  * @cfgidx: Configuration index.
  * Initializes USB CDC layer.
  */
-static uint32_t usb_fun_cdc_init(void *usb_device, uint8_t cfgidx)
+static uint32_t usb_fun_cdc_acm_init(void *usb_device, uint8_t cfgidx)
 {
     uint8_t *pbuf;
-    extern uint8_t usb_fun_cdc_device_desc[USB_DEVICE_DESC_SIZE];
+    extern uint8_t usb_fun_cdc_acm_device_desc[USB_DEVICE_DESC_SIZE];
 
     /* Remove compiler warning. */
     UNUSED_PARAM(cfgidx);
@@ -309,29 +309,29 @@ static uint32_t usb_fun_cdc_init(void *usb_device, uint8_t cfgidx)
     /* Open CMD endpoint. */
     usb_fun_endpoint_open(usb_device, CDC_CMD_EP, CDC_CMD_PACKET_SZE, EP_TYPE_INTR);
 
-    pbuf = (uint8_t *)usb_fun_cdc_device_desc;
+    pbuf = (uint8_t *)usb_fun_cdc_acm_device_desc;
     pbuf[4] = DEVICE_CLASS_CDC;
     pbuf[5] = DEVICE_SUBCLASS_CDC;
 
     /* Initialize console data. */
-    ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd = NO_CMD;
-    ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.altset = 0;
+    ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd = NO_CMD;
+    ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.altset = 0;
 
     /* Prepare OUT endpoint to receive incoming packet. */
-    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(((USB_FUN_CDC_DEV *)usb_device)->cdc_console.rx_buffer), *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 64));
+    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.rx_buffer), *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 64));
 
     /* Return success. */
     return (SUCCESS);
 
-} /* usb_fun_cdc_init */
+} /* usb_fun_cdc_acm_init */
 
 /*
- * usb_fun_cdc_deinit
+ * usb_fun_cdc_acm_deinit
  * @usb_device: USB device instance.
  * @cfgidx: Configuration index.
  * Deinitialize CDC layer.
  */
-static uint32_t usb_fun_cdc_deinit(void *usb_device, uint8_t cfgidx)
+static uint32_t usb_fun_cdc_acm_deinit(void *usb_device, uint8_t cfgidx)
 {
     /* Remove compiler warning. */
     UNUSED_PARAM(cfgidx);
@@ -348,15 +348,15 @@ static uint32_t usb_fun_cdc_deinit(void *usb_device, uint8_t cfgidx)
     /* Return success. */
     return (SUCCESS);
 
-} /* usb_fun_cdc_deinit */
+} /* usb_fun_cdc_acm_deinit */
 
 /*
- * usb_fun_cdc_setup
+ * usb_fun_cdc_acm_setup
  * @usb_device: USB device instance.
  * @req: USB request needed to be setup.
  * Handle the CDC specific requests.
  */
-static uint32_t usb_fun_cdc_setup(void *usb_device, USB_SETUP_REQ *req)
+static uint32_t usb_fun_cdc_acm_setup(void *usb_device, USB_SETUP_REQ *req)
 {
     uint16_t len;
     uint8_t *pbuf, ret = SUCCESS;
@@ -372,23 +372,23 @@ static uint32_t usb_fun_cdc_setup(void *usb_device, USB_SETUP_REQ *req)
             if (req->bmRequest & 0x80)
             {
                 /* Get the data to be sent to host from interface layer. */
-                usb_cdc_fun_console_handle_ctrl(usb_device, req->bRequest, ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd_buffer, req->wLength);
+                usb_cdc_fun_console_handle_ctrl(usb_device, req->bRequest, ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_buffer, req->wLength);
 
                 /* Send the data to the host. */
-                usb_fun_control_tx(usb_device, (uint8_t *)((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd_buffer, req->wLength);
+                usb_fun_control_tx(usb_device, (uint8_t *)((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_buffer, req->wLength);
             }
 
             /* Host-to-device request. */
             else
             {
                 /* Set the value of the current command to be processed. */
-                ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd = req->bRequest;
-                ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd_len = req->wLength;
+                ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd = req->bRequest;
+                ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_len = req->wLength;
 
                 /* Prepare the reception of the buffer over endpoint0.
                  * Next step: the received data will be managed in ep0_tx_sent
                  * function. */
-                usb_fun_control_rx(usb_device, (uint8_t *)((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd_buffer, req->wLength);
+                usb_fun_control_rx(usb_device, (uint8_t *)((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_buffer, req->wLength);
             }
         }
 
@@ -410,9 +410,9 @@ static uint32_t usb_fun_cdc_setup(void *usb_device, USB_SETUP_REQ *req)
             if( (req->wValue >> 8) == CDC_DESCRIPTOR_TYPE)
             {
 #ifdef STM32F407_USB_HS_DMA_ENABLED
-                pbuf = usb_fun_cdc_cfg_desc;
+                pbuf = usb_fun_cdc_acm_cfg_desc;
 #else
-                pbuf = usb_fun_cdc_cfg_desc + 9 + (9 * USBD_ITF_MAX_NUM);
+                pbuf = usb_fun_cdc_acm_cfg_desc + 9 + (9 * USB_FUN_ITF_MAX_NUM);
 #endif
                 len = MIN(USB_CDC_DESC_SIZ , req->wLength);
             }
@@ -421,13 +421,13 @@ static uint32_t usb_fun_cdc_setup(void *usb_device, USB_SETUP_REQ *req)
             break;
 
         case USB_REQ_GET_INTERFACE:
-            usb_fun_control_tx(usb_device, (uint8_t *)&((USB_FUN_CDC_DEV *)usb_device)->cdc_console.altset, 1);
+            usb_fun_control_tx(usb_device, (uint8_t *)&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.altset, 1);
             break;
 
         case USB_REQ_SET_INTERFACE:
-            if ((uint8_t)(req->wValue) < USBD_ITF_MAX_NUM)
+            if ((uint8_t)(req->wValue) < USB_FUN_ITF_MAX_NUM)
             {
-                ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.altset = (uint8_t)(req->wValue);
+                ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.altset = (uint8_t)(req->wValue);
             }
             else
             {
@@ -449,36 +449,36 @@ static uint32_t usb_fun_cdc_setup(void *usb_device, USB_SETUP_REQ *req)
     /* Return status code. */
     return (ret);
 
-} /* usb_fun_cdc_setup */
+} /* usb_fun_cdc_acm_setup */
 
 /*
- * usb_fun_cdc_ep0_rx_ready
+ * usb_fun_cdc_acm_ep0_rx_ready
  * @usb_device: USB device instance.
  * Handles event when data is received on control endpoint.
  */
-static uint32_t usb_fun_cdc_ep0_rx_ready(void *usb_device)
+static uint32_t usb_fun_cdc_acm_ep0_rx_ready(void *usb_device)
 {
-    if (((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd != NO_CMD)
+    if (((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd != NO_CMD)
     {
         /* Process this command. */
-        usb_cdc_fun_console_handle_ctrl(&((USB_FUN_CDC_DEV *)usb_device)->cdc_console, ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd, ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd_buffer, (int32_t)((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd_len);
+        usb_cdc_fun_console_handle_ctrl(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console, ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd, ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_buffer, (int32_t)((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_len);
 
         /* Reset the command variable to default value. */
-        ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.cmd = NO_CMD;
+        ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd = NO_CMD;
     }
 
     /* Return success. */
     return (SUCCESS);
 
-} /* usb_fun_cdc_ep0_rx_ready */
+} /* usb_fun_cdc_acm_ep0_rx_ready */
 
 /*
- * usb_fun_cdc_data_in
+ * usb_fun_cdc_acm_data_in
  * @usb_device: USB device instance.
  * @epnum: Endpoint number.
  * Handles data TX a non-control endpoint.
  */
-static uint32_t usb_fun_cdc_data_in(void *usb_device, uint8_t epnum)
+static uint32_t usb_fun_cdc_acm_data_in(void *usb_device, uint8_t epnum)
 {
     int32_t tx_length;
 
@@ -486,120 +486,120 @@ static uint32_t usb_fun_cdc_data_in(void *usb_device, uint8_t epnum)
     UNUSED_PARAM(epnum);
 
     /* Check if there is some data available to be sent on the console. */
-    tx_length = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_DEV *)usb_device)->cdc_console, ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.tx_buffer, CDC_DATA_MAX_PACKET_SIZE);
+    tx_length = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console, ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.tx_buffer, CDC_DATA_MAX_PACKET_SIZE);
 
     if (tx_length > 0)
     {
         /* Prepare the available data buffer to be sent on IN endpoint. */
-        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(((USB_FUN_CDC_DEV *)usb_device)->cdc_console.tx_buffer), (uint32_t)tx_length);
+        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.tx_buffer), (uint32_t)tx_length);
     }
 
     /* Return success. */
     return (SUCCESS);
 
-} /* usb_fun_cdc_data_in */
+} /* usb_fun_cdc_acm_data_in */
 
 /*
- * usb_fun_cdc_data_out
+ * usb_fun_cdc_acm_data_out
  * @usb_device: USB device instance.
  * @epnum: Endpoint number on which data was received.
  * Handles data RX on non control endpoint.
  */
-static uint32_t usb_fun_cdc_data_out(void *usb_device, uint8_t epnum)
+static uint32_t usb_fun_cdc_acm_data_out(void *usb_device, uint8_t epnum)
 {
     /* Handle RX on CDC device. */
-    usb_cdc_fun_console_handle_rx(&((USB_FUN_CDC_DEV *)usb_device)->cdc_console, ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.rx_buffer, (int32_t)((USB_STM32F407_HANDLE *)usb_device)->device.out_ep[epnum].xfer_count);
+    usb_cdc_fun_console_handle_rx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console, ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.rx_buffer, (int32_t)((USB_STM32F407_HANDLE *)usb_device)->device.out_ep[epnum].xfer_count);
 
     /* Prepare out endpoint to receive next packet. */
-    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(((USB_FUN_CDC_DEV *)usb_device)->cdc_console.rx_buffer), *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 64));
+    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.rx_buffer), *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 64));
 
     /* Return success. */
     return (SUCCESS);
 
-} /* usb_fun_cdc_data_out */
+} /* usb_fun_cdc_acm_data_out */
 
 /*
- * usb_fun_cdc_sof
+ * usb_fun_cdc_acm_sof
  * @usb_device: USB device instance.
  * Handles start of a frame.
  */
-static uint32_t usb_fun_cdc_sof(void *usb_device)
+static uint32_t usb_fun_cdc_acm_sof(void *usb_device)
 {
     int32_t tx_length;
 
     /* Check if there is some data available to be sent on the console. */
-    tx_length = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_DEV *)usb_device)->cdc_console, ((USB_FUN_CDC_DEV *)usb_device)->cdc_console.tx_buffer, CDC_DATA_MAX_PACKET_SIZE);
+    tx_length = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console, ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.tx_buffer, CDC_DATA_MAX_PACKET_SIZE);
 
     if (tx_length > 0)
     {
         /* Prepare the available data buffer to be sent on IN endpoint. */
-        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(((USB_FUN_CDC_DEV *)usb_device)->cdc_console.tx_buffer), (uint32_t)tx_length);
+        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.tx_buffer), (uint32_t)tx_length);
     }
 
     /* Return success. */
     return (SUCCESS);
 
-} /* usb_fun_cdc_sof */
+} /* usb_fun_cdc_acm_sof */
 
 /*
- * usb_fun_cdc_get_cfg_desc
+ * usb_fun_cdc_acm_get_cfg_desc
  * @speed: Current device speed.
  * @length: Pointer where data length will be returned.
  * Returns configuration descriptor.
  */
-static uint8_t *usb_fun_cdc_get_cfg_desc(uint8_t speed, uint16_t *length)
+static uint8_t *usb_fun_cdc_acm_get_cfg_desc(uint8_t speed, uint16_t *length)
 {
     /* Remove compiler warning. */
     UNUSED_PARAM(speed);
 
-    *length = sizeof (usb_fun_cdc_cfg_desc);
+    *length = sizeof (usb_fun_cdc_acm_cfg_desc);
 
-    return (usb_fun_cdc_cfg_desc);
+    return (usb_fun_cdc_acm_cfg_desc);
 
-} /* usb_fun_cdc_get_cfg_desc */
+} /* usb_fun_cdc_acm_get_cfg_desc */
 
 /*
- * usb_fun_cdc_get_other_cfg_desc
+ * usb_fun_cdc_acm_get_other_cfg_desc
  * @speed: Current device speed.
  * @length: Pointer where data length will be returned.
  * Returns configuration descriptor.
  */
-static uint8_t *usb_fun_cdc_get_other_cfg_desc(uint8_t speed, uint16_t *length)
+static uint8_t *usb_fun_cdc_acm_get_other_cfg_desc(uint8_t speed, uint16_t *length)
 {
     /* Remove compiler warning. */
     UNUSED_PARAM(speed);
 
-    *length = sizeof (usb_fun_cdc_other_cfg);
+    *length = sizeof (usb_fun_cdc_acm_other_cfg);
 
-    return (usb_fun_cdc_other_cfg);
+    return (usb_fun_cdc_acm_other_cfg);
 
-} /* usb_fun_cdc_get_other_cfg_desc */
+} /* usb_fun_cdc_acm_get_other_cfg_desc */
 
 /*
- * usb_fun_cdc_device_descriptor
+ * usb_fun_cdc_acm_device_descriptor
  * @speed: Current device speed.
  * @length: Pointer where data length will be returned.
  * Returns device descriptor.
  */
-uint8_t *usb_fun_cdc_device_descriptor(uint8_t speed, uint16_t *length)
+uint8_t *usb_fun_cdc_acm_device_descriptor(uint8_t speed, uint16_t *length)
 {
     UNUSED_PARAM(speed);
 
     /* Return the length of the descriptor that will be returned. */
-    *length = sizeof(usb_fun_cdc_device_desc);
+    *length = sizeof(usb_fun_cdc_acm_device_desc);
 
     /* Return the descriptor. */
-    return (usb_fun_cdc_device_desc);
+    return (usb_fun_cdc_acm_device_desc);
 
-} /* usb_fun_cdc_device_descriptor */
+} /* usb_fun_cdc_acm_device_descriptor */
 
 /*
- * usb_fun_cdc_langid_descriptor
+ * usb_fun_cdc_acm_langid_descriptor
  * @speed: Current device speed.
  * @length: Pointer where data length will be returned.
  * Returns language ID descriptor.
  */
-uint8_t *usb_fun_cdc_langid_descriptor(uint8_t speed, uint16_t *length)
+uint8_t *usb_fun_cdc_acm_langid_descriptor(uint8_t speed, uint16_t *length)
 {
     UNUSED_PARAM(speed);
 
@@ -609,126 +609,126 @@ uint8_t *usb_fun_cdc_langid_descriptor(uint8_t speed, uint16_t *length)
     /* Return the descriptor. */
     return (usb_fun_langid_desc);
 
-} /* usb_fun_cdc_langid_descriptor */
+} /* usb_fun_cdc_acm_langid_descriptor */
 
 /*
- * usb_fun_cdc_product_descriptor
+ * usb_fun_cdc_acm_product_descriptor
  * @speed: Current device speed.
  * @desc_buffer: Descriptor buffer that can be used to store the required string.
  * @length: Pointer where data length will be returned, on input will contain
  *  the size of provided buffer.
  * Returns the product descriptor.
  */
-uint8_t *usb_fun_cdc_product_descriptor(uint8_t speed, uint8_t *desc_buffer, uint16_t *length)
+uint8_t *usb_fun_cdc_acm_product_descriptor(uint8_t speed, uint8_t *desc_buffer, uint16_t *length)
 {
     /* Convert the required descriptor. */
     if (speed == USB_STM32F407_SPEED_HIGH)
     {
-        usb_fun_get_string((uint8_t*)USB_FUN_CDC_PDT_HS_STR, desc_buffer, length);
+        usb_fun_get_string((uint8_t*)USB_FUN_CDC_ACM_PDT_HS_STR, desc_buffer, length);
     }
     else
     {
-        usb_fun_get_string((uint8_t*)USB_FUN_CDC_PDT_FS_STR, desc_buffer, length);
+        usb_fun_get_string((uint8_t*)USB_FUN_CDC_ACM_PDT_FS_STR, desc_buffer, length);
     }
 
     /* Return the same descriptor buffer. */
     return (desc_buffer);
 
-} /* usb_fun_cdc_product_descriptor */
+} /* usb_fun_cdc_acm_product_descriptor */
 
 /*
- * usb_fun_cdc_manufacturer_descriptor
+ * usb_fun_cdc_acm_manufacturer_descriptor
  * @speed: Current device speed.
  * @desc_buffer: Descriptor buffer that can be used to store the required string.
  * @length: Pointer where data length will be returned, on input will contain
  *  the size of provided buffer.
  * Returns the manufacturer descriptor.
  */
-uint8_t *usb_fun_cdc_manufacturer_descriptor(uint8_t speed, uint8_t *desc_buffer, uint16_t *length)
+uint8_t *usb_fun_cdc_acm_manufacturer_descriptor(uint8_t speed, uint8_t *desc_buffer, uint16_t *length)
 {
     /* Remove some compiler warnings. */
     UNUSED_PARAM(speed);
 
     /* Convert the required descriptor. */
-    usb_fun_get_string((uint8_t*)USB_FUN_CDC_MFGR_STR, desc_buffer, length);
+    usb_fun_get_string((uint8_t*)USB_FUN_CDC_ACM_MFGR_STR, desc_buffer, length);
 
     /* Return the same descriptor buffer. */
     return (desc_buffer);
 
-} /* usb_fun_cdc_manufacturer_descriptor */
+} /* usb_fun_cdc_acm_manufacturer_descriptor */
 
 /*
- * usb_fun_cdc_serial_number_descriptor
+ * usb_fun_cdc_acm_serial_number_descriptor
  * @speed: Current device speed.
  * @desc_buffer: Descriptor buffer that can be used to store the required string.
  * @length: Pointer where data length will be returned, on input will contain
  *  the size of provided buffer.
  * Returns the serial number descriptor.
  */
-uint8_t *usb_fun_cdc_serial_number_descriptor(uint8_t speed, uint8_t *desc_buffer, uint16_t *length)
+uint8_t *usb_fun_cdc_acm_serial_number_descriptor(uint8_t speed, uint8_t *desc_buffer, uint16_t *length)
 {
     /* Convert the required descriptor. */
     if (speed == USB_STM32F407_SPEED_HIGH)
     {
-        usb_fun_get_string((uint8_t*)USB_FUN_CDC_SN_HS_STR, desc_buffer, length);
+        usb_fun_get_string((uint8_t*)USB_FUN_CDC_ACM_SN_HS_STR, desc_buffer, length);
     }
     else
     {
-        usb_fun_get_string((uint8_t*)USB_FUN_CDC_SN_FS_STR, desc_buffer, length);
+        usb_fun_get_string((uint8_t*)USB_FUN_CDC_ACM_SN_FS_STR, desc_buffer, length);
     }
 
     /* Return the same descriptor buffer. */
     return (desc_buffer);
 
-} /* usb_fun_cdc_serial_number_descriptor */
+} /* usb_fun_cdc_acm_serial_number_descriptor */
 
 /*
- * usb_fun_cdc_config_descriptor
+ * usb_fun_cdc_acm_config_descriptor
  * @speed: Current device speed.
  * @desc_buffer: Descriptor buffer that can be used to store the required string.
  * @length: Pointer where data length will be returned, on input will contain
  *  the size of provided buffer.
  * Returns the configuration string descriptor.
  */
-uint8_t *usb_fun_cdc_config_descriptor(uint8_t speed, uint8_t *desc_buffer, uint16_t *length)
+uint8_t *usb_fun_cdc_acm_config_descriptor(uint8_t speed, uint8_t *desc_buffer, uint16_t *length)
 {
     /* Convert the required descriptor. */
     if (speed == USB_STM32F407_SPEED_HIGH)
     {
-        usb_fun_get_string((uint8_t*)USB_FUN_CDC_CFG_HS_STR, desc_buffer, length);
+        usb_fun_get_string((uint8_t*)USB_FUN_CDC_ACM_CFG_HS_STR, desc_buffer, length);
     }
     else
     {
-        usb_fun_get_string((uint8_t*)USB_FUN_CDC_CFG_FS_STR, desc_buffer, length);
+        usb_fun_get_string((uint8_t*)USB_FUN_CDC_ACM_CFG_FS_STR, desc_buffer, length);
     }
 
     /* Return the same descriptor buffer. */
     return (desc_buffer);
 
-} /* usb_fun_cdc_config_descriptor */
+} /* usb_fun_cdc_acm_config_descriptor */
 
 /*
- * usb_fun_cdc_iface_descriptor
+ * usb_fun_cdc_acm_iface_descriptor
  * @speed: Current device speed.
  * @desc_buffer: Descriptor buffer that can be used to store the required string.
  * @length: Pointer where data length will be returned, on input will contain
  *  the size of provided buffer.
  * Returns the interface string descriptor.
  */
-uint8_t *usb_fun_cdc_iface_descriptor(uint8_t speed, uint8_t *desc_buffer, uint16_t *length)
+uint8_t *usb_fun_cdc_acm_iface_descriptor(uint8_t speed, uint8_t *desc_buffer, uint16_t *length)
 {
     /* Convert the required descriptor. */
     if (speed == USB_STM32F407_SPEED_HIGH)
     {
-        usb_fun_get_string ((uint8_t*)USB_FUN_CDC_IFACE_HS_STR, desc_buffer, length);
+        usb_fun_get_string ((uint8_t*)USB_FUN_CDC_ACM_IFACE_HS_STR, desc_buffer, length);
     }
     else
     {
-        usb_fun_get_string ((uint8_t*)USB_FUN_CDC_IFACE_FS_STR, desc_buffer, length);
+        usb_fun_get_string ((uint8_t*)USB_FUN_CDC_ACM_IFACE_FS_STR, desc_buffer, length);
     }
 
     /* Return the same descriptor buffer. */
     return (desc_buffer);
 
-} /* usb_fun_cdc_iface_descriptor */
-#endif /* USB_FUNCTION */
+} /* usb_fun_cdc_acm_iface_descriptor */
+#endif /* USB_FUNCTION_CDC_ACM */

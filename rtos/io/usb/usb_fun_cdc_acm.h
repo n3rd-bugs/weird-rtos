@@ -1,5 +1,5 @@
 /*
- * usb_fun_cdc.h
+ * usb_fun_cdc_acm.h
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -11,14 +11,15 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 
-#ifndef _USB_FUN_CDC_H_
-#define _USB_FUN_CDC_H_
+#ifndef _USB_FUN_CDC_ACM_H_
+#define _USB_FUN_CDC_ACM_H_
 
 #include <os.h>
 
-/* User configurations. */
-#define USBD_CFG_MAX_NUM                1
-#define USBD_ITF_MAX_NUM                1
+#ifdef USB_FUNCTION_CDC_ACM
+
+/* Enable CDC console. */
+#define USB_CDC_CONSOLE
 
 #define CDC_IN_EP                       0x81    /* EP1 for data IN. */
 #define CDC_OUT_EP                      0x01    /* EP1 for data OUT. */
@@ -26,24 +27,24 @@
 #define CDC_DATA_MAX_PACKET_SIZE        64      /* Endpoint IN & OUT Packet size. */
 #define CDC_CMD_PACKET_SZE              8       /* Control Endpoint Packet size. */
 
-/* CDC descriptor configuration. */
-#define USB_FUN_CDC_VID                 0x0483
-#define USB_FUN_CDC_PID                 0x5740
+/* CDC ACM descriptor configuration. */
+#define USB_FUN_CDC_ACM_VID                 0x0483
+#define USB_FUN_CDC_ACM_PID                 0x5740
 
-#define USB_FUN_CDC_LANGID_STR          0x409   /* English (United States) */
-#define USB_FUN_CDC_MFGR_STR            "N3RD Bugs"
+#define USB_FUN_CDC_ACM_LANGID_STR          0x409   /* English (United States) */
+#define USB_FUN_CDC_ACM_MFGR_STR            "N3RD Bugs"
 
-#define USB_FUN_CDC_PDT_HS_STR          "Tiny-RTOS CDC Console (HS mode)"
-#define USB_FUN_CDC_SN_HS_STR           "2K15-USB-CDC-HS-00000000"
-#define USB_FUN_CDC_CFG_HS_STR          "None"
-#define USB_FUN_CDC_IFACE_HS_STR        "System CDC Console"
+#define USB_FUN_CDC_ACM_PDT_HS_STR          "Tiny-RTOS CDC Console (HS mode)"
+#define USB_FUN_CDC_ACM_SN_HS_STR           "2K15-USB-CDC-HS-00000000"
+#define USB_FUN_CDC_ACM_CFG_HS_STR          "None"
+#define USB_FUN_CDC_ACM_IFACE_HS_STR        "System CDC Console"
 
-#define USB_FUN_CDC_PDT_FS_STR          "Tiny-RTOS CDC Console (FS mode)"
-#define USB_FUN_CDC_SN_FS_STR           "2K15-USB-CDC-FS-00000000"
-#define USB_FUN_CDC_CFG_FS_STR          "None"
-#define USB_FUN_CDC_IFACE_FS_STR        "System CDC Console"
+#define USB_FUN_CDC_ACM_PDT_FS_STR          "Tiny-RTOS CDC Console (FS mode)"
+#define USB_FUN_CDC_ACM_SN_FS_STR           "2K15-USB-CDC-FS-00000000"
+#define USB_FUN_CDC_ACM_CFG_FS_STR          "None"
+#define USB_FUN_CDC_ACM_IFACE_FS_STR        "System CDC Console"
 
-/* CDC core definitions. */
+/* CDC ACM core definitions. */
 #define USB_CDC_CONFIG_DESC_SIZ         (67)
 #define USB_CDC_DESC_SIZ                (67-9)
 
@@ -52,7 +53,7 @@
 #define DEVICE_CLASS_CDC                0x02
 #define DEVICE_SUBCLASS_CDC             0x00
 
-/* CDC requests. */
+/* CDC ACM requests. */
 #define SEND_ENCAPSULATED_COMMAND       0x00
 #define GET_ENCAPSULATED_RESPONSE       0x01
 #define SET_COMM_FEATURE                0x02
@@ -64,19 +65,20 @@
 #define SEND_BREAK                      0x23
 #define NO_CMD                          0xFF
 
-/* USB CDC device. */
-extern USB_FUN_CB usb_fun_cdc_cb;
+/* USB CDC ACM device. */
+extern USB_FUN_CB usb_fun_cdc_acm_cb;
 
 #ifdef USB_CDC_CONSOLE
 #include <usb_cdc_console.h>
 #endif
 #include <os_target.h>
 
-/* USB CDC function device descriptor. */
-typedef struct _usb_fun_cdc_dev
+/* USB CDC ACM function device descriptor. */
+typedef struct _usb_fun_cdc_acm_dev
 {
     USB_STM32F407_HANDLE    usb;
     CDC_CONSOLE             cdc_console;
-} USB_FUN_CDC_DEV;
+} USB_FUN_CDC_ACM_DEV;
 
-#endif /* _USB_FUN_CDC_H_ */
+#endif /* USB_FUNCTION_CDC_ACM */
+#endif /* _USB_FUN_CDC_ACM_H_ */
