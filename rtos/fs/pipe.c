@@ -23,7 +23,6 @@ static PIPE_DATA pipe_data;
 /* Internal function prototypes. */
 static int32_t pipe_lock(void *);
 static void pipe_unlock(void *);
-static int32_t pipe_space_available(void *);
 static void *pipe_open(char *, uint32_t );
 
 /* File system definition. */
@@ -104,7 +103,6 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
         pipe->fs.timeout = MAX_WAIT;
         pipe->fs.get_lock = pipe_lock;
         pipe->fs.release_lock = pipe_unlock;
-        pipe->fs.space_available = pipe_space_available;
 
 #ifdef CONFIG_SEMAPHORE
         /* Create a semaphore to protect pipe data. */
@@ -203,34 +201,6 @@ static void pipe_unlock(void *fd)
     scheduler_unlock();
 #endif
 } /* pipe_unlock */
-
-/*
- * pipe_space_available
- * @fd: File descriptor for the pipe.
- * This function will calculate number of bytes that can be written on this
- * PIPE.
- */
-static int32_t pipe_space_available(void *fd)
-{
-    int32_t space = 0;
-
-    /* Calculate number of bytes available. */
-    if (((PIPE *)fd)->free >= ((PIPE *)fd)->message)
-    {
-        /* Tell FS that we still have this much space available. */
-        space = (int32_t)((((PIPE *)fd)->size + ((PIPE *)fd)->message) - (((PIPE *)fd)->free + sizeof(MSG_DATA)));
-    }
-
-    else
-    {
-        /* Tell FS that we still have this much space available. */
-        space = (int32_t)(((PIPE *)fd)->message - (((PIPE *)fd)->free + sizeof(MSG_DATA)));
-    }
-
-    /* Return number of bytes that can be written on this PIPE. */
-    return (space);
-
-} /* pipe_space_available */
 
 /*
  * pipe_open

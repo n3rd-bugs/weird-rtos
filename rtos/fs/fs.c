@@ -113,6 +113,70 @@ void fs_unregister(FS *file_system)
 } /* fs_unregister */
 
 /*
+ * fs_set_rx_watcher
+ * @fd: File descriptor with a watcher is needed to be registered.
+ * @watcher_data: Watcher data that will be forwarded to the registered
+ *  call back.
+ * @watch_cb: Watch callback that will be called when there is some data is
+ *  available on the file descriptor.
+ * This function registers a watcher with a file descriptor that will be
+ * called whenever we have some RX data is available.
+ */
+void fs_set_rx_watcher(FD fd, void *watcher_data, void (*watch_cb) (void *, void *))
+{
+    if (((FS *)fd)->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
+    }
+
+    /* Should not already have been set. */
+    OS_ASSERT(((FS *)fd)->rx_watcher != NULL);
+
+    /* Set the watcher callback. */
+    ((FS *)fd)->rx_watcher = watch_cb;
+    ((FS *)fd)->rx_watcher_data = watcher_data;
+
+    if (((FS *)fd)->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
+} /* fs_set_rx_watcher */
+
+/*
+ * fs_set_tx_watcher
+ * @fd: File descriptor with a watcher is needed to be registered.
+ * @watcher_data: Watcher data that will be forwarded to the registered
+ *  call back.
+ * @watch_cb: Watch callback that will be called when there is some space
+ *  available on this file descriptor.
+ * This function registers a watcher with a file descriptor that will be
+ * called whenever we have some TX space is available.
+ */
+void fs_set_tx_watcher(FD fd, void *watcher_data, void (*watch_cb) (void *, void *))
+{
+    if (((FS *)fd)->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
+    }
+
+    /* Should not already have been set. */
+    OS_ASSERT(((FS *)fd)->tx_watcher != NULL);
+
+    /* Set the watcher callback. */
+    ((FS *)fd)->tx_watcher = watch_cb;
+    ((FS *)fd)->tx_watcher_data = watcher_data;
+
+    if (((FS *)fd)->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
+} /* fs_set_tx_watcher */
+
+/*
  * fs_connect
  * @fd: File descriptor needed to be connected.
  * @fd_head: Descriptor that will be defined as a head file descriptor.
@@ -124,7 +188,7 @@ void fs_connect(FD fd, FD fd_head)
     if (((FS *)fd)->get_lock)
     {
         /* Get lock for this file descriptor. */
-        ((FS *)fd)->get_lock((void *)fd);
+        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
     }
 
     /* Given file descriptor should not be a chain head. */
@@ -145,7 +209,7 @@ void fs_connect(FD fd, FD fd_head)
     if (((FS *)fd_head)->get_lock)
     {
         /* Get lock for head file descriptor. */
-        ((FS *)fd_head)->get_lock((void *)fd_head);
+        OS_ASSERT(((FS *)fd_head)->get_lock((void *)fd_head) != SUCCESS);
     }
 
     /* If head file descriptor is not a chain head. */
@@ -180,7 +244,7 @@ void fs_destroy_chain(FD fd)
     if (((FS *)fd)->get_lock)
     {
         /* Get lock for this file descriptor. */
-        ((FS *)fd)->get_lock((void *)fd);
+        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
     }
 
     /* Get a file descriptor from list. */
@@ -192,7 +256,7 @@ void fs_destroy_chain(FD fd)
         if (fs->get_lock)
         {
             /* Get lock for head file descriptor. */
-            fs->get_lock((void *)fs);
+            OS_ASSERT(fs->get_lock((void *)fs) != SUCCESS);
         }
 
         /* Remove this file descriptor from the list. */
@@ -226,7 +290,7 @@ void fs_disconnect(FD fd)
     if (((FS *)fd)->get_lock)
     {
         /* Get lock for this file descriptor. */
-        ((FS *)fd)->get_lock((void *)fd);
+        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
     }
 
     /* Given file descriptor should not be a chain head. */
@@ -238,7 +302,7 @@ void fs_disconnect(FD fd)
         if (((FS *)((FS *)fd)->fd_chain.fd_node.head)->get_lock)
         {
             /* Get lock for head file descriptor. */
-            ((FS *)((FS *)fd)->fd_chain.fd_node.head)->get_lock((void *)((FS *)fd)->fd_chain.fd_node.head);
+            OS_ASSERT(((FS *)((FS *)fd)->fd_chain.fd_node.head)->get_lock((void *)((FS *)fd)->fd_chain.fd_node.head) != SUCCESS);
         }
 
         /* We must have removed this file descriptor from it's list. */
@@ -440,7 +504,7 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
              * data on the descriptor and we are in a task. */
             if ((!(((FS *)fd)->flags & FS_DATA_AVAILABLE)) &&
                 (((FS *)fd)->flags & FS_BLOCK) &&
-                (current_task))
+                (get_current_task() != NULL))
             {
                 /* There is never a surety that if some data is available and
                  * picked up by a waiting task as scheduler might decide to run
@@ -462,7 +526,6 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
 #endif
                     /* Initialize suspend criteria. */
                     param.flag = FS_BLOCK_READ;
-                    param.value = 0;
 
                     /* Wait for data on this file descriptor. */
                     status = fd_suspend_criteria(fd, &param, ((FS *)fd)->timeout);
@@ -491,10 +554,10 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
                 }
 
                 /* If there is some space on this file descriptor. */
-                if ((!(((FS *)fd)->flags & FS_NO_MORE_SPACE)) && (((FS *)fd)->space_available))
+                if (((FS *)fd)->flags & FS_SPACE_AVAILABLE)
                 {
                     /* Resume any tasks waiting for space on this file descriptor. */
-                    fd_space_available(fd, ((FS *)fd)->space_available(fd));
+                    fd_space_available(fd);
                 }
             }
         }
@@ -555,18 +618,12 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                 do
                 {
                     /* If we are in a task. */
-                    if ((current_task) &&
+                    if ((get_current_task() != NULL) &&
 
                         /* Check if we can block on write for this FD and there
                          * is no space. */
-                        (((((FS *)fd)->flags & FS_BLOCK) &&
-                          (((FS *)fd)->flags & FS_NO_MORE_SPACE)) ||
-
-                        /* If we need to flush all the data then we should block
-                         * until we have required space. */
-                        ((((FS *)fd)->flags & FS_FLUSH_WRITE) &&
-                         (((FS *)fd)->space_available) &&
-                         ((((FS *)fd)->space_available)(fd) < nbytes))))
+                        ((((FS *)fd)->flags & FS_BLOCK) &&
+                         (!(((FS *)fd)->flags & FS_SPACE_AVAILABLE))))
                     {
                         /* There is never a surety that if some space is available and
                          * consumed up by a waiting task as scheduler might decide to run
@@ -576,7 +633,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                          * schedulers are present. */
                         do
                         {
-    #ifdef CONFIG_SLEEP
+#ifdef CONFIG_SLEEP
                             if (((FS *)fd)->timeout != (uint32_t)MAX_WAIT)
                             {
                                 /* If called again compensate for the time we have already waited. */
@@ -585,10 +642,9 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                                 /* Save when we suspended last time. */
                                 last_tick = current_system_tick();
                             }
-    #endif
+#endif
                             /* Initialize suspend criteria. */
                             param.flag = FS_BLOCK_WRITE;
-                            param.value = (uint32_t)nbytes;
 
                             /* Wait for space on this file descriptor. */
                             status = fd_suspend_criteria(fd, &param, ((FS *)fd)->timeout);
@@ -600,11 +656,11 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                                 break;
                             }
 
-                        } while (((FS *)fd)->flags & FS_NO_MORE_SPACE);
+                        } while (!(((FS *)fd)->flags & FS_SPACE_AVAILABLE));
                     }
 
                     /* Check if some space is available. */
-                    if ((status == SUCCESS) && (!(((FS *)fd)->flags & FS_NO_MORE_SPACE)))
+                    if ((status == SUCCESS) && (((FS *)fd)->flags & FS_SPACE_AVAILABLE))
                     {
                         /* Transfer call to underlying API. */
                         status = ((FS *)fd)->write((void *)fd, buffer, nbytes);
@@ -637,10 +693,10 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                 }
 
                 /* Some space is still available. */
-                if (!(((FS *)fd)->flags & FS_NO_MORE_SPACE) && (((FS *)fd)->space_available))
+                if (((FS *)fd)->flags & FS_SPACE_AVAILABLE)
                 {
                     /* Resume any tasks waiting for space on this file descriptor. */
-                    fd_space_available(fd, ((FS *)fd)->space_available(fd));
+                    fd_space_available(fd);
                 }
             }
 
@@ -668,6 +724,11 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                 /* Release lock for this file descriptor. */
                 ((FS *)fd)->release_lock((void *)fd);
             }
+        }
+        else
+        {
+            /* Unable to obtain semaphore. */
+            break;
         }
 
         /* Check if we need to process a file descriptor in the chain. */
@@ -748,9 +809,7 @@ static uint8_t fd_sreach_task(void *node, void *param)
     uint8_t match = FALSE;
 
     /* Check if the waiting task fulfills our criteria. */
-    if ( (fs_param->flag & ((FS_PARAM *)((TASK *)node)->suspend_data)->flag) &&
-         ((((FS_PARAM *)((TASK *)node)->suspend_data)->value == 0) ||
-          (fs_param->value >= ((FS_PARAM *)((TASK *)node)->suspend_data)->value)) )
+    if (fs_param->flag & ((FS_PARAM *)((TASK *)node)->suspend_data)->flag)
     {
         /* Got an match. */
         match = TRUE;
@@ -777,7 +836,11 @@ static uint8_t fd_sreach_task(void *node, void *param)
 int32_t fd_suspend_criteria(void *fd, FS_PARAM *param, uint32_t timeout)
 {
     TASK *tcb = get_current_task();
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
     int32_t status = SUCCESS;
+
+    /* Current task should not be null. */
+    OS_ASSERT(tcb == NULL);
 
 #ifdef CONFIG_SLEEP
     /* Check if we need to wait for a finite time. */
@@ -809,6 +872,13 @@ int32_t fd_suspend_criteria(void *fd, FS_PARAM *param, uint32_t timeout)
     /* Disable preemption. */
     scheduler_lock();
 
+    /* Disable interrupts. */
+    /* File system semaphores can be accessed through the interrupts for
+     * data protection, so disable the interrupts before releasing the
+     * semaphore as this will cause task lists to get corrupted if this task
+     * is needed to be resumed again from an interrupt. */
+    DISABLE_INTERRUPTS();
+
     if (((FS *)fd)->release_lock)
     {
         /* Release lock for this file descriptor. */
@@ -823,6 +893,9 @@ int32_t fd_suspend_criteria(void *fd, FS_PARAM *param, uint32_t timeout)
 
     /* Wait for either being resumed by some data or timeout. */
     task_waiting();
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Check if we are resumed due to a timeout. */
     if (tcb->status == TASK_RESUME_SLEEP)
@@ -840,6 +913,9 @@ int32_t fd_suspend_criteria(void *fd, FS_PARAM *param, uint32_t timeout)
         /* Return the error returned by the task. */
         status = tcb->status;
     }
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Enable preemption. */
     scheduler_unlock();
@@ -874,12 +950,24 @@ void fd_data_available(void *fd)
     /* Set flag that some data is available. */
     ((FS *)fd)->flags |= FS_DATA_AVAILABLE;
 
-    /* Initialize criteria. */
-    fs_param.flag = FS_BLOCK_READ;
-    fs_param.value = 0;
+    /* Check if there is a consumer that must be called to deliver this data. */
+    if (((FS *)fd)->rx_watcher)
+    {
+        /* Call the consumer, this can be called from an interrupt so locks
+         * must not be used here, also if called from user space appropriate
+         * locks are already acquired. */
+        ((FS *)fd)->rx_watcher(fd, ((FS *)fd)->rx_watcher_data);
+    }
 
-    /* Resume a task if any waiting on read on this file descriptor. */
-    fd_handle_criteria(fd, &fs_param);
+    /* If we still have some data available, resume any tasks waiting on it. */
+    if (((FS *)fd)->flags & FS_DATA_AVAILABLE)
+    {
+        /* Initialize criteria. */
+        fs_param.flag = FS_BLOCK_READ;
+
+        /* Resume a task if any waiting on read on this file descriptor. */
+        fd_handle_criteria(fd, &fs_param);
+    }
 
 } /* fd_data_available */
 
@@ -899,23 +987,34 @@ void fd_data_flushed(void *fd)
 /*
  * fd_space_available
  * @fs: File descriptor for which there is data space is available.
- * @nbytes: Number of bytes available.
  * This function will clear the FD flag that is there is some space available
  * that can now be used, and resume any tasks waiting on this.
  */
-void fd_space_available(void *fd, int32_t nbytes)
+void fd_space_available(void *fd)
 {
     FS_PARAM fs_param;
 
     /* Set flag that some data is available. */
-    ((FS *)fd)->flags &= (uint32_t)~(FS_NO_MORE_SPACE);
+    ((FS *)fd)->flags |= FS_SPACE_AVAILABLE;
 
-    /* Initialize criteria. */
-    fs_param.flag = FS_BLOCK_WRITE;
-    fs_param.value = (uint32_t)nbytes;
+    /* Check if there is a generator that should be called to fill the space. */
+    if (((FS *)fd)->tx_watcher)
+    {
+        /* Call the consumer, this can be called from an interrupt so locks
+         * must not be used here, also if called from user space appropriate
+         * locks are already acquired. */
+        ((FS *)fd)->tx_watcher(fd, ((FS *)fd)->tx_watcher_data);
+    }
 
-    /* Resume a task if any waiting on write for this file descriptor. */
-    fd_handle_criteria(fd, &fs_param);
+    /* If there is still some space available. */
+    if (((FS *)fd)->flags & FS_SPACE_AVAILABLE)
+    {
+        /* Initialize criteria. */
+        fs_param.flag = FS_BLOCK_WRITE;
+
+        /* Resume a task if any waiting on write for this file descriptor. */
+        fd_handle_criteria(fd, &fs_param);
+    }
 
 } /* fd_space_available */
 
@@ -928,7 +1027,7 @@ void fd_space_available(void *fd, int32_t nbytes)
 void fd_space_consumed(void *fd)
 {
     /* Set the flag that there is no more space in this FD. */
-    ((FS *)fd)->flags |= FS_NO_MORE_SPACE;
+    ((FS *)fd)->flags &= (uint32_t)(~FS_SPACE_AVAILABLE);
 
 } /* fd_space_consumed */
 
@@ -989,12 +1088,8 @@ void fs_resume_tasks(void *fd, int32_t status, FS_PARAM *param, uint32_t n)
             /* Try to reschedule this task. */
             ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
 
-            /* This function might have been called from an IRQ. */
-            if (current_task)
-            {
-                /* Yield the current task and schedule the new task if required. */
-                task_yield();
-            }
+            /* Try to yield the current task. */
+            task_yield();
 
             /* A task has been processed. */
             n--;

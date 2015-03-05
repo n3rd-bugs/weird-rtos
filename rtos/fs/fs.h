@@ -34,7 +34,7 @@ typedef void *FD;
 
 /* File system specific flags. */
 #define FS_DATA_AVAILABLE   0x00000001
-#define FS_NO_MORE_SPACE    0x00000002
+#define FS_SPACE_AVAILABLE  0x00000002
 #define FS_CHAIN_HEAD       0x00000004
 #define FS_BLOCK            0x00010000
 #define FS_PRIORITY_SORT    0x00020000
@@ -65,7 +65,16 @@ struct _fs
     /* Driver operations. */
     int32_t     (*get_lock) (void *);
     void        (*release_lock) (void *);
-    int32_t     (*space_available) (void *);
+    void        (*rx_consumed) (void *);
+    void        (*tx_available) (void *);
+
+    /* Read hook for this file descriptor. */
+    void        (*rx_watcher) (void *, void *);
+    void        *rx_watcher_data;
+
+    /* Write hook for this file descriptor. */
+    void        (*tx_watcher) (void *, void *);
+    void        *tx_watcher_data;
 
     /* File system specific flags. */
     uint32_t    flags;
@@ -98,13 +107,18 @@ struct _fs
             FD          *head;
         } fd_node;
     } fd_chain;
+
+    /* Buffer file system members. */
+    char            *tx_buffer;
+    char            *rx_buffer;
+    uint32_t        rx_len;
+    uint32_t        tx_len;
 };
 
 /* This holds the resumption criteria for a task waiting on an FS. */
 typedef struct _fs_param
 {
     uint32_t    flag;
-    uint32_t    value;
 } FS_PARAM;
 
 /* File system list. */
@@ -157,6 +171,8 @@ int32_t fs_read(FD, char *, int32_t);
 int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
+void fs_set_rx_watcher(FD, void *, void (*) (void *, void *));
+void fs_set_tx_watcher(FD, void *, void (*) (void *, void *));
 void fs_connect(FD, FD);
 void fs_destroy_chain(FD);
 void fs_disconnect(FD);
@@ -166,7 +182,7 @@ void fs_register(FS *);
 void fs_unregister(FS *);
 void fd_data_available(void *);
 void fd_data_flushed(void *);
-void fd_space_available(void *, int32_t);
+void fd_space_available(void *);
 void fd_space_consumed(void *);
 void fd_handle_criteria(void *, FS_PARAM *);
 int32_t fd_suspend_criteria(void *, FS_PARAM *, uint32_t);
