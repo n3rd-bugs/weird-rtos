@@ -99,7 +99,7 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
         pipe->fs.read = &pipe_read;
         pipe->fs.write = &pipe_write;
         memset(&pipe->fs.task_list, 0, sizeof(struct _fs_task_list));
-        pipe->fs.flags = FS_BLOCK;
+        pipe->fs.flags = (FS_BLOCK | FS_SPACE_AVAILABLE);
         pipe->fs.timeout = MAX_WAIT;
         pipe->fs.get_lock = pipe_lock;
         pipe->fs.release_lock = pipe_unlock;
