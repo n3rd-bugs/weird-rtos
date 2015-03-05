@@ -18,6 +18,13 @@
 #ifdef USB_FUNCTION
 #include <usb_function_stm32f407_interrupt.h>
 
+/* ST32F407 USB function configuration. */
+#define STM32F407_USB_CDC_ACM
+//#define STM32F407_USB_CDC_DEBUG
+#ifdef CONFIG_PPP
+#define STM32F407_USB_CDC_ACM_PPP
+#endif
+
 /* Function prototypes. */
 void usb_function_stm32f407_init();
 uint32_t usb_function_stm32f407_core_initialize_device(USB_STM32F407_HANDLE *);

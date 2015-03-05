@@ -15,7 +15,7 @@
 
 #ifdef USB_FUNCTION
 
-#ifdef USB_FUNCTION_CDC_ACM
+#ifdef STM32F407_USB_CDC_ACM
 /* Needs to be word aligned. */
 USB_FUN_CDC_ACM_DEV USB_CDC_Device __attribute__ ((aligned (0x10)));
 #endif
@@ -24,7 +24,7 @@ ISR_FUN usb_otg_interrupt()
 {
     OS_ISR_ENTER();
 
-#ifdef USB_FUNCTION_CDC_ACM
+#ifdef STM32F407_USB_CDC_ACM
     usb_function_stm32f407_interrupt_handler (&USB_CDC_Device.usb);
 #endif
 
@@ -37,8 +37,10 @@ ISR_FUN usb_otg_interrupt()
  */
 void usb_function_stm32f407_init()
 {
-#ifdef USB_FUNCTION_CDC_ACM
+#ifdef STM32F407_USB_CDC_ACM
+#ifdef STM32F407_USB_CDC_DEBUG
     extern FD debug_usart_fd;
+#endif
 
     memset(&USB_CDC_Device, 0, sizeof(USB_FUN_CDC_ACM_DEV));
 
@@ -53,13 +55,13 @@ void usb_function_stm32f407_init()
 
     /* Initialize and register a console for this device. */
     /* For now we only support one CDC function console. */
-    USB_CDC_Device.cdc_console.console.fs.name = "cdcf0";
-    USB_CDC_Device.cdc_console.rx_pipe.fs.name = "cdcrx0";
-    USB_CDC_Device.cdc_console.tx_pipe.fs.name = "cdctx0";
+    USB_CDC_Device.cdc_console.console.fs.name = "cdcacmf0";
     usb_cdc_console_register(&USB_CDC_Device.cdc_console);
 
+#ifdef STM32F407_USB_CDC_DEBUG
     /* Connect this descriptor to the UART file descriptor. */
     fs_connect((FD)&USB_CDC_Device.cdc_console, debug_usart_fd);
+#endif
 #endif
 
 } /* usb_function_stm32f407_init */
@@ -399,7 +401,7 @@ uint32_t usb_function_stm32f407_ep_activate(USB_STM32F407_HANDLE *usb_device, US
  * @usb_device: USB device instance.
  * This function will return the current device speed.
  */
-uint32_t usb_function_stm32f407_ep_deactivate(USB_STM32F407_HANDLE *usb_device , USB_ENDPOINT *ep)
+uint32_t usb_function_stm32f407_ep_deactivate(USB_STM32F407_HANDLE *usb_device, USB_ENDPOINT *ep)
 {
     USB_STM32F407_DEPCTL  depctl;
     USB_STM32F407_DAINT  daintmsk;
