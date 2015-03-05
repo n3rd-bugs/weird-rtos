@@ -80,6 +80,8 @@ typedef struct _usb_device
 {
     USB_ENDPOINT    in_ep[USB_MAX_FIFO];
     USB_ENDPOINT    out_ep[USB_MAX_FIFO];
+    uint32_t        cmd;
+    uint32_t        altset;
     uint8_t         str_desc_buffer[USB_STRING_DESC_SIZE];
     uint8_t         setup_packet[8*3];
     USB_FUN_CB      *class_cb;

@@ -208,7 +208,7 @@ uint32_t usb_fun_endpoint_prepare_rx(USB_STM32F407_HANDLE *usb_device, uint8_t a
     else
     {
         /* Start RX on given endpoint. */
-        usb_function_stm32f407_ep_start_transfer(usb_device, ep );
+        usb_function_stm32f407_ep_start_transfer(usb_device, ep);
     }
 
     /* Always return success. */
@@ -400,7 +400,7 @@ uint32_t usb_fun_endpoint_get_status(USB_STM32F407_HANDLE *usb_device, uint8_t a
     }
 
     /* Get endpoint status. */
-    status = usb_function_stm32f407_ep_get_status(usb_device ,ep);
+    status = usb_function_stm32f407_ep_get_status(usb_device, ep);
 
     /* Return the current status */
     return (status);

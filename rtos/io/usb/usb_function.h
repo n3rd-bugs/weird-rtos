@@ -18,7 +18,7 @@
 #ifdef USB_FUNCTION
 
 /* USB function configurations. */
-//#define USB_FUNCTION_CDC_ACM
+#define USB_FUNCTION_CDC_ACM
 
 /* USB Configuration. */
 //#define USB_SUPPORT_STRING_DESC

@@ -80,5 +80,8 @@ typedef struct _usb_fun_cdc_acm_dev
     CDC_CONSOLE             cdc_console;
 } USB_FUN_CDC_ACM_DEV;
 
+/* Function prototypes. */
+void usb_fun_cdc_acm_data_out_enable(void *);
+
 #endif /* USB_FUNCTION_CDC_ACM */
 #endif /* _USB_FUN_CDC_ACM_H_ */
