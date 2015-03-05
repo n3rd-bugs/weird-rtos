@@ -111,7 +111,7 @@ static void sleep_task_re_enqueue(TASK *tcb, uint8_t from)
  * number of system ticks. This function adds the given task in the sleeping
  * tasks list.
  */
-void sleep_add_to_list(TASK *tcb, uint32_t ticks)
+void sleep_add_to_list(TASK *tcb, uint64_t ticks)
 {
     /* Calculate system tick at which task will be invoked. */
     tcb->tick_sleep = current_system_tick() + ticks;
@@ -151,6 +151,9 @@ void sleep(uint32_t ticks)
 
     /* Save the current task pointer. */
     tcb = get_current_task();
+
+    /* Current task should not be null. */
+    OS_ASSERT(tcb == NULL);
 
     /* Add current task to the sleep list. */
     sleep_add_to_list(tcb, ticks);

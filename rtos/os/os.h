@@ -30,6 +30,9 @@
 #ifdef CONFIG_USB
 #include <usb.h>
 #endif
+#ifdef CONFIG_PPP
+#include <ppp.h>
+#endif
 #include <os_target.h>
 
 /* Some return codes. */
@@ -67,15 +70,13 @@
 #define ALLIGN_FLOOR(n)         (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(0x3)) : (n))
 #define ALLIGN_CEIL(n)          (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(0x3)) + ALLIGN_SIZE : (n))
 
-/* Exported variables. */
-extern TASK *current_task;
-
 /* ISR routines. */
-#define OS_ISR_ENTER();         TASK *task_save = current_task;         \
-                                current_task = NULL;
+extern TASK *return_task;
+#define OS_ISR_ENTER();         return_task = get_current_task();           \
+                                set_current_task(NULL);
 
-
-#define OS_ISR_EXIT();          current_task = task_save;
+#define OS_ISR_EXIT();          set_current_task(return_task);              \
+                                return_task = NULL;
 
 /* Public function prototypes. */
 void os_run();

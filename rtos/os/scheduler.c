@@ -223,11 +223,13 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
  */
 void scheduler_lock()
 {
+    TASK *tcb = get_current_task();
+
     /* Check if we have a current task. */
-    if (current_task != NULL)
+    if (tcb != NULL)
     {
         /* Set the flag on the current task to disable scheduling. */
-        current_task->flags |= TASK_DONT_PREEMPT;
+        tcb->flags |= TASK_DONT_PREEMPT;
     }
 
 } /* scheduler_lock */
@@ -239,11 +241,13 @@ void scheduler_lock()
  */
 void scheduler_unlock()
 {
+    TASK *tcb = get_current_task();
+
     /* Check if we have a current task. */
-    if (current_task != NULL)
+    if (tcb != NULL)
     {
         /* Clear the flag on the current task to enable scheduling. */
-        current_task->flags &= ((uint8_t)~(TASK_DONT_PREEMPT));
+        tcb->flags &= ((uint8_t)~(TASK_DONT_PREEMPT));
     }
 
 } /* scheduler_unlock */

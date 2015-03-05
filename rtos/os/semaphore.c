@@ -68,7 +68,7 @@ void semaphore_destroy(SEMAPHORE *semaphore)
         /* Try to reschedule this task. */
         ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
 
-        /* Yield the current task and schedule the new task if required. */
+        /* Try to yield the current task. */
         task_yield();
 
         /* Get the next task that can be resumed. */
@@ -106,12 +106,12 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     /* Check if this semaphore is not available. */
     if (semaphore->count == 0)
     {
-        /* Check if we need to wait for semaphore to be free. */
-        if (wait > 0)
-        {
-            /* Save the current task pointer. */
-            tcb = get_current_task();
+        /* Save the current task pointer. */
+        tcb = get_current_task();
 
+        /* Check if we need to wait for semaphore to be free. */
+        if ((wait > 0) && (tcb != NULL))
+        {
             /* There is never a surety that if semaphore is released it will be
              * picked up by a waiting task as scheduler might decide to run
              * some other higher/same priority task and it might acquire the
@@ -256,7 +256,7 @@ void semaphore_release(SEMAPHORE *semaphore)
         /* Try to reschedule this task. */
         ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
 
-        /* Yield the current task and schedule the new task if required. */
+        /* Try to yield the current task. */
         task_yield();
     }
 

@@ -16,6 +16,10 @@
 /* This will hold the control block for the currently running. */
 TASK *current_task = NULL;
 
+/* This will hold the control block for task in which we will return after
+ * executing the interrupt. */
+TASK *return_task = NULL;
+
 /* This is used for time keeping in the system. */
 uint64_t current_tick = 0;
 /*
@@ -54,8 +58,20 @@ void os_process_system_tick()
 void task_yield()
 {
     uint32_t interrupt_level;
+    uint8_t in_isr = FALSE;
 
-    OS_ASSERT(current_task == NULL);
+    /* If we are in an interrupt. */
+    if (current_task == NULL)
+    {
+        /* Return task should not be null. */
+        OS_ASSERT(return_task == NULL);
+
+        /* Pick the return task. */
+        current_task = return_task;
+
+        /* We are in an interrupt. */
+        in_isr = TRUE;
+    }
 
     /* Check if we can actually yield the current task. */
     if (!(current_task->flags & TASK_DONT_PREEMPT))
@@ -76,6 +92,15 @@ void task_yield()
 
         /* Restore old interrupt level. */
         SET_INTERRUPT_LEVEL(interrupt_level);
+    }
+
+    if (in_isr == TRUE)
+    {
+        /* Save the return task. */
+        return_task = current_task;
+
+        /* Clear current task. */
+        current_task = NULL;
     }
 
 } /* task_yield */
@@ -126,9 +151,6 @@ void set_current_task(TASK *tcb)
  */
 TASK *get_current_task()
 {
-    /* Assert if current task is null. */
-    OS_ASSERT(current_task == NULL);
-
     /* Return the current task's control block. */
    return (current_task);
 
