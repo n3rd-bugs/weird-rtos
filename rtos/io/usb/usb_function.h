@@ -107,6 +107,9 @@ typedef struct _usb_fun_cb
     uint32_t (*init)(void *, uint8_t);
     uint32_t (*deinit)(void *, uint8_t);
 
+    uint32_t (*connected)(void *);
+    uint32_t (*disconnected)(void *);
+
     /* Control endpoints. */
     uint32_t (*setup)(void *, USB_SETUP_REQ  *);
     uint32_t (*ep0_tx_sent)(void *);

@@ -45,6 +45,8 @@ typedef struct _cdc_console
 /* Function prototypes. */
 void usb_cdc_console_register(CDC_CONSOLE *);
 void usb_cdc_console_unregister(CDC_CONSOLE *);
+void usb_cdc_console_handle_connect(CDC_CONSOLE *);
+void usb_cdc_console_handle_disconnect(CDC_CONSOLE *);
 
 /* Device driver APIs. */
 void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *, uint32_t);

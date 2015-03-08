@@ -18,6 +18,8 @@
 /* Internal function prototypes. */
 static uint32_t usb_fun_cdc_acm_init(void *, uint8_t);
 static uint32_t usb_fun_cdc_acm_deinit(void *, uint8_t);
+static uint32_t usb_fun_cdc_acm_connected(void *);
+static uint32_t usb_fun_cdc_acm_disconnected(void *);
 static uint32_t usb_fun_cdc_acm_setup (void *, USB_SETUP_REQ *);
 static uint32_t usb_fun_cdc_acm_ep0_rx_ready(void *);
 static uint32_t usb_fun_cdc_acm_data_in(void *, uint8_t);
@@ -270,6 +272,9 @@ USB_FUN_CB usb_fun_cdc_acm_cb =
     .init = &usb_fun_cdc_acm_init,
     .deinit = &usb_fun_cdc_acm_deinit,
 
+    .connected = &usb_fun_cdc_acm_connected,
+    .disconnected = &usb_fun_cdc_acm_disconnected,
+
     /* Endpoint management. */
     .setup = &usb_fun_cdc_acm_setup,
     .ep0_rx_ready = &usb_fun_cdc_acm_ep0_rx_ready,
@@ -348,6 +353,36 @@ static uint32_t usb_fun_cdc_acm_deinit(void *usb_device, uint8_t cfgidx)
     return (SUCCESS);
 
 } /* usb_fun_cdc_acm_deinit */
+
+/*
+ * usb_fun_cdc_acm_connected
+ * @usb_device: USB device instance.
+ * Will be called when device is connected.
+ */
+static uint32_t usb_fun_cdc_acm_connected(void *usb_device)
+{
+    /* Handle connect event. */
+    usb_cdc_console_handle_connect(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
+
+    /* Return success. */
+    return (SUCCESS);
+
+} /* usb_fun_cdc_acm_connected */
+
+/*
+ * usb_fun_cdc_acm_disconnected
+ * @usb_device: USB device instance.
+ * Will be called when device is disconnected.
+ */
+static uint32_t usb_fun_cdc_acm_disconnected(void *usb_device)
+{
+    /* Handle disconnect event. */
+    usb_cdc_console_handle_disconnect(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
+
+    /* Return success. */
+    return (SUCCESS);
+
+} /* usb_fun_cdc_acm_disconnected */
 
 /*
  * usb_fun_cdc_acm_setup

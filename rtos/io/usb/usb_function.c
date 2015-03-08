@@ -382,7 +382,11 @@ static uint32_t usb_fun_iso_out_incomplete(USB_STM32F407_HANDLE *usb_device)
  */
 static uint32_t usb_fun_dev_connected(USB_STM32F407_HANDLE *usb_device)
 {
-    UNUSED_PARAM(usb_device);
+    /* Call class callback. */
+    if (usb_device->device.class_cb->connected)
+    {
+        usb_device->device.class_cb->connected(usb_device);
+    }
 
     /* Always return success. */
     return (SUCCESS);
@@ -398,9 +402,9 @@ static uint32_t usb_fun_dev_connected(USB_STM32F407_HANDLE *usb_device)
 static uint32_t usb_fun_dev_disconnected(USB_STM32F407_HANDLE *usb_device)
 {
     /* Call class callback. */
-    if (usb_device->device.class_cb->deinit)
+    if (usb_device->device.class_cb->disconnected)
     {
-        usb_device->device.class_cb->deinit(usb_device, 0);
+        usb_device->device.class_cb->disconnected(usb_device);
     }
 
     /* Always return success. */

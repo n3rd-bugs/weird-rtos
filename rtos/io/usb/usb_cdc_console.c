@@ -61,6 +61,30 @@ void usb_cdc_console_unregister(CDC_CONSOLE *cdc_cons)
 } /* usb_cdc_console_unregister */
 
 /*
+ * usb_cdc_console_handle_connect
+ * @cdc_cons: CDC console connected.
+ * This function will be called when USB device is connected.
+ */
+void usb_cdc_console_handle_connect(CDC_CONSOLE *cdc_cons)
+{
+    /* Handle the connection event. */
+    fs_connected((FD)cdc_cons);
+
+} /* usb_cdc_console_handle_connect */
+
+/*
+ * usb_cdc_console_handle_disconnect
+ * @cdc_cons: CDC console disconnected.
+ * This function will be called when USB device is disconnected.
+ */
+void usb_cdc_console_handle_disconnect(CDC_CONSOLE *cdc_cons)
+{
+    /* Handle the disconnection event. */
+    fs_disconnected((FD)cdc_cons);
+
+} /* usb_cdc_console_handle_disconnect */
+
+/*
  * usb_cdc_fun_console_handle_rx
  * @cdc_cons: USB CDC function console context.
  * @nbytes: Number of bytes received.
