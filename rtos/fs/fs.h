@@ -76,6 +76,11 @@ struct _fs
     void        (*tx_watcher) (void *, void *);
     void        *tx_watcher_data;
 
+    /* Connection watcher hooks. */
+    void        (*connected) (void *, void *);
+    void        (*disconnected) (void *, void *);
+    void        *connection_watcher_data;
+
     /* File system specific flags. */
     uint32_t    flags;
 
@@ -173,6 +178,9 @@ int32_t fs_ioctl(FD, uint32_t, void *);
 
 void fs_set_rx_watcher(FD, void *, void (*) (void *, void *));
 void fs_set_tx_watcher(FD, void *, void (*) (void *, void *));
+void fs_set_connection_watcher(FD *, void *, void (*) (void *, void *), void (*) (void *, void *));
+void fs_connected(FD *);
+void fs_disconnected(FD *);
 void fs_connect(FD, FD);
 void fs_destroy_chain(FD);
 void fs_disconnect(FD);

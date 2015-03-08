@@ -177,6 +177,79 @@ void fs_set_tx_watcher(FD fd, void *watcher_data, void (*watch_cb) (void *, void
 } /* fs_set_tx_watcher */
 
 /*
+ * fs_set_connection_watcher
+ * @fd: File descriptor for which connection is needed to be monitored.
+ * @watcher_data: Watcher data.
+ * @connected_cb: This will be called when file descriptor is connected.
+ * @disconnected_cb: This will be called when file descriptor is disconnected.
+ * This function will set connection watcher for a given file system.
+ */
+void fs_set_connection_watcher(FD *fd, void *watcher_data, void (*connected_cb) (void *, void *), void (*disconnected_cb) (void *, void *))
+{
+    /* Save/update watcher data. */
+    ((FS *)fd)->connection_watcher_data = watcher_data;
+    ((FS *)fd)->connected = connected_cb;
+    ((FS *)fd)->disconnected = disconnected_cb;
+
+} /* fs_set_connection_watcher */
+
+/*
+ * fs_connected
+ * @fd: File descriptor for which connection was established.
+ * This function will be called by driver when this console is connected.
+ */
+void fs_connected(FD *fd)
+{
+    if (((FS *)fd)->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
+    }
+
+    /* If a connection watcher was registered. */
+    if (((FS *)fd)->connected != NULL)
+    {
+        /* Call the watcher function. */
+        ((FS *)fd)->connected(fd, ((FS *)fd)->connection_watcher_data);
+    }
+
+    if (((FS *)fd)->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
+
+} /* console_connected */
+
+/*
+ * fs_disconnected
+ * @fd: File descriptor for which connection was terminated.
+ * This function will be called by driver when this console is disconnected.
+ */
+void fs_disconnected(FD *fd)
+{
+    if (((FS *)fd)->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
+    }
+
+    /* If a connection watcher was registered. */
+    if (((FS *)fd)->disconnected != NULL)
+    {
+        /* Call the watcher function. */
+        ((FS *)fd)->disconnected(fd, ((FS *)fd)->connection_watcher_data);
+    }
+
+    if (((FS *)fd)->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
+
+} /* console_disconnected */
+
+/*
  * fs_connect
  * @fd: File descriptor needed to be connected.
  * @fd_head: Descriptor that will be defined as a head file descriptor.
@@ -578,7 +651,8 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
  * fs_write
  * @fd: File descriptor on which data is needed to be written.
  * @buffer: Data buffer needed to be sent.
- * @nbytes: Number of bytes to write.
+ * @nbytes: Number of bytes to write. If -1 the we will use assume that given
+ *  data is a null terminated string and it's length will be calculated locally.
  * @return: Returns number of bytes written, if this descriptor is part of a
  * chain average number of bytes written will be returned.
  * This function will write data on a file descriptor.
@@ -590,10 +664,21 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
 #endif
     FS_PARAM param;
     int32_t status = SUCCESS, written = 0;
-    int32_t n_fd = 0, nbytes_fd = nbytes;
-    char *buffer_start = buffer;
+    int32_t n_fd = 0, nbytes_fd;
+    char *buffer_start;
     FD next_fd = NULL;
     uint8_t is_list = FALSE;
+
+    /* If this is a null terminated string. */
+    if (nbytes == -1)
+    {
+        /* Compute the string length. */
+        nbytes = (int32_t)strlen(buffer);
+    }
+
+    /* Save buffer data. */
+    buffer_start = buffer;
+    nbytes_fd = nbytes;
 
     do
     {
