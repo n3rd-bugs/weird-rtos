@@ -113,16 +113,12 @@ void fs_unregister(FS *file_system)
 } /* fs_unregister */
 
 /*
- * fs_set_rx_watcher
- * @fd: File descriptor with a watcher is needed to be registered.
- * @watcher_data: Watcher data that will be forwarded to the registered
- *  call back.
- * @watch_cb: Watch callback that will be called when there is some data is
- *  available on the file descriptor.
- * This function registers a watcher with a file descriptor that will be
- * called whenever we have some RX data is available.
+ * fs_set_data_watcher
+ * @fd: File descriptor for which data is needed to be monitored.
+ * @watcher: Data watcher needed to be registered.
+ * This function will add a data watcher for the given file system.
  */
-void fs_set_rx_watcher(FD fd, void *watcher_data, void (*watch_cb) (void *, void *))
+void fs_set_data_watcher(FD fd, FS_DATA_WATCHER *watcher)
 {
     if (((FS *)fd)->get_lock)
     {
@@ -130,66 +126,39 @@ void fs_set_rx_watcher(FD fd, void *watcher_data, void (*watch_cb) (void *, void
         OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
     }
 
-    /* Should not already have been set. */
-    OS_ASSERT(((FS *)fd)->rx_watcher != NULL);
-
-    /* Set the watcher callback. */
-    ((FS *)fd)->rx_watcher = watch_cb;
-    ((FS *)fd)->rx_watcher_data = watcher_data;
+    /* Add this watcher is the watcher list. */
+    sll_append(&((FS *)fd)->data_watcher_list, watcher, OFFSETOF(FS_DATA_WATCHER, next));
 
     if (((FS *)fd)->release_lock)
     {
         /* Release lock for this file descriptor. */
         ((FS *)fd)->release_lock((void *)fd);
     }
-} /* fs_set_rx_watcher */
 
-/*
- * fs_set_tx_watcher
- * @fd: File descriptor with a watcher is needed to be registered.
- * @watcher_data: Watcher data that will be forwarded to the registered
- *  call back.
- * @watch_cb: Watch callback that will be called when there is some space
- *  available on this file descriptor.
- * This function registers a watcher with a file descriptor that will be
- * called whenever we have some TX space is available.
- */
-void fs_set_tx_watcher(FD fd, void *watcher_data, void (*watch_cb) (void *, void *))
-{
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
-    }
-
-    /* Should not already have been set. */
-    OS_ASSERT(((FS *)fd)->tx_watcher != NULL);
-
-    /* Set the watcher callback. */
-    ((FS *)fd)->tx_watcher = watch_cb;
-    ((FS *)fd)->tx_watcher_data = watcher_data;
-
-    if (((FS *)fd)->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        ((FS *)fd)->release_lock((void *)fd);
-    }
-} /* fs_set_tx_watcher */
+} /* fs_set_connection_watcher */
 
 /*
  * fs_set_connection_watcher
  * @fd: File descriptor for which connection is needed to be monitored.
- * @watcher_data: Watcher data.
- * @connected_cb: This will be called when file descriptor is connected.
- * @disconnected_cb: This will be called when file descriptor is disconnected.
- * This function will set connection watcher for a given file system.
+ * @watcher: Connection watcher needed to be registered.
+ * This function will add a connection watcher for given file system.
  */
-void fs_set_connection_watcher(FD *fd, void *watcher_data, void (*connected_cb) (void *, void *), void (*disconnected_cb) (void *, void *))
+void fs_set_connection_watcher(FD fd, FS_CONNECTION_WATCHER *watcher)
 {
-    /* Save/update watcher data. */
-    ((FS *)fd)->connection_watcher_data = watcher_data;
-    ((FS *)fd)->connected = connected_cb;
-    ((FS *)fd)->disconnected = disconnected_cb;
+    if (((FS *)fd)->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
+    }
+
+    /* Add this watcher is the watcher list. */
+    sll_append(&((FS *)fd)->connection_watcher_list, watcher, OFFSETOF(FS_CONNECTION_WATCHER, next));
+
+    if (((FS *)fd)->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
 
 } /* fs_set_connection_watcher */
 
@@ -198,19 +167,31 @@ void fs_set_connection_watcher(FD *fd, void *watcher_data, void (*connected_cb) 
  * @fd: File descriptor for which connection was established.
  * This function will be called by driver when this console is connected.
  */
-void fs_connected(FD *fd)
+void fs_connected(FD fd)
 {
+    FS_CONNECTION_WATCHER *watcher;
+
     if (((FS *)fd)->get_lock)
     {
         /* Get lock for this file descriptor. */
         OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
     }
 
-    /* If a connection watcher was registered. */
-    if (((FS *)fd)->connected != NULL)
+    /* Pick the first watcher data. */
+    watcher = ((FS *)fd)->connection_watcher_list.head;
+
+    /* While we have a watcher to process. */
+    while (watcher != NULL)
     {
-        /* Call the watcher function. */
-        ((FS *)fd)->connected(fd, ((FS *)fd)->connection_watcher_data);
+        /* If we have a connection established watcher. */
+        if (watcher->connected != NULL)
+        {
+            /* Call the watcher function. */
+            watcher->connected(fd, watcher->data);
+        }
+
+        /* Pick the next watcher. */
+        watcher = watcher->next;
     }
 
     if (((FS *)fd)->release_lock)
@@ -226,19 +207,31 @@ void fs_connected(FD *fd)
  * @fd: File descriptor for which connection was terminated.
  * This function will be called by driver when this console is disconnected.
  */
-void fs_disconnected(FD *fd)
+void fs_disconnected(FD fd)
 {
+    FS_CONNECTION_WATCHER *watcher;
+
     if (((FS *)fd)->get_lock)
     {
         /* Get lock for this file descriptor. */
         OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
     }
 
-    /* If a connection watcher was registered. */
-    if (((FS *)fd)->disconnected != NULL)
+    /* Pick the first watcher data. */
+    watcher = ((FS *)fd)->connection_watcher_list.head;
+
+    /* While we have a watcher to process. */
+    while (watcher != NULL)
     {
-        /* Call the watcher function. */
-        ((FS *)fd)->disconnected(fd, ((FS *)fd)->connection_watcher_data);
+        /* If we have a connection terminated watcher. */
+        if (watcher->disconnected != NULL)
+        {
+            /* Call the watcher function. */
+            watcher->disconnected(fd, watcher->data);
+        }
+
+        /* Pick the next watcher. */
+        watcher = watcher->next;
     }
 
     if (((FS *)fd)->release_lock)
@@ -1031,17 +1024,30 @@ int32_t fd_suspend_criteria(void *fd, FS_PARAM *param, uint32_t timeout)
 void fd_data_available(void *fd)
 {
     FS_PARAM fs_param;
+    FS_DATA_WATCHER *watcher = ((FS *)fd)->data_watcher_list.head;
 
     /* Set flag that some data is available. */
     ((FS *)fd)->flags |= FS_DATA_AVAILABLE;
 
-    /* Check if there is a consumer that must be called to deliver this data. */
-    if (((FS *)fd)->rx_watcher)
+    /* Call the consumer, this can be called from an interrupt so locks
+     * must not be used here, also if called from user space appropriate
+     * locks are already acquired. */
+
+    /* While we have a watcher to process. */
+    while ( (watcher != NULL) &&
+
+            /* While we still have some data. */
+            (((FS *)fd)->flags & FS_DATA_AVAILABLE))
     {
-        /* Call the consumer, this can be called from an interrupt so locks
-         * must not be used here, also if called from user space appropriate
-         * locks are already acquired. */
-        ((FS *)fd)->rx_watcher(fd, ((FS *)fd)->rx_watcher_data);
+        /* If we have a RX watcher call back. */
+        if (watcher->data_rx != NULL)
+        {
+            /* Call the watcher function. */
+            watcher->data_rx(fd, watcher->data);
+        }
+
+        /* Pick the next watcher. */
+        watcher = watcher->next;
     }
 
     /* If we still have some data available, resume any tasks waiting on it. */
@@ -1078,17 +1084,30 @@ void fd_data_flushed(void *fd)
 void fd_space_available(void *fd)
 {
     FS_PARAM fs_param;
+    FS_DATA_WATCHER *watcher = ((FS *)fd)->data_watcher_list.head;
 
     /* Set flag that some data is available. */
     ((FS *)fd)->flags |= FS_SPACE_AVAILABLE;
 
-    /* Check if there is a generator that should be called to fill the space. */
-    if (((FS *)fd)->tx_watcher)
+    /* Call the consumer, this can be called from an interrupt so locks
+     * must not be used here, also if called from user space appropriate
+     * locks are already acquired. */
+
+    /* While we have a watcher to process. */
+    while ( (watcher != NULL) &&
+
+            /* While we still have some data. */
+            (((FS *)fd)->flags & FS_DATA_AVAILABLE))
     {
-        /* Call the consumer, this can be called from an interrupt so locks
-         * must not be used here, also if called from user space appropriate
-         * locks are already acquired. */
-        ((FS *)fd)->tx_watcher(fd, ((FS *)fd)->tx_watcher_data);
+        /* If we have a TX watcher call back. */
+        if (watcher->data_tx != NULL)
+        {
+            /* Call the watcher function. */
+            watcher->data_tx(fd, watcher->data);
+        }
+
+        /* Pick the next watcher. */
+        watcher = watcher->next;
     }
 
     /* If there is still some space available. */

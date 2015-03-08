@@ -45,6 +45,32 @@ typedef void *FD;
 #define FS_BLOCK_READ       0x00000001
 #define FS_BLOCK_WRITE      0x00000002
 
+/* Data watcher data. */
+typedef struct _fs_data_watcher FS_DATA_WATCHER;
+struct _fs_data_watcher
+{
+    /* List next. */
+    FS_DATA_WATCHER *next;
+
+    /* Watcher data. */
+    void            (*data_tx) (void *, void *);
+    void            (*data_rx) (void *, void *);
+    void            *data;
+};
+
+/* Connection watcher data. */
+typedef struct _fs_connection_watcher FS_CONNECTION_WATCHER;
+struct _fs_connection_watcher
+{
+    /* List next. */
+    FS_CONNECTION_WATCHER   *next;
+
+    /* Watcher data. */
+    void            (*connected) (void *, void *);
+    void            (*disconnected) (void *, void *);
+    void            *data;
+};
+
 /* File system descriptor. */
 typedef struct _fs FS;
 struct _fs
@@ -68,18 +94,19 @@ struct _fs
     void        (*rx_consumed) (void *);
     void        (*tx_available) (void *);
 
-    /* Read hook for this file descriptor. */
-    void        (*rx_watcher) (void *, void *);
-    void        *rx_watcher_data;
-
-    /* Write hook for this file descriptor. */
-    void        (*tx_watcher) (void *, void *);
-    void        *tx_watcher_data;
+    /* Data hook for this file descriptor. */
+    struct _fs_rx_watcher_list
+    {
+        FS_DATA_WATCHER   *head;
+        FS_DATA_WATCHER   *tail;
+    } data_watcher_list;
 
     /* Connection watcher hooks. */
-    void        (*connected) (void *, void *);
-    void        (*disconnected) (void *, void *);
-    void        *connection_watcher_data;
+    struct _fs_connection_watcher_list
+    {
+        FS_CONNECTION_WATCHER   *head;
+        FS_CONNECTION_WATCHER   *tail;
+    } connection_watcher_list;
 
     /* File system specific flags. */
     uint32_t    flags;
@@ -176,11 +203,10 @@ int32_t fs_read(FD, char *, int32_t);
 int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
-void fs_set_rx_watcher(FD, void *, void (*) (void *, void *));
-void fs_set_tx_watcher(FD, void *, void (*) (void *, void *));
-void fs_set_connection_watcher(FD *, void *, void (*) (void *, void *), void (*) (void *, void *));
-void fs_connected(FD *);
-void fs_disconnected(FD *);
+void fs_set_data_watcher(FD, FS_DATA_WATCHER *);
+void fs_set_connection_watcher(FD, FS_CONNECTION_WATCHER *);
+void fs_connected(FD);
+void fs_disconnected(FD);
 void fs_connect(FD, FD);
 void fs_destroy_chain(FD);
 void fs_disconnect(FD);
