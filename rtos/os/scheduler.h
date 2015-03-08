@@ -16,8 +16,8 @@
 #include <os.h>
 
 /* Scheduler configurations. */
-#define CONFIG_APERIODIC_TASKS
-#define CONFIG_PERIODIC_TASKS
+#define CONFIG_APERIODIC_TASK
+#define CONFIG_PERIODIC_TASK
 
 /* Scheduler priority configurations. */
 #define CONFIG_PERIODIC_PIORITY     0
@@ -32,10 +32,11 @@
 /* Some task resume status. */
 #define TASK_SUSPENDED              0
 #define TASK_RESUME                 1
-#define TASK_SUSP_SLEEP             2
-#define TASK_SUSP_SEMAPHORE         3
-#define TASK_SUSP_FILE              4
-#define TASK_RESUME_SLEEP           5
+#define TASK_FINISHED               2
+#define TASK_SUSP_SLEEP             3
+#define TASK_SUSP_SEMAPHORE         4
+#define TASK_SUSP_FILE              5
+#define TASK_RESUME_SLEEP           6
 
 /* Scheduler class definition. */
 typedef struct _scheduler SCHEDULER;
@@ -75,7 +76,8 @@ extern TASK_LIST sch_task_list;
 /* Function prototypes. */
 void scheduler_init();
 TASK *scheduler_get_next_task();
-void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t param);
+void scheduler_task_add(TASK *, uint8_t, uint32_t, uint64_t);
+void scheduler_task_remove(TASK *);
 void scheduler_lock();
 void scheduler_unlock();
 

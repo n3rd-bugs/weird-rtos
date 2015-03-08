@@ -22,6 +22,10 @@
 
 /* These defines different task flags. */
 #define TASK_DONT_PREEMPT   0x01        /* Don't preempt this task. */
+#define TASK_NO_RETURN      0x02        /* This task will never return. */
+
+/* This is task entry function. */
+typedef void TASK_ENTRY (void *argv);
 
 /* This holds information about a single task. */
 typedef struct _task TASK;
@@ -40,6 +44,12 @@ struct _task
     /* Number of times this task was scheduled. */
     uint64_t    scheduled;
 #endif /* CONFIG_TASK_STATS */
+
+    /* Task entry function. */
+    TASK_ENTRY  *entry;
+
+    /* Task arguments. */
+    void        *argv;
 
     /* Task list member. */
     TASK        *next;
@@ -84,14 +94,14 @@ struct _task
 
 #endif /* CONFIG_TASK_STATS */
 
-    /* Padding variable (need to be 64-bit aligned). */
-    uint8_t     pad[6];
-
     /* Task scheduler class identifier. */
     uint8_t     class;
 
     /* Task flags as configured by scheduler. */
     uint8_t     flags;
+
+    /* Padding variable (need to be 64-bit aligned). */
+    uint8_t     pad[6];
 };
 
 /* This defines a task list. */
@@ -101,11 +111,8 @@ typedef struct _task_list
     TASK        *tail;
 } TASK_LIST;
 
-/* This is task entry function. */
-typedef void TASK_ENTRY (void *argv);
-
 /* Function prototypes. */
-void task_create(TASK *tcb, char *name, char *stack, uint32_t stack_size, TASK_ENTRY *entry, void *argv);
-uint8_t task_priority_sort(void *node, void *task);
+void task_create(TASK *, char *, char *, uint32_t, TASK_ENTRY *, void *, uint8_t);
+uint8_t task_priority_sort(void *, void *);
 
 #endif /* _TASKS_H_ */

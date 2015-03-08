@@ -80,15 +80,15 @@ void scheduler_init()
     memset(&scheduler_list, 0, sizeof(scheduler_list));
     memset(&sch_task_list, 0, sizeof(sch_task_list));
 
-#ifdef CONFIG_APERIODIC_TASKS
+#ifdef CONFIG_APERIODIC_TASK
     /* Add aperiodic scheduler. */
     sll_insert(&scheduler_list, &aperiodic_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
-#endif /* CONFIG_APERIODIC_TASKS */
+#endif /* CONFIG_APERIODIC_TASK */
 
-#ifdef CONFIG_PERIODIC_TASKS
+#ifdef CONFIG_PERIODIC_TASK
     /* Add periodic scheduler. */
     sll_insert(&scheduler_list, &periodic_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
-#endif /* CONFIG_PERIODIC_TASKS */
+#endif /* CONFIG_PERIODIC_TASK */
 
 #ifdef CONFIG_SLEEP
     /* Add scheduler for sleeping tasks. */
@@ -96,7 +96,7 @@ void scheduler_init()
 #endif /* CONFIG_SLEEP */
 
     /* Initialize idle task's control block and stack. */
-    task_create(&__idle_task, "Idle", __idle_task_stack, 128, &__idle_task_entry, (void *)0x00);
+    task_create(&__idle_task, "Idle", __idle_task_stack, 128, &__idle_task_entry, (void *)0x00, TASK_NO_RETURN);
     scheduler_task_add(&__idle_task, TASK_IDLE, 0, 0);
 } /* scheduler_init */
 
@@ -184,6 +184,11 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
 {
     /* Get the first scheduler from the scheduler list. */
     SCHEDULER *scheduler = scheduler_list.head;
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* This function call be called from a task without any locks so disable
+     * interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Try to find the scheduler for which this task is being added. */
     while (scheduler != NULL)
@@ -214,7 +219,45 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
     sll_append(&sch_task_list, tcb, OFFSETOF(TASK, next_global));
 #endif /* CONFIG_TASK_STATS */
 
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
 } /* scheduler_task_add */
+
+/*
+ * scheduler_task_remove
+ * @tcb: Task control block that is needed to be removed.
+ * This function removes a finished task from the global task list. Once
+ * removed user cannot call scheduler_task_add to run a finished task.
+ */
+void scheduler_task_remove(TASK *tcb)
+{
+    /* Get the scheduler from the task control block. */
+    SCHEDULER *scheduler = tcb->scheduler;
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* This function call be called from a task without any locks so disable
+     * interrupts. */
+    DISABLE_INTERRUPTS();
+
+    /* A scheduler must have been assigned to this task. */
+    OS_ASSERT(scheduler == NULL);
+
+    /* Task should be in finished state. */
+    OS_ASSERT(tcb->status != TASK_FINISHED);
+
+    /* Clear the task scheduler. */
+    tcb->scheduler          = NULL;
+
+#ifdef CONFIG_TASK_STATS
+    /* Remove this task from global task list. */
+    sll_remove(&sch_task_list, tcb, OFFSETOF(TASK, next_global));
+#endif /* CONFIG_TASK_STATS */
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
+} /* scheduler_task_remove */
 
 /*
  * scheduler_lock

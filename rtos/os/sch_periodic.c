@@ -14,7 +14,7 @@
 #include <sch_periodic.h>
 #include <sll.h>
 
-#ifdef CONFIG_PERIODIC_TASKS
+#ifdef CONFIG_PERIODIC_TASK
 
 /*
  * sch_periodic_task_sort
@@ -162,4 +162,4 @@ SCHEDULER periodic_scheduler =
     .class          = TASK_PERIODIC
 };
 
-#endif /* CONFIG_PERIODIC_TASKS */
+#endif /* CONFIG_PERIODIC_TASK */
