@@ -130,8 +130,11 @@ void usart_atmega644p_init()
     /* Register serial port with console. */
     console_register(&usart_1);
 
+    /* There is always some space available to send data. */
+    usart_1.fs.flags |= FS_SPACE_AVAILABLE;
+
     /* Set debug file descriptor. */
-    debug_fd = fs_open("\\console\\usart1", 0);
+    debug_fd = fs_open("\\console\\uart1", 0);
 
 #endif /* FS_CONSOLE */
 
