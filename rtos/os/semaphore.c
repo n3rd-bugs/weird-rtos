@@ -103,12 +103,12 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     /* Lock the scheduler. */
     scheduler_lock();
 
+    /* Save the current task pointer. */
+    tcb = get_current_task();
+
     /* Check if this semaphore is not available. */
     if (semaphore->count == 0)
     {
-        /* Save the current task pointer. */
-        tcb = get_current_task();
-
         /* Check if we need to wait for semaphore to be free. */
         if ((wait > 0) && (tcb != NULL))
         {
