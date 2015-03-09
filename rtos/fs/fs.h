@@ -45,6 +45,11 @@ typedef void *FD;
 #define FS_BLOCK_READ       0x00000001
 #define FS_BLOCK_WRITE      0x00000002
 
+/* Buffer type definition. */
+#define FS_FREE_BUFFER      1
+#define FS_RX_BUFFER        2
+#define FS_TX_BUFFER        3
+
 /* Data watcher data. */
 typedef struct _fs_data_watcher FS_DATA_WATCHER;
 struct _fs_data_watcher
@@ -53,9 +58,9 @@ struct _fs_data_watcher
     FS_DATA_WATCHER *next;
 
     /* Watcher data. */
-    void            (*data_tx) (void *, void *);
-    void            (*data_rx) (void *, void *);
-    void            *data;
+    void        (*space_available) (void *, void *);
+    void        (*data_available) (void *, void *);
+    void        *data;
 };
 
 /* Connection watcher data. */
@@ -63,12 +68,28 @@ typedef struct _fs_connection_watcher FS_CONNECTION_WATCHER;
 struct _fs_connection_watcher
 {
     /* List next. */
-    FS_CONNECTION_WATCHER   *next;
+    FS_CONNECTION_WATCHER *next;
 
     /* Watcher data. */
-    void            (*connected) (void *, void *);
-    void            (*disconnected) (void *, void *);
-    void            *data;
+    void        (*connected) (void *, void *);
+    void        (*disconnected) (void *, void *);
+    void        *data;
+};
+
+/* File system buffers. */
+typedef struct _fs_buffer FS_BUFFER;
+struct _fs_buffer
+{
+    /* Buffer list member. */
+    FS_BUFFER   *next;
+
+    /* Original buffer data. */
+    char        *init_buffer;
+    uint32_t    init_length;
+
+    /* Buffer data. */
+    char        *buffer;
+    uint32_t    length;
 };
 
 /* File system descriptor. */
@@ -91,7 +112,7 @@ struct _fs
     /* Driver operations. */
     int32_t     (*get_lock) (void *);
     void        (*release_lock) (void *);
-    void        (*rx_consumed) (void *);
+    void        (*rx_consumed) (void *, FS_BUFFER *);
     void        (*tx_available) (void *);
 
     /* Data hook for this file descriptor. */
@@ -107,12 +128,6 @@ struct _fs
         FS_CONNECTION_WATCHER   *head;
         FS_CONNECTION_WATCHER   *tail;
     } connection_watcher_list;
-
-    /* File system specific flags. */
-    uint32_t    flags;
-
-    /* This will hold the timeout if blocking mode is used. */
-    uint32_t    timeout;
 
     struct _fs_task_list
     {
@@ -140,11 +155,32 @@ struct _fs
         } fd_node;
     } fd_chain;
 
-    /* Buffer file system members. */
-    char            *tx_buffer;
-    char            *rx_buffer;
-    uint32_t        rx_len;
-    uint32_t        tx_len;
+    /* Free buffer list. */
+    struct _fs_free_buffer_list
+    {
+        FS_BUFFER       *head;
+        FS_BUFFER       *tail;
+    } free_buffer_list;
+
+    /* Free buffer list. */
+    struct _fs_tx_buffer_list
+    {
+        FS_BUFFER       *head;
+        FS_BUFFER       *tail;
+    } tx_buffer_list;
+
+    /* Free buffer list. */
+    struct _fs_rx_buffer_list
+    {
+        FS_BUFFER       *head;
+        FS_BUFFER       *tail;
+    } rx_buffer_list;
+
+    /* File system specific flags. */
+    uint32_t    flags;
+
+    /* This will hold the timeout if blocking mode is used. */
+    uint32_t    timeout;
 };
 
 /* This holds the resumption criteria for a task waiting on an FS. */
@@ -202,6 +238,12 @@ void fs_close(FD *);
 int32_t fs_read(FD, char *, int32_t);
 int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
+
+/* File system buffer management APIs. */
+void fs_init_buffer(FS_BUFFER *, char *, uint32_t);
+void fs_update_buffer(FS_BUFFER *, char *, uint32_t);
+void fs_add_buffer(FD, FS_BUFFER *, uint32_t);
+FS_BUFFER *fs_get_buffer(FD, uint32_t);
 
 void fs_set_data_watcher(FD, FS_DATA_WATCHER *);
 void fs_set_connection_watcher(FD, FS_CONNECTION_WATCHER *);

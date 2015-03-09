@@ -113,6 +113,144 @@ void fs_unregister(FS *file_system)
 } /* fs_unregister */
 
 /*
+ * fs_init_buffer
+ * @buffer: File buffer needed to be initialized.
+ * @data: Data space needed to be used for this buffer.
+ * @size: Size of the data used with buffer.
+ * This function will initialize a buffer with given data.
+ */
+void fs_init_buffer(FS_BUFFER *buffer, char *data, uint32_t size)
+{
+    /* Clear this buffer. */
+    memset(buffer, 0, sizeof(FS_BUFFER));
+
+    /* Initialize this buffer. */
+    buffer->init_buffer = data;
+    buffer->init_length = size;
+
+} /* fs_init_buffer */
+
+/*
+ * fs_update_buffer
+ * @buffer: File buffer needed to be initialized.
+ * @data: New buffer pointer.
+ * @size: Size valid data in the buffer.
+ * This function will update a buffer data pointers.
+ */
+void fs_update_buffer(FS_BUFFER *buffer, char *data, uint32_t size)
+{
+    /* Update the buffer data. */
+    buffer->buffer = data;
+    buffer->length = size;
+
+} /* fs_update_buffer */
+
+/*
+ * fs_add_buffer
+ * @fd: File descriptor on which a free buffer is needed to be added.
+ * @type: Type of buffer needed to be added.
+ *  FS_FREE_BUFFER: if this is a free buffer.
+ *  FS_RX_BUFFER: if this is a receive buffer.
+ *  FS_TX_BUFFER: if this is a transmit buffer.
+ * This function will add a new buffer in the file descriptor for the required
+ * type.
+ */
+void fs_add_buffer(FD fd, FS_BUFFER *buffer, uint32_t type)
+{
+    /* Type of buffer we are adding. */
+    switch (type)
+    {
+    case (FS_FREE_BUFFER):
+
+        /* Initialize this buffer. */
+        buffer->buffer = buffer->init_buffer;
+        buffer->length = buffer->init_length;
+
+        /* Just add this buffer in the free buffer list. */
+        sll_append(&((FS *)fd)->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+
+        /* Some space is now available. */
+        fd_space_available(fd);
+
+        break;
+
+    case (FS_RX_BUFFER):
+
+        /* Just add this buffer in the receive buffer list. */
+        sll_append(&((FS *)fd)->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+
+        /* Some new data is now available. */
+        fd_data_available(fd);
+
+        break;
+
+    case (FS_TX_BUFFER):
+
+        /* Just add this buffer in the transmit buffer list. */
+        sll_append(&((FS *)fd)->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+
+        break;
+    }
+
+} /* fs_add_buffer */
+
+/*
+ * fs_get_buffer
+ * @fd: File descriptor from which a free buffer is needed.
+ * @type: Type of buffer needed to be added.
+ *  FS_FREE_BUFFER: if this is a free buffer.
+ *  FS_RX_BUFFER: if this is a receive buffer.
+ *  FS_TX_BUFFER: if this is a transmit buffer.
+ * This function return a buffer from a required buffer list for this file
+ * descriptor.
+ */
+FS_BUFFER *fs_get_buffer(FD fd, uint32_t type)
+{
+    FS_BUFFER *buffer;
+    /* Type of buffer we need. */
+    switch (type)
+    {
+    case (FS_FREE_BUFFER):
+
+        /* Pop a buffer from this file descriptor's free buffer list. */
+        buffer = sll_pop(&((FS *)fd)->free_buffer_list, OFFSETOF(FS_BUFFER, next));
+
+        if (((FS *)fd)->free_buffer_list.head == NULL)
+        {
+            /* Tell the file system to block the write until there is some
+             * space available. */
+            fd_space_consumed(fd);
+        }
+
+        break;
+
+    case (FS_RX_BUFFER):
+
+        /* Pop a buffer from this file descriptor's receive buffer list. */
+        buffer = sll_pop(&((FS *)fd)->rx_buffer_list, OFFSETOF(FS_BUFFER, next));
+
+        if (((FS *)fd)->rx_buffer_list.head == NULL)
+        {
+            /* No more data is available to read. */
+            fd_data_flushed(fd);
+        }
+
+        break;
+
+    case (FS_TX_BUFFER):
+
+        /* Pop a buffer from this file descriptor's transmit buffer list. */
+        buffer = sll_pop(&((FS *)fd)->tx_buffer_list, OFFSETOF(FS_BUFFER, next));
+
+        break;
+    }
+
+    /* Return the buffer. */
+    return (buffer);
+
+} /* fs_get_buffer */
+
+/*
  * fs_set_data_watcher
  * @fd: File descriptor for which data is needed to be monitored.
  * @watcher: Data watcher needed to be registered.
@@ -1039,11 +1177,11 @@ void fd_data_available(void *fd)
             /* While we still have some data. */
             (((FS *)fd)->flags & FS_DATA_AVAILABLE))
     {
-        /* If we have a RX watcher call back. */
-        if (watcher->data_rx != NULL)
+        /* If we have a watcher for received data. */
+        if (watcher->data_available != NULL)
         {
             /* Call the watcher function. */
-            watcher->data_rx(fd, watcher->data);
+            watcher->data_available(fd, watcher->data);
         }
 
         /* Pick the next watcher. */
@@ -1097,13 +1235,13 @@ void fd_space_available(void *fd)
     while ( (watcher != NULL) &&
 
             /* While we still have some data. */
-            (((FS *)fd)->flags & FS_DATA_AVAILABLE))
+            (((FS *)fd)->flags & FS_SPACE_AVAILABLE))
     {
-        /* If we have a TX watcher call back. */
-        if (watcher->data_tx != NULL)
+        /* If we have somebody waiting for space on this file descriptor. */
+        if (watcher->space_available != NULL)
         {
             /* Call the watcher function. */
-            watcher->data_tx(fd, watcher->data);
+            watcher->space_available(fd, watcher->data);
         }
 
         /* Pick the next watcher. */
