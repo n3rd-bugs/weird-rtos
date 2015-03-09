@@ -28,8 +28,8 @@
 #define BAUD_RATE       115200
 
 /* Function prototypes. */
-uint32_t usart_atmega644p_puts(void *priv_data, char *buf, uint32_t nbytes);
-uint32_t uart_atmega644p_printf(char *format, ...);
+int32_t usart_atmega644p_puts(void *, char *, int32_t);
+int32_t uart_atmega644p_printf(char *, ...);
 void usart_atmega644p_init();
 
 #endif /* _USART_ATMEGA664P_H_ */

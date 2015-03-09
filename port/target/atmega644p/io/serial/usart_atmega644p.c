@@ -41,9 +41,9 @@ static CONSOLE usart_1 =
  * @nbytes: Number of bytes to be printed from the string.
  * This function prints a string on the USART.
  */
-uint32_t usart_atmega644p_puts(void *priv_data, char *buf, uint32_t nbytes)
+int32_t usart_atmega644p_puts(void *priv_data, char *buf, int32_t nbytes)
 {
-    uint32_t to_print = nbytes;
+    int32_t to_print = nbytes;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(priv_data);
@@ -74,9 +74,9 @@ uint32_t usart_atmega644p_puts(void *priv_data, char *buf, uint32_t nbytes)
  * @format: Formated string to be printed on USART.
  * This function prints a formated string on the USART.
  */
-uint32_t uart_atmega644p_printf(char *format, ...)
+int32_t uart_atmega644p_printf(char *format, ...)
 {
-    uint32_t n = 0;
+    int32_t n = 0;
     char buf[100];
     va_list vl;
 

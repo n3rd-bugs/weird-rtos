@@ -97,20 +97,24 @@ void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
  */
 void control_to_system()
 {
-    /* Save the context on the current task's stack. */
-    /* This will also disable global interrupts. */
-    SAVE_CONTEXT();
+    /* If we are not in an ISR. */
+    if (get_current_task() != NULL)
+    {
+        /* Save the context on the current task's stack. */
+        /* This will also disable global interrupts. */
+        SAVE_CONTEXT();
 
-    /* We will not re-enqueue this task as it is suspended and only the
-     * suspending component can resume this task. */
+        /* We will not re-enqueue this task as it is suspended and only the
+         * suspending component can resume this task. */
 
-    /* Get the task that should run next. */
-    current_task = scheduler_get_next_task();
+        /* Get and set the task that should run next. */
+        set_current_task(scheduler_get_next_task());
 
-    /* Restore the previous task's context. */
-    RESTORE_CONTEXT();
+        /* Restore the previous task's context. */
+        RESTORE_CONTEXT();
 
-    /* Return and enable global interrupts. */
-    RETURN_ENABLING_INTERRUPTS();
+        /* Return and enable global interrupts. */
+        RETURN_ENABLING_INTERRUPTS();
+    }
 
 } /* run_first_task */

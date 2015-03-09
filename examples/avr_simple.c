@@ -109,13 +109,13 @@ int main(void)
 
     semaphore_create(&semaphore, 1, 1, SEMAPHORE_FIFO);
 
-    task_create(&task_cb_1, "TSK_1", stack_1, 192, &led_task_delayed, (void *)0x07);
-    task_create(&task_cb_2, "TSK_2", stack_2, 128, &led_task_periodic, (void *)0x06);
-    task_create(&task_cb_3, "TSK_3", stack_3, 128, &led_task, (void *)0x05);
-    task_create(&task_cb_4, "TSK_4", stack_4, 128, &led_task, (void *)0x04);
-    task_create(&task_cb_5, "TSK_5", stack_5, 256, &print_task, (void *)0x00);
-    task_create(&task_cb_6, "TSK_6", stack_6, 128, &semaphore_task, (void *)0x02);
-    task_create(&task_cb_7, "TSK_7", stack_7, 128, &semaphore_task, (void *)0x03);
+    task_create(&task_cb_1, "TSK_1", stack_1, 192, &led_task_delayed, (void *)0x07, TASK_NO_RETURN);
+    task_create(&task_cb_2, "TSK_2", stack_2, 128, &led_task_periodic, (void *)0x06, TASK_NO_RETURN);
+    task_create(&task_cb_3, "TSK_3", stack_3, 128, &led_task, (void *)0x05, TASK_NO_RETURN);
+    task_create(&task_cb_4, "TSK_4", stack_4, 128, &led_task, (void *)0x04, TASK_NO_RETURN);
+    task_create(&task_cb_5, "TSK_5", stack_5, 256, &print_task, (void *)0x00, TASK_NO_RETURN);
+    task_create(&task_cb_6, "TSK_6", stack_6, 128, &semaphore_task, (void *)0x02, TASK_NO_RETURN);
+    task_create(&task_cb_7, "TSK_7", stack_7, 128, &semaphore_task, (void *)0x03, TASK_NO_RETURN);
 
     scheduler_task_add(&task_cb_1, TASK_APERIODIC, 2, 0);
     scheduler_task_add(&task_cb_2, TASK_PERIODIC, 1, 500);
