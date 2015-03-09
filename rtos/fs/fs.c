@@ -206,7 +206,8 @@ void fs_add_buffer(FD fd, FS_BUFFER *buffer, uint32_t type)
  */
 FS_BUFFER *fs_get_buffer(FD fd, uint32_t type)
 {
-    FS_BUFFER *buffer;
+    FS_BUFFER *buffer = NULL;
+
     /* Type of buffer we need. */
     switch (type)
     {
