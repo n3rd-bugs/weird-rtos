@@ -24,27 +24,12 @@ TASK *return_task = NULL;
 uint64_t current_tick = 0;
 /*
  * os_process_system_tick
- * This function is called at each system tick. Here we decide which task is
- * needed to run in next system tick.
+ * This function is called at each system tick.
  */
 void os_process_system_tick()
 {
     /* Increment system clock. */
     current_tick ++;
-
-    /* Check if we can actually preempt the current task. */
-    if (!(current_task->flags & TASK_DONT_PREEMPT))
-    {
-        /* If current task has a scheduler defined. */
-        if (current_task->scheduler != NULL)
-        {
-            /* Re-enqueue/schedule this task in the scheduler. */
-            ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_SYSTEM);
-        }
-
-        /* Get the task that should run next. */
-        current_task = scheduler_get_next_task();
-    }
 
 } /* os_process_system_tick */
 
