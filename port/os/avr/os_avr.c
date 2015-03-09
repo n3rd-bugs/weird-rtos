@@ -16,6 +16,7 @@
 
 /* System interrupt management. */
 uint32_t sys_interrupt_level;
+extern TASK *current_task;
 
 /*
  * ISR(TIMER1_COMPA_vect, ISR_NAKED)
@@ -29,6 +30,20 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 
     /* Process system tick. */
     os_process_system_tick();
+
+    /* Check if we can actually preempt the current task. */
+    if (!(current_task->flags & TASK_DONT_PREEMPT))
+    {
+        /* If current task has a scheduler defined. */
+        if (current_task->scheduler != NULL)
+        {
+            /* Re-enqueue/schedule this task in the scheduler. */
+            ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_SYSTEM);
+        }
+
+        /* Get and set the task that should run next. */
+        set_current_task(scheduler_get_next_task());
+    }
 
     /* Restore the previous task's context. */
     RESTORE_CONTEXT();
