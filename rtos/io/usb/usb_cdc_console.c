@@ -12,34 +12,52 @@
  */
 #include <os.h>
 #include <string.h>
+#include <sll.h>
 
 #ifdef USB_CDC_CONSOLE
 
 /* Internal function prototypes. */
 static int32_t usb_cdc_fun_console_read(void *, char *, int32_t);
 static int32_t usb_cdc_fun_console_write(void *, char *, int32_t);
-static void usb_cdc_fun_console_rx_consumed(void *);
-static void usb_cdc_fun_console_tx_available(void *);
+static void usb_cdc_fun_console_rx_consumed(void *, FS_BUFFER *);
+static void usb_cdc_fun_console_space_available(void *, void *);
 
 /*
  * usb_cdc_console_register
+ * @cdc_cons: CDC console instance needed to be initialized.
+ * @usb_device: USB device handle to use.
  * This function will register a USB CDC console.
  */
-void usb_cdc_console_register(CDC_CONSOLE *cdc_cons)
+void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
 {
+    uint32_t i;
+
     /* Note: this should handle both device and host consoles. */
     /* For function console. */
+
+    /* Assign console device. */
+    cdc_cons->usb_device = usb_device;
 
     /* Register this console with the file system. */
     cdc_cons->console.fs.read = usb_cdc_fun_console_read;
     cdc_cons->console.fs.write = usb_cdc_fun_console_write;
-    cdc_cons->console.fs.tx_buffer = cdc_cons->tx_buffer;
-    cdc_cons->console.fs.rx_buffer = cdc_cons->rx_buffer;
-    cdc_cons->console.fs.tx_len = CDC_DATA_MAX_PACKET_SIZE;
-    cdc_cons->console.fs.rx_len = 0;
     cdc_cons->console.fs.rx_consumed = usb_cdc_fun_console_rx_consumed;
-    cdc_cons->console.fs.tx_available = usb_cdc_fun_console_tx_available;
     console_register(&cdc_cons->console);
+
+    cdc_cons->data_watcher.data = &(cdc_cons->console);
+    cdc_cons->data_watcher.space_available = usb_cdc_fun_console_space_available;
+    cdc_cons->data_watcher.data_available = NULL;
+    fs_set_data_watcher(&cdc_cons->console, &cdc_cons->data_watcher);
+
+    /* Add buffer for this console. */
+    for (i = 0; i < CDC_NUM_BUFFERS; i++)
+    {
+        /* Initialize a buffer. */
+        fs_init_buffer(&cdc_cons->fs_buffer[i], &cdc_cons->buffer[CDC_DATA_MAX_PACKET_SIZE * i], CDC_DATA_MAX_PACKET_SIZE);
+
+        /* Add this buffer to the free buffer list for this file descriptor. */
+        fs_add_buffer((FD)&cdc_cons->console, &cdc_cons->fs_buffer[i], FS_FREE_BUFFER);
+    }
 
     /* This will block on read, and all data that will be given to write must
      * be flushed. */
@@ -93,17 +111,23 @@ void usb_cdc_console_handle_disconnect(CDC_CONSOLE *cdc_cons)
  */
 void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
 {
-    /* We are in interrupt so just try to obtain semaphore here. */
-    if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
-    {
-        /* Save number of bytes available. */
-        cdc_cons->console.fs.rx_len = cdc_cons->rx_len = nbytes;
+    FS_BUFFER *buffer;
 
-        /* Tell upper layer that some data is now available. */
-        fd_data_available(&cdc_cons->console);
+    /* We are in interrupt so just try to obtain semaphore here. */
+    if (cdc_cons->console.fs.get_lock((FD)(&cdc_cons->console)) == SUCCESS)
+    {
+        /* Update buffer pointers. */
+        fs_update_buffer(cdc_cons->rx_buffer, cdc_cons->rx_buffer->buffer, nbytes);
+
+        /* Save and clear the receive buffer. */
+        buffer = cdc_cons->rx_buffer;
+        cdc_cons->rx_buffer = NULL;
+
+        /* Push this buffer on the RX buffer list. */
+        fs_add_buffer((FD)(&cdc_cons->console), buffer, FS_RX_BUFFER);
 
         /* Release lock. */
-        cdc_cons->console.fs.release_lock(&cdc_cons->console);
+        cdc_cons->console.fs.release_lock((FD)(&cdc_cons->console));
     }
 
 } /* usb_cdc_fun_console_handle_rx */
@@ -115,20 +139,20 @@ void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
  */
 void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *cdc_cons)
 {
+    FS_BUFFER *buffer;
+
     /* We are in interrupt so just try to obtain semaphore here. */
     if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
     {
         /* If we were actually transferring some data. */
-        if (cdc_cons->console.fs.tx_len == 0)
+        if (cdc_cons->tx_buffer)
         {
-            /* Reset the number of bytes to be sent. */
-            cdc_cons->tx_len = 0;
+            /* Save and clear the transmit buffer. */
+            buffer = cdc_cons->tx_buffer;
+            cdc_cons->tx_buffer = NULL;
 
-            /* Recover the number of bytes that can be written on this FD. */
-            cdc_cons->console.fs.tx_len = CDC_DATA_MAX_PACKET_SIZE;
-
-            /* Tell upper layer that some space is now available. */
-            fd_space_available(cdc_cons);
+            /* Push this buffer back to the free list. */
+            fs_add_buffer((FD)(&cdc_cons->console), buffer, FS_FREE_BUFFER);
         }
 
         /* Release lock. */
@@ -140,30 +164,27 @@ void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *cdc_cons)
 /*
  * usb_cdc_fun_console_handle_tx
  * @cdc_cons: USB CDC function console context.
+ * @return: Returns a transmit buffer if available.
  * This function will be called whenever an SOF is received. This
  * function will see if we need to send some data and copy the required data
  * in the given buffer.
  */
-uint32_t usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
+FS_BUFFER *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
 {
-    uint32_t nbytes = 0;
+    FS_BUFFER *buffer = NULL;
 
     /* We are in interrupt so just try to obtain semaphore here. */
     if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
     {
-        /* If we do have to copy some data. */
-        if (cdc_cons->tx_len > 0)
-        {
-            /* Save number of bytes that are needed to be sent. */
-            nbytes = cdc_cons->tx_len;
-        }
+        /* Check if we have something to transmit. */
+        buffer = cdc_cons->tx_buffer = fs_get_buffer(((FD)&cdc_cons->console), FS_TX_BUFFER);
 
         /* Release lock. */
         cdc_cons->console.fs.release_lock(&cdc_cons->console);
     }
 
-    /* Return number of bytes that can be sent on the console. */
-    return (nbytes);
+    /* Return buffer that can be sent on the console. */
+    return (buffer);
 
 } /* usb_cdc_fun_console_handle_tx */
 
@@ -188,26 +209,20 @@ void usb_cdc_fun_console_handle_ctrl(CDC_CONSOLE *cdc_cons, uint32_t cmd, char *
 /*
  * usb_cdc_fun_console_rx_consumed
  * @fd: File descriptor.
+ * @buffer: Receive buffer that was consumed.
  * This function will be called when buffer scheme is used and we have
  * consumed the RX buffer.
  */
-static void usb_cdc_fun_console_rx_consumed(void *fd)
+static void usb_cdc_fun_console_rx_consumed(void *fd, FS_BUFFER *buffer)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
 
-    /* If we actually have some data. */
-    if (cdc->rx_len > 0)
+    /* If we actually have consumed some data. */
+    if (buffer)
     {
-        /* TODO: Will discard any remaining data. */
-        cdc->console.fs.rx_len = cdc->rx_len = 0;
-
-        /* Receive remaining data from the device. */
-        usb_fun_cdc_acm_data_out_enable(cdc->usb_device);
+        /* Push this buffer back to the free list. */
+        fs_add_buffer((FD)(&cdc->console), buffer, FS_FREE_BUFFER);
     }
-
-    /* We will be receiving one packet at a time so tell the file system that
-     * there is no more available to read. */
-    fd_data_flushed(fd);
 
 } /* usb_cdc_fun_console_rx_consumed */
 
@@ -222,23 +237,27 @@ static void usb_cdc_fun_console_rx_consumed(void *fd)
 static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
+    FS_BUFFER *fs_buffer = fs_get_buffer(((FD)&cdc->console), FS_RX_BUFFER);
 
-    /* Calculate number of bytes that can be copied in the buffer. */
-    if (size > (int32_t)cdc->rx_len)
+    /* If we do have received a buffer. */
+    if (fs_buffer)
     {
-        size = (int32_t)cdc->rx_len;
-    }
+        /* Calculate number of bytes that can be copied in the buffer. */
+        if (size > (int32_t)fs_buffer->length)
+        {
+            size = (int32_t)fs_buffer->length;
+        }
 
-    /* If we actually have some data. */
-    if (cdc->rx_len > 0)
-    {
-        /* Copy received data from the buffer. */
-        memcpy(buffer, cdc->rx_buffer, (uint32_t)size);
-    }
+        /* If we actually have some data. */
+        if (fs_buffer->length > 0)
+        {
+            /* Copy received data from the buffer. */
+            memcpy(buffer, fs_buffer->buffer, (uint32_t)size);
+        }
 
-    /* We will be receiving one packet at a time so tell the file system that
-     * there is no more data available to read. */
-    usb_cdc_fun_console_rx_consumed(fd);
+        /* This receive buffer is now consumed. */
+        usb_cdc_fun_console_rx_consumed(fd, fs_buffer);
+    }
 
     /* Return number of bytes. */
     return (size);
@@ -246,26 +265,33 @@ static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
 } /* usb_cdc_fun_console_read */
 
 /*
- * usb_cdc_fun_console_tx_available
+ * usb_cdc_fun_console_space_available
  * @fd: File descriptor.
- * This function will be called when we have some data to transfer when
- * using buffered scheme.
+ * @buffer: Receive buffer that was consumed.
+ * This function will be called when buffer scheme is used and we have
+ * consumed the RX buffer.
  */
-static void usb_cdc_fun_console_tx_available(void *fd)
+static void usb_cdc_fun_console_space_available(void *fd, void *priv_data)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
 
-    /* Tell the file system to block the write until there is some
-     * space available. */
-    fd_space_consumed(fd);
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(priv_data);
 
-    /* Save number of bytes that can be sent on the USB device. */
-    cdc->tx_len = cdc->console.fs.tx_len;
+    /* If we are not receiving any data, start receiving new data. */
+    if (cdc->rx_buffer == NULL)
+    {
+        /* Pick a free buffer. */
+        cdc->rx_buffer = fs_get_buffer(fd, FS_FREE_BUFFER);
 
-    /* No more data can be pushed now. */
-    cdc->console.fs.tx_len = 0;
+        if (cdc->rx_buffer != NULL)
+        {
+            /* Start receiving new data. */
+            usb_fun_cdc_acm_data_out_enable(cdc->usb_device);
+        }
+    }
 
-} /* usb_cdc_fun_console_tx_available */
+} /* usb_cdc_fun_console_space_available */
 
 /*
  * usb_cdc_fun_console_write
@@ -278,24 +304,29 @@ static void usb_cdc_fun_console_tx_available(void *fd)
 static int32_t usb_cdc_fun_console_write(void *fd, char *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
+    FS_BUFFER *fs_buffer = fs_get_buffer(((FD)&cdc->console), FS_FREE_BUFFER);
 
-    /* Check if we need to send more bytes than we can send in a single packet. */
-    if (size > CDC_DATA_MAX_PACKET_SIZE)
+    /* If we do have a free buffer that can be used to transmit this data. */
+    if (fs_buffer)
     {
-        /* Send bytes that can be sent in a packet. */
-        size = CDC_DATA_MAX_PACKET_SIZE;
-    }
+        /* Check if we need to send more bytes than we can send in a single packet. */
+        if (size > (int32_t)fs_buffer->length)
+        {
+            /* Send bytes that can be sent in a packet. */
+            size = (int32_t)fs_buffer->length;
+        }
 
-    if (size > 0)
-    {
-        /* Copy data in the TX buffer. */
-        memcpy(cdc->tx_buffer, buffer, (uint32_t)size);
+        if (size > 0)
+        {
+            /* Copy data in the TX buffer. */
+            memcpy(fs_buffer->buffer, buffer, (uint32_t)size);
 
-        /* Save number of bytes needed to be sent. */
-        cdc->console.fs.tx_len = (uint32_t)size;
+            /* Update buffer pointers. */
+            fs_update_buffer(fs_buffer, fs_buffer->buffer, (uint32_t)size);
 
-        /* Enable TX for the file descriptor. */
-        usb_cdc_fun_console_tx_available(fd);
+            /* Push this buffer back to the transmit list. */
+            fs_add_buffer((FD)(&cdc->console), fs_buffer, FS_TX_BUFFER);
+        }
     }
 
     /* Return number of bytes. */

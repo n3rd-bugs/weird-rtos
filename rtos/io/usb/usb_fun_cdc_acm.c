@@ -126,8 +126,8 @@ static uint8_t usb_fun_cdc_acm_cfg_desc[USB_CDC_CONFIG_DESC_SIZ] __attribute__ (
     USB_EP_DESC_TYPE,           /* bDescriptorType: Endpoint. */
     CDC_CMD_EP,                 /* bEndpointAddress. */
     0x03,                       /* bmAttributes: Interrupt. */
-    LOBYTE(CDC_CMD_PACKET_SZE), /* wMaxPacketSize:. */
-    HIBYTE(CDC_CMD_PACKET_SZE),
+    LOBYTE(CDC_CMD_PACKET_SIZE),/* wMaxPacketSize:. */
+    HIBYTE(CDC_CMD_PACKET_SIZE),
     0x10,                       /* bInterval:. */
 
     /* Data class interface descriptor. */
@@ -217,8 +217,8 @@ static uint8_t usb_fun_cdc_acm_other_cfg[USB_CDC_CONFIG_DESC_SIZ] __attribute__ 
     USB_EP_DESC_TYPE,           /* bDescriptorType: Endpoint. */
     CDC_CMD_EP,                 /* bEndpointAddress. */
     0x03,                       /* bmAttributes: Interrupt. */
-    LOBYTE(CDC_CMD_PACKET_SZE), /* wMaxPacketSize:. */
-    HIBYTE(CDC_CMD_PACKET_SZE),
+    LOBYTE(CDC_CMD_PACKET_SIZE),/* wMaxPacketSize:. */
+    HIBYTE(CDC_CMD_PACKET_SIZE),
     0xFF,                       /* bInterval:. */
 
     /*---------------------------------------------------------------------------*/
@@ -310,19 +310,15 @@ static uint32_t usb_fun_cdc_acm_init(void *usb_device, uint8_t cfgidx)
     usb_fun_endpoint_open(usb_device, CDC_OUT_EP, *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 64), EP_TYPE_BULK);
 
     /* Open CMD endpoint. */
-    usb_fun_endpoint_open(usb_device, CDC_CMD_EP, CDC_CMD_PACKET_SZE, EP_TYPE_INTR);
+    usb_fun_endpoint_open(usb_device, CDC_CMD_EP, CDC_CMD_PACKET_SIZE, EP_TYPE_INTR);
 
     pbuf = (uint8_t *)usb_fun_cdc_acm_device_desc;
     pbuf[4] = DEVICE_CLASS_CDC;
     pbuf[5] = DEVICE_SUBCLASS_CDC;
 
     /* Initialize console data. */
-    ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.usb_device = usb_device;
     ((USB_FUN_CDC_ACM_DEV *)usb_device)->usb.device.cmd = NO_CMD;
     ((USB_FUN_CDC_ACM_DEV *)usb_device)->usb.device.altset = 0;
-
-    /* Prepare OUT endpoint to receive incoming packet. */
-    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.rx_buffer), *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 64));
 
     /* Return success. */
     return (SUCCESS);
@@ -515,7 +511,7 @@ static uint32_t usb_fun_cdc_acm_ep0_rx_ready(void *usb_device)
  */
 static uint32_t usb_fun_cdc_acm_data_in(void *usb_device, uint8_t epnum)
 {
-    uint32_t tx_length;
+    FS_BUFFER *buffer;
 
     /* Remove compiler warning. */
     UNUSED_PARAM(epnum);
@@ -524,12 +520,12 @@ static uint32_t usb_fun_cdc_acm_data_in(void *usb_device, uint8_t epnum)
     usb_cdc_fun_console_handle_tx_complete(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
 
     /* Check if there still is some data available to be sent. */
-    tx_length = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
+    buffer = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
 
-    if (tx_length > 0)
+    if (buffer)
     {
         /* Prepare the available data buffer to be sent on IN endpoint. */
-        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.tx_buffer), tx_length);
+        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(buffer->buffer), buffer->length);
     }
 
     /* Return success. */
@@ -561,7 +557,7 @@ static uint32_t usb_fun_cdc_acm_data_out(void *usb_device, uint8_t epnum)
 void usb_fun_cdc_acm_data_out_enable(void *usb_device)
 {
     /* Prepare out endpoint to receive next packet. */
-    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.rx_buffer), *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 64));
+    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.rx_buffer->buffer), *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 64));
 
 } /* usb_fun_cdc_acm_data_out_enable */
 
@@ -572,15 +568,15 @@ void usb_fun_cdc_acm_data_out_enable(void *usb_device)
  */
 static uint32_t usb_fun_cdc_acm_sof(void *usb_device)
 {
-    uint32_t tx_length;
+    FS_BUFFER *buffer;
 
     /* Check if there is some data available to be sent. */
-    tx_length = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
+    buffer = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
 
-    if (tx_length > 0)
+    if (buffer)
     {
         /* Prepare the available data buffer to be sent on IN endpoint. */
-        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.tx_buffer), tx_length);
+        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(buffer->buffer), buffer->length);
     }
 
     /* Return success. */

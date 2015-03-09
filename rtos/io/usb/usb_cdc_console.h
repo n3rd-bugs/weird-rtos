@@ -26,24 +26,33 @@ typedef struct _cdc_console
     /* Console data for file system. */
     CONSOLE     console;
 
-    /* Intermediate buffer used to maintain OUT buffer to receive incoming
-     * data in an endpoint. */
-    char        rx_buffer[CDC_DATA_MAX_PACKET_SIZE];
-    char        tx_buffer[CDC_DATA_MAX_PACKET_SIZE];
-    char        cmd_buffer[CDC_CMD_PACKET_SZE];
+    /* Data watcher that will be used to start receive if we are not already
+     * receiving. */
+    FS_DATA_WATCHER data_watcher;
 
     /* USB device. */
     void        *usb_device;
 
+    /* Buffer used to manage data for this device. */
+    char        buffer[CDC_DATA_MAX_PACKET_SIZE * CDC_NUM_BUFFERS];
+
+    /* File system buffers. */
+    FS_BUFFER   fs_buffer[CDC_NUM_BUFFERS];
+
+    /* Current buffers being used. */
+    FS_BUFFER   *rx_buffer;
+    FS_BUFFER   *tx_buffer;
+
+    /* Command buffer. */
+    char        cmd_buffer[CDC_CMD_PACKET_SIZE];
+
     /* Buffer data lengths. */
-    uint32_t    rx_len;
-    uint32_t    tx_len;
     uint32_t    cmd_len;
 
 } CDC_CONSOLE;
 
 /* Function prototypes. */
-void usb_cdc_console_register(CDC_CONSOLE *);
+void usb_cdc_console_register(CDC_CONSOLE *, void *);
 void usb_cdc_console_unregister(CDC_CONSOLE *);
 void usb_cdc_console_handle_connect(CDC_CONSOLE *);
 void usb_cdc_console_handle_disconnect(CDC_CONSOLE *);
@@ -51,7 +60,7 @@ void usb_cdc_console_handle_disconnect(CDC_CONSOLE *);
 /* Device driver APIs. */
 void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *, uint32_t);
 void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *);
-uint32_t usb_cdc_fun_console_handle_tx(CDC_CONSOLE *);
+FS_BUFFER *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *);
 void usb_cdc_fun_console_handle_ctrl(CDC_CONSOLE *, uint32_t, char *, int32_t);
 
 #endif /* USB_CDC_CONSOLE */

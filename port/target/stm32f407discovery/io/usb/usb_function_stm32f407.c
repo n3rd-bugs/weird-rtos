@@ -17,7 +17,7 @@
 
 #ifdef STM32F407_USB_CDC_ACM
 /* Needs to be word aligned. */
-USB_FUN_CDC_ACM_DEV USB_CDC_Device __attribute__ ((aligned (0x10)));
+USB_FUN_CDC_ACM_DEV usb_cdc_device __attribute__ ((aligned (0x10)));
 #endif
 
 ISR_FUN usb_otg_interrupt()
@@ -25,7 +25,7 @@ ISR_FUN usb_otg_interrupt()
     OS_ISR_ENTER();
 
 #ifdef STM32F407_USB_CDC_ACM
-    usb_function_stm32f407_interrupt_handler (&USB_CDC_Device.usb);
+    usb_function_stm32f407_interrupt_handler (&usb_cdc_device.usb);
 #endif
 
     OS_ISR_EXIT();
@@ -42,21 +42,21 @@ void usb_function_stm32f407_init()
     extern FD debug_usart_fd;
 #endif
 
-    memset(&USB_CDC_Device, 0, sizeof(USB_FUN_CDC_ACM_DEV));
+    memset(&usb_cdc_device, 0, sizeof(USB_FUN_CDC_ACM_DEV));
 
     /* Initialize BSP. */
-    usb_stm32f407_hw_initilaize((USB_STM32F407_HANDLE *)&USB_CDC_Device);
+    usb_stm32f407_hw_initilaize((USB_STM32F407_HANDLE *)&usb_cdc_device);
 
     /* Initialize USB function device. */
-    usb_function_init((USB_STM32F407_HANDLE *)&USB_CDC_Device, &usb_fun_cdc_acm_cb);
-
-    /* Enable interrupts. */
-    usb_stm32f407_enable_interrupt((USB_STM32F407_HANDLE *)&USB_CDC_Device);
+    usb_function_init((USB_STM32F407_HANDLE *)&usb_cdc_device, &usb_fun_cdc_acm_cb);
 
     /* Initialize and register a console for this device. */
     /* For now we only support one CDC function console. */
-    USB_CDC_Device.cdc_console.console.fs.name = "cdcacmf0";
-    usb_cdc_console_register(&USB_CDC_Device.cdc_console);
+    usb_cdc_device.cdc_console.console.fs.name = "cdcacmf0";
+    usb_cdc_console_register(&usb_cdc_device.cdc_console, &usb_cdc_device);
+
+    /* Enable interrupts. */
+    usb_stm32f407_enable_interrupt((USB_STM32F407_HANDLE *)&usb_cdc_device);
 
 #ifdef STM32F407_USB_CDC_DEBUG
     /* Connect this descriptor to the UART file descriptor. */
