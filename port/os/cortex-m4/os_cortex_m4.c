@@ -146,14 +146,28 @@ ISR_FUN isr_sysclock_handle(void)
     /* Disable interrupts. */
     DISABLE_INTERRUPTS();
 
+    /* Process system tick. */
+    os_process_system_tick();
+
     /* If we have already scheduled a context switch. */
     if (last_task == NULL)
     {
         /* Save the current task pointer. */
         last_task = current_task;
 
-        /* Process system tick. */
-        os_process_system_tick();
+        /* Check if we can actually preempt the current task. */
+        if (!(current_task->flags & TASK_DONT_PREEMPT))
+        {
+            /* If current task has a scheduler defined. */
+            if (current_task->scheduler != NULL)
+            {
+                /* Re-enqueue/schedule this task in the scheduler. */
+                ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_SYSTEM);
+            }
+
+            /* Get the task that should run next. */
+            current_task = scheduler_get_next_task();
+        }
 
         /* Check if we need to switch context. */
         if (current_task != last_task)
