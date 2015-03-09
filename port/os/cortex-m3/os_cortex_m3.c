@@ -23,6 +23,7 @@ uint32_t sys_interrupt_level = TRUE;
  * switching from. */
 /* Removing this requires implementation of naked ISR functions. */
 static TASK *last_task;
+extern TASK *current_task;
 
 /*
  * os_stack_init
@@ -99,21 +100,31 @@ void run_first_task()
  */
 void control_to_system()
 {
-    /* Save the task from which we will be switching. */
-    last_task = current_task;
-
-    /* Process and get the next task in this task's context. */
-    current_task = scheduler_get_next_task();
-
-    /* Check if we need to switch context. */
-    if (current_task != last_task)
+    /* If we have not already scheduled a context switch. */
+    if (last_task == NULL)
     {
-        /* Schedule a context switch. */
-        PEND_SV();
-    }
+        /* Save the task from which we will be switching. */
+        last_task = current_task;
 
-    /* Enable interrupts. */
-    ENABLE_INTERRUPTS();
+        /* Process and get the next task in this task's context. */
+        current_task = scheduler_get_next_task();
+
+        /* Check if we need to switch context. */
+        if (current_task != last_task)
+        {
+            /* Schedule a context switch. */
+            PEND_SV();
+        }
+
+        else
+        {
+            /* We are not scheduling a context switch. */
+            last_task = NULL;
+        }
+
+        /* Enable interrupts. */
+        ENABLE_INTERRUPTS();
+    }
 
 } /* run_first_task */
 
@@ -126,17 +137,41 @@ ISR_FUN isr_sysclock_handle(void)
     /* Disable interrupts. */
     DISABLE_INTERRUPTS();
 
-    /* Save the current task pointer. */
-    last_task = current_task;
-
     /* Process system tick. */
     os_process_system_tick();
 
-    /* Check if we need to switch context. */
-    if (current_task != last_task)
+    /* If we have already scheduled a context switch. */
+    if (last_task == NULL)
     {
-        /* Schedule a context switch. */
-        PEND_SV();
+        /* Save the current task pointer. */
+        last_task = current_task;
+
+        /* Check if we can actually preempt the current task. */
+        if (!(current_task->flags & TASK_DONT_PREEMPT))
+        {
+            /* If current task has a scheduler defined. */
+            if (current_task->scheduler != NULL)
+            {
+                /* Re-enqueue/schedule this task in the scheduler. */
+                ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_SYSTEM);
+            }
+
+            /* Get the task that should run next. */
+            current_task = scheduler_get_next_task();
+        }
+
+        /* Check if we need to switch context. */
+        if (current_task != last_task)
+        {
+            /* Schedule a context switch. */
+            PEND_SV();
+        }
+
+        else
+        {
+            /* We are not scheduling a context switch. */
+            last_task = NULL;
+        }
     }
 
     /* Enable interrupts. */
@@ -170,6 +205,9 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
         *(last_task->tos - 1) = 0x00;
 #endif /* CONFIG_TASK_STATS */
     }
+
+    /* Clear the last task. */
+    last_task = NULL;
 
     /* Load context for new task. */
     asm volatile
