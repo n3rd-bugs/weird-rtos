@@ -92,6 +92,8 @@ void semaphore_task(void *argv)
         PORTB &= ~(1 << (uint16_t)argv);
         sleep(50);
         semaphore_release(&semaphore);
+
+        task_yield();
     }
 }
 
@@ -118,10 +120,10 @@ int main(void)
     task_create(&task_cb_7, "TSK_7", stack_7, 128, &semaphore_task, (void *)0x03, TASK_NO_RETURN);
 
     scheduler_task_add(&task_cb_1, TASK_APERIODIC, 2, 0);
-    scheduler_task_add(&task_cb_2, TASK_PERIODIC, 1, 500);
+    scheduler_task_add(&task_cb_2, TASK_PERIODIC, 1, OS_TICKS_PER_SEC/2);
     scheduler_task_add(&task_cb_3, TASK_APERIODIC, 2, 0);
     scheduler_task_add(&task_cb_4, TASK_APERIODIC, 2, 0);
-    scheduler_task_add(&task_cb_5, TASK_PERIODIC, 2, 1000);
+    scheduler_task_add(&task_cb_5, TASK_PERIODIC, 2, OS_TICKS_PER_SEC);
     scheduler_task_add(&task_cb_6, TASK_APERIODIC, 2, 0);
     scheduler_task_add(&task_cb_7, TASK_APERIODIC, 2, 0);
 
