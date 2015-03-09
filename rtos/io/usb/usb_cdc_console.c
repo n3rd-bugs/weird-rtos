@@ -19,7 +19,7 @@
 /* Internal function prototypes. */
 static int32_t usb_cdc_fun_console_read(void *, char *, int32_t);
 static int32_t usb_cdc_fun_console_write(void *, char *, int32_t);
-static void usb_cdc_fun_console_rx_consumed(void *, FS_BUFFER *);
+static void usb_cdc_fun_console_rx_consumed(void *, void *);
 static void usb_cdc_fun_console_space_available(void *, void *);
 
 /*
@@ -213,7 +213,7 @@ void usb_cdc_fun_console_handle_ctrl(CDC_CONSOLE *cdc_cons, uint32_t cmd, char *
  * This function will be called when buffer scheme is used and we have
  * consumed the RX buffer.
  */
-static void usb_cdc_fun_console_rx_consumed(void *fd, FS_BUFFER *buffer)
+static void usb_cdc_fun_console_rx_consumed(void *fd, void *buffer)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
 
@@ -221,7 +221,7 @@ static void usb_cdc_fun_console_rx_consumed(void *fd, FS_BUFFER *buffer)
     if (buffer)
     {
         /* Push this buffer back to the free list. */
-        fs_add_buffer((FD)(&cdc->console), buffer, FS_FREE_BUFFER);
+        fs_add_buffer((FD)(&cdc->console), (FS_BUFFER *)buffer, FS_FREE_BUFFER);
     }
 
 } /* usb_cdc_fun_console_rx_consumed */

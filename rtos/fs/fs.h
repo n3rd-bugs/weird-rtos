@@ -112,7 +112,7 @@ struct _fs
     /* Driver operations. */
     int32_t     (*get_lock) (void *);
     void        (*release_lock) (void *);
-    void        (*rx_consumed) (void *, FS_BUFFER *);
+    void        (*rx_consumed) (void *, void *);
     void        (*tx_available) (void *);
 
     /* Data hook for this file descriptor. */
