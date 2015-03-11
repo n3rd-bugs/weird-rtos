@@ -46,9 +46,13 @@ typedef void *FD;
 #define FS_BLOCK_WRITE      0x00000002
 
 /* Buffer type definition. */
-#define FS_FREE_BUFFER      1
-#define FS_RX_BUFFER        2
-#define FS_TX_BUFFER        3
+#define FS_BUFFER_FREE      1
+#define FS_BUFFER_RX        2
+#define FS_BUFFER_TX        3
+
+/* Buffer management flags. */
+#define FS_BUFFER_ACTIVE    0x1
+#define FS_BUFFER_INPLACE   0x2
 
 /* Data watcher data. */
 typedef struct _fs_data_watcher FS_DATA_WATCHER;
@@ -242,8 +246,8 @@ int32_t fs_ioctl(FD, uint32_t, void *);
 /* File system buffer management APIs. */
 void fs_init_buffer(FS_BUFFER *, char *, uint32_t);
 void fs_update_buffer(FS_BUFFER *, char *, uint32_t);
-void fs_add_buffer(FD, FS_BUFFER *, uint32_t);
-FS_BUFFER *fs_get_buffer(FD, uint32_t);
+void fs_add_buffer(FD, FS_BUFFER *, uint32_t, uint32_t);
+FS_BUFFER *fs_get_buffer(FD, uint32_t, uint32_t);
 
 void fs_set_data_watcher(FD, FS_DATA_WATCHER *);
 void fs_set_connection_watcher(FD, FS_CONNECTION_WATCHER *);

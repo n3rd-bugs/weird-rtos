@@ -56,7 +56,7 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
         fs_init_buffer(&cdc_cons->fs_buffer[i], &cdc_cons->buffer[CDC_DATA_MAX_PACKET_SIZE * i], CDC_DATA_MAX_PACKET_SIZE);
 
         /* Add this buffer to the free buffer list for this file descriptor. */
-        fs_add_buffer((FD)&cdc_cons->console, &cdc_cons->fs_buffer[i], FS_FREE_BUFFER);
+        fs_add_buffer((FD)&cdc_cons->console, &cdc_cons->fs_buffer[i], FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
 
     /* This will block on read, and all data that will be given to write must
@@ -124,7 +124,7 @@ void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
         cdc_cons->rx_buffer = NULL;
 
         /* Push this buffer on the RX buffer list. */
-        fs_add_buffer((FD)(&cdc_cons->console), buffer, FS_RX_BUFFER);
+        fs_add_buffer((FD)(&cdc_cons->console), buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
 
         /* Release lock. */
         cdc_cons->console.fs.release_lock((FD)(&cdc_cons->console));
@@ -152,7 +152,7 @@ void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *cdc_cons)
             cdc_cons->tx_buffer = NULL;
 
             /* Push this buffer back to the free list. */
-            fs_add_buffer((FD)(&cdc_cons->console), buffer, FS_FREE_BUFFER);
+            fs_add_buffer((FD)(&cdc_cons->console), buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* Release lock. */
@@ -177,7 +177,7 @@ FS_BUFFER *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
     if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
     {
         /* Check if we have something to transmit. */
-        buffer = cdc_cons->tx_buffer = fs_get_buffer(((FD)&cdc_cons->console), FS_TX_BUFFER);
+        buffer = cdc_cons->tx_buffer = fs_get_buffer(((FD)&cdc_cons->console), FS_BUFFER_TX, FS_BUFFER_ACTIVE);
 
         /* Release lock. */
         cdc_cons->console.fs.release_lock(&cdc_cons->console);
@@ -221,7 +221,7 @@ static void usb_cdc_fun_console_rx_consumed(void *fd, void *buffer)
     if (buffer)
     {
         /* Push this buffer back to the free list. */
-        fs_add_buffer((FD)(&cdc->console), (FS_BUFFER *)buffer, FS_FREE_BUFFER);
+        fs_add_buffer((FD)(&cdc->console), (FS_BUFFER *)buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
 
 } /* usb_cdc_fun_console_rx_consumed */
@@ -237,7 +237,7 @@ static void usb_cdc_fun_console_rx_consumed(void *fd, void *buffer)
 static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
-    FS_BUFFER *fs_buffer = fs_get_buffer(((FD)&cdc->console), FS_RX_BUFFER);
+    FS_BUFFER *fs_buffer = fs_get_buffer(((FD)&cdc->console), FS_BUFFER_RX, FS_BUFFER_ACTIVE);
 
     /* If we do have received a buffer. */
     if (fs_buffer)
@@ -282,7 +282,7 @@ static void usb_cdc_fun_console_space_available(void *fd, void *priv_data)
     if (cdc->rx_buffer == NULL)
     {
         /* Pick a free buffer. */
-        cdc->rx_buffer = fs_get_buffer(fd, FS_FREE_BUFFER);
+        cdc->rx_buffer = fs_get_buffer(fd, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
 
         if (cdc->rx_buffer != NULL)
         {
@@ -304,7 +304,7 @@ static void usb_cdc_fun_console_space_available(void *fd, void *priv_data)
 static int32_t usb_cdc_fun_console_write(void *fd, char *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
-    FS_BUFFER *fs_buffer = fs_get_buffer(((FD)&cdc->console), FS_FREE_BUFFER);
+    FS_BUFFER *fs_buffer = fs_get_buffer(((FD)&cdc->console), FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
 
     /* If we do have a free buffer that can be used to transmit this data. */
     if (fs_buffer)
@@ -325,7 +325,7 @@ static int32_t usb_cdc_fun_console_write(void *fd, char *buffer, int32_t size)
             fs_update_buffer(fs_buffer, fs_buffer->buffer, (uint32_t)size);
 
             /* Push this buffer back to the transmit list. */
-            fs_add_buffer((FD)(&cdc->console), fs_buffer, FS_TX_BUFFER);
+            fs_add_buffer((FD)(&cdc->console), fs_buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
         }
     }
 

@@ -149,18 +149,20 @@ void fs_update_buffer(FS_BUFFER *buffer, char *data, uint32_t size)
  * fs_add_buffer
  * @fd: File descriptor on which a free buffer is needed to be added.
  * @type: Type of buffer needed to be added.
- *  FS_FREE_BUFFER: if this is a free buffer.
- *  FS_RX_BUFFER: if this is a receive buffer.
- *  FS_TX_BUFFER: if this is a transmit buffer.
+ *  FS_BUFFER_FREE: if this is a free buffer.
+ *  FS_BUFFER_RX: if this is a receive buffer.
+ *  FS_BUFFER_TX: if this is a transmit buffer.
+ * @flags: Operation flags.
+ *  FS_BUFFER_ACTIVE: actively add the buffer and invoke the any callbacks.
  * This function will add a new buffer in the file descriptor for the required
  * type.
  */
-void fs_add_buffer(FD fd, FS_BUFFER *buffer, uint32_t type)
+void fs_add_buffer(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
 {
     /* Type of buffer we are adding. */
     switch (type)
     {
-    case (FS_FREE_BUFFER):
+    case (FS_BUFFER_FREE):
 
         /* Initialize this buffer. */
         buffer->buffer = buffer->init_buffer;
@@ -169,22 +171,30 @@ void fs_add_buffer(FD fd, FS_BUFFER *buffer, uint32_t type)
         /* Just add this buffer in the free buffer list. */
         sll_append(&((FS *)fd)->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-        /* Some space is now available. */
-        fd_space_available(fd);
+        /* If we are doing this actively. */
+        if (flags & FS_BUFFER_ACTIVE)
+        {
+            /* Some space is now available. */
+            fd_space_available(fd);
+        }
 
         break;
 
-    case (FS_RX_BUFFER):
+    case (FS_BUFFER_RX):
 
         /* Just add this buffer in the receive buffer list. */
         sll_append(&((FS *)fd)->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-        /* Some new data is now available. */
-        fd_data_available(fd);
+        /* If we are doing this actively. */
+        if (flags & FS_BUFFER_ACTIVE)
+        {
+            /* Some new data is now available. */
+            fd_data_available(fd);
+        }
 
         break;
 
-    case (FS_TX_BUFFER):
+    case (FS_BUFFER_TX):
 
         /* Just add this buffer in the transmit buffer list. */
         sll_append(&((FS *)fd)->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
@@ -198,50 +208,85 @@ void fs_add_buffer(FD fd, FS_BUFFER *buffer, uint32_t type)
  * fs_get_buffer
  * @fd: File descriptor from which a free buffer is needed.
  * @type: Type of buffer needed to be added.
- *  FS_FREE_BUFFER: if this is a free buffer.
- *  FS_RX_BUFFER: if this is a receive buffer.
- *  FS_TX_BUFFER: if this is a transmit buffer.
+ *  FS_BUFFER_FREE: if this is a free buffer.
+ *  FS_BUFFER_RX: if this is a receive buffer.
+ *  FS_BUFFER_TX: if this is a transmit buffer.
+ * @flags: Operation flags.
+ *  FS_BUFFER_ACTIVE: actively pickup the buffer and invoke the any callbacks.
+ *  FS_BUFFER_INPLACE: will not remove the buffer from the list just return a
+ *      pointer to it.
  * This function return a buffer from a required buffer list for this file
  * descriptor.
  */
-FS_BUFFER *fs_get_buffer(FD fd, uint32_t type)
+FS_BUFFER *fs_get_buffer(FD fd, uint32_t type, uint32_t flags)
 {
     FS_BUFFER *buffer = NULL;
 
     /* Type of buffer we need. */
     switch (type)
     {
-    case (FS_FREE_BUFFER):
+    case (FS_BUFFER_FREE):
 
-        /* Pop a buffer from this file descriptor's free buffer list. */
-        buffer = sll_pop(&((FS *)fd)->free_buffer_list, OFFSETOF(FS_BUFFER, next));
-
-        if (((FS *)fd)->free_buffer_list.head == NULL)
+        /* If we need to return the buffer in-place. */
+        if (flags & FS_BUFFER_INPLACE)
         {
-            /* Tell the file system to block the write until there is some
-             * space available. */
-            fd_space_consumed(fd);
+            /* Return the pointer to the head buffer. */
+            buffer = ((FS *)fd)->free_buffer_list.head;
+        }
+        else
+        {
+            /* Pop a buffer from this file descriptor's free buffer list. */
+            buffer = sll_pop(&((FS *)fd)->free_buffer_list, OFFSETOF(FS_BUFFER, next));
+
+            /* If we are doing this actively. */
+            if ((flags & FS_BUFFER_ACTIVE) &&
+                (((FS *)fd)->free_buffer_list.head == NULL))
+            {
+                /* Tell the file system to block the write until there is some
+                 * space available. */
+                fd_space_consumed(fd);
+            }
         }
 
         break;
 
-    case (FS_RX_BUFFER):
+    case (FS_BUFFER_RX):
 
-        /* Pop a buffer from this file descriptor's receive buffer list. */
-        buffer = sll_pop(&((FS *)fd)->rx_buffer_list, OFFSETOF(FS_BUFFER, next));
-
-        if (((FS *)fd)->rx_buffer_list.head == NULL)
+        /* If we need to return the buffer in-place. */
+        if (flags & FS_BUFFER_INPLACE)
         {
-            /* No more data is available to read. */
-            fd_data_flushed(fd);
+            /* Return the pointer to the head buffer. */
+            buffer = ((FS *)fd)->rx_buffer_list.head;
+        }
+        else
+        {
+            /* Pop a buffer from this file descriptor's receive buffer list. */
+            buffer = sll_pop(&((FS *)fd)->rx_buffer_list, OFFSETOF(FS_BUFFER, next));
+
+            /* If we are doing this actively. */
+            if ((flags & FS_BUFFER_ACTIVE) &&
+                (((FS *)fd)->rx_buffer_list.head == NULL))
+            {
+                /* No more data is available to read. */
+                fd_data_flushed(fd);
+            }
         }
 
         break;
 
-    case (FS_TX_BUFFER):
+    case (FS_BUFFER_TX):
 
-        /* Pop a buffer from this file descriptor's transmit buffer list. */
-        buffer = sll_pop(&((FS *)fd)->tx_buffer_list, OFFSETOF(FS_BUFFER, next));
+        /* If we need to return the buffer in-place. */
+        if (flags & FS_BUFFER_INPLACE)
+        {
+            /* Return the pointer to the head buffer. */
+            buffer = ((FS *)fd)->tx_buffer_list.head;
+        }
+        else
+        {
+            /* Pop a buffer from this file descriptor's transmit buffer list. */
+            buffer = sll_pop(&((FS *)fd)->tx_buffer_list, OFFSETOF(FS_BUFFER, next));
+        }
 
         break;
     }
