@@ -525,7 +525,7 @@ static uint32_t usb_fun_cdc_acm_data_in(void *usb_device, uint8_t epnum)
     if (buffer)
     {
         /* Prepare the available data buffer to be sent on IN endpoint. */
-        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(buffer->buffer), buffer->length);
+        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(buffer->buffer), buffer->max_length);
     }
 
     /* Return success. */

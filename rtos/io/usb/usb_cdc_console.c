@@ -53,10 +53,10 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
     for (i = 0; i < CDC_NUM_BUFFERS; i++)
     {
         /* Initialize a buffer. */
-        fs_init_buffer(&cdc_cons->fs_buffer[i], &cdc_cons->buffer[CDC_DATA_MAX_PACKET_SIZE * i], CDC_DATA_MAX_PACKET_SIZE);
+        fs_buffer_init(&cdc_cons->fs_buffer[i], &cdc_cons->buffer[CDC_DATA_MAX_PACKET_SIZE * i], CDC_DATA_MAX_PACKET_SIZE);
 
         /* Add this buffer to the free buffer list for this file descriptor. */
-        fs_add_buffer((FD)&cdc_cons->console, &cdc_cons->fs_buffer[i], FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+        fs_buffer_add((FD)&cdc_cons->console, &cdc_cons->fs_buffer[i], FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
 
     /* This will block on read, and all data that will be given to write must
@@ -117,14 +117,14 @@ void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
     if (cdc_cons->console.fs.get_lock((FD)(&cdc_cons->console)) == SUCCESS)
     {
         /* Update buffer pointers. */
-        fs_update_buffer(cdc_cons->rx_buffer, cdc_cons->rx_buffer->buffer, nbytes);
+        fs_buffer_update(cdc_cons->rx_buffer, cdc_cons->rx_buffer->buffer, nbytes);
 
         /* Save and clear the receive buffer. */
         buffer = cdc_cons->rx_buffer;
         cdc_cons->rx_buffer = NULL;
 
         /* Push this buffer on the RX buffer list. */
-        fs_add_buffer((FD)(&cdc_cons->console), buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+        fs_buffer_add((FD)(&cdc_cons->console), buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
 
         /* Release lock. */
         cdc_cons->console.fs.release_lock((FD)(&cdc_cons->console));
@@ -152,7 +152,7 @@ void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *cdc_cons)
             cdc_cons->tx_buffer = NULL;
 
             /* Push this buffer back to the free list. */
-            fs_add_buffer((FD)(&cdc_cons->console), buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add((FD)(&cdc_cons->console), buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* Release lock. */
@@ -177,7 +177,7 @@ FS_BUFFER *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
     if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
     {
         /* Check if we have something to transmit. */
-        buffer = cdc_cons->tx_buffer = fs_get_buffer(((FD)&cdc_cons->console), FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+        buffer = cdc_cons->tx_buffer = fs_buffer_get(((FD)&cdc_cons->console), FS_BUFFER_TX, FS_BUFFER_ACTIVE);
 
         /* Release lock. */
         cdc_cons->console.fs.release_lock(&cdc_cons->console);
@@ -221,7 +221,7 @@ static void usb_cdc_fun_console_rx_consumed(void *fd, void *buffer)
     if (buffer)
     {
         /* Push this buffer back to the free list. */
-        fs_add_buffer((FD)(&cdc->console), (FS_BUFFER *)buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+        fs_buffer_add((FD)(&cdc->console), (FS_BUFFER *)buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
 
 } /* usb_cdc_fun_console_rx_consumed */
@@ -237,7 +237,7 @@ static void usb_cdc_fun_console_rx_consumed(void *fd, void *buffer)
 static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
-    FS_BUFFER *fs_buffer = fs_get_buffer(((FD)&cdc->console), FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+    FS_BUFFER *fs_buffer = fs_buffer_get(((FD)&cdc->console), FS_BUFFER_RX, FS_BUFFER_ACTIVE);
 
     /* If we do have received a buffer. */
     if (fs_buffer)
@@ -251,12 +251,16 @@ static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
         /* If we actually have some data. */
         if (fs_buffer->length > 0)
         {
-            /* Copy received data from the buffer. */
-            memcpy(buffer, fs_buffer->buffer, (uint32_t)size);
+            /* Pull data from the buffer. */
+            fs_buffer_pull(fs_buffer, buffer, (uint32_t)size, FS_BUFFER_LSB_FIRST);
         }
 
-        /* This receive buffer is now consumed. */
-        usb_cdc_fun_console_rx_consumed(fd, fs_buffer);
+        /* If this buffer is now consumed. */
+        if (fs_buffer->length == 0)
+        {
+            /* This receive buffer is now consumed. */
+            usb_cdc_fun_console_rx_consumed(fd, fs_buffer);
+        }
     }
 
     /* Return number of bytes. */
@@ -282,7 +286,7 @@ static void usb_cdc_fun_console_space_available(void *fd, void *priv_data)
     if (cdc->rx_buffer == NULL)
     {
         /* Pick a free buffer. */
-        cdc->rx_buffer = fs_get_buffer(fd, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+        cdc->rx_buffer = fs_buffer_get(fd, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
 
         if (cdc->rx_buffer != NULL)
         {
@@ -304,28 +308,25 @@ static void usb_cdc_fun_console_space_available(void *fd, void *priv_data)
 static int32_t usb_cdc_fun_console_write(void *fd, char *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
-    FS_BUFFER *fs_buffer = fs_get_buffer(((FD)&cdc->console), FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+    FS_BUFFER *fs_buffer = fs_buffer_get(((FD)&cdc->console), FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
 
     /* If we do have a free buffer that can be used to transmit this data. */
     if (fs_buffer)
     {
         /* Check if we need to send more bytes than we can send in a single packet. */
-        if (size > (int32_t)fs_buffer->length)
+        if (size > (int32_t)fs_buffer->max_length)
         {
             /* Send bytes that can be sent in a packet. */
-            size = (int32_t)fs_buffer->length;
+            size = (int32_t)fs_buffer->max_length;
         }
 
         if (size > 0)
         {
-            /* Copy data in the TX buffer. */
-            memcpy(fs_buffer->buffer, buffer, (uint32_t)size);
-
-            /* Update buffer pointers. */
-            fs_update_buffer(fs_buffer, fs_buffer->buffer, (uint32_t)size);
+            /* Push data in the TX buffer. */
+            fs_buffer_push(fs_buffer, buffer, (uint32_t)size, FS_BUFFER_LSB_FIRST);
 
             /* Push this buffer back to the transmit list. */
-            fs_add_buffer((FD)(&cdc->console), fs_buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+            fs_buffer_add((FD)(&cdc->console), fs_buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
         }
     }
 
