@@ -113,40 +113,113 @@ void fs_unregister(FS *file_system)
 } /* fs_unregister */
 
 /*
- * fs_init_buffer
+ * fs_buffer_init
  * @buffer: File buffer needed to be initialized.
  * @data: Data space needed to be used for this buffer.
- * @size: Size of the data used with buffer.
+ * @size: Size of the data allocated for this buffer.
  * This function will initialize a buffer with given data.
  */
-void fs_init_buffer(FS_BUFFER *buffer, char *data, uint32_t size)
+void fs_buffer_init(FS_BUFFER *buffer, char *data, uint32_t size)
 {
     /* Clear this buffer. */
     memset(buffer, 0, sizeof(FS_BUFFER));
 
     /* Initialize this buffer. */
-    buffer->init_buffer = data;
-    buffer->init_length = size;
+    buffer->data = buffer->buffer = data;
+    buffer->max_length = size;
 
-} /* fs_init_buffer */
+} /* fs_buffer_init */
 
 /*
- * fs_update_buffer
- * @buffer: File buffer needed to be initialized.
+ * fs_buffer_update
+ * @buffer: File buffer needed to be updated.
  * @data: New buffer pointer.
- * @size: Size valid data in the buffer.
+ * @size: Size of valid data in the buffer.
  * This function will update a buffer data pointers.
  */
-void fs_update_buffer(FS_BUFFER *buffer, char *data, uint32_t size)
+void fs_buffer_update(FS_BUFFER *buffer, char *data, uint32_t size)
 {
     /* Update the buffer data. */
     buffer->buffer = data;
     buffer->length = size;
 
-} /* fs_update_buffer */
+} /* fs_buffer_update */
 
 /*
- * fs_add_buffer
+ * fs_buffer_pull
+ * @buffer: File buffer from which data is needed to be pulled.
+ * @data: Buffer in which data is needed to be pulled.
+ * @size: Number of bytes needed to be pulled.
+ * @flags: Defines how we will be pulling the data.
+ *  FS_BUFFER_LSB_FIRST: If we need to pull the first byte first.
+ *  FS_BUFFER_MSB_FIRST: If we need to pull the last byte first.
+ * This function will remove data from the start of the buffer. If given will
+ * also copy the data in the provided buffer.
+ */
+void fs_buffer_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
+{
+    /* If we need to return the pulled data. */
+    if (data != NULL)
+    {
+        if (flags == FS_BUFFER_LSB_FIRST)
+        {
+            /* Copy the data in the provided buffer. */
+            memcpy(data, buffer->buffer, size);
+        }
+
+        else if (flags == FS_BUFFER_MSB_FIRST)
+        {
+            /* Copy the last byte first. */
+            fs_memcpy_r(data, buffer->buffer, size);
+        }
+    }
+
+    /* Should never happen. */
+    OS_ASSERT(buffer->length < size);
+
+    /* Update the buffer pointers. */
+    buffer->buffer += size;
+    buffer->length -= size;
+
+} /* fs_buffer_pull */
+/*
+ * fs_buffer_push
+ * @buffer: File buffer on which data is needed to be pushed.
+ * @data: Buffer from which data is needed to pushed.
+ * @size: Number of bytes needed to be pushed.
+ * @flags: Defines how we will be pushing the data.
+ *  FS_BUFFER_LSB_FIRST: If we need to push the first byte first.
+ *  FS_BUFFER_MSB_FIRST: If we need to push the last byte first.
+ * This function will add trailing data in the buffer.
+ */
+void fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
+{
+    /* Should never happen. */
+    OS_ASSERT((buffer->max_length - buffer->length) < size);
+
+    /* If we actually need to push some data. */
+    if (data != NULL)
+    {
+        if (flags == FS_BUFFER_LSB_FIRST)
+        {
+            /* Copy data from the provided buffer. */
+            memcpy(&buffer->buffer[buffer->length], data, size);
+        }
+
+        else if (flags == FS_BUFFER_MSB_FIRST)
+        {
+            /* Copy data from the provided buffer last byte first. */
+            fs_memcpy_r(&buffer->buffer[buffer->length], data, size);
+        }
+    }
+
+    /* Update the buffer length. */
+    buffer->length += size;
+
+} /* fs_buffer_push */
+
+/*
+ * fs_buffer_add
  * @fd: File descriptor on which a free buffer is needed to be added.
  * @type: Type of buffer needed to be added.
  *  FS_BUFFER_FREE: if this is a free buffer.
@@ -157,7 +230,7 @@ void fs_update_buffer(FS_BUFFER *buffer, char *data, uint32_t size)
  * This function will add a new buffer in the file descriptor for the required
  * type.
  */
-void fs_add_buffer(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
+void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
 {
     /* Type of buffer we are adding. */
     switch (type)
@@ -165,8 +238,8 @@ void fs_add_buffer(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
     case (FS_BUFFER_FREE):
 
         /* Initialize this buffer. */
-        buffer->buffer = buffer->init_buffer;
-        buffer->length = buffer->init_length;
+        buffer->buffer = buffer->data;
+        buffer->length = 0;
 
         /* Just add this buffer in the free buffer list. */
         sll_append(&((FS *)fd)->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
@@ -202,10 +275,10 @@ void fs_add_buffer(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
         break;
     }
 
-} /* fs_add_buffer */
+} /* fs_buffer_add */
 
 /*
- * fs_get_buffer
+ * fs_buffer_get
  * @fd: File descriptor from which a free buffer is needed.
  * @type: Type of buffer needed to be added.
  *  FS_BUFFER_FREE: if this is a free buffer.
@@ -218,7 +291,7 @@ void fs_add_buffer(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
  * This function return a buffer from a required buffer list for this file
  * descriptor.
  */
-FS_BUFFER *fs_get_buffer(FD fd, uint32_t type, uint32_t flags)
+FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
 {
     FS_BUFFER *buffer = NULL;
 
@@ -294,7 +367,7 @@ FS_BUFFER *fs_get_buffer(FD fd, uint32_t type, uint32_t flags)
     /* Return the buffer. */
     return (buffer);
 
-} /* fs_get_buffer */
+} /* fs_buffer_get */
 
 /*
  * fs_set_data_watcher
@@ -1390,5 +1463,27 @@ void fs_resume_tasks(void *fd, int32_t status, FS_PARAM *param, uint32_t n)
     }
 
 } /* fs_resume_tasks */
+
+/*
+ * fs_memcpy_r
+ * @dst: Destination buffer on which data is needed to be pushed.
+ * @src: Source buffer from which data is needed to be copied.
+ * @len: Number of bytes to copy.
+ * This function will copy n bytes from source to the destination buffer last
+ * byte first.
+ */
+void fs_memcpy_r(char *dst, char *src, uint32_t n)
+{
+    /* Go to the end of destination buffer. */
+    dst = dst + n;
+
+    /* While we have a byte to copy. */
+    while (n --)
+    {
+        /* Copy a byte from source to the buffer. */
+        *(--dst) = *(src++);
+    }
+
+} /* fs_memcpy_r */
 
 #endif /* CONFIG_FS */

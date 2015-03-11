@@ -53,6 +53,8 @@ typedef void *FD;
 /* Buffer management flags. */
 #define FS_BUFFER_ACTIVE    0x1
 #define FS_BUFFER_INPLACE   0x2
+#define FS_BUFFER_LSB_FIRST 0x3
+#define FS_BUFFER_MSB_FIRST 0x4
 
 /* Data watcher data. */
 typedef struct _fs_data_watcher FS_DATA_WATCHER;
@@ -87,9 +89,9 @@ struct _fs_buffer
     /* Buffer list member. */
     FS_BUFFER   *next;
 
-    /* Original buffer data. */
-    char        *init_buffer;
-    uint32_t    init_length;
+    /* Actual buffer data. */
+    char        *data;
+    uint32_t    max_length;
 
     /* Buffer data. */
     char        *buffer;
@@ -244,10 +246,12 @@ int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
 /* File system buffer management APIs. */
-void fs_init_buffer(FS_BUFFER *, char *, uint32_t);
-void fs_update_buffer(FS_BUFFER *, char *, uint32_t);
-void fs_add_buffer(FD, FS_BUFFER *, uint32_t, uint32_t);
-FS_BUFFER *fs_get_buffer(FD, uint32_t, uint32_t);
+void fs_buffer_init(FS_BUFFER *, char *, uint32_t);
+void fs_buffer_update(FS_BUFFER *, char *, uint32_t);
+void fs_buffer_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
+void fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
+void fs_buffer_add(FD, FS_BUFFER *, uint32_t, uint32_t);
+FS_BUFFER *fs_buffer_get(FD, uint32_t, uint32_t);
 
 void fs_set_data_watcher(FD, FS_DATA_WATCHER *);
 void fs_set_connection_watcher(FD, FS_CONNECTION_WATCHER *);
@@ -271,6 +275,7 @@ void fs_resume_tasks(void *, int32_t, FS_PARAM *, uint32_t);
 /* Helper APIs. */
 uint8_t fs_sreach_directory(void *, void *);
 uint8_t fs_sreach_node(void *, void *);
+void fs_memcpy_r(char *, char *, uint32_t);
 
 /* Include sub modules. */
 #ifdef FS_PIPE
