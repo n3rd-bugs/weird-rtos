@@ -131,6 +131,45 @@ void fs_buffer_init(FS_BUFFER *buffer, char *data, uint32_t size)
 } /* fs_buffer_init */
 
 /*
+ * fs_buffer_add_head
+ * @buffer: File buffer needed to be updated.
+ * @size: Size of head room needed to be left in the buffer.
+ * @return: Success if operation was successfully performed,
+ *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
+ *  buffer.
+ * This function will add a head room to the given buffer, if there is already
+ * some data on the buffer it will be moved. If it already has some head room
+ * it will be maintained.
+ */
+int32_t fs_buffer_add_head(FS_BUFFER *buffer, uint32_t size)
+{
+    int32_t status = SUCCESS;
+
+    /* Validate that there is enough space on the buffer. */
+    if (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) < size)
+    {
+        /* Return an error. */
+        status = FS_BUFFER_NO_SPACE;
+    }
+    else
+    {
+        /* Check if we have some data on the buffer. */
+        if (buffer->length != 0)
+        {
+            /* Move the data to make room for head. */
+            memmove(&buffer->buffer[size], buffer->buffer, buffer->length);
+        }
+
+        /* Update the buffer pointer. */
+        buffer->buffer = buffer->buffer + size;
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* fs_buffer_add_head */
+
+/*
  * fs_buffer_update
  * @buffer: File buffer needed to be updated.
  * @data: New buffer pointer.
@@ -151,70 +190,145 @@ void fs_buffer_update(FS_BUFFER *buffer, char *data, uint32_t size)
  * @data: Buffer in which data is needed to be pulled.
  * @size: Number of bytes needed to be pulled.
  * @flags: Defines how we will be pulling the data.
- *  FS_BUFFER_LSB_FIRST: If we need to pull the first byte first.
  *  FS_BUFFER_MSB_FIRST: If we need to pull the last byte first.
+ *  FS_BUFFER_TAIL: If we need to pull data from the tail.
+ * @return: Success if operation was successfully performed,
+ *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
+ *  buffer.
  * This function will remove data from the start of the buffer. If given will
  * also copy the data in the provided buffer.
  */
-void fs_buffer_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
 {
-    /* If we need to return the pulled data. */
-    if (data != NULL)
+    char *from;
+    int32_t status = SUCCESS;
+
+    /* Validate if we do have that much data on the buffer. */
+    if (buffer->length < size)
     {
-        if (flags == FS_BUFFER_LSB_FIRST)
+        /* Return an error. */
+        status = FS_BUFFER_NO_SPACE;
+    }
+    else
+    {
+        /* If we need to pull data from the tail. */
+        if (flags & FS_BUFFER_TAIL)
         {
-            /* Copy the data in the provided buffer. */
-            memcpy(data, buffer->buffer, size);
+            /* Pick the data from the end of the buffer. */
+            from = &buffer->buffer[buffer->length - size];
+        }
+        else
+        {
+            /* Pick the data from the start of the buffer. */
+            from = buffer->buffer;
+
+            /* Advance the buffer pointer. */
+            buffer->buffer += size;
         }
 
-        else if (flags == FS_BUFFER_MSB_FIRST)
+        /* If we need to actually need to return the pulled data. */
+        if (data != NULL)
         {
-            /* Copy the last byte first. */
-            fs_memcpy_r(data, buffer->buffer, size);
+            if (flags & FS_BUFFER_MSB_FIRST)
+            {
+                /* Copy the last byte first. */
+                fs_memcpy_r(data, from, size);
+            }
+            else
+            {
+                /* Copy the data in the provided buffer. */
+                memcpy(data, from, size);
+            }
         }
+
+        /* Update the buffer length. */
+        buffer->length -= size;
     }
 
-    /* Should never happen. */
-    OS_ASSERT(buffer->length < size);
-
-    /* Update the buffer pointers. */
-    buffer->buffer += size;
-    buffer->length -= size;
+    /* Return status to the caller. */
+    return (status);
 
 } /* fs_buffer_pull */
+
 /*
  * fs_buffer_push
  * @buffer: File buffer on which data is needed to be pushed.
  * @data: Buffer from which data is needed to pushed.
  * @size: Number of bytes needed to be pushed.
  * @flags: Defines how we will be pushing the data.
- *  FS_BUFFER_LSB_FIRST: If we need to push the first byte first.
  *  FS_BUFFER_MSB_FIRST: If we need to push the last byte first.
- * This function will add trailing data in the buffer.
+ *  FS_BUFFER_HEAD: If data is needed to be pushed on the head.
+ * @return: Success if operation was successfully performed,
+ *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
+ *  buffer.
+ * This function will add data in the buffer. If we are adding at the start the
+ * buffer pointer will be updated to the newly added data.
  */
-void fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
 {
-    /* Should never happen. */
-    OS_ASSERT((buffer->max_length - buffer->length) < size);
+    char *to;
+    int32_t status = SUCCESS;
 
-    /* If we actually need to push some data. */
-    if (data != NULL)
+    /* If we do have enough space on the buffer. */
+    if ((flags & FS_BUFFER_HEAD) && (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) < size))
     {
-        if (flags == FS_BUFFER_LSB_FIRST)
+        /* Return an error. */
+        status = FS_BUFFER_NO_SPACE;
+    }
+    else
+    {
+        /* If we need to push data on the head. */
+        if (flags & FS_BUFFER_HEAD)
         {
-            /* Copy data from the provided buffer. */
-            memcpy(&buffer->buffer[buffer->length], data, size);
+            /* Check if we have some head room. */
+            if ((uint32_t)(buffer->buffer - buffer->data) < size)
+            {
+                /* Add required head room. */
+                status = fs_buffer_add_head(buffer, (size - (uint32_t)(buffer->buffer - buffer->data)));
+            }
+
+            if (status == SUCCESS)
+            {
+                /* We will be adding data at the start of the existing data. */
+
+                /* Decrement the buffer pointer. */
+                buffer->buffer -= size;
+
+                /* Pick the pointer at which we will be adding data. */
+                to = buffer->buffer;
+            }
+        }
+        else
+        {
+            /* We will be pushing data at the end of the buffer. */
+            to = &buffer->buffer[buffer->length];
         }
 
-        else if (flags == FS_BUFFER_MSB_FIRST)
+        if (status == SUCCESS)
         {
-            /* Copy data from the provided buffer last byte first. */
-            fs_memcpy_r(&buffer->buffer[buffer->length], data, size);
+            /* If we actually need to push some data. */
+            if (data != NULL)
+            {
+                if (flags & FS_BUFFER_MSB_FIRST)
+                {
+                    /* Copy data from the provided buffer last byte first. */
+                    fs_memcpy_r(to, data, size);
+                }
+
+                else
+                {
+                    /* Copy data from the provided buffer. */
+                    memcpy(to, data, size);
+                }
+            }
+
+            /* Update the buffer length. */
+            buffer->length += size;
         }
     }
 
-    /* Update the buffer length. */
-    buffer->length += size;
+    /* Return status to the caller. */
+    return (status);
 
 } /* fs_buffer_push */
 

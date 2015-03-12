@@ -28,6 +28,7 @@
 /* Error definitions. */
 #define FS_NODE_DELETED     -801
 #define FS_TIMEOUT          -802
+#define FS_BUFFER_NO_SPACE  -803
 
 /* File descriptor definitions. */
 typedef void *FD;
@@ -51,10 +52,11 @@ typedef void *FD;
 #define FS_BUFFER_TX        3
 
 /* Buffer management flags. */
-#define FS_BUFFER_ACTIVE    0x1
-#define FS_BUFFER_INPLACE   0x2
-#define FS_BUFFER_LSB_FIRST 0x3
-#define FS_BUFFER_MSB_FIRST 0x4
+#define FS_BUFFER_ACTIVE        0x0001
+#define FS_BUFFER_INPLACE       0x0002
+#define FS_BUFFER_MSB_FIRST     0x0004
+#define FS_BUFFER_TAIL          0x0008
+#define FS_BUFFER_HEAD          0x0010
 
 /* Data watcher data. */
 typedef struct _fs_data_watcher FS_DATA_WATCHER;
@@ -247,9 +249,10 @@ int32_t fs_ioctl(FD, uint32_t, void *);
 
 /* File system buffer management APIs. */
 void fs_buffer_init(FS_BUFFER *, char *, uint32_t);
+int32_t fs_buffer_add_head(FS_BUFFER *, uint32_t);
 void fs_buffer_update(FS_BUFFER *, char *, uint32_t);
-void fs_buffer_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
-void fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
+int32_t fs_buffer_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
+int32_t fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
 void fs_buffer_add(FD, FS_BUFFER *, uint32_t, uint32_t);
 FS_BUFFER *fs_buffer_get(FD, uint32_t, uint32_t);
 

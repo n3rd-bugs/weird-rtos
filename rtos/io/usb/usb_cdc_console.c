@@ -252,7 +252,7 @@ static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
         if (fs_buffer->length > 0)
         {
             /* Pull data from the buffer. */
-            fs_buffer_pull(fs_buffer, buffer, (uint32_t)size, FS_BUFFER_LSB_FIRST);
+            OS_ASSERT(fs_buffer_pull(fs_buffer, buffer, (uint32_t)size, 0) != SUCCESS);
         }
 
         /* If this buffer is now consumed. */
@@ -323,7 +323,7 @@ static int32_t usb_cdc_fun_console_write(void *fd, char *buffer, int32_t size)
         if (size > 0)
         {
             /* Push data in the TX buffer. */
-            fs_buffer_push(fs_buffer, buffer, (uint32_t)size, FS_BUFFER_LSB_FIRST);
+            OS_ASSERT(fs_buffer_push(fs_buffer, buffer, (uint32_t)size, 0) != SUCCESS);
 
             /* Push this buffer back to the transmit list. */
             fs_buffer_add((FD)(&cdc->console), fs_buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
