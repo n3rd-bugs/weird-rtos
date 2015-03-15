@@ -19,6 +19,9 @@
 /* Needs to be word aligned. */
 USB_FUN_CDC_ACM_DEV usb_cdc_device __attribute__ ((aligned (0x10)));
 #endif
+#ifdef STM32F407_USB_CDC_ACM_PPP
+PPP ppp_instance;
+#endif
 
 ISR_FUN usb_otg_interrupt()
 {
@@ -61,6 +64,10 @@ void usb_function_stm32f407_init()
 #ifdef STM32F407_USB_CDC_DEBUG
     /* Connect this descriptor to the UART file descriptor. */
     fs_connect((FD)&USB_CDC_Device.cdc_console, debug_usart_fd);
+#elif defined(STM32F407_USB_CDC_ACM_PPP)
+
+    /* Register USB CDC with PPP. */
+    ppp_register_fd(&ppp_instance, (FD)&usb_cdc_device.cdc_console);
 #endif
 #endif
 
