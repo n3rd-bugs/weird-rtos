@@ -25,5 +25,6 @@
 
 /* Device IO. */
 //#define CONFIG_USB
+//#define CONFIG_PPP
 
 #endif /* _CONFIG_H_ */

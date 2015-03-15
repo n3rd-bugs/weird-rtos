@@ -5,6 +5,7 @@ C Includes:
 "${workspace_loc:/${ProjName}/rtos/console}"
 "${workspace_loc:/${ProjName}/rtos/fs}"
 "${workspace_loc:/${ProjName}/rtos/io/usb}"
+"${workspace_loc:/${ProjName}/rtos/io/ppp}"
 "${workspace_loc:/${ProjName}/port/os}"
 "${workspace_loc:/${ProjName}/port/toolset/gcc-arm}"
 "${workspace_loc:/${ProjName}/port/os/cortex-m4}"
