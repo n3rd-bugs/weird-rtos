@@ -358,6 +358,11 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
         /* Just add this buffer in the free buffer list. */
         sll_append(&((FS *)fd)->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
+#ifdef FS_BUFFER_TRACE
+        /* Increment the number of buffers on free list. */
+        ((FS *)fd)->free_buffer_list.buffers ++;
+#endif
+
         /* If we are doing this actively. */
         if (flags & FS_BUFFER_ACTIVE)
         {
@@ -372,6 +377,11 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
         /* Just add this buffer in the receive buffer list. */
         sll_append(&((FS *)fd)->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
+#ifdef FS_BUFFER_TRACE
+        /* Increment the number of buffers on receive list. */
+        ((FS *)fd)->rx_buffer_list.buffers ++;
+#endif
+
         /* If we are doing this actively. */
         if (flags & FS_BUFFER_ACTIVE)
         {
@@ -385,6 +395,11 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
 
         /* Just add this buffer in the transmit buffer list. */
         sll_append(&((FS *)fd)->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+
+#ifdef FS_BUFFER_TRACE
+        /* Increment the number of buffers on transmit list. */
+        ((FS *)fd)->tx_buffer_list.buffers ++;
+#endif
 
         break;
     }
@@ -425,6 +440,15 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
             /* Pop a buffer from this file descriptor's free buffer list. */
             buffer = sll_pop(&((FS *)fd)->free_buffer_list, OFFSETOF(FS_BUFFER, next));
 
+#ifdef FS_BUFFER_TRACE
+            /* If we are returning a buffer. */
+            if (buffer)
+            {
+                /* Decrement the number of buffers on free list. */
+                ((FS *)fd)->free_buffer_list.buffers --;
+            }
+#endif
+
             /* If we are doing this actively. */
             if ((flags & FS_BUFFER_ACTIVE) &&
                 (((FS *)fd)->free_buffer_list.head == NULL))
@@ -450,6 +474,15 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
             /* Pop a buffer from this file descriptor's receive buffer list. */
             buffer = sll_pop(&((FS *)fd)->rx_buffer_list, OFFSETOF(FS_BUFFER, next));
 
+#ifdef FS_BUFFER_TRACE
+            /* If we are returning a buffer. */
+            if (buffer)
+            {
+                /* Decrement the number of buffers on receive list. */
+                ((FS *)fd)->rx_buffer_list.buffers --;
+            }
+#endif
+
             /* If we are doing this actively. */
             if ((flags & FS_BUFFER_ACTIVE) &&
                 (((FS *)fd)->rx_buffer_list.head == NULL))
@@ -473,6 +506,15 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
         {
             /* Pop a buffer from this file descriptor's transmit buffer list. */
             buffer = sll_pop(&((FS *)fd)->tx_buffer_list, OFFSETOF(FS_BUFFER, next));
+
+#ifdef FS_BUFFER_TRACE
+            /* If we are returning a buffer. */
+            if (buffer)
+            {
+                /* Decrement the number of buffers on transmit list. */
+                ((FS *)fd)->tx_buffer_list.buffers --;
+            }
+#endif
         }
 
         break;

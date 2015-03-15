@@ -24,6 +24,7 @@
 /* File system configuration. */
 #define FS_PIPE
 #define FS_CONSOLE
+#define FS_BUFFER_TRACE
 
 /* Error definitions. */
 #define FS_NODE_DELETED     -801
@@ -168,6 +169,9 @@ struct _fs
     {
         FS_BUFFER       *head;
         FS_BUFFER       *tail;
+#ifdef FS_BUFFER_TRACE
+        int32_t        buffers;
+#endif
     } free_buffer_list;
 
     /* Free buffer list. */
@@ -175,6 +179,9 @@ struct _fs
     {
         FS_BUFFER       *head;
         FS_BUFFER       *tail;
+#ifdef FS_BUFFER_TRACE
+        int32_t        buffers;
+#endif
     } tx_buffer_list;
 
     /* Free buffer list. */
@@ -182,6 +189,9 @@ struct _fs
     {
         FS_BUFFER       *head;
         FS_BUFFER       *tail;
+#ifdef FS_BUFFER_TRACE
+        int32_t        buffers;
+#endif
     } rx_buffer_list;
 
     /* File system specific flags. */
@@ -248,6 +258,7 @@ int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
 /* File system buffer management APIs. */
+#define FS_BUFFER_RESET(b)  fs_buffer_init(b, b->data, b->max_length)
 void fs_buffer_init(FS_BUFFER *, char *, uint32_t);
 int32_t fs_buffer_add_head(FS_BUFFER *, uint32_t);
 void fs_buffer_update(FS_BUFFER *, char *, uint32_t);
