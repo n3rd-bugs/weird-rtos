@@ -111,20 +111,17 @@ void usb_cdc_console_handle_disconnect(CDC_CONSOLE *cdc_cons)
  */
 void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
 {
-    FS_BUFFER *buffer;
-
     /* We are in interrupt so just try to obtain semaphore here. */
     if (cdc_cons->console.fs.get_lock((FD)(&cdc_cons->console)) == SUCCESS)
     {
         /* Update buffer pointers. */
         fs_buffer_update(cdc_cons->rx_buffer, cdc_cons->rx_buffer->buffer, nbytes);
 
-        /* Save and clear the receive buffer. */
-        buffer = cdc_cons->rx_buffer;
-        cdc_cons->rx_buffer = NULL;
-
         /* Push this buffer on the RX buffer list. */
-        fs_buffer_add((FD)(&cdc_cons->console), buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+        fs_buffer_add((FD)(&cdc_cons->console), cdc_cons->rx_buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+
+        /* Save and clear the receive buffer pointer. */
+        cdc_cons->rx_buffer = NULL;
 
         /* Release lock. */
         cdc_cons->console.fs.release_lock((FD)(&cdc_cons->console));
@@ -139,26 +136,21 @@ void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
  */
 void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *cdc_cons)
 {
-    FS_BUFFER *buffer;
-
     /* We are in interrupt so just try to obtain semaphore here. */
     if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
     {
-        /* If we were actually transferring some data. */
-        if (cdc_cons->tx_buffer)
+        if (cdc_cons->tx_buffer != NULL)
         {
-            /* Save and clear the transmit buffer. */
-            buffer = cdc_cons->tx_buffer;
-            cdc_cons->tx_buffer = NULL;
-
             /* Push this buffer back to the free list. */
-            fs_buffer_add((FD)(&cdc_cons->console), buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add((FD)(&cdc_cons->console), cdc_cons->tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+
+            /* Clear the TX buffer. */
+            cdc_cons->tx_buffer = NULL;
         }
 
         /* Release lock. */
         cdc_cons->console.fs.release_lock(&cdc_cons->console);
     }
-
 } /* usb_cdc_fun_console_handle_tx_complete */
 
 /*
@@ -176,8 +168,11 @@ FS_BUFFER *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
     /* We are in interrupt so just try to obtain semaphore here. */
     if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
     {
-        /* Check if we have something to transmit. */
-        buffer = cdc_cons->tx_buffer = fs_buffer_get(((FD)&cdc_cons->console), FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+        if (cdc_cons->tx_buffer == NULL)
+        {
+            /* Check if we have something else to transmit. */
+            buffer = cdc_cons->tx_buffer = fs_buffer_get(((FD)&cdc_cons->console), FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+        }
 
         /* Release lock. */
         cdc_cons->console.fs.release_lock(&cdc_cons->console);

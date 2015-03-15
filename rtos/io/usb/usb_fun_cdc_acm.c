@@ -516,7 +516,7 @@ static uint32_t usb_fun_cdc_acm_data_in(void *usb_device, uint8_t epnum)
     /* Remove compiler warning. */
     UNUSED_PARAM(epnum);
 
-    /* Handle TX complete stage. */
+    /* Data TX complete. */
     usb_cdc_fun_console_handle_tx_complete(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
 
     /* Check if there still is some data available to be sent. */
@@ -525,7 +525,7 @@ static uint32_t usb_fun_cdc_acm_data_in(void *usb_device, uint8_t epnum)
     if (buffer)
     {
         /* Prepare the available data buffer to be sent on IN endpoint. */
-        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(buffer->buffer), buffer->max_length);
+        usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(buffer->buffer), buffer->length);
     }
 
     /* Return success. */
