@@ -29,12 +29,13 @@
 #define PPP_DONT_CONSUME            -1002
 #define PPP_INVALID_HEADER          -1003
 #define PPP_NOT_SUPPORTED           -1004
-#define PPP_NO_REPLY                -1005
-#define PPP_NO_NEXT_OPTION          -1006
-#define PPP_NO_BUFFERS              -1007
-#define PPP_NO_SPACE                -1008
-#define PPP_PHASE_SUCCESS           -1009
-#define PPP_INTERNAL_ERROR          -1010
+#define PPP_VALUE_NOT_SUPPORTED     -1005
+#define PPP_NO_REPLY                -1006
+#define PPP_NO_NEXT_OPTION          -1007
+#define PPP_NO_BUFFERS              -1008
+#define PPP_NO_SPACE                -1009
+#define PPP_PHASE_SUCCESS           -1010
+#define PPP_INTERNAL_ERROR          -1011
 
 /* PPP instance states. */
 #define PPP_STATE_CONNECTED         1

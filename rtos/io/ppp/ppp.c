@@ -434,8 +434,8 @@ void ppp_lcp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer)
                             break;
                         }
 
-                        /* If we have not accepted this option and we were in in the ACK state. */
-                        if ((status == PPP_NOT_SUPPORTED) && (tx_packet.code == PPP_LCP_CONFIG_NAK))
+                        /* If we have not accepted this option and we are not in NAK state. */
+                        if ((status == PPP_VALUE_NOT_SUPPORTED) && (tx_packet.code != PPP_LCP_CONFIG_NAK))
                         {
                             /* The option value is not supported. */
                             tx_packet.code = PPP_LCP_CONFIG_NAK;
@@ -444,14 +444,18 @@ void ppp_lcp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer)
                             fs_buffer_pull(tx_buffer, NULL, tx_buffer->length, 0);
                         }
 
-                        /* If we have accepted this option and we are still in the ACK state. */
-                        if ( ((status == SUCCESS) && (tx_packet.code == PPP_LCP_CONFIG_ACK)) ||
-                             /* If we have not accepted this option and we are still in the NAK state. */
-                             ((status == PPP_NOT_SUPPORTED) && (tx_packet.code == PPP_LCP_CONFIG_NAK)))
+                        /* If we have not accepted this option and we are not in the REJECT state. */
+                        if ((status == PPP_NOT_SUPPORTED) && (tx_packet.code != PPP_LCP_CONFIG_REJECT))
                         {
-                            /* Add this option in the transmit buffer. */
-                            status = ppp_packet_configuration_option_add(&option, tx_buffer);
+                            /* This option is not supported. */
+                            tx_packet.code = PPP_LCP_CONFIG_REJECT;
+
+                            /* Remove any data already on the buffer. */
+                            fs_buffer_pull(tx_buffer, NULL, tx_buffer->length, 0);
                         }
+
+                        /* Add this option in the transmit buffer. */
+                        status = ppp_packet_configuration_option_add(&option, tx_buffer);
                     }
                     else
                     {
