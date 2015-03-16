@@ -18,25 +18,37 @@
  * ppp_packet_protocol_parse
  * @buffer: FS buffer from which data is needed to be pulled.
  * @protocol: PPP protocol will be returned here.
+ * @pfc: If true it means we might receive a protocol with first byte elided.
  * @return: A success status will be returned if header was successfully parsed,
  *  PPP_INVALID_HEADER will be returned if an invalid header was parsed.
  * This function will parse the PPP protocol field in the given buffer and
  * return it's value.
  */
-int32_t ppp_packet_protocol_parse(FS_BUFFER *buffer, uint16_t *protocol)
+int32_t ppp_packet_protocol_parse(FS_BUFFER *buffer, uint16_t *protocol, uint8_t pfc)
 {
     int32_t status = SUCCESS;
 
     /* We must have 2 bytes on the buffer to pull the PPP protocol field. */
     if (buffer->length > 2)
     {
-        /* Pull the protocol field. */
-        OS_ASSERT(fs_buffer_pull(buffer, (char *)protocol, sizeof(uint16_t), FS_BUFFER_MSB_FIRST) != SUCCESS);
-    }
-    else
-    {
-        /* Should not happen return an error. */
-        status = PPP_INVALID_HEADER;
+        /* First byte of protocol must be even and second must be odd. */
+        if ((!(buffer->buffer[0] & 0x1)) && (buffer->buffer[1] & 0x1))
+        {
+            /* Pull the protocol field. */
+            OS_ASSERT(fs_buffer_pull(buffer, (char *)protocol, sizeof(uint16_t), FS_BUFFER_MSB_FIRST) != SUCCESS);
+        }
+
+        else if ((buffer->buffer[0] & 0x1) && (pfc))
+        {
+            /* First byte is zero and elided. */
+            *protocol = (uint16_t)(buffer->buffer[0]);
+        }
+
+        else
+        {
+            /* Invalid protocol parsed, return an error. */
+            status = PPP_INVALID_HEADER;
+        }
     }
 
     /* Return status to the caller. */
@@ -48,20 +60,32 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER *buffer, uint16_t *protocol)
  * ppp_packet_protocol_add
  * @buffer: FS buffer needed to be updated.
  * @protocol: PPP protocol needed to be added.
+ * @pfc: If true it means we can compress the protocol field.
  * @return: A success status will be returned if protocol was successfully added.
  *  PPP_NO_SPACE will be returned if there is not enough space on the buffer to
  *  add protocol.
  * This function will add PPP protocol field in the given buffer.
  */
-int32_t ppp_packet_protocol_add(FS_BUFFER *buffer, uint16_t protocol)
+int32_t ppp_packet_protocol_add(FS_BUFFER *buffer, uint16_t protocol, uint8_t pfc)
 {
     int32_t status = SUCCESS;
 
     /* If we have enough space on the buffer. */
-    if (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) >= 2)
+    if (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) >= (uint32_t)(((protocol & 0xFF00) || (pfc == FALSE))  + 1))
     {
-        /* Push protocol for this packet. */
-        OS_ASSERT(fs_buffer_push(buffer, (char *)&protocol, 2, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD)) != SUCCESS);
+        /* If we cannot compress the protocol field. */
+        if (((protocol & 0xFF00) || (pfc == FALSE)))
+        {
+            /* Push protocol for this packet. */
+            OS_ASSERT(fs_buffer_push(buffer, (char *)&protocol, 2, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD)) != SUCCESS);
+        }
+
+        /* We can compress the protocol field. */
+        else
+        {
+            /* Push protocol for this packet. */
+            OS_ASSERT(fs_buffer_push(buffer, (char *)&(protocol), 1, FS_BUFFER_HEAD) != SUCCESS);
+        }
     }
 
     else

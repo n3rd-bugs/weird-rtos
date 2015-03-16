@@ -17,6 +17,7 @@
 /*
  * hdlc_parse_header
  * @buffer: Buffer needed to be processed.
+ * @acfc: If address and control fields may be compressed.
  * @return: A success status will be returned if header was successfully parsed,
  *  PPP_INVALID_HEADER will be returned if an invalid header was parsed.
  * This function will process the HDLC header. Nothing is needed to be returned
@@ -24,7 +25,7 @@
  * verifying other constant data like flags, address and control fields.
  * [TDOD] Add support for multiple buffers here or multiple packets in a buffer.
  */
-int32_t hdlc_header_parse(FS_BUFFER *buffer)
+int32_t hdlc_header_parse(FS_BUFFER *buffer, uint8_t acfc)
 {
     int32_t status;
 
@@ -78,6 +79,16 @@ int32_t hdlc_header_parse(FS_BUFFER *buffer)
                     /* HDLC frame was successfully verified. */
                     status = SUCCESS;
                 }
+
+                /* When ACFC is negotiated these two fields will be left out.  */
+                else if ( ( ((uint8_t)buffer->buffer[0] != PPP_ADDRESS) ||
+                            ((uint8_t)buffer->buffer[1] != PPP_CONTROL) ) &&
+                          (acfc == TRUE) )
+                {
+                    /* Address and control field are elided. */
+                    /* HDLC frame was successfully verified. */
+                    status = SUCCESS;
+                }
             }
         }
     }
@@ -91,6 +102,7 @@ int32_t hdlc_header_parse(FS_BUFFER *buffer)
  * hdlc_header_add
  * @buffer: Buffer needed to be processed.
  * @accm: Array of 4 bytes of transmit ACCM to be used to escape the data.
+ * @acfc: If address and control fields may be compressed.
  * @return: A success status will be returned if header was successfully added,
  *  PPP_NO_SPACE will be returned if there was not enough space on the buffer
  *  to add this header.
@@ -99,7 +111,7 @@ int32_t hdlc_header_parse(FS_BUFFER *buffer)
  * verifying other constant data like flags, address and control fields.
  * [TDOD] Add support for multiple buffers here or multiple packets in a buffer.
  */
-int32_t hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm)
+int32_t hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc)
 {
     int32_t status = SUCCESS;
     uint8_t value_uint8;
@@ -108,13 +120,18 @@ int32_t hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm)
     /* If we have enough space on the buffer. */
     if (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) > 6)
     {
-        /* Add control field. */
-        value_uint8 = PPP_CONTROL;
-        OS_ASSERT(fs_buffer_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
+        /* When ACFC is negotiated we can optionally drop address and control
+         * fields. */
+        if (acfc == TRUE)
+        {
+            /* Add control field. */
+            value_uint8 = PPP_CONTROL;
+            OS_ASSERT(fs_buffer_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
 
-        /* Add address field. */
-        value_uint8 = PPP_ADDRESS;
-        OS_ASSERT(fs_buffer_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
+            /* Add address field. */
+            value_uint8 = PPP_ADDRESS;
+            OS_ASSERT(fs_buffer_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
+        }
 
         /* Calculate the FCS of the data. */
         fcs = ppp_fcs16_calculate(buffer->buffer, buffer->length);

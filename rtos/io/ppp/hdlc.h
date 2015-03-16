@@ -24,8 +24,8 @@
 #define HDLC_ESCAPE             (0x7D)
 
 /* Function prototypes. */
-int32_t hdlc_header_parse(FS_BUFFER *);
-int32_t hdlc_header_add(FS_BUFFER *, uint32_t *);
+int32_t hdlc_header_parse(FS_BUFFER *, uint8_t);
+int32_t hdlc_header_add(FS_BUFFER *, uint32_t *, uint8_t);
 int32_t hdlc_escape(FS_BUFFER *, uint32_t *);
 int32_t hdlc_unescape(FS_BUFFER *buffer);
 

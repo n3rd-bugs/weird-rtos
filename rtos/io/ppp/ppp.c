@@ -63,6 +63,14 @@ void ppp_register_fd(PPP *ppp, FD fd)
 
     /* Assume that we are already connected. */
     ppp->state = PPP_STATE_CONNECTED;
+    ppp->state_data.lcp_id = 0;
+
+    /* Initialize state. */
+    ppp->rx_accm = (0xFFFFFFFF);
+    ppp->tx_accm[0] = (0xFFFFFFFF);
+    ppp->tx_accm[1] = (0x0);
+    ppp->tx_accm[2] = (0x0);
+    ppp->tx_accm[3] = (0x60000000);
 
 #ifdef CONFIG_SEMAPHORE
     /* Create the PPP instance semaphore. */
@@ -70,6 +78,7 @@ void ppp_register_fd(PPP *ppp, FD fd)
 #endif
 
 } /* ppp_register_fd */
+
 /*
  * ppp_connection_established
  * @fd: File descriptor for which connection is established.
@@ -107,6 +116,7 @@ void ppp_connection_established(void *fd, void *ppp)
 #endif
 
 } /* ppp_connection_established */
+
 /*
  * ppp_connection_terminated
  * @fd: File descriptor for which connection was terminated.
@@ -474,13 +484,13 @@ void ppp_lcp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer)
                 if (status == SUCCESS)
                 {
                     /* Add PPP protocol. */
-                    status = ppp_packet_protocol_add(tx_buffer, PPP_PROTO_LCP);
+                    status = ppp_packet_protocol_add(tx_buffer, PPP_PROTO_LCP, PPP_IS_PFC_VALID(ppp));
                 }
 
                 if (status == SUCCESS)
                 {
                     /* Add the HDLC header. */
-                    status = hdlc_header_add(tx_buffer, ppp->tx_accm);
+                    status = hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp));
                 }
 
                 if (status == SUCCESS)
@@ -506,8 +516,10 @@ void ppp_lcp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer)
     /* If we did not get any error. */
     if (status == SUCCESS)
     {
-        /* Check if we have received a request. */
-        if (rx_packet.code == PPP_LCP_CONFIG_REQ)
+        /* Check if we have received a request and we have sent an ACK in
+         * response, send our own configuration. */
+        if ( (rx_packet.code == PPP_LCP_CONFIG_REQ) &&
+             (tx_packet.code == PPP_LCP_CONFIG_ACK) )
         {
             /* Pull a buffer from the free list to use when we are building
              * the response. */
@@ -526,7 +538,7 @@ void ppp_lcp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer)
                 /* We will be sending an ACK until we see a requirement
                  * for not to. */
                 tx_packet.code = PPP_LCP_CONFIG_REQ;
-                tx_packet.id = ++(ppp->lcp_id);
+                tx_packet.id = ++(ppp->state_data.lcp_id);
 
                 /* Add configuration options we need to send. */
                 status = ppp_lcp_configuration_add(tx_buffer);
@@ -539,13 +551,13 @@ void ppp_lcp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer)
                     if (status == SUCCESS)
                     {
                         /* Add PPP protocol. */
-                        status = ppp_packet_protocol_add(tx_buffer, PPP_PROTO_LCP);
+                        status = ppp_packet_protocol_add(tx_buffer, PPP_PROTO_LCP, PPP_IS_PFC_VALID(ppp));
                     }
 
                     if (status == SUCCESS)
                     {
                         /* Add the HDLC header. */
-                        status = hdlc_header_add(tx_buffer, ppp->tx_accm);
+                        status = hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp));
                     }
 
                     if (status == SUCCESS)
@@ -577,10 +589,25 @@ void ppp_lcp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer)
         else if (rx_packet.code == PPP_LCP_CONFIG_REQ)
         {
             /* We have now received an ACK so our link is now established. */
+            /* Now start network configuration. */
+            ppp->state = PPP_STATE_NCP;
+            ppp->state_data.ncp_id = 0;
         }
     }
 
 } /* ppp_lcp_configuration_process */
+
+/*
+ * ppp_ncp_configuration_process
+ * @fd: File descriptor on which this packet was received.
+ * @ppp: PPP private data.
+ * @buffer: Buffer needed to process.
+ * This function will be called to process NCP configuration packets.
+ */
+void ppp_ncp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer)
+{
+    ;
+} /* ppp_ncp_configuration_process */
 
 /*
  * ppp_process_configuration
@@ -594,6 +621,13 @@ void ppp_process_configuration(void *fd, PPP *ppp)
     FS_BUFFER *buffer;
     int32_t status;
     uint16_t protocol;
+    static uint8_t num_received = 0;
+
+    if (num_received == 2)
+    {
+        num_received = 2;
+    }
+    num_received ++;
 
     /* Get the buffer from the receive list. */
     buffer = fs_buffer_get(fd, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
@@ -602,12 +636,12 @@ void ppp_process_configuration(void *fd, PPP *ppp)
     if (buffer)
     {
         /* Verify and skim the HDLC headers. */
-        status = hdlc_header_parse(buffer);
+        status = hdlc_header_parse(buffer, PPP_IS_ACFC_VALID(ppp));
 
         if (status == SUCCESS)
         {
             /* Pick the protocol field. */
-            status = ppp_packet_protocol_parse(buffer, &protocol);
+            status = ppp_packet_protocol_parse(buffer, &protocol, PPP_IS_PFC_VALID(ppp));
         }
 
         /* If this is a LCP configuration. */
@@ -616,6 +650,14 @@ void ppp_process_configuration(void *fd, PPP *ppp)
             /* Process LCP configuration. */
             ppp_lcp_configuration_process(fd, ppp, buffer);
         }
+
+        /* If this is a NCP configuration. */
+        else if (status == SUCCESS)
+        {
+            /* Process NCP configuration. */
+            ppp_ncp_configuration_process(fd, ppp, buffer);
+        }
+
         else
         {
             /* Either protocol is not supported or an invalid header was given. */
@@ -646,6 +688,7 @@ void ppp_rx_watcher(void *fd, void *priv_data)
     if (semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) == SUCCESS)
 #endif
     {
+
         switch (ppp->state)
         {
         /* If physical medium is connected. */
@@ -658,8 +701,9 @@ void ppp_rx_watcher(void *fd, void *priv_data)
             /* Break out of this switch. */
             break;
 
-        /* If we are processing LCP configuration packets. */
+        /* If we are processing LCP or NCP configuration packets. */
         case PPP_STATE_LCP:
+        case PPP_STATE_NCP:
 
             /* Process Link-layer Configuration Packets. */
             ppp_process_configuration(fd, ppp);

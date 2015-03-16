@@ -43,12 +43,12 @@
 #define PPP_STATE_DISCONNECTED      4
 
 /* PPP configuration flags. */
-#define PPP_FLAG_PFC                0x01
-#define PPP_FALG_ACFC               0x02
-#define PPP_FALG_FCS_32             0x04
-#define PPP_FALG_OWN_LCP_SENT       0x08
-#define PPP_FALG_SEND_LCP_REQ       0x10
-#define PPP_FALG_SEND_NCP_REQ       0x20
+#define PPP_FALG_ACFC               0x01
+#define PPP_FLAG_PFC                0x02
+
+/* ACFC and PFC helper macros. */
+#define PPP_IS_ACFC_VALID(ppp)      (((ppp)->flags & PPP_LCP_OPT_ACFC) && ((ppp)->state != PPP_STATE_LCP))
+#define PPP_IS_PFC_VALID(ppp)       (((ppp)->flags & PPP_FLAG_PFC) && ((ppp)->state != PPP_STATE_LCP))
 
 /* LCP code definitions. */
 #define PPP_LCP_CONFIG_NONE         0
@@ -134,8 +134,14 @@ typedef struct _ppp_data
     /* MRU value. */
     uint32_t    mru;
 
-    /* LCP id used in last request. */
-    uint8_t     lcp_id;
+    union _ppp_state_data
+    {
+        /* ID used in last LCP request. */
+        uint8_t     lcp_id;
+
+        /* ID used in last NCP request. */
+        uint8_t     ncp_id;
+    } state_data;
 
     /* Structure padding. */
     uint8_t     pad[3];
@@ -154,6 +160,7 @@ void ppp_process_modem_chat(void *, PPP *);
 int32_t ppp_lcp_configuration_add(FS_BUFFER *);
 void ppp_process_configuration(void *, PPP *);
 void ppp_lcp_configuration_process(void *, PPP *, FS_BUFFER *);
+void ppp_ncp_configuration_process(void *, PPP *, FS_BUFFER *);
 
 #ifdef PPP_MODEM_CHAT
 #include <modem_chat.h>
