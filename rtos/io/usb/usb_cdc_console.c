@@ -111,17 +111,41 @@ void usb_cdc_console_handle_disconnect(CDC_CONSOLE *cdc_cons)
  */
 void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
 {
+    FS_BUFFER *rx_buffer;
+
     /* We are in interrupt so just try to obtain semaphore here. */
     if (cdc_cons->console.fs.get_lock((FD)(&cdc_cons->console)) == SUCCESS)
     {
-        /* Update buffer pointers. */
-        fs_buffer_update(cdc_cons->rx_buffer, cdc_cons->rx_buffer->buffer, nbytes);
+        /* If we are actually receiving some data. */
+        if (cdc_cons->rx_buffer != NULL)
+        {
+            /* Update buffer pointers. */
+            fs_buffer_update(cdc_cons->rx_buffer, cdc_cons->rx_buffer->buffer, nbytes);
 
-        /* Push this buffer on the RX buffer list. */
-        fs_buffer_add((FD)(&cdc_cons->console), cdc_cons->rx_buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+            /* Save received buffer pointer. */
+            rx_buffer = cdc_cons->rx_buffer;
 
-        /* Save and clear the receive buffer pointer. */
-        cdc_cons->rx_buffer = NULL;
+            /* It is possible that we will free this buffer in next statement so we
+             * want it to null so that it can be reused. */
+            cdc_cons->rx_buffer = NULL;
+
+            /* Push this buffer on the RX buffer list. */
+            fs_buffer_add((FD)(&cdc_cons->console), rx_buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+
+            /* If not freed try to pick a buffer from the free list. */
+            if (cdc_cons->rx_buffer == NULL)
+            {
+                /* Try to pick a free buffer to receive incoming data. */
+                cdc_cons->rx_buffer = fs_buffer_get(((FD)&cdc_cons->console), FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+
+                /* If a buffer was found. */
+                if (cdc_cons->rx_buffer != NULL)
+                {
+                    /* Start receiving new data. */
+                    usb_fun_cdc_acm_data_out_enable(cdc_cons->usb_device);
+                }
+            }
+        }
 
         /* Release lock. */
         cdc_cons->console.fs.release_lock((FD)(&cdc_cons->console));
@@ -168,10 +192,24 @@ FS_BUFFER *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
     /* We are in interrupt so just try to obtain semaphore here. */
     if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
     {
+        /* If we have something to transmit. */
         if (cdc_cons->tx_buffer == NULL)
         {
             /* Check if we have something else to transmit. */
             buffer = cdc_cons->tx_buffer = fs_buffer_get(((FD)&cdc_cons->console), FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+        }
+
+        /* If we don't have not started to receive. */
+        if (cdc_cons->rx_buffer == NULL)
+        {
+            /* Try to pick a free buffer. */
+            cdc_cons->rx_buffer = fs_buffer_get(((FD)&cdc_cons->console), FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+
+            if (cdc_cons->rx_buffer != NULL)
+            {
+                /* Start receiving new data. */
+                usb_fun_cdc_acm_data_out_enable(cdc_cons->usb_device);
+            }
         }
 
         /* Release lock. */
