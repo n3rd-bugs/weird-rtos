@@ -18,10 +18,10 @@
 #ifdef CONFIG_PPP
 #include <ppp_fcs.h>
 #include <ppp_packet.h>
+#include <ppp_hdlc.h>
 
 /* PPP configuration. */
 #define PPP_MODEM_CHAT
-#define PPP_HDLC
 
 /* Status codes. */
 #define PPP_NOT_CONNECTED           -1000
@@ -48,22 +48,22 @@
 #define PPP_FLAG_PFC                0x02
 
 /* ACFC and PFC helper macros. */
-#define PPP_IS_ACFC_VALID(ppp)      (((ppp)->flags & PPP_LCP_OPT_ACFC) && ((ppp)->state != PPP_STATE_LCP))
-#define PPP_IS_PFC_VALID(ppp)       (((ppp)->flags & PPP_FLAG_PFC) && ((ppp)->state != PPP_STATE_LCP))
+#define PPP_IS_ACFC_VALID(ppp)      (((ppp)->lcp_flags & PPP_FALG_ACFC) && ((ppp)->state != PPP_STATE_LCP))
+#define PPP_IS_PFC_VALID(ppp)       (((ppp)->lcp_flags & PPP_FLAG_PFC) && ((ppp)->state != PPP_STATE_LCP))
 
 /* LCP code definitions. */
-#define PPP_LCP_CONFIG_NONE         0
-#define PPP_LCP_CONFIG_REQ          1
-#define PPP_LCP_CONFIG_ACK          2
-#define PPP_LCP_CONFIG_NAK          3
-#define PPP_LCP_CONFIG_REJECT       4
-#define PPP_LCP_TREM_REQ            5
-#define PPP_LCP_TREM_ACK            6
-#define PPP_LCP_CODE_REJECT         7
-#define PPP_LCP_PROTO_REJECT        8
-#define PPP_LCP_ECHO_REQ            9
-#define PPP_LCP_ECHO_REP            10
-#define PPP_LCP_DIS_REQ             11
+#define PPP_CONFIG_NONE             0
+#define PPP_CONFIG_REQ              1
+#define PPP_CONFIG_ACK              2
+#define PPP_CONFIG_NAK              3
+#define PPP_CONFIG_REJECT           4
+#define PPP_TREM_REQ                5
+#define PPP_TREM_ACK                6
+#define PPP_CODE_REJECT             7
+#define PPP_PROTO_REJECT            8
+#define PPP_ECHO_REQ                9
+#define PPP_ECHO_REP                10
+#define PPP_DIS_REQ                 11
 
 /* LCP option definitions. */
 #define PPP_LCP_OPT_MRU             1
@@ -92,23 +92,6 @@
 #define PPP_AUTH_PAP                (0xC023)
 #define PPP_AUTH_CHAP               (0xC223)
 
-/* PPP option DB configuration. */
-#define PPP_OPT_DB_NUM_OPTIONS      (9)
-#define LCP_OPT_RANDOM              (-1)
-#define LCP_OPT_NO_VALUE            (-2)
-
-typedef struct _ppp_lcp_opt
-{
-    const uint8_t   *value;
-    uint8_t         length;
-    uint8_t         do_send;
-    uint8_t         pad[2];
-} PPP_LCP_OPT;
-
-/* Supported option definition. */
-/* Each bit specifies one option type starting from 0 at LSb-0. */
-#define PPP_LCP_OPTION_MASK         (0x000001A6)
-
 /* PPP instance data. */
 typedef struct _ppp_data
 {
@@ -125,8 +108,8 @@ typedef struct _ppp_data
     /* PPP instance state. */
     uint32_t    state;
 
-    /* PPP configuration flags. */
-    uint32_t    flags;
+    /* PPP LCP configuration flags. */
+    uint32_t    lcp_flags;
 
     /* ACCM definitions. */
     uint32_t    tx_accm[8];
@@ -148,6 +131,18 @@ typedef struct _ppp_data
     uint8_t     pad[3];
 } PPP;
 
+/* PPP protocol definition. */
+typedef struct _ppp_proto
+{
+    uint8_t (*negotiable)(PPP *, PPP_PKT_OPT *);
+    uint8_t (*length_valid)(PPP *, PPP_PKT_OPT *);
+    int32_t (*process)(PPP *, PPP_PKT_OPT *, PPP_PKT *);
+    int32_t (*update)(void *, PPP *, PPP_PKT *, PPP_PKT *);
+
+    uint16_t protocol;
+    uint8_t pad[2];
+} PPP_PROTO;
+
 /* Function prototypes. */
 void ppp_register_fd(PPP *, FD fd);
 void ppp_connection_established(void *, void *);
@@ -158,17 +153,14 @@ void ppp_tx_watcher(void *, void *);
 /* PPP internal APIs. */
 uint32_t ppp_get_buffer_head_room(PPP *);
 void ppp_process_modem_chat(void *, PPP *);
-int32_t ppp_lcp_configuration_add(FS_BUFFER *);
 void ppp_process_configuration(void *, PPP *);
-void ppp_lcp_configuration_process(void *, PPP *, FS_BUFFER *);
-void ppp_ncp_configuration_process(void *, PPP *, FS_BUFFER *);
+void ppp_configuration_process(void *, PPP *, FS_BUFFER *, PPP_PROTO *);
 
 #ifdef PPP_MODEM_CHAT
 #include <modem_chat.h>
 #endif
-#ifdef PPP_HDLC
-#include <hdlc.h>
-#endif
+#include <ppp_lcp.h>
+#include <ppp_ncp.h>
 
 #endif /* CONFIG_PPP */
 

@@ -1,5 +1,5 @@
 /*
- * hdlc.h
+ * ppp_hdlc.h
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -10,25 +10,25 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#ifndef _HDLC_H_
-#define _HDLC_H_
+#ifndef _PPP_HDLC_H_
+#define _PPP_HDLC_H_
 
 #include <os.h>
 
-#ifdef PPP_HDLC
+#ifdef CONFIG_PPP
 
 /* Status code definitions. */
 #define HDLC_STREAM_ERROR       -1100
 
 /* HDLC protocol definitions. */
-#define HDLC_ESCAPE             (0x7D)
+#define PPP_ESCAPE              (0x7D)
 
 /* Function prototypes. */
-int32_t hdlc_header_parse(FS_BUFFER *, uint8_t);
-int32_t hdlc_header_add(FS_BUFFER *, uint32_t *, uint8_t);
-int32_t hdlc_escape(FS_BUFFER *, uint32_t *);
-int32_t hdlc_unescape(FS_BUFFER *buffer);
+int32_t ppp_hdlc_header_parse(FS_BUFFER *, uint8_t);
+int32_t ppp_hdlc_header_add(FS_BUFFER *, uint32_t *, uint8_t);
+int32_t ppp_hdlc_escape(FS_BUFFER *, uint32_t *);
+int32_t ppp_hdlc_unescape(FS_BUFFER *);
 
-#endif /* PPP_HDLC */
+#endif /* CONFIG_PPP */
 
-#endif /* _HDLC_H_ */
+#endif /* _PPP_HDLC_H_ */

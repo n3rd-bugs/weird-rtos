@@ -1,5 +1,5 @@
 /*
- * hdlc.c
+ * ppp_hdlc.c
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -12,7 +12,7 @@
  */
 #include <os.h>
 
-#ifdef PPP_HDLC
+#ifdef CONFIG_PPP
 
 /*
  * hdlc_parse_header
@@ -25,12 +25,12 @@
  * verifying other constant data like flags, address and control fields.
  * [TDOD] Add support for multiple buffers here or multiple packets in a buffer.
  */
-int32_t hdlc_header_parse(FS_BUFFER *buffer, uint8_t acfc)
+int32_t ppp_hdlc_header_parse(FS_BUFFER *buffer, uint8_t acfc)
 {
     int32_t status;
 
     /* First un-escape the data. */
-    status = hdlc_unescape(buffer);
+    status = ppp_hdlc_unescape(buffer);
 
     if (status == SUCCESS)
     {
@@ -96,10 +96,10 @@ int32_t hdlc_header_parse(FS_BUFFER *buffer, uint8_t acfc)
     /* Return status to the caller. */
     return (status);
 
-} /* hdlc_header_parse */
+} /* ppp_hdlc_header_parse */
 
 /*
- * hdlc_header_add
+ * ppp_hdlc_header_add
  * @buffer: Buffer needed to be processed.
  * @accm: Array of 4 bytes of transmit ACCM to be used to escape the data.
  * @acfc: If address and control fields may be compressed.
@@ -111,7 +111,7 @@ int32_t hdlc_header_parse(FS_BUFFER *buffer, uint8_t acfc)
  * verifying other constant data like flags, address and control fields.
  * [TDOD] Add support for multiple buffers here or multiple packets in a buffer.
  */
-int32_t hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc)
+int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc)
 {
     int32_t status = SUCCESS;
     uint8_t value_uint8;
@@ -122,7 +122,7 @@ int32_t hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc)
     {
         /* When ACFC is negotiated we can optionally drop address and control
          * fields. */
-        if (acfc == TRUE)
+        if (acfc == FALSE)
         {
             /* Add control field. */
             value_uint8 = PPP_CONTROL;
@@ -141,7 +141,7 @@ int32_t hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc)
         OS_ASSERT(fs_buffer_push(buffer, (char *)&fcs, 2, 0) != SUCCESS);
 
         /* Escape the data. */
-        status = hdlc_escape(buffer, accm);
+        status = ppp_hdlc_escape(buffer, accm);
 
         /* If data was successfully escaped. */
         if (status == SUCCESS)
@@ -156,16 +156,16 @@ int32_t hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc)
     /* Return status to the caller. */
     return (status);
 
-} /* hdlc_header_add */
+} /* ppp_hdlc_header_add */
 
 /*
- * hdlc_escape
+ * ppp_hdlc_escape
  * @buffer: Buffer needed to be processed.
  * @accm: Array of 4 bytes of transmit ACCM.
  * This function will escape a HDLC buffer. This routine will leave room for
  * end and start flags.
  */
-int32_t hdlc_escape(FS_BUFFER *buffer, uint32_t *accm)
+int32_t ppp_hdlc_escape(FS_BUFFER *buffer, uint32_t *accm)
 {
     int32_t status = PPP_NO_SPACE;
     uint8_t buf[2];
@@ -181,11 +181,10 @@ int32_t hdlc_escape(FS_BUFFER *buffer, uint32_t *accm)
     while ((length > 0) && (process_ptr < (uint8_t *)(buffer->buffer - 2)))
     {
         /* Check if we need to escape this byte. */
-        if ( (*process_ptr < 0x20) ||
-             (accm[*process_ptr >> 5] & (uint32_t)(1 << (*process_ptr & 0x1F))) )
+        if (accm[*process_ptr >> 5] & (uint32_t)(1 << (*process_ptr & 0x1F)))
         {
             /* Escape this character. */
-            buf[0] = HDLC_ESCAPE;
+            buf[0] = PPP_ESCAPE;
             buf[1] = (uint8_t)(*process_ptr ^ 0x20);
 
             /* Push this on the buffer. */
@@ -212,14 +211,14 @@ int32_t hdlc_escape(FS_BUFFER *buffer, uint32_t *accm)
     /* Return status to the caller. */
     return (status);
 
-} /* hdlc_escape */
+} /* ppp_hdlc_escape */
 
 /*
- * hdlc_unescape
+ * ppp_hdlc_unescape
  * @buffer: Buffer needed to be processed.
  * This function will un-escaping a HDLC packet.
  */
-int32_t hdlc_unescape(FS_BUFFER *buffer)
+int32_t ppp_hdlc_unescape(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
     char *data = buffer->buffer;
@@ -229,7 +228,7 @@ int32_t hdlc_unescape(FS_BUFFER *buffer)
     while ((status == SUCCESS) && (buffer->length > 0))
     {
         /* If we have a escape sequence. */
-        if (buffer->buffer[0] == HDLC_ESCAPE)
+        if (buffer->buffer[0] == PPP_ESCAPE)
         {
             /* If we have enough length on source buffer. */
             if (buffer->length > 1)
@@ -276,6 +275,6 @@ int32_t hdlc_unescape(FS_BUFFER *buffer)
     /* Return status to the caller. */
     return (status);
 
-} /* hdlc_unescape */
+} /* ppp_hdlc_unescape */
 
-#endif /* PPP_HDLC */
+#endif /* CONFIG_PPP */
