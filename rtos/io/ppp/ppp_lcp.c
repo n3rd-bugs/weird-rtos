@@ -317,7 +317,7 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packe
                 if (status == SUCCESS)
                 {
                     /* Add the HDLC header. */
-                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp));
+                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), TRUE);
                 }
 
                 if (status == SUCCESS)
@@ -350,13 +350,17 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packe
     {
         /* We have now received an ACK so our link is now established. */
         /* Now start network configuration. */
-        ppp->state = PPP_STATE_NCP;
-        ppp->state_data.ncp_id = 0;
+        ppp->state = PPP_STATE_IPCP;
+        ppp->state_data.ipcp_id = 0;
     }
 
     /* Check if connection was terminated. */
     else if (rx_packet->code == PPP_TREM_REQ)
     {
+        /* This puts us back to LCP configuration stage. */
+        ppp->state = PPP_STATE_LCP;
+        ppp_lcp_state_initialize(ppp);
+
         /* Move to the connected state. */
         ppp->state = PPP_STATE_CONNECTED;
     }

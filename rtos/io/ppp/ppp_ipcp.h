@@ -1,5 +1,5 @@
 /*
- * ppp_ncp.h
+ * ppp_ipcp.h
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -10,22 +10,22 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#ifndef _PPP_NCP_H_
-#define _PPP_NCP_H_
+#ifndef _PPP_IPCP_H_
+#define _PPP_IPCP_H_
 
 #include <os.h>
 
 #ifdef CONFIG_PPP
 
 /* Exported variables. */
-extern PPP_PROTO ppp_proto_ncp;
+extern PPP_PROTO ppp_proto_ipcp;
 
 /* Function prototypes. */
-uint8_t ppp_ncp_option_negotiable(PPP *, PPP_PKT_OPT *);
-int32_t ppp_ncp_option_pocess(PPP *, PPP_PKT_OPT *, PPP_PKT *);
-uint8_t ppp_ncp_option_length_valid(PPP *, PPP_PKT_OPT *);
-int32_t ppp_ncp_update(void *, PPP *, PPP_PKT *, PPP_PKT *);
+uint8_t ppp_ipcp_option_negotiable(PPP *, PPP_PKT_OPT *);
+int32_t ppp_ipcp_option_pocess(PPP *, PPP_PKT_OPT *, PPP_PKT *);
+uint8_t ppp_ipcp_option_length_valid(PPP *, PPP_PKT_OPT *);
+int32_t ppp_ipcp_update(void *, PPP *, PPP_PKT *, PPP_PKT *);
 
 #endif /* CONFIG_PPP */
 
-#endif /* _PPP_NCP_H_ */
+#endif /* _PPP_IPCP_H_ */

@@ -345,7 +345,7 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer, PPP_PROTO 
                 if (status == SUCCESS)
                 {
                     /* Add the HDLC header. */
-                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp));
+                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), (proto->protocol == PPP_PROTO_LCP));
                 }
 
                 if (status == SUCCESS)
@@ -422,18 +422,15 @@ void ppp_process_configuration(void *fd, PPP *ppp)
             switch (protocol)
             {
             case (PPP_PROTO_LCP):
-                /* This puts us back to LCP configuration stage. */
-                ppp->state = PPP_STATE_LCP;
-                ppp_lcp_state_initialize(ppp);
 
                 /* Process LCP configuration. */
                 proto = &ppp_proto_lcp;
 
                 break;
-            case (PPP_PROTO_NCP):
+            case (PPP_PROTO_IPCP):
 
-                /* Process NCP configuration. */
-                proto = &ppp_proto_ncp;
+                /* Process IPCP configuration. */
+                proto = &ppp_proto_ipcp;
 
                 break;
             default:
@@ -488,9 +485,9 @@ void ppp_rx_watcher(void *fd, void *priv_data)
             /* Break out of this switch. */
             break;
 
-        /* If we are processing LCP or NCP configuration packets. */
+        /* If we are processing LCP or IPCP configuration packets. */
         case PPP_STATE_LCP:
-        case PPP_STATE_NCP:
+        case PPP_STATE_IPCP:
 
             /* Process Link-layer Configuration Packets. */
             ppp_process_configuration(fd, ppp);

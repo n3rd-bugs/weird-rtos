@@ -103,6 +103,7 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER *buffer, uint8_t acfc)
  * @buffer: Buffer needed to be processed.
  * @accm: Array of 4 bytes of transmit ACCM to be used to escape the data.
  * @acfc: If address and control fields may be compressed.
+ * @lcp: If we are sending a LCP request.
  * @return: A success status will be returned if header was successfully added,
  *  PPP_NO_SPACE will be returned if there was not enough space on the buffer
  *  to add this header.
@@ -111,7 +112,7 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER *buffer, uint8_t acfc)
  * verifying other constant data like flags, address and control fields.
  * [TDOD] Add support for multiple buffers here or multiple packets in a buffer.
  */
-int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc)
+int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp)
 {
     int32_t status = SUCCESS;
     uint8_t value_uint8;
@@ -141,7 +142,7 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc)
         OS_ASSERT(fs_buffer_push(buffer, (char *)&fcs, 2, 0) != SUCCESS);
 
         /* Escape the data. */
-        status = ppp_hdlc_escape(buffer, accm);
+        status = ppp_hdlc_escape(buffer, accm, lcp);
 
         /* If data was successfully escaped. */
         if (status == SUCCESS)
@@ -162,10 +163,11 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc)
  * ppp_hdlc_escape
  * @buffer: Buffer needed to be processed.
  * @accm: Array of 4 bytes of transmit ACCM.
+ * @lcp: If we are sending a LCP request.
  * This function will escape a HDLC buffer. This routine will leave room for
  * end and start flags.
  */
-int32_t ppp_hdlc_escape(FS_BUFFER *buffer, uint32_t *accm)
+int32_t ppp_hdlc_escape(FS_BUFFER *buffer, uint32_t *accm, uint8_t lcp)
 {
     int32_t status = PPP_NO_SPACE;
     uint8_t buf[2];
@@ -181,7 +183,8 @@ int32_t ppp_hdlc_escape(FS_BUFFER *buffer, uint32_t *accm)
     while ((length > 0) && (process_ptr < (uint8_t *)(buffer->buffer - 2)))
     {
         /* Check if we need to escape this byte. */
-        if (accm[*process_ptr >> 5] & (uint32_t)(1 << (*process_ptr & 0x1F)))
+        if ( ((lcp == TRUE) && (*process_ptr < 0x20)) ||
+              (accm[*process_ptr >> 5] & (uint32_t)(1 << (*process_ptr & 0x1F))) )
         {
             /* Escape this character. */
             buf[0] = PPP_ESCAPE;

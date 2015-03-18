@@ -40,7 +40,7 @@
 /* PPP instance states. */
 #define PPP_STATE_CONNECTED         1
 #define PPP_STATE_LCP               2
-#define PPP_STATE_NCP               3
+#define PPP_STATE_IPCP              3
 #define PPP_STATE_DISCONNECTED      4
 
 /* PPP configuration flags. */
@@ -48,8 +48,8 @@
 #define PPP_FLAG_PFC                0x02
 
 /* ACFC and PFC helper macros. */
-#define PPP_IS_ACFC_VALID(ppp)      (((ppp)->lcp_flags & PPP_FALG_ACFC) && ((ppp)->state != PPP_STATE_LCP))
-#define PPP_IS_PFC_VALID(ppp)       (((ppp)->lcp_flags & PPP_FLAG_PFC) && ((ppp)->state != PPP_STATE_LCP))
+#define PPP_IS_ACFC_VALID(ppp)      ((ppp)->lcp_flags & PPP_FALG_ACFC)
+#define PPP_IS_PFC_VALID(ppp)       ((ppp)->lcp_flags & PPP_FLAG_PFC)
 
 /* LCP code definitions. */
 #define PPP_CONFIG_NONE             0
@@ -74,10 +74,10 @@
 #define PPP_LCP_OPT_PFC             7
 #define PPP_LCP_OPT_ACFC            8
 
-/* NCP option definitions. */
-#define PPP_NCP_OPT_ADDRESSES       1
-#define PPP_NCP_OPT_COMP            2
-#define PPP_NCP_OPT_ADDRESS         3
+/* IPCP option definitions. */
+#define PPP_IPCP_OPT_ADDRESSES      1
+#define PPP_IPCP_OPT_COMP           2
+#define PPP_IPCP_OPT_ADDRESS        3
 
 /* PPP protocol definitions. */
 #define PPP_FLAG                    (0x7E)
@@ -86,7 +86,7 @@
 
 /* PPP packet type definitions. */
 #define PPP_PROTO_LCP               (0xC021)
-#define PPP_PROTO_NCP               (0x8021)
+#define PPP_PROTO_IPCP              (0x8021)
 
 /* PPP authentication protocol definitions. */
 #define PPP_AUTH_PAP                (0xC023)
@@ -123,8 +123,8 @@ typedef struct _ppp_data
         /* ID used in last LCP request. */
         uint8_t     lcp_id;
 
-        /* ID used in last NCP request. */
-        uint8_t     ncp_id;
+        /* ID used in last IPCP request. */
+        uint8_t     ipcp_id;
     } state_data;
 
     /* Structure padding. */
@@ -160,7 +160,7 @@ void ppp_configuration_process(void *, PPP *, FS_BUFFER *, PPP_PROTO *);
 #include <modem_chat.h>
 #endif
 #include <ppp_lcp.h>
-#include <ppp_ncp.h>
+#include <ppp_ipcp.h>
 
 #endif /* CONFIG_PPP */
 

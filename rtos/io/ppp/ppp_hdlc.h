@@ -25,8 +25,8 @@
 
 /* Function prototypes. */
 int32_t ppp_hdlc_header_parse(FS_BUFFER *, uint8_t);
-int32_t ppp_hdlc_header_add(FS_BUFFER *, uint32_t *, uint8_t);
-int32_t ppp_hdlc_escape(FS_BUFFER *, uint32_t *);
+int32_t ppp_hdlc_header_add(FS_BUFFER *, uint32_t *, uint8_t, uint8_t);
+int32_t ppp_hdlc_escape(FS_BUFFER *, uint32_t *, uint8_t);
 int32_t ppp_hdlc_unescape(FS_BUFFER *);
 
 #endif /* CONFIG_PPP */
