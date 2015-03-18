@@ -25,7 +25,7 @@
 #define CDC_OUT_EP                      0x01    /* EP1 for data OUT. */
 #define CDC_CMD_EP                      0x82    /* EP2 for CDC commands. */
 #define CDC_DATA_MAX_PACKET_SIZE        64      /* Endpoint Packet size. */
-#define CDC_NUM_BUFFERS                 4       /* Number of buffers we will use to transmit and receive data on this USB CDC device. */
+#define CDC_NUM_BUFFERS                 16      /* Number of buffers we will use to transmit and receive data on this USB CDC device. */
 #define CDC_CMD_PACKET_SIZE             8       /* Control Endpoint Packet size. */
 
 /* CDC ACM descriptor configuration. */

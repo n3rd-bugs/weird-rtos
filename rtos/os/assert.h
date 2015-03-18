@@ -25,7 +25,7 @@
                                     {                                           \
                                         system_assert((raise),                  \
                                                       __FILE__, __LINE__,       \
-                                                      current_task);            \
+                                                      get_current_task());      \
                                     }                                           \
                                 }
 #else
@@ -33,7 +33,7 @@
                                     if (raise != FALSE)                         \
                                     {                                           \
                                         system_assert(raise, "", 0,             \
-                                                      current_task);            \
+                                                      get_current_task());      \
                                     }                                           \
                                 }
 #endif

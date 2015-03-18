@@ -192,11 +192,11 @@ void system_entry(void)
     "   bcc     CLEAR_REGION    \r\n"
     );
 
-    /* Disable watch dog timer. */
-    wdt_disbale();
-
     /* Initialize system clock. */
     sysclock_init();
+
+    /* Disable watch dog timer. */
+    wdt_disbale();
 
     /* Initialize system clock. */
     current_tick = 0;

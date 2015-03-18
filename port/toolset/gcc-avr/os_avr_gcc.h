@@ -1,7 +1,7 @@
 /*
- * os_arm_gcc.h
+ * os_avr_gcc.h
  *
- * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
+ * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
  * Standard MIT License apply on this source code, with the inclusion of below
  * clause.

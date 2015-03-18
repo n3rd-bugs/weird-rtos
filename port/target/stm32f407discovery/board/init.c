@@ -65,11 +65,11 @@ void sysclock_init()
     /* HCLK = SYSCLK / 1. */
     RCC->CFGR |= RCC_CFGR_HPRE_DIV1;
 
+    /* PCLK1 = HCLK / 2. */
+    RCC->CFGR |= RCC_CFGR_PPRE1_DIV2;
+
     /* PCLK2 = HCLK / 2. */
     RCC->CFGR |= RCC_CFGR_PPRE2_DIV2;
-
-    /* PCLK1 = HCLK / 4. */
-    RCC->CFGR |= RCC_CFGR_PPRE1_DIV4;
 
     /* Configure the main PLL. */
     /* PLL_VCO = (HSE_VALUE or HSI_VALUE / PLL_M) * PLL_N. */
