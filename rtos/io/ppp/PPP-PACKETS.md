@@ -12,7 +12,9 @@ Purpose of this file is to show an example PPP configuration packet exchange.
         <TG-REJ> 7E 80 21 04 01 00 22 02 06 00 2D 0F 01 81 06 00 00 00 00 82 06 00 00 00 00 83 06 00 00 00 00 84 06 00 00 00 00 49 2A 7E
         <PC-REQ> 7E 80 21 01 02 00 0A 03 06 00 00 00 00 6A 10 7E
         <TG-NAK> 7E 80 21 03 02 00 0A 03 06 C0 A8 00 02 FA 99 7E
+        <TG-REQ> 7E 80 21 01 02 00 0A 03 06 C0 A8 00 01 2F F3 7E
         <PC-REQ> 7E 80 21 01 03 00 0A 03 06 C0 A8 00 02 49 8C 7E
+        <PC-ACK> 7E 80 21 02 02 00 0A 03 06 C0 A8 00 01 46 87 7E
         <TG-ACK> 7E 80 21 02 03 00 0A 03 06 C0 A8 00 02 20 F8 7E
 
     <TG> is target

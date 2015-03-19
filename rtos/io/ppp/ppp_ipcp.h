@@ -18,7 +18,8 @@
 #ifdef CONFIG_PPP
 
 /* PPP IP configurations. */
-#define PPP_IP_ADDRESS          {192, 168, 0, 2}
+#define PPP_LOCAL_IP_ADDRESS    {192, 168, 0, 1}
+#define PPP_REMOTE_IP_ADDRESS   {192, 168, 0, 2}
 
 /* IPCP option definitions. */
 #define PPP_IPCP_OPT_COMP   2

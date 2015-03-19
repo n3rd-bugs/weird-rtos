@@ -114,8 +114,9 @@ typedef struct _ppp_data
     /* MRU value. */
     uint32_t    mru;
 
-    /* IP address configured. */
-    uint32_t    ip_address;
+    /* Configured IP addresses. */
+    uint32_t    remote_ip_address;
+    uint32_t    local_ip_address;
 
     union _ppp_state_data
     {

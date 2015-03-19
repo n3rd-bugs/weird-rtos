@@ -66,7 +66,7 @@ uint8_t ppp_ipcp_option_negotiable(PPP *ppp, PPP_PKT_OPT *option)
 int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_PKT_OPT *option, PPP_PKT *rx_packet)
 {
     int32_t status = PPP_NOT_SUPPORTED;
-    uint8_t ip[4] = PPP_IP_ADDRESS;
+    uint8_t ip[4] = PPP_REMOTE_IP_ADDRESS;
 
     /* If we have a IP option. */
     if (option->type == PPP_IPCP_OPT_IP)
@@ -88,12 +88,22 @@ int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_PKT_OPT *option, PPP_PKT *rx_packet
             /* Remote has same IP address. */
             else
             {
-                /* Copy the configured IP address in the PPP structure. */
-                fs_memcpy_r((char *)&ppp->ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+                /* Copy the configured remote IP address in the PPP structure. */
+                fs_memcpy_r((char *)&ppp->remote_ip_address, (char *)option->data, (uint32_t)(option->length - 2));
 
                 /* Return success. */
                 status = SUCCESS;
             }
+        }
+
+        /* If this is a ACK for our configuration. */
+        if (rx_packet->code == PPP_CONFIG_ACK)
+        {
+            /* Copy the configured local IP address in the PPP structure. */
+            fs_memcpy_r((char *)&ppp->local_ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+
+            /* Return success. */
+            status = SUCCESS;
         }
     }
 
@@ -141,13 +151,83 @@ uint8_t ppp_ipcp_option_length_valid(PPP *ppp, PPP_PKT_OPT *option)
 int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packet)
 {
     int32_t status = SUCCESS;
+    PPP_PKT_OPT option;
+    FS_BUFFER *tx_buffer = NULL;
+    uint8_t ip[4] = PPP_LOCAL_IP_ADDRESS;
 
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(fd);
-    UNUSED_PARAM(rx_packet);
+    /* If we have not received an ACK for our configuration. */
+    if (ppp->local_ip_address == 0)
+    {
+        /* Pull a buffer from the free list to use when we are building
+         * the response. */
+        tx_buffer = fs_buffer_get(fd, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+
+        /* If we have a transmit buffer. */
+        if (tx_buffer != NULL)
+        {
+            /* Clear the TX packet to initialize a reply for this
+             * packet. */
+            memset(tx_packet, 0, sizeof(PPP_PKT));
+
+            /* Leave head room on the buffer so that it can be sent. */
+            /* Add extra room for LCP. */
+            fs_buffer_add_head(tx_buffer, (ppp_get_buffer_head_room(ppp) + 4));
+
+            /* We will be sending an ACK until we see a requirement
+             * for not to. */
+            tx_packet->code = PPP_CONFIG_REQ;
+            tx_packet->id = ++(ppp->state_data.ipcp_id);
+
+            /* Add IP configuration option in the transmit buffer. */
+            option.data = ip;
+            option.length = 6;
+            option.type = PPP_IPCP_OPT_IP;
+            status = ppp_packet_configuration_option_add(&option, tx_buffer);
+
+            if (status == SUCCESS)
+            {
+                /* Push the PPP header on the buffer. */
+                status = ppp_packet_configuration_header_add(tx_packet, tx_buffer);
+
+                if (status == SUCCESS)
+                {
+                    /* Add PPP protocol. */
+                    status = ppp_packet_protocol_add(tx_buffer, PPP_PROTO_IPCP, PPP_IS_PFC_VALID(ppp));
+                }
+
+                if (status == SUCCESS)
+                {
+                    /* Add the HDLC header. */
+                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), FALSE);
+                }
+
+                if (status == SUCCESS)
+                {
+                    /* Add this buffer to the TX list. */
+                    fs_buffer_add(fd, tx_buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+                }
+            }
+
+            if (status != SUCCESS)
+            {
+                /* If we have allocated a TX buffer. */
+                if (tx_buffer != NULL)
+                {
+                    /* Free this buffer. */
+                    fs_buffer_add(fd, tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+                    tx_buffer = NULL;
+                }
+            }
+        }
+        else
+        {
+            /* We don't have buffers to process this request. */
+            status = PPP_NO_BUFFERS;
+        }
+    }
 
     /* IPCP configuration is being ACKed. */
-    if (tx_packet->code == PPP_CONFIG_ACK)
+    if (rx_packet->code == PPP_CONFIG_ACK)
     {
         /* We are now in network phase. */
         ppp->state = PPP_STATE_NETWORK;

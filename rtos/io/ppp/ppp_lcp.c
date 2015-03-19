@@ -380,6 +380,9 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packe
         /* Now start network configuration. */
         ppp->state = PPP_STATE_IPCP;
         ppp->state_data.ipcp_id = 0;
+
+        /* Clear the assigned IP addresses. */
+        ppp->local_ip_address = ppp->remote_ip_address = 0;
     }
 
     /* Check if connection was terminated. */
