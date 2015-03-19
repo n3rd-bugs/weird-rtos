@@ -37,6 +37,7 @@ typedef struct _cdc_console
     char        buffer[CDC_DATA_MAX_PACKET_SIZE * CDC_NUM_BUFFERS];
 
     /* File system buffers. */
+    FS_BUFFER_DATA  fs_buffer_data;
     FS_BUFFER   fs_buffer[CDC_NUM_BUFFERS];
 
     /* Current buffers being used. */

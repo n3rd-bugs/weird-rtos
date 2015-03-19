@@ -44,10 +44,17 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
     cdc_cons->console.fs.rx_consumed = usb_cdc_fun_console_rx_consumed;
     console_register(&cdc_cons->console);
 
+    /* This will block on read, and all data that will be given to write must
+     * be flushed. */
+    cdc_cons->console.fs.flags = (FS_BLOCK | FS_FLUSH_WRITE);
+
     cdc_cons->data_watcher.data = &(cdc_cons->console);
     cdc_cons->data_watcher.space_available = usb_cdc_fun_console_space_available;
     cdc_cons->data_watcher.data_available = NULL;
     fs_set_data_watcher(&cdc_cons->console, &cdc_cons->data_watcher);
+
+    /* Set the buffer data structure for this file descriptor. */
+    fs_buffer_data_set(&cdc_cons->console, &cdc_cons->fs_buffer_data);
 
     /* Add buffer for this console. */
     for (i = 0; i < CDC_NUM_BUFFERS; i++)
@@ -58,11 +65,6 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
         /* Add this buffer to the free buffer list for this file descriptor. */
         fs_buffer_add((FD)&cdc_cons->console, &cdc_cons->fs_buffer[i], FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
-
-    /* This will block on read, and all data that will be given to write must
-     * be flushed. */
-    cdc_cons->console.fs.flags = (FS_BLOCK | FS_BUFFERED | FS_FLUSH_WRITE |
-                                  FS_SPACE_AVAILABLE);
 
 } /* usb_cdc_console_register */
 
