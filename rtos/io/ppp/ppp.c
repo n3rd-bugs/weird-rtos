@@ -285,7 +285,10 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer, PPP_PROTO 
                             status = proto->process(ppp, &option, &rx_packet);
 
                             /* If we have not accepted this option and we are not in NAK state. */
-                            if ((status == PPP_VALUE_NOT_SUPPORTED) && (tx_packet.code != PPP_CONFIG_NAK))
+                            /* If we are rejecting an option don't send a NAK send a REJECT. */
+                            if ((status == PPP_VALUE_NOT_VALID) &&
+                                (tx_packet.code != PPP_CONFIG_NAK) &&
+                                (tx_packet.code != PPP_CONFIG_REJECT))
                             {
                                 /* The option value is not supported. */
                                 tx_packet.code = PPP_CONFIG_NAK;
@@ -295,7 +298,8 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer, PPP_PROTO 
                             }
 
                             /* If we have not accepted this option and we are not in the REJECT state. */
-                            if ((status == PPP_NOT_SUPPORTED) && (tx_packet.code != PPP_CONFIG_REJECT))
+                            if ((status == PPP_NOT_SUPPORTED) &&
+                                (tx_packet.code != PPP_CONFIG_REJECT))
                             {
                                 /* This option is not supported. */
                                 tx_packet.code = PPP_CONFIG_REJECT;
@@ -304,8 +308,24 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer, PPP_PROTO 
                                 fs_buffer_pull(tx_buffer, NULL, tx_buffer->length, 0);
                             }
 
-                            /* Add this option in the transmit buffer. */
-                            status = ppp_packet_configuration_option_add(&option, tx_buffer);
+                            /* If a value is not valid and we are rejecting this
+                             * packet don't add the option. */
+                            if (((status == PPP_VALUE_NOT_VALID) &&
+                                 (tx_packet.code == PPP_CONFIG_REJECT)) ||
+
+                                /* If we are already sending a NAK or reject don't
+                                 * add options which are supported. */
+                                ((status == SUCCESS) &&
+                                 (tx_packet.code != PPP_CONFIG_ACK)))
+                            {
+                                /* Just reset the status here. */
+                                status = SUCCESS;
+                            }
+                            else
+                            {
+                                /* Add this option in the transmit buffer. */
+                                status = ppp_packet_configuration_option_add(&option, tx_buffer);
+                            }
                         }
                         else
                         {
@@ -381,25 +401,19 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer, PPP_PROTO 
 } /* ppp_configuration_process */
 
 /*
- * ppp_process_configuration
+ * ppp_process_frame
  * @fd: File descriptor on which this packet was received.
  * @ppp: PPP private data.
- * This function will be called with the packets that we will receive during
- * configuration phase.
+ * This function will be parse the PPP frames and if is a PPP packet will be be
+ * processed by related protocol otherwise packet will be forwarded to upper
+ * layers for processing.
  */
-void ppp_process_configuration(void *fd, PPP *ppp)
+void ppp_process_frame(void *fd, PPP *ppp)
 {
     FS_BUFFER *buffer;
     PPP_PROTO *proto;
     int32_t status;
     uint16_t protocol;
-    static uint8_t num_received = 0;
-
-    if (num_received == 2)
-    {
-        num_received = 2;
-    }
-    num_received ++;
 
     /* Get the buffer from the receive list. */
     buffer = fs_buffer_get(fd, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
@@ -451,7 +465,7 @@ void ppp_process_configuration(void *fd, PPP *ppp)
         /* Free the received buffer. */
         fs_buffer_add(fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
-} /* ppp_process_configuration */
+} /* ppp_process_frame */
 
 /*
  * ppp_rx_watcher
@@ -472,7 +486,7 @@ void ppp_rx_watcher(void *fd, void *priv_data)
     if (semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) == SUCCESS)
 #endif
     {
-
+        /* Process the received buffer according to the PPP state. */
         switch (ppp->state)
         {
         /* If physical medium is connected. */
@@ -485,12 +499,14 @@ void ppp_rx_watcher(void *fd, void *priv_data)
             /* Break out of this switch. */
             break;
 
-        /* If we are processing LCP or IPCP configuration packets. */
+        /* If we are processing LCP, IPCP frames or we have our connection
+         * established. */
         case PPP_STATE_LCP:
         case PPP_STATE_IPCP:
+        case PPP_STATE_NETWORK:
 
-            /* Process Link-layer Configuration Packets. */
-            ppp_process_configuration(fd, ppp);
+            /* Try to parse the packet and see if PPP needs to process it. */
+            ppp_process_frame(fd, ppp);
 
             /* Break out of this switch. */
             break;
@@ -527,7 +543,6 @@ void ppp_tx_watcher(void *fd, void *ppp)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(ppp);
     UNUSED_PARAM(fd);
-
 
 } /* ppp_tx_watcher */
 

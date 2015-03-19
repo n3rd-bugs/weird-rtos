@@ -40,7 +40,12 @@ uint8_t ppp_ipcp_option_negotiable(PPP *ppp, PPP_PKT_OPT *option)
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(ppp);
-    UNUSED_PARAM(option);
+
+    /* For now only IP address option is negotiable. */
+    if (option->type == PPP_IPCP_OPT_IP)
+    {
+        negotiable = TRUE;
+    }
 
     /* Return if this option is negotiable. */
     return (negotiable);
@@ -52,18 +57,48 @@ uint8_t ppp_ipcp_option_negotiable(PPP *ppp, PPP_PKT_OPT *option)
  * @ppp: PPP private data.
  * @option: Option needed to be process.
  * @rx_packet: Parsed PPP packet.
- * @return: Always return success.
+ * @return: Return success if option was successfully parsed,
+ *  PPP_VALUE_NOT_VALID will be returned if a option value is not valid and a
+ *  valid option value is returned in the option,
+ *  PPP_NOT_SUPPORTED will be returned if option type is not supported.
  * This function will process the data for a given option.
  */
 int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_PKT_OPT *option, PPP_PKT *rx_packet)
 {
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(ppp);
-    UNUSED_PARAM(option);
-    UNUSED_PARAM(rx_packet);
+    int32_t status = PPP_NOT_SUPPORTED;
+    uint8_t ip[4] = PPP_IP_ADDRESS;
+
+    /* If we have a IP option. */
+    if (option->type == PPP_IPCP_OPT_IP)
+    {
+        /* If this is a configuration request. */
+        if (rx_packet->code == PPP_CONFIG_REQ)
+        {
+            /* If remote has a different IP address. */
+            if (memcmp(option->data, ip, (uint32_t)(option->length - 2)))
+            {
+                /* Whatever IP address was given by the other end, overwrite it
+                 * with our configured IP address. */
+                memcpy(option->data, ip, (uint32_t)(option->length - 2));
+
+                /* Tell the other end to use this IP address. */
+                status = PPP_VALUE_NOT_VALID;
+            }
+
+            /* Remote has same IP address. */
+            else
+            {
+                /* Copy the configured IP address in the PPP structure. */
+                fs_memcpy_r((char *)&ppp->ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+
+                /* Return success. */
+                status = SUCCESS;
+            }
+        }
+    }
 
     /* Always return success. */
-    return (SUCCESS);
+    return (status);
 
 } /* ppp_ipcp_option_pocess */
 
@@ -80,7 +115,13 @@ uint8_t ppp_ipcp_option_length_valid(PPP *ppp, PPP_PKT_OPT *option)
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(ppp);
-    UNUSED_PARAM(option);
+
+    /* We only support IP option for now. */
+    if ( (option->type == PPP_IPCP_OPT_IP) && (option->length == 6) )
+    {
+        /* Option length is valid. */
+        valid = TRUE;
+    }
 
     /* Return if the given option is valid. */
     return (valid);
@@ -103,9 +144,14 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_pack
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
-    UNUSED_PARAM(ppp);
     UNUSED_PARAM(rx_packet);
-    UNUSED_PARAM(tx_packet);
+
+    /* IPCP configuration is being ACKed. */
+    if (tx_packet->code == PPP_CONFIG_ACK)
+    {
+        /* We are now in network phase. */
+        ppp->state = PPP_STATE_NETWORK;
+    }
 
     /* Return status to the caller. */
     return (status);

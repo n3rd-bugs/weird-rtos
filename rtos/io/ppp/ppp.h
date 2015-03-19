@@ -24,24 +24,20 @@
 #define PPP_MODEM_CHAT
 
 /* Status codes. */
-#define PPP_NOT_CONNECTED           -1000
-#define PPP_INVALID_STATE           -1001
-#define PPP_DONT_CONSUME            -1002
-#define PPP_INVALID_HEADER          -1003
-#define PPP_NOT_SUPPORTED           -1004
-#define PPP_VALUE_NOT_SUPPORTED     -1005
-#define PPP_NO_REPLY                -1006
-#define PPP_NO_NEXT_OPTION          -1007
-#define PPP_NO_BUFFERS              -1008
-#define PPP_NO_SPACE                -1009
-#define PPP_PHASE_SUCCESS           -1010
-#define PPP_INTERNAL_ERROR          -1011
+#define PPP_INVALID_HEADER          -900
+#define PPP_NOT_SUPPORTED           -901
+#define PPP_VALUE_NOT_VALID         -902
+#define PPP_NO_NEXT_OPTION          -903
+#define PPP_NO_BUFFERS              -904
+#define PPP_NO_SPACE                -905
+#define PPP_INTERNAL_ERROR          -906
 
 /* PPP instance states. */
 #define PPP_STATE_CONNECTED         1
 #define PPP_STATE_LCP               2
 #define PPP_STATE_IPCP              3
-#define PPP_STATE_DISCONNECTED      4
+#define PPP_STATE_NETWORK           4
+#define PPP_STATE_DISCONNECTED      5
 
 /* PPP configuration flags. */
 #define PPP_FALG_ACFC               0x01
@@ -118,6 +114,9 @@ typedef struct _ppp_data
     /* MRU value. */
     uint32_t    mru;
 
+    /* IP address configured. */
+    uint32_t    ip_address;
+
     union _ppp_state_data
     {
         /* ID used in last LCP request. */
@@ -153,7 +152,7 @@ void ppp_tx_watcher(void *, void *);
 /* PPP internal APIs. */
 uint32_t ppp_get_buffer_head_room(PPP *);
 void ppp_process_modem_chat(void *, PPP *);
-void ppp_process_configuration(void *, PPP *);
+void ppp_process_frame(void *, PPP *);
 void ppp_configuration_process(void *, PPP *, FS_BUFFER *, PPP_PROTO *);
 
 #ifdef PPP_MODEM_CHAT

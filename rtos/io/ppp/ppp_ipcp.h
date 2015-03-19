@@ -17,6 +17,13 @@
 
 #ifdef CONFIG_PPP
 
+/* PPP IP configurations. */
+#define PPP_IP_ADDRESS          {192, 168, 0, 2}
+
+/* IPCP option definitions. */
+#define PPP_IPCP_OPT_COMP   2
+#define PPP_IPCP_OPT_IP     3
+
 /* Exported variables. */
 extern PPP_PROTO ppp_proto_ipcp;
 

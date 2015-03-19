@@ -18,22 +18,15 @@
 #ifdef CONFIG_PPP
 
 /* PPP option DB configuration. */
-#define LCP_OPT_DB_NUM_OPTIONS      (9)
-#define LCP_OPT_RANDOM              (-1)
-#define LCP_OPT_NO_VALUE            (-2)
+#define LCP_OPT_DB_NUM_OPTIONS          (9)
+#define LCP_OPT_DB_NUM_OPTIONS_VALID    (5)
+#define LCP_OPT_RANDOM                  (-1)
+#define LCP_OPT_NO_VALUE                (-2)
 
 /* Supported option definition. */
 /* Each bit specifies one option type starting from 0 at LSb-0. */
-#define PPP_LCP_OPTION_MASK         (0x000001A6)
-
-/* PPP LCP option database structure. */
-typedef struct _ppp_lcp_opt
-{
-    const uint8_t   *value;     /* Option value that will be send. */
-    uint8_t         length;     /* Valid option length. */
-    uint8_t         do_send;    /* If this option is needed to be sent. */
-    uint8_t         pad[2];
-} PPP_LCP_OPT;
+#define PPP_LCP_OPTION_NEG_MASK     (0x000001A6)
+#define PPP_LCP_OPTION_SEND_MASK    (0x000001A4)
 
 /* Exported variables. */
 extern PPP_PROTO ppp_proto_lcp;

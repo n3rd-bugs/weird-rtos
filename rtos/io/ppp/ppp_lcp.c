@@ -27,18 +27,35 @@ PPP_PROTO ppp_proto_lcp =
 
 /* PPP LCP option database. */
 const uint32_t ppp_lcp_accm = 0x00000000;
-const PPP_LCP_OPT ppp_lcp_options[LCP_OPT_DB_NUM_OPTIONS] =
+const int8_t ppp_lcp_opt_index[LCP_OPT_DB_NUM_OPTIONS] =
 {
-    /*  Send Value,                         Length,     Send,   Padding,    */
-    {   NULL,                               0xFF,       FALSE,  {0, 0},     },  /* 0: Invalid option. */
-    {   NULL,                               0x04,       FALSE,  {0, 0},     },  /* 1: MRU. */
-    {   (const uint8_t*)&ppp_lcp_accm,      0x06,       TRUE,   {0, 0},     },  /* 2: ACCM. */
-    {   NULL,                               0xFF,       FALSE,  {0, 0},     },  /* 3: Invalid option. */
-    {   NULL,                               0xFF,       FALSE,  {0, 0},     },  /* 4: Invalid option. */
-    {   (const uint8_t*)(LCP_OPT_RANDOM),   0x06,       TRUE,   {0, 0},     },  /* 5: MAGIC. */
-    {   NULL,                               0xFF,       FALSE,  {0, 0},     },  /* 6: Invalid option. */
-    {   (const uint8_t*)(LCP_OPT_NO_VALUE), 0x02,       TRUE,   {0, 0},     },  /* 7: PFC. */
-    {   (const uint8_t*)(LCP_OPT_NO_VALUE), 0x02,       TRUE,   {0, 0},     },  /* 8: ACFC. */
+    -1,     /* 0: Invalid option. */
+    0,      /* 1: MRU. */
+    1,      /* 2: ACCM. */
+    -1,     /* 3: Invalid option. */
+    -1,     /* 4: Invalid option. */
+    2,      /* 5: MAGIC. */
+    -1,     /* 6: Invalid option. */
+    3,      /* 8: ACFC. */
+    4,      /* 7: PFC. */
+};
+
+const uint8_t ppp_lcp_option_valid_lengths[LCP_OPT_DB_NUM_OPTIONS_VALID] =
+{
+    0x04,   /* 1: MRU. */
+    0x06,   /* 2: ACCM. */
+    0x06,   /* 5: MAGIC. */
+    0x02,   /* 8: ACFC. */
+    0x02,   /* 7: PFC. */
+};
+
+const uint8_t *ppp_lcp_option_values[LCP_OPT_DB_NUM_OPTIONS_VALID] =
+{
+    NULL,                           /* 1: MRU. */
+    (uint8_t *)&ppp_lcp_accm,       /* 2: ACCM. */
+    (uint8_t *)LCP_OPT_RANDOM,      /* 5: MAGIC. */
+    (uint8_t *)LCP_OPT_NO_VALUE,    /* 8: ACFC. */
+    (uint8_t *)LCP_OPT_NO_VALUE,    /* 7: PFC. */
 };
 
 /*
@@ -71,33 +88,38 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
 {
     PPP_PKT_OPT option;
     int32_t random, status = SUCCESS;
-    uint8_t i, opt_value[4];
+    uint8_t i, opt_len, opt_value[4];
+    uint8_t *db_value;
 
     for (i = 0; (status == SUCCESS) && (i < LCP_OPT_DB_NUM_OPTIONS); i++)
     {
         /* If we need to send this option. */
-        if (ppp_lcp_options[i].do_send == TRUE)
+        if (((1 << i) & PPP_LCP_OPTION_SEND_MASK))
         {
+            /* Pick up the option value and lengths needed to be send. */
+            db_value = (uint8_t *)ppp_lcp_option_values[ppp_lcp_opt_index[i]];
+            opt_len = ppp_lcp_option_valid_lengths[ppp_lcp_opt_index[i]];
+
             /* Check if this option takes a random value. */
-            if (ppp_lcp_options[i].value == (const uint8_t *)(LCP_OPT_RANDOM))
+            if (db_value == (const uint8_t *)(LCP_OPT_RANDOM))
             {
                 /* Generate and put a random value. */
                 random = (int32_t)current_system_tick();
-                fs_memcpy_r((char *)opt_value, (char *)&random, (uint32_t)(ppp_lcp_options[i].length - 2));
+                fs_memcpy_r((char *)opt_value, (char *)&random, (uint32_t)(opt_len - 2));
                 option.data = opt_value;
             }
 
             /* Check if this option does not take a value. */
-            else if (ppp_lcp_options[i].value == (const uint8_t *)(LCP_OPT_NO_VALUE))
+            else if (db_value == (const uint8_t *)(LCP_OPT_NO_VALUE))
             {
                 option.data = NULL;
             }
 
             /* Check if we have specified a value for this option. */
-            else if (ppp_lcp_options[i].value != NULL)
+            else if (db_value != NULL)
             {
                 /* Copy the given value in the option buffer. */
-                fs_memcpy_r((char *)opt_value, (char *)ppp_lcp_options[i].value, (uint32_t)(ppp_lcp_options[i].length - 2));
+                fs_memcpy_r((char *)opt_value, (char *)db_value, (uint32_t)(opt_len - 2));
                 option.data = opt_value;
             }
 
@@ -111,7 +133,7 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
             {
                 /* Initialize the option needed to be send. */
                 option.type = i;
-                option.length = ppp_lcp_options[i].length;
+                option.length = opt_len;
 
                 /* Add this option in the transmit buffer. */
                 status = ppp_packet_configuration_option_add(&option, buffer);
@@ -140,7 +162,7 @@ uint8_t ppp_lcp_option_negotiable(PPP *ppp, PPP_PKT_OPT *option)
 
     /* For now all the options in LCP can be mapped on a 32-bit integer so a
      * option mask is used here to check if do support a given option. */
-    return (((1 << option->type) & PPP_LCP_OPTION_MASK) ? TRUE: FALSE);
+    return (((1 << option->type) & PPP_LCP_OPTION_NEG_MASK) ? TRUE: FALSE);
 
 } /* ppp_lcp_option_negotiable */
 
@@ -243,17 +265,23 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_PKT_OPT *option, PPP_PKT *rx_packet)
 uint8_t ppp_lcp_option_length_valid(PPP *ppp, PPP_PKT_OPT *option)
 {
     uint8_t valid = FALSE;
+    uint8_t opt_len;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(ppp);
-
-    /* All supported LCP options have a static length so we will just check our
-     * static database if the given option has valid length. */
     if ((option->type < LCP_OPT_DB_NUM_OPTIONS) &&
-        (option->length == ppp_lcp_options[option->type].length))
+        (ppp_lcp_opt_index[option->type] != -1))
     {
-        /* Option length is valid. */
-        valid = TRUE;
+        /* All supported LCP options have a static length so we will just check our
+         * static database if the given option has valid length. */
+        opt_len = ppp_lcp_option_valid_lengths[ppp_lcp_opt_index[option->type]];
+
+        /* If option length is valid. */
+        if (option->length == opt_len)
+        {
+            /* Option length is valid. */
+            valid = TRUE;
+        }
     }
 
     /* Return if the given option is valid. */
