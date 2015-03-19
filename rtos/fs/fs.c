@@ -333,6 +333,42 @@ int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
 } /* fs_buffer_push */
 
 /*
+ * fs_buffer_data_set
+ * @fd: File descriptor for which buffer data is needed to be set.
+ * @data: Pointer to buffer data structure.
+ * This function will set the buffer structure to be used by this file
+ * descriptor also sets the flag to tell others that this will be a buffered
+ * file descriptor.
+ */
+void fs_buffer_data_set(FD fd, FS_BUFFER_DATA *data)
+{
+    /* Should never happen. */
+    OS_ASSERT(data == NULL);
+
+    if (((FS *)fd)->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
+    }
+
+    /* This is a buffer file system. */
+    ((FS *)fd)->flags |= FS_BUFFERED;
+
+    /* Set the buffer data structure provided by caller. */
+    ((FS *)fd)->buffer = data;
+
+    /* Clear the structure. */
+    memset(data, 0, sizeof(FS_BUFFER_DATA));
+
+    if (((FS *)fd)->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
+
+} /* fs_buffer_data_set */
+
+/*
  * fs_buffer_add
  * @fd: File descriptor on which a free buffer is needed to be added.
  * @type: Type of buffer needed to be added.
@@ -346,6 +382,11 @@ int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
  */
 void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
 {
+    FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
+
+    /* Should never happen. */
+    OS_ASSERT(data == NULL);
+
     /* Type of buffer we are adding. */
     switch (type)
     {
@@ -356,11 +397,11 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
         buffer->length = 0;
 
         /* Just add this buffer in the free buffer list. */
-        sll_append(&((FS *)fd)->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        sll_append(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
         /* Increment the number of buffers on free list. */
-        ((FS *)fd)->free_buffer_list.buffers ++;
+        data->free_buffer_list.buffers ++;
 #endif
 
         /* If we are doing this actively. */
@@ -375,11 +416,11 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
     case (FS_BUFFER_RX):
 
         /* Just add this buffer in the receive buffer list. */
-        sll_append(&((FS *)fd)->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
         /* Increment the number of buffers on receive list. */
-        ((FS *)fd)->rx_buffer_list.buffers ++;
+        data->rx_buffer_list.buffers ++;
 #endif
 
         /* If we are doing this actively. */
@@ -394,11 +435,11 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
     case (FS_BUFFER_TX):
 
         /* Just add this buffer in the transmit buffer list. */
-        sll_append(&((FS *)fd)->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
         /* Increment the number of buffers on transmit list. */
-        ((FS *)fd)->tx_buffer_list.buffers ++;
+        data->tx_buffer_list.buffers ++;
 #endif
 
         break;
@@ -422,7 +463,11 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
  */
 FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
 {
+    FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
     FS_BUFFER *buffer = NULL;
+
+    /* Should never happen. */
+    OS_ASSERT(data == NULL);
 
     /* Type of buffer we need. */
     switch (type)
@@ -433,25 +478,25 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
         if (flags & FS_BUFFER_INPLACE)
         {
             /* Return the pointer to the head buffer. */
-            buffer = ((FS *)fd)->free_buffer_list.head;
+            buffer = data->free_buffer_list.head;
         }
         else
         {
             /* Pop a buffer from this file descriptor's free buffer list. */
-            buffer = sll_pop(&((FS *)fd)->free_buffer_list, OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
             /* If we are returning a buffer. */
             if (buffer)
             {
                 /* Decrement the number of buffers on free list. */
-                ((FS *)fd)->free_buffer_list.buffers --;
+                data->free_buffer_list.buffers --;
             }
 #endif
 
             /* If we are doing this actively. */
             if ((flags & FS_BUFFER_ACTIVE) &&
-                (((FS *)fd)->free_buffer_list.head == NULL))
+                (data->free_buffer_list.head == NULL))
             {
                 /* Tell the file system to block the write until there is some
                  * space available. */
@@ -467,25 +512,25 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
         if (flags & FS_BUFFER_INPLACE)
         {
             /* Return the pointer to the head buffer. */
-            buffer = ((FS *)fd)->rx_buffer_list.head;
+            buffer = data->rx_buffer_list.head;
         }
         else
         {
             /* Pop a buffer from this file descriptor's receive buffer list. */
-            buffer = sll_pop(&((FS *)fd)->rx_buffer_list, OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
             /* If we are returning a buffer. */
             if (buffer)
             {
                 /* Decrement the number of buffers on receive list. */
-                ((FS *)fd)->rx_buffer_list.buffers --;
+                data->rx_buffer_list.buffers --;
             }
 #endif
 
             /* If we are doing this actively. */
             if ((flags & FS_BUFFER_ACTIVE) &&
-                (((FS *)fd)->rx_buffer_list.head == NULL))
+                (data->rx_buffer_list.head == NULL))
             {
                 /* No more data is available to read. */
                 fd_data_flushed(fd);
@@ -500,19 +545,19 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
         if (flags & FS_BUFFER_INPLACE)
         {
             /* Return the pointer to the head buffer. */
-            buffer = ((FS *)fd)->tx_buffer_list.head;
+            buffer = data->tx_buffer_list.head;
         }
         else
         {
             /* Pop a buffer from this file descriptor's transmit buffer list. */
-            buffer = sll_pop(&((FS *)fd)->tx_buffer_list, OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
             /* If we are returning a buffer. */
             if (buffer)
             {
                 /* Decrement the number of buffers on transmit list. */
-                ((FS *)fd)->tx_buffer_list.buffers --;
+                data->tx_buffer_list.buffers --;
             }
 #endif
         }
@@ -548,7 +593,7 @@ void fs_set_data_watcher(FD fd, FS_DATA_WATCHER *watcher)
         ((FS *)fd)->release_lock((void *)fd);
     }
 
-} /* fs_set_connection_watcher */
+} /* fs_set_data_watcher */
 
 /*
  * fs_set_connection_watcher

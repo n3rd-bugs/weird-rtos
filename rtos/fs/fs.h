@@ -101,6 +101,40 @@ struct _fs_buffer
     uint32_t    length;
 };
 
+/* File system buffer data. */
+typedef struct _fs_buffer_data
+{
+    /* Free buffer list. */
+    struct _fs_free_buffer_list
+    {
+        FS_BUFFER       *head;
+        FS_BUFFER       *tail;
+#ifdef FS_BUFFER_TRACE
+        int32_t        buffers;
+#endif
+    } free_buffer_list;
+
+    /* Free buffer list. */
+    struct _fs_tx_buffer_list
+    {
+        FS_BUFFER       *head;
+        FS_BUFFER       *tail;
+#ifdef FS_BUFFER_TRACE
+        int32_t        buffers;
+#endif
+    } tx_buffer_list;
+
+    /* Free buffer list. */
+    struct _fs_rx_buffer_list
+    {
+        FS_BUFFER       *head;
+        FS_BUFFER       *tail;
+#ifdef FS_BUFFER_TRACE
+        int32_t        buffers;
+#endif
+    } rx_buffer_list;
+} FS_BUFFER_DATA;
+
 /* File system descriptor. */
 typedef struct _fs FS;
 struct _fs
@@ -164,35 +198,8 @@ struct _fs
         } fd_node;
     } fd_chain;
 
-    /* Free buffer list. */
-    struct _fs_free_buffer_list
-    {
-        FS_BUFFER       *head;
-        FS_BUFFER       *tail;
-#ifdef FS_BUFFER_TRACE
-        int32_t        buffers;
-#endif
-    } free_buffer_list;
-
-    /* Free buffer list. */
-    struct _fs_tx_buffer_list
-    {
-        FS_BUFFER       *head;
-        FS_BUFFER       *tail;
-#ifdef FS_BUFFER_TRACE
-        int32_t        buffers;
-#endif
-    } tx_buffer_list;
-
-    /* Free buffer list. */
-    struct _fs_rx_buffer_list
-    {
-        FS_BUFFER       *head;
-        FS_BUFFER       *tail;
-#ifdef FS_BUFFER_TRACE
-        int32_t        buffers;
-#endif
-    } rx_buffer_list;
+    /* File system buffer data. */
+    FS_BUFFER_DATA  *buffer;
 
     /* File system specific flags. */
     uint32_t    flags;
@@ -257,13 +264,16 @@ int32_t fs_read(FD, char *, int32_t);
 int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
-/* File system buffer management APIs. */
+/* File system buffer manipulation APIs. */
 #define FS_BUFFER_RESET(b)  fs_buffer_init(b, b->data, b->max_length)
 void fs_buffer_init(FS_BUFFER *, char *, uint32_t);
 int32_t fs_buffer_add_head(FS_BUFFER *, uint32_t);
 void fs_buffer_update(FS_BUFFER *, char *, uint32_t);
 int32_t fs_buffer_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
 int32_t fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
+
+/* File system buffer management APIs. */
+void fs_buffer_data_set(FD, FS_BUFFER_DATA *);
 void fs_buffer_add(FD, FS_BUFFER *, uint32_t, uint32_t);
 FS_BUFFER *fs_buffer_get(FD, uint32_t, uint32_t);
 
