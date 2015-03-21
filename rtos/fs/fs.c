@@ -188,15 +188,15 @@ void fs_buffer_update(FS_BUFFER *buffer, char *data, uint32_t size)
 } /* fs_buffer_update */
 
 /*
- * fs_buffer_chain_add
+ * fs_buffer_chain_push
  * @chain: Buffer chain to which a buffer is needed to be added.
  * @buffer: Buffer needed to be added.
  * @flags: Defines where the given buffer is needed to be added.
  *  FS_BUFFER_HEAD: If we need to add this buffer on the chain head.
  * This function will add a given to a given buffer chain.
  */
-void fs_buffer_chain_add(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer,
-                         uint8_t flag)
+void fs_buffer_chain_push(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer,
+                            uint8_t flag)
 {
     /* If we need to add this buffer on the head. */
     if (flag & FS_BUFFER_HEAD)
@@ -214,7 +214,7 @@ void fs_buffer_chain_add(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer,
     /* Update the total length of this buffer chain. */
     chain->length += buffer->length;
 
-} /* fs_buffer_chain_add */
+} /* fs_buffer_chain_push */
 
 /*
  * fs_buffer_one_pull
@@ -578,11 +578,12 @@ int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
  * fs_buffer_dataset
  * @fd: File descriptor for which buffer data-set is needed to be set.
  * @data: Pointer to buffer data structure.
+ * @num_buffers: Total number of buffers in the system.
  * This function will set the buffer structure to be used by this file
  * descriptor also sets the flag to tell others that this will be a buffered
  * file descriptor.
  */
-void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data)
+void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
 {
     /* Should never happen. */
     OS_ASSERT(data == NULL);
@@ -601,6 +602,7 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data)
 
     /* Clear the structure. */
     memset(data, 0, sizeof(FS_BUFFER_DATA));
+    data->buffers = num_buffers;
 
     if (((FS *)fd)->release_lock)
     {
@@ -611,8 +613,44 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data)
 } /* fs_buffer_dataset */
 
 /*
+ * fs_buffer_chain_add
+ * @fd: File descriptor on which a free buffer is needed to be added.
+ * @chain: Buffer chain needed to be added.
+ * @type: Type of buffer needed to be added.
+ *  FS_BUFFER_FREE: If this is a free buffer.
+ *  FS_BUFFER_RX: If this is a receive buffer.
+ *  FS_BUFFER_TX: If this is a transmit buffer.
+ * @flags: Operation flags.
+ *  FS_BUFFER_ACTIVE: Actively add the buffer and invoke the any callbacks.
+ * This function will add a buffer chain in the file descriptor for the required
+ * type.
+ */
+void fs_buffer_chain_add(FD fd, FS_BUFFER_CHAIN *chain, uint32_t type, uint32_t flags)
+{
+    FS_BUFFER *buffer;
+
+    do
+    {
+        /* Pick a buffer from the buffer list. */
+        buffer = sll_pop(chain, OFFSETOF(FS_BUFFER, next));
+
+        if (buffer)
+        {
+            /* Add a buffer from the chain to the given file descriptor. */
+            fs_buffer_add(fd, buffer, type, flags);
+        }
+
+    } while (buffer != NULL);
+
+    /* There are no more buffers, reset the chain length. */
+    chain->length = 0;
+
+} /* fs_buffer_chain_add */
+
+/*
  * fs_buffer_add
  * @fd: File descriptor on which a free buffer is needed to be added.
+ * @buffer: Buffer needed to be added.
  * @type: Type of buffer needed to be added.
  *  FS_BUFFER_FREE: If this is a free buffer.
  *  FS_BUFFER_RX: If this is a receive buffer.
@@ -625,84 +663,100 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data)
 void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
 {
     FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
-    FS_BUFFER *next_buffer = buffer;
 
     /* Should never happen. */
     OS_ASSERT(data == NULL);
 
-    /* Add all the buffers in the chain to specified list. */
-    do
+    /* Type of buffer we are adding. */
+    switch (type)
     {
-        /* Pick the buffer we need to process. */
-        buffer = next_buffer;
-        next_buffer = buffer->next;
+    case (FS_BUFFER_FREE):
+        /* Initialize this buffer. */
+        buffer->buffer = buffer->data;
+        buffer->length = 0;
 
-        /* Type of buffer we are adding. */
-        switch (type)
+        /* Just add this buffer in the free buffer list. */
+        sll_append(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+
+#ifdef FS_BUFFER_TRACE
+        /* Increment the number of buffers on free list. */
+        data->free_buffer_list.buffers ++;
+#endif
+
+#ifdef FS_BUFFER_TRACE
+        /* Should not happen. */
+        OS_ASSERT(data->buffers == 0);
+
+        /* Decrement number of buffers in the system. */
+        data->buffers --;
+#endif
+
+        /* If we are doing this actively. */
+        if (flags & FS_BUFFER_ACTIVE)
         {
-        case (FS_BUFFER_FREE):
-            /* Initialize this buffer. */
-            buffer->buffer = buffer->data;
-            buffer->length = 0;
-
-            /* Just add this buffer in the free buffer list. */
-            sll_append(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
-
-#ifdef FS_BUFFER_TRACE
-            /* Increment the number of buffers on free list. */
-            data->free_buffer_list.buffers ++;
-#endif
-
-            /* If we are doing this actively. */
-            if (flags & FS_BUFFER_ACTIVE)
-            {
-                /* Some space is now available. */
-                fd_space_available(fd);
-            }
-            else
-            {
-                /* Just set flag that some data is available. */
-                ((FS *)fd)->flags |= FS_SPACE_AVAILABLE;
-            }
-
-            break;
-
-        case (FS_BUFFER_RX):
-
-            /* Just add this buffer in the receive buffer list. */
-            sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
-
-#ifdef FS_BUFFER_TRACE
-            /* Increment the number of buffers on receive list. */
-            data->rx_buffer_list.buffers ++;
-#endif
-            /* If we are doing this actively. */
-            if (flags & FS_BUFFER_ACTIVE)
-            {
-                /* Some new data is now available. */
-                fd_data_available(fd);
-            }
-            else
-            {
-                /* Just set the flags that data is available. */
-                ((FS *)fd)->flags |= FS_DATA_AVAILABLE;
-            }
-
-            break;
-
-        case (FS_BUFFER_TX):
-
-            /* Just add this buffer in the transmit buffer list. */
-            sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
-
-#ifdef FS_BUFFER_TRACE
-            /* Increment the number of buffers on transmit list. */
-            data->tx_buffer_list.buffers ++;
-#endif
-
-            break;
+            /* Some space is now available. */
+            fd_space_available(fd);
         }
-    } while (next_buffer != NULL);
+        else
+        {
+            /* Just set flag that some data is available. */
+            ((FS *)fd)->flags |= FS_SPACE_AVAILABLE;
+        }
+
+        break;
+
+    case (FS_BUFFER_RX):
+
+        /* Just add this buffer in the receive buffer list. */
+        sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+
+#ifdef FS_BUFFER_TRACE
+        /* Increment the number of buffers on receive list. */
+        data->rx_buffer_list.buffers ++;
+#endif
+
+#ifdef FS_BUFFER_TRACE
+        /* Should not happen. */
+        OS_ASSERT(data->buffers == 0);
+
+        /* Decrement number of buffers in the system. */
+        data->buffers --;
+#endif
+
+        /* If we are doing this actively. */
+        if (flags & FS_BUFFER_ACTIVE)
+        {
+            /* Some new data is now available. */
+            fd_data_available(fd);
+        }
+        else
+        {
+            /* Just set the flags that data is available. */
+            ((FS *)fd)->flags |= FS_DATA_AVAILABLE;
+        }
+
+        break;
+
+    case (FS_BUFFER_TX):
+
+        /* Just add this buffer in the transmit buffer list. */
+        sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+
+#ifdef FS_BUFFER_TRACE
+        /* Increment the number of buffers on transmit list. */
+        data->tx_buffer_list.buffers ++;
+#endif
+
+#ifdef FS_BUFFER_TRACE
+        /* Should not happen. */
+        OS_ASSERT(data->buffers == 0);
+
+        /* Decrement number of buffers in the system. */
+        data->buffers --;
+#endif
+
+        break;
+    }
 
 } /* fs_buffer_add */
 
@@ -827,6 +881,11 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
     {
         /* Clear the next buffer pointer. */
         buffer->next = NULL;
+
+#ifdef FS_BUFFER_TRACE
+        /* Increase the number of buffers in the system. */
+        data->buffers ++;
+#endif
     }
 
     /* Return the buffer. */
