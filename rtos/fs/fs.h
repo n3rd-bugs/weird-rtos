@@ -112,7 +112,7 @@ typedef struct _fs_buffer_chain
     } list;
 
     /* Total length of buffers. */
-    uint32_t    length;
+    uint32_t    total_length;
 
     /* File descriptor from which this chain was allocated. */
     FD          fd;

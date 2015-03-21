@@ -195,8 +195,7 @@ void fs_buffer_update(FS_BUFFER *buffer, char *data, uint32_t size)
  *  FS_BUFFER_HEAD: If we need to add this buffer on the chain head.
  * This function will add a given to a given buffer chain.
  */
-void fs_buffer_chain_push(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer,
-                            uint8_t flag)
+void fs_buffer_chain_push(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer, uint8_t flag)
 {
     /* If we need to add this buffer on the head. */
     if (flag & FS_BUFFER_HEAD)
@@ -212,7 +211,7 @@ void fs_buffer_chain_push(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer,
     }
 
     /* Update the total length of this buffer chain. */
-    chain->length += buffer->length;
+    chain->total_length += buffer->length;
 
 } /* fs_buffer_chain_push */
 
@@ -390,7 +389,7 @@ int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t
     param.return_buffer = &buffer;
 
     /* Validate if we do have that much data on the buffer chain. */
-    if (buffer_chain->length < size)
+    if (buffer_chain->total_length < size)
     {
         /* Return an error. */
         status = FS_BUFFER_NO_SPACE;
@@ -474,7 +473,7 @@ int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t
                 {
                     /* Decrement number of bytes we have left on this buffer
                      * chain. */
-                    buffer_chain->length = (buffer_chain->length - this_size);
+                    buffer_chain->total_length = (buffer_chain->total_length - this_size);
                 }
             }
         }
@@ -640,7 +639,7 @@ void fs_buffer_chain_add(FS_BUFFER_CHAIN *chain, uint32_t type, uint32_t flags)
     } while (buffer != NULL);
 
     /* There are no more buffers, reset the chain length. */
-    chain->length = 0;
+    chain->total_length = 0;
 
 } /* fs_buffer_chain_add */
 
