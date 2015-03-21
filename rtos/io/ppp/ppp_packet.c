@@ -30,7 +30,7 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER_CHAIN *buffer, uint16_t *protocol, u
     uint8_t proto[2];
 
     /* We must have 2 bytes on the buffer to pull the PPP protocol field. */
-    if (buffer->length > 2)
+    if (buffer->total_length > 2)
     {
         /* Peek first two bytes of the buffer. */
         OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)proto, 2, FS_BUFFER_INPLACE) != SUCCESS);
@@ -123,7 +123,7 @@ int32_t ppp_packet_configuration_header_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT *
     int32_t status = SUCCESS;
 
     /* We must have 4 bytes on the buffer to pull the PPP header. */
-    if (buffer->length > 4)
+    if (buffer->total_length > 4)
     {
         /* Pull the code, id and length. */
         OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&packet->code, 1, 0) != SUCCESS);
@@ -131,7 +131,7 @@ int32_t ppp_packet_configuration_header_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT *
         OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&packet->length, 2, FS_BUFFER_MSB_FIRST) != SUCCESS);
 
         /* If header has invalid length of data left. */
-        if (buffer->length != (uint32_t)(packet->length - 4))
+        if (buffer->total_length != (uint32_t)(packet->length - 4))
         {
             /* Should not happen return an error. */
             status = PPP_INVALID_HEADER;
@@ -163,7 +163,7 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT_O
     int32_t status = SUCCESS;
 
     /* If we have enough data on buffer to pull the option. */
-    if (buffer->length >= 2)
+    if (buffer->total_length >= 2)
     {
         /* Pull the option type and length. */
         OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&option->type, 1, 0) != SUCCESS);
@@ -174,7 +174,7 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT_O
         {
             /* Validate that buffer has enough length left to process this
              * option. */
-            if ((buffer->length >= (uint32_t)(option->length - 2)) &&
+            if ((buffer->total_length >= (uint32_t)(option->length - 2)) &&
                 ((uint32_t)(option->length - 2) <= PPP_MAX_OPTION_SIZE))
             {
                 /* Just pull the data and discard it. */
@@ -187,7 +187,7 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT_O
             }
         }
     }
-    else if (buffer->length == 0)
+    else if (buffer->total_length == 0)
     {
         /* There is no next option to process. */
         status = PPP_NO_NEXT_OPTION;

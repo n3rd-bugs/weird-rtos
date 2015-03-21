@@ -546,6 +546,11 @@ void ppp_process_frame(void *fd, PPP *ppp)
             ppp_configuration_process(fd, ppp, &ppp->rx_buffer, proto);
         }
 
+        if (ppp->rx_buffer.total_length > 80)
+        {
+            fs_buffer_chain_pull(&ppp->rx_buffer, NULL, ppp->rx_buffer.total_length, 0);
+        }
+
         /* Free the received buffer. */
         fs_buffer_chain_add(&ppp->rx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }

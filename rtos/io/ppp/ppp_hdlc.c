@@ -42,7 +42,7 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER_CHAIN *buffer, uint8_t acfc)
          * +----------+----------+----------+----------+----------+----------+----------+
          */
         /* To successfully parse HDLC frame we must need 6 bytes on the buffer. */
-        if (buffer->length >= 6)
+        if (buffer->total_length >= 6)
         {
             /* Peek the start buffer. */
             OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&flag, 1, FS_BUFFER_INPLACE) != SUCCESS);
@@ -145,7 +145,7 @@ int32_t ppp_hdlc_unescape(FS_BUFFER_CHAIN *buffer)
     uint8_t last_escaped = FALSE;
 
     /* Reset the buffer chain length. */
-    buffer->length = 0;
+    buffer->total_length = 0;
 
     /* While we have a buffer in the chain. */
     while (this_buffer != NULL)
@@ -154,7 +154,7 @@ int32_t ppp_hdlc_unescape(FS_BUFFER_CHAIN *buffer)
         ppp_hdlc_unescape_one(this_buffer, &last_escaped);
 
         /* Add the length for converted buffer. */
-        buffer->length += this_buffer->length;
+        buffer->total_length += this_buffer->length;
 
         /* Pick the next buffer in the list. */
         this_buffer = this_buffer->next;
@@ -211,6 +211,9 @@ void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
             }
             else
             {
+                /* Consume this byte. */
+                OS_ASSERT(fs_buffer_one_pull(buffer, NULL, 1, 0) != SUCCESS);
+
                 /* First byte in the next buffer is needed to be escaped. */
                 *last_escaped = TRUE;
             }
