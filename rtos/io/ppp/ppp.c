@@ -188,7 +188,7 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER_CHAIN *buffer, PPP_
 {
     PPP_PKT rx_packet, tx_packet;
     PPP_PKT_OPT option;
-    FS_BUFFER *tx_buffer = NULL;
+    FS_BUFFER_CHAIN tx_buffer;
     int32_t status;
 
     /* Clear the packet structure in which we will be parsing the data. */
@@ -204,41 +204,26 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER_CHAIN *buffer, PPP_
         if ( (rx_packet.code == PPP_CONFIG_REQ) ||
              (rx_packet.code == PPP_TREM_REQ) )
         {
-            /* Pull a buffer from the free list to use when we are building
-             * the response. */
-            tx_buffer = fs_buffer_get(fd, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+            /* Clear the transmit packet and buffer chain structures. */
+            memset(&tx_packet, 0, sizeof(PPP_PKT));
+            memset(&tx_buffer, 0, sizeof(FS_BUFFER_CHAIN));
+            tx_buffer.fd = fd;
 
-            if (tx_buffer != NULL)
+            if (rx_packet.code == PPP_CONFIG_REQ)
             {
-                /* Clear the TX packet to initialize a reply for this
-                 * packet. */
-                memset(&tx_packet, 0, sizeof(PPP_PKT));
-
-                /* Leave head room on the buffer so that it can be sent. */
-                /* Add extra room for LCP. */
-                fs_buffer_add_head(tx_buffer, (ppp_get_buffer_head_room(ppp) + 4));
-
-                if (rx_packet.code == PPP_CONFIG_REQ)
-                {
-                    /* We will be sending an ACK until we see a requirement
-                     * for not to. */
-                    tx_packet.code = PPP_CONFIG_ACK;
-                }
-
-                else if (rx_packet.code == PPP_TREM_REQ)
-                {
-                    /* Send a terminate ACK in response. */
-                    tx_packet.code = PPP_TREM_ACK;
-                }
-
-                /* Use the same ID in reply too. */
-                tx_packet.id = rx_packet.id;
+                /* We will be sending an ACK until we see a requirement
+                 * for not to. */
+                tx_packet.code = PPP_CONFIG_ACK;
             }
-            else
+
+            else if (rx_packet.code == PPP_TREM_REQ)
             {
-                /* We don't have buffers to process this request. */
-                status = PPP_NO_BUFFERS;
+                /* Send a terminate ACK in response. */
+                tx_packet.code = PPP_TREM_ACK;
             }
+
+            /* Use the same ID in reply too. */
+            tx_packet.id = rx_packet.id;
         }
 
         /* Don't process data in terminate request. */
@@ -264,11 +249,11 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER_CHAIN *buffer, PPP_
                             tx_packet.code = PPP_CONFIG_REJECT;
 
                             /* Remove any data already on the buffer. */
-                            fs_buffer_one_pull(tx_buffer, NULL, tx_buffer->length, 0);
+                            fs_buffer_chain_pull(&tx_buffer, NULL, tx_buffer.total_length, 0);
                         }
 
                         /* Add this option in the transmit buffer. */
-                        status = ppp_packet_configuration_option_add(tx_buffer, &option);
+                        status = ppp_packet_configuration_option_add(&tx_buffer, &option);
                     }
                     else
                     {
@@ -288,7 +273,7 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER_CHAIN *buffer, PPP_
                                 tx_packet.code = PPP_CONFIG_NAK;
 
                                 /* Remove any data already on the buffer. */
-                                fs_buffer_one_pull(tx_buffer, NULL, tx_buffer->length, 0);
+                                fs_buffer_chain_pull(&tx_buffer, NULL, tx_buffer.total_length, 0);
                             }
 
                             /* If we have not accepted this option and we are not in the REJECT state. */
@@ -299,7 +284,7 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER_CHAIN *buffer, PPP_
                                 tx_packet.code = PPP_CONFIG_REJECT;
 
                                 /* Remove any data already on the buffer. */
-                                fs_buffer_one_pull(tx_buffer, NULL, tx_buffer->length, 0);
+                                fs_buffer_chain_pull(&tx_buffer, NULL, tx_buffer.total_length, 0);
                             }
 
                             /* If a value is not valid and we are rejecting this
@@ -318,7 +303,7 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER_CHAIN *buffer, PPP_
                             else
                             {
                                 /* Add this option in the transmit buffer. */
-                                status = ppp_packet_configuration_option_add(tx_buffer, &option);
+                                status = ppp_packet_configuration_option_add(&tx_buffer, &option);
                             }
                         }
                         else
@@ -348,24 +333,12 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER_CHAIN *buffer, PPP_
                  * in the buffer. */
 
                 /* Push the PPP header on the buffer. */
-                status = ppp_packet_configuration_header_add(tx_buffer, &tx_packet);
+                status = ppp_packet_configuration_header_add(&tx_buffer, &tx_packet);
 
                 if (status == SUCCESS)
                 {
-                    /* Add PPP protocol. */
-                    status = ppp_packet_protocol_add(tx_buffer, proto->protocol, PPP_IS_PFC_VALID(ppp));
-                }
-
-                if (status == SUCCESS)
-                {
-                    /* Add the HDLC header. */
-                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), (proto->protocol == PPP_PROTO_LCP));
-                }
-
-                if (status == SUCCESS)
-                {
-                    /* Add this buffer to the TX list. */
-                    fs_buffer_add(fd, tx_buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+                    /* Send this buffer. */
+                    status = ppp_transmit_buffer(ppp, &tx_buffer, proto->protocol);
                 }
             }
         }
@@ -373,11 +346,10 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER_CHAIN *buffer, PPP_
         if (status != SUCCESS)
         {
             /* If we have allocated a TX buffer. */
-            if (tx_buffer != NULL)
+            if (tx_buffer.list.head != NULL)
             {
                 /* Free this buffer. */
-                fs_buffer_add(fd, tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
-                tx_buffer = NULL;
+                fs_buffer_chain_add(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
             }
         }
     }
@@ -475,7 +447,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             }
 
             /* Add this complete or partial received buffer on the receive buffer. */
-            fs_buffer_chain_push(&ppp->rx_buffer, buffer, 0);
+            fs_buffer_chain_append(&ppp->rx_buffer, buffer, 0);
         }
 
         /* We will wait to receive required amount of flags so that we can
@@ -491,7 +463,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             else
             {
                 /* Add this partial received buffer on the receive buffer. */
-                fs_buffer_chain_push(&ppp->rx_buffer, buffer, 0);
+                fs_buffer_chain_append(&ppp->rx_buffer, buffer, 0);
             }
 
             /* We don't have a buffer to continue. */
@@ -556,6 +528,44 @@ void ppp_process_frame(void *fd, PPP *ppp)
     }
 
 } /* ppp_process_frame */
+
+/*
+ * ppp_transmit_buffer
+ * @ppp: PPP private data.
+ * @buffer: Buffer needed to be sent.
+ * @proto: PPP protocol needed to be added in the header.
+ * This function will add required fields on a given buffer and send it on the
+ * file descriptor attached to the given buffer.
+ */
+int32_t ppp_transmit_buffer(PPP *ppp, FS_BUFFER_CHAIN *buffer, uint16_t proto)
+{
+    int32_t status;
+
+    /* Add PPP protocol. */
+    status = ppp_packet_protocol_add(buffer, proto, PPP_IS_PFC_VALID(ppp));
+
+    if (status == SUCCESS)
+    {
+        /* Add the HDLC header. */
+        status = ppp_hdlc_header_add(buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), (proto == PPP_PROTO_LCP));
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Add this buffer to the TX list. */
+        fs_buffer_chain_add(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+    }
+
+    else
+    {
+        /* Free this buffer. */
+        fs_buffer_chain_add(buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* ppp_transmit_buffer */
 
 /*
  * ppp_rx_watcher

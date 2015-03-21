@@ -76,33 +76,20 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER_CHAIN *buffer, uint16_t *protocol, u
  *  add protocol.
  * This function will add PPP protocol field in the given buffer.
  */
-int32_t ppp_packet_protocol_add(FS_BUFFER *buffer, uint16_t protocol, uint8_t pfc)
+int32_t ppp_packet_protocol_add(FS_BUFFER_CHAIN *buffer, uint16_t protocol, uint8_t pfc)
 {
     int32_t status = SUCCESS;
+    uint8_t proto_len = 2;
 
-    /* If we have enough space on the buffer. */
-    if (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) >= (uint32_t)(((protocol & 0xFF00) || (pfc == FALSE))  + 1))
+    /* If we can compress the protocol field. */
+    if (((protocol & 0xFF00) == 0) && (pfc == TRUE))
     {
-        /* If we cannot compress the protocol field. */
-        if (((protocol & 0xFF00) || (pfc == FALSE)))
-        {
-            /* Push protocol for this packet. */
-            OS_ASSERT(fs_buffer_push(buffer, (char *)&protocol, 2, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD)) != SUCCESS);
-        }
-
-        /* We can compress the protocol field. */
-        else
-        {
-            /* Push protocol for this packet. */
-            OS_ASSERT(fs_buffer_push(buffer, (char *)&(protocol), 1, FS_BUFFER_HEAD) != SUCCESS);
-        }
+        /* We will only add the non-zero byte of the protocol field. */
+        proto_len = 1;
     }
 
-    else
-    {
-        /* There is no space in the provided buffer, return an error. */
-        status = PPP_NO_SPACE;
-    }
+    /* Push protocol for this packet. */
+    status = fs_buffer_chain_push(buffer, (char *)&(protocol), proto_len, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD));
 
     /* Return status to the caller. */
     return (status);
@@ -212,27 +199,17 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT_O
  *  header.
  * This function will add a PPP configuration option in the provided buffer.
  */
-int32_t ppp_packet_configuration_header_add(FS_BUFFER *buffer, PPP_PKT *packet)
+int32_t ppp_packet_configuration_header_add(FS_BUFFER_CHAIN *buffer, PPP_PKT *packet)
 {
     int32_t status = SUCCESS;
 
-    /* If we have enough space on the buffer. */
-    if (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) >= 4)
-    {
-        /* Calculate the packet length. */
-        packet->length = (uint16_t)(buffer->length + 4);
+    /* Calculate the packet length. */
+    packet->length = (uint16_t)(buffer->total_length + 4);
 
-        /* Push length, id and code of this packet. */
-        OS_ASSERT(fs_buffer_push(buffer, (char *)&packet->length, 2, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD)) != SUCCESS);
-        OS_ASSERT(fs_buffer_push(buffer, (char *)&packet->id, 1, FS_BUFFER_HEAD) != SUCCESS);
-        OS_ASSERT(fs_buffer_push(buffer, (char *)&packet->code, 1, FS_BUFFER_HEAD) != SUCCESS);
-    }
-
-    else
-    {
-        /* There is no space in the provided buffer, return an error. */
-        status = PPP_NO_SPACE;
-    }
+    /* Push length, id and code of this packet. */
+    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&packet->length, 2, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD)) != SUCCESS);
+    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&packet->id, 1, FS_BUFFER_HEAD) != SUCCESS);
+    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&packet->code, 1, FS_BUFFER_HEAD) != SUCCESS);
 
     /* Return status to the caller. */
     return (status);
@@ -248,29 +225,19 @@ int32_t ppp_packet_configuration_header_add(FS_BUFFER *buffer, PPP_PKT *packet)
  *  data.
  * This function will add a PPP configuration option in the provided buffer.
  */
-int32_t ppp_packet_configuration_option_add(FS_BUFFER *buffer, PPP_PKT_OPT *option)
+int32_t ppp_packet_configuration_option_add(FS_BUFFER_CHAIN *buffer, PPP_PKT_OPT *option)
 {
     int32_t status = SUCCESS;
 
-    /* If we have enough space on the buffer. */
-    if ((buffer->max_length - buffer->length) >= option->length)
-    {
-        /* Add type, length of this option. */
-        OS_ASSERT(fs_buffer_push(buffer, (char *)&option->type, 1, 0) != SUCCESS);
-        OS_ASSERT(fs_buffer_push(buffer, (char *)&option->length, 1, 0) != SUCCESS);
+    /* Add type, length of this option. */
+    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&option->type, 1, 0) != SUCCESS);
+    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&option->length, 1, 0) != SUCCESS);
 
-        /* Check if we need to add value data in the option. */
-        if (option->length > 2)
-        {
-            /* Add the option value. */
-            OS_ASSERT(fs_buffer_push(buffer, (char *)option->data, (uint32_t)(option->length - 2), 0) != SUCCESS);
-        }
-    }
-
-    else
+    /* Check if we need to add value data in the option. */
+    if (option->length > 2)
     {
-        /* There is no space in the provided buffer, return an error. */
-        status = PPP_NO_SPACE;
+        /* Add the option value. */
+        OS_ASSERT(fs_buffer_chain_push(buffer, (char *)option->data, (uint32_t)(option->length - 2), 0) != SUCCESS);
     }
 
     /* Return status to the caller. */

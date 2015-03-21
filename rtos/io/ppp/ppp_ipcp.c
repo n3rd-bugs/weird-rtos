@@ -152,77 +152,48 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_pack
 {
     int32_t status = SUCCESS;
     PPP_PKT_OPT option;
-    FS_BUFFER *tx_buffer = NULL;
-    //uint8_t ip[4] = PPP_LOCAL_IP_ADDRESS;
+    FS_BUFFER_CHAIN tx_buffer;
 
     /* If we have not received an ACK for our configuration. */
     if (ppp->local_ip_address == 0)
     {
-        /* Pull a buffer from the free list to use when we are building
-         * the response. */
-        tx_buffer = fs_buffer_get(fd, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+        /* Clear the transmit packet and buffer chain structures. */
+        memset(tx_packet, 0, sizeof(PPP_PKT));
+        memset(&tx_buffer, 0, sizeof(FS_BUFFER_CHAIN));
+        tx_buffer.fd = fd;
 
-        /* If we have a transmit buffer. */
-        if (tx_buffer != NULL)
+        /* We will be sending an ACK until we see a requirement
+         * for not to. */
+        tx_packet->code = PPP_CONFIG_REQ;
+        tx_packet->id = ++(ppp->state_data.ipcp_id);
+
+        /* Add IP configuration option in the transmit buffer. */
+        memcpy(option.data, (uint8_t [])PPP_LOCAL_IP_ADDRESS, 4);
+        option.length = 6;
+        option.type = PPP_IPCP_OPT_IP;
+
+        status = ppp_packet_configuration_option_add(&tx_buffer, &option);
+
+        if (status == SUCCESS)
         {
-            /* Clear the TX packet to initialize a reply for this
-             * packet. */
-            memset(tx_packet, 0, sizeof(PPP_PKT));
-
-            /* Leave head room on the buffer so that it can be sent. */
-            /* Add extra room for LCP. */
-            fs_buffer_add_head(tx_buffer, (ppp_get_buffer_head_room(ppp) + 4));
-
-            /* We will be sending an ACK until we see a requirement
-             * for not to. */
-            tx_packet->code = PPP_CONFIG_REQ;
-            tx_packet->id = ++(ppp->state_data.ipcp_id);
-
-            /* Add IP configuration option in the transmit buffer. */
-            memcpy(option.data, (uint8_t [])PPP_LOCAL_IP_ADDRESS, 4);
-            option.length = 6;
-            option.type = PPP_IPCP_OPT_IP;
-            status = ppp_packet_configuration_option_add(tx_buffer, &option);
+            /* Push the PPP header on the buffer. */
+            status = ppp_packet_configuration_header_add(&tx_buffer, tx_packet);
 
             if (status == SUCCESS)
             {
-                /* Push the PPP header on the buffer. */
-                status = ppp_packet_configuration_header_add(tx_buffer, tx_packet);
-
-                if (status == SUCCESS)
-                {
-                    /* Add PPP protocol. */
-                    status = ppp_packet_protocol_add(tx_buffer, PPP_PROTO_IPCP, PPP_IS_PFC_VALID(ppp));
-                }
-
-                if (status == SUCCESS)
-                {
-                    /* Add the HDLC header. */
-                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), FALSE);
-                }
-
-                if (status == SUCCESS)
-                {
-                    /* Add this buffer to the TX list. */
-                    fs_buffer_add(fd, tx_buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
-                }
-            }
-
-            if (status != SUCCESS)
-            {
-                /* If we have allocated a TX buffer. */
-                if (tx_buffer != NULL)
-                {
-                    /* Free this buffer. */
-                    fs_buffer_add(fd, tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
-                    tx_buffer = NULL;
-                }
+                /* Send this buffer. */
+                status = ppp_transmit_buffer(ppp, &tx_buffer, PPP_PROTO_IPCP);
             }
         }
-        else
+
+        if (status != SUCCESS)
         {
-            /* We don't have buffers to process this request. */
-            status = PPP_NO_BUFFERS;
+            /* If we have allocated a TX buffer. */
+            if (tx_buffer.list.head != NULL)
+            {
+                /* Free this buffer. */
+                fs_buffer_chain_add(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+            }
         }
     }
 

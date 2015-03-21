@@ -13,6 +13,7 @@
 #include <os.h>
 
 #ifdef CONFIG_PPP
+#include <string.h>
 
 /*
  * hdlc_parse_header
@@ -253,46 +254,58 @@ void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
  * verifying other constant data like flags, address and control fields.
  * [TDOD] Add support for multiple buffers here or multiple packets in a buffer.
  */
-int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp)
+int32_t ppp_hdlc_header_add(FS_BUFFER_CHAIN *buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp)
 {
     int32_t status = SUCCESS;
     uint8_t value_uint8;
     uint16_t fcs;
+    FS_BUFFER_CHAIN destination;
 
-    /* If we have enough space on the buffer. */
-    if (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) > 6)
+    /* When ACFC is negotiated we can optionally drop address and control
+     * fields. */
+    if ((lcp == TRUE) || (acfc == FALSE))
     {
-        /* When ACFC is negotiated we can optionally drop address and control
-         * fields. */
-        if (acfc == FALSE)
-        {
-            /* Add control field. */
-            value_uint8 = PPP_CONTROL;
-            OS_ASSERT(fs_buffer_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
+        /* Add control field. */
+        value_uint8 = PPP_CONTROL;
+        OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
 
-            /* Add address field. */
-            value_uint8 = PPP_ADDRESS;
-            OS_ASSERT(fs_buffer_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
-        }
+        /* Add address field. */
+        value_uint8 = PPP_ADDRESS;
+        OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
+    }
 
-        /* Calculate the FCS of the data. */
-        fcs = ppp_fcs16_calculate(buffer->buffer, buffer->length, PPP_FCS16_INIT);
-        fcs ^= 0xffff;
+    /* Calculate the FCS of the data. */
+    fcs = ppp_fcs16_buffer_calculate(buffer->list.head, PPP_FCS16_INIT);
+    fcs ^= 0xffff;
 
-        /* Push the FCS at the end of buffer. */
-        OS_ASSERT(fs_buffer_push(buffer, (char *)&fcs, 2, 0) != SUCCESS);
+    /* Push the FCS at the end of buffer. */
+    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&fcs, 2, 0) != SUCCESS);
 
-        /* Escape the data. */
-        status = ppp_hdlc_escape(buffer, accm, lcp);
+    /* Initialize a destination chain buffer. */
+    memset(&destination, 0, sizeof(FS_BUFFER_CHAIN));
+    destination.fd = buffer->fd;
 
-        /* If data was successfully escaped. */
-        if (status == SUCCESS)
-        {
-            /* Add start and end flags. */
-            value_uint8 = PPP_FLAG;
-            OS_ASSERT(fs_buffer_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
-            OS_ASSERT(fs_buffer_push(buffer, (char *)&value_uint8, 1, 0) != SUCCESS);
-        }
+    /* Escape the data. */
+    status = ppp_hdlc_escape(buffer, &destination, accm, lcp);
+
+    /* If there is still some data left on the source buffer then the status
+     * is not success, we still need to clean up the things. */
+    if (buffer->total_length > 0)
+    {
+        /* Free the remaining buffers. */
+        fs_buffer_chain_add(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+    }
+
+    /* Copy our chain buffer to the provided buffer. */
+    memcpy(buffer, &destination, sizeof(FS_BUFFER_CHAIN));
+
+    /* If data was successfully escaped. */
+    if (status == SUCCESS)
+    {
+        /* Add start and end flags. */
+        value_uint8 = PPP_FLAG;
+        OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
+        OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&value_uint8, 1, 0) != SUCCESS);
     }
 
     /* Return status to the caller. */
@@ -302,54 +315,40 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
 
 /*
  * ppp_hdlc_escape
- * @buffer: Buffer needed to be processed.
+ * @src: Buffer needed to be processed.
+ * @dst: Buffer in which escaped packet will be pushed.
  * @accm: Array of 4 bytes of transmit ACCM.
  * @lcp: If we are sending a LCP request.
  * This function will escape a HDLC buffer. This routine will leave room for
  * end and start flags.
  */
-int32_t ppp_hdlc_escape(FS_BUFFER *buffer, uint32_t *accm, uint8_t lcp)
+int32_t ppp_hdlc_escape(FS_BUFFER_CHAIN *src, FS_BUFFER_CHAIN *dst, uint32_t *accm, uint8_t lcp)
 {
-    int32_t status = PPP_NO_SPACE;
+    int32_t status = SUCCESS;
     uint8_t buf[2];
-    uint8_t *process_ptr = (uint8_t *)&buffer->buffer[buffer->length - 1];
-    uint32_t length = buffer->length;
 
-    /* Adjust the buffer in such a way that we can add the data at the end of
-     * it. */
-    buffer->length = 0;
-    buffer->buffer = (&buffer->data[buffer->max_length - 1] - 1);   /* Leave room for end flag. */
-
-    /* While we have some data to process. */
-    while ((length > 0) && (process_ptr < (uint8_t *)(buffer->buffer - 2)))
+    /* While we have some data left in source buffer. */
+    while ((status == SUCCESS) && (src->total_length > 0))
     {
+        /* Pull a byte from the source buffer chain. */
+        OS_ASSERT(fs_buffer_chain_pull(src, (char *)buf, 1, 0) != SUCCESS);
+
         /* Check if we need to escape this byte. */
-        if ( ((lcp == TRUE) && (*process_ptr < 0x20)) ||
-              (accm[*process_ptr >> 5] & (uint32_t)(1 << (*process_ptr & 0x1F))) )
+        if ( ((lcp == TRUE) && (*buf < 0x20)) ||
+              (accm[*buf >> 5] & (uint32_t)(1 << (*buf & 0x1F))) )
         {
             /* Escape this character. */
+            buf[1] = buf[0] ^ 0x20;
             buf[0] = PPP_ESCAPE;
-            buf[1] = (uint8_t)(*process_ptr ^ 0x20);
 
-            /* Push this on the buffer. */
-            OS_ASSERT(fs_buffer_push(buffer, (char *)buf, 2, FS_BUFFER_HEAD) != SUCCESS);
+            /* Push converted byte on the destination. */
+            status = fs_buffer_chain_push(dst, (char *)buf, 2, 0);
         }
         else
         {
-            /* Put this character as it is. */
-            OS_ASSERT(fs_buffer_push(buffer, (char *)process_ptr, 1, FS_BUFFER_HEAD) != SUCCESS);
+            /* Push the byte as it is. */
+            status = fs_buffer_chain_push(dst, (char *)buf, 1, 0);
         }
-
-        /* We have processed this byte. */
-        process_ptr--;
-        length--;
-    }
-
-    /* All the data was successfully escaped. */
-    if (length == 0)
-    {
-        /* Return success. */
-        status = SUCCESS;
     }
 
     /* Return status to the caller. */
