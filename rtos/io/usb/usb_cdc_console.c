@@ -287,7 +287,7 @@ static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
         if (fs_buffer->length > 0)
         {
             /* Pull data from the buffer. */
-            OS_ASSERT(fs_buffer_pull(fs_buffer, buffer, (uint32_t)size, 0) != SUCCESS);
+            OS_ASSERT(fs_buffer_one_pull(fs_buffer, buffer, (uint32_t)size, 0) != SUCCESS);
         }
 
         /* If this buffer is now consumed. */
