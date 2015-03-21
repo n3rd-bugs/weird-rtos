@@ -277,13 +277,6 @@ typedef struct _node_param
     void        *priv;
 } NODE_PARAM;
 
-/* Search parameter for fs_buffer_serach_last. */
-typedef struct _buffer_param
-{
-    FS_BUFFER   **return_buffer;
-    FS_BUFFER   *last_buffer;
-} BUFFER_PARAM;
-
 /* Function prototypes. */
 void fs_init();
 
@@ -296,15 +289,19 @@ int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
 /* File system buffer manipulation APIs. */
-#define FS_BUFFER_RESET(b)  fs_buffer_init(b, b->data, b->max_length)
-#define FS_BUFFER_LEN(b)    ((b->next == NULL) ? b->length : ((FS_BUFFER_CHAIN *)b)->length)
+#define FS_BUFFER_RESET(b)      fs_buffer_init(b, b->data, b->max_length)
+#define FS_BUFFER_LEN(b)        ((b->next == NULL) ? b->length : ((FS_BUFFER_CHAIN *)b)->length)
+#define FS_BUFFER_SPACE(b)      (b->max_length - b->length)
+#define FS_BUFFER_HEAD_ROOM(b)  ((uint32_t)(b->buffer - b->data))
+#define FS_BUFFER_TAIL_ROOM(b)  (FS_BUFFER_SPACE(b) - FS_BUFFER_HEAD_ROOM(b))
 void fs_buffer_init(FS_BUFFER *, char *, uint32_t);
 int32_t fs_buffer_add_head(FS_BUFFER *, uint32_t);
 void fs_buffer_update(FS_BUFFER *, char *, uint32_t);
-void fs_buffer_chain_push(FS_BUFFER_CHAIN *, FS_BUFFER *, uint8_t);
+void fs_buffer_chain_append(FS_BUFFER_CHAIN *, FS_BUFFER *, uint8_t);
 int32_t fs_buffer_one_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
 int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *, char *, uint32_t, uint8_t);
-int32_t fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
+int32_t fs_buffer_one_push(FS_BUFFER *, char *, uint32_t, uint8_t);
+int32_t fs_buffer_chain_push(FS_BUFFER_CHAIN *, char *, uint32_t, uint8_t);
 
 /* Search functions. */
 uint8_t fs_buffer_serach_last(void *, void *);

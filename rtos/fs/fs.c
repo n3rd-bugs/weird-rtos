@@ -149,12 +149,7 @@ int32_t fs_buffer_add_head(FS_BUFFER *buffer, uint32_t size)
     OS_ASSERT(buffer->data == NULL);
 
     /* Validate that there is enough space on the buffer. */
-    if (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) < size)
-    {
-        /* Return an error. */
-        status = FS_BUFFER_NO_SPACE;
-    }
-    else
+    if (FS_BUFFER_SPACE(buffer) >= size)
     {
         /* Check if we have some data on the buffer. */
         if (buffer->length != 0)
@@ -165,6 +160,11 @@ int32_t fs_buffer_add_head(FS_BUFFER *buffer, uint32_t size)
 
         /* Update the buffer pointer. */
         buffer->buffer = buffer->buffer + size;
+    }
+    else
+    {
+        /* Return an error. */
+        status = FS_BUFFER_NO_SPACE;
     }
 
     /* Return status to the caller. */
@@ -188,14 +188,14 @@ void fs_buffer_update(FS_BUFFER *buffer, char *data, uint32_t size)
 } /* fs_buffer_update */
 
 /*
- * fs_buffer_chain_push
+ * fs_buffer_chain_append
  * @chain: Buffer chain to which a buffer is needed to be added.
  * @buffer: Buffer needed to be added.
  * @flags: Defines where the given buffer is needed to be added.
  *  FS_BUFFER_HEAD: If we need to add this buffer on the chain head.
  * This function will add a given to a given buffer chain.
  */
-void fs_buffer_chain_push(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer, uint8_t flag)
+void fs_buffer_chain_append(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer, uint8_t flag)
 {
     /* If we need to add this buffer on the head. */
     if (flag & FS_BUFFER_HEAD)
@@ -213,7 +213,7 @@ void fs_buffer_chain_push(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer, uint8_t fla
     /* Update the total length of this buffer chain. */
     chain->total_length += buffer->length;
 
-} /* fs_buffer_chain_push */
+} /* fs_buffer_chain_append */
 
 /*
  * fs_buffer_one_pull
@@ -237,12 +237,7 @@ int32_t fs_buffer_one_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t
     int32_t status = SUCCESS;
 
     /* Validate if we do have that much data on the buffer. */
-    if (buffer->length < size)
-    {
-        /* Return an error. */
-        status = FS_BUFFER_NO_SPACE;
-    }
-    else
+    if (buffer->length >= size)
     {
         /* If we need to pull data from the tail. */
         if (flags & FS_BUFFER_TAIL)
@@ -285,81 +280,16 @@ int32_t fs_buffer_one_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t
             buffer->length -= size;
         }
     }
+    else
+    {
+        /* Return an error. */
+        status = FS_BUFFER_NO_SPACE;
+    }
 
     /* Return status to the caller. */
     return (status);
 
 } /* fs_buffer_one_pull */
-
-/*
- * fs_buffer_serach_last
- * @node: An existing buffer in the list.
- * @priv_data: File buffer search parameter.
- * @return: If we have found the last buffer according to given parameter
- *  returns true, otherwise false will be returned.
- * This is search function to find the last non zero buffer.
- */
-uint8_t fs_buffer_serach_last(void *node, void *priv_data)
-{
-    BUFFER_PARAM *param = (BUFFER_PARAM *)priv_data;
-    uint8_t break_loop = FALSE;
-
-    /* Check if we have not gone over over search. */
-    if (node != param->last_buffer)
-    {
-        /* Check if we have some data on this buffer. */
-        if (((FS_BUFFER *)node)->length != 0)
-        {
-            /* Save this buffer as it could be required buffer. */
-            *param->return_buffer = (FS_BUFFER *)node;
-        }
-
-        /* If we are at the second last buffer. */
-        if (((FS_BUFFER *)node)->next == param->last_buffer)
-        {
-            /* We may or may not have found the required buffer but still we need
-             * to break here. */
-            break_loop = TRUE;
-        }
-    }
-    else
-    {
-        /* This could again be the first buffer break the loop
-         * here. */
-        break_loop = TRUE;
-    }
-
-    /* This is a search function always return false. */
-    return (break_loop);
-
-} /* fs_buffer_serach_last. */
-
-/*
- * fs_buffer_serach_first
- * @node: An existing buffer in the list.
- * @none: Unused parameter.
- * @return: If we have a non zero length buffer true will be returned, otherwise
- *  false will be returned.
- * This is search function to find the first non zero buffer.
- */
-uint8_t fs_buffer_serach_first(void *node, void *none)
-{
-    uint8_t this_buffer = FALSE;
-
-    /* Remove some compiler warning. */
-    UNUSED_PARAM(none);
-
-    /* Check if we have some data on this buffer and we have not already found
-     * a buffer that does have some data. */
-    if (((FS_BUFFER *)node)->length != 0)
-    {
-        this_buffer = TRUE;
-    }
-
-    /* Check if we can use this buffer. */
-    return (this_buffer);
-
-} /* fs_buffer_serach_first. */
 
 /*
  * fs_buffer_chain_pull
@@ -379,50 +309,36 @@ uint8_t fs_buffer_serach_first(void *node, void *none)
  */
 int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t size, uint8_t flags)
 {
-    BUFFER_PARAM param;
-    FS_BUFFER *buffer = NULL;
+    FS_BUFFER *buffer;
     int32_t status = SUCCESS;
     uint32_t this_size;
-
-    /* Initialize search parameter. */
-    param.last_buffer = NULL;
-    param.return_buffer = &buffer;
+    uint8_t reverse = ((flags & FS_BUFFER_MSB_FIRST) != 0);
+    char *to;
 
     /* Validate if we do have that much data on the buffer chain. */
-    if (buffer_chain->total_length < size)
-    {
-        /* Return an error. */
-        status = FS_BUFFER_NO_SPACE;
-    }
-    else
+    if (buffer_chain->total_length >= size)
     {
         /* While we have some data to copy. */
-        while ((status == SUCCESS) &&
-               (size > 0))
+        while (size > 0)
         {
-            /* Reset the buffer pointer. */
-            buffer = NULL;
-
             /* If we need to pull data from the tail. */
             if (flags & FS_BUFFER_TAIL)
             {
-                /* Pick the last non-zero buffer. */
-                sll_search(&buffer_chain->list, NULL, &fs_buffer_serach_last, &param, OFFSETOF(FS_BUFFER, next));
-
-                /* Save this buffer in the parameter so we can return a non
-                 * zero buffer before this one in next call. */
-                param.last_buffer = buffer;
+                /* Pick the tail buffer. */
+                buffer = buffer_chain->list.tail;
             }
             else
             {
-                /* Pick the first non-zero buffer. */
-                buffer = sll_search(&buffer_chain->list, NULL, &fs_buffer_serach_first, NULL, OFFSETOF(FS_BUFFER, next));
+                /* Pick the head buffer. */
+                buffer = buffer_chain->list.head;
             }
 
-            /* We have already verified that we have enough length on the
-             * buffer chain, if don't get a buffer here then it is an
-             * exception. */
+            /* There is data in the buffer so there must a buffer on the
+             * chain. */
             OS_ASSERT(buffer == NULL);
+
+            /* There should not be a zero buffer in the chain. */
+            OS_ASSERT(buffer->length == 0);
 
             /* Check if we need to do a partial read of this buffer. */
             if (size > buffer->length)
@@ -437,49 +353,54 @@ int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t
                 this_size = size;
             }
 
-            /* Pull data from this buffer. */
-            status = fs_buffer_one_pull(buffer, data, this_size, flags);
+            /* Pick the destination pointer. */
+            to = data;
 
-            if (status == SUCCESS)
+            /* If we need to copy data MSB first. */
+            if ((data != NULL) && (reverse == TRUE))
             {
-                /* If there is no more valid data on this buffer. */
-                if (buffer->length == 0)
-                {
-                    /* If we have saved a pointer for this buffer in our search parameter. */
-                    if (flags & FS_BUFFER_TAIL)
-                    {
-                        /* Update the parameter to point to next buffer. */
-                        param.last_buffer = buffer->next;
-                    }
+                /* Move to the offset at the end of the provided buffer. */
+                to += (size - this_size);
+            }
 
-                    /* We no longer need this buffer on our buffer chain. */
-                    OS_ASSERT(sll_remove(&buffer_chain->list, buffer, OFFSETOF(FS_BUFFER, next)) != buffer);
+            /* Pull data from this buffer. */
+            /* We have already verified that we have enough length on the buffer
+             * chain, so we should never get an error here. */
+            OS_ASSERT(fs_buffer_one_pull(buffer, data, this_size, flags) != SUCCESS);
 
-                    /* Actively free this buffer. */
-                    fs_buffer_add(buffer_chain->fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
-                }
+            /* If there is no more valid data on this buffer. */
+            if (buffer->length == 0)
+            {
+                /* We no longer need this buffer on our buffer chain. */
+                OS_ASSERT(sll_remove(&buffer_chain->list, buffer, OFFSETOF(FS_BUFFER, next)) != buffer);
 
-                /* Decrement the number of bytes we still need to copy. */
-                size = (uint32_t)(size - this_size);
+                /* Actively free this buffer. */
+                fs_buffer_add(buffer_chain->fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+            }
 
-                if (data != NULL)
-                {
-                    /* Update the data pointer. */
-                    data += this_size;
-                }
+            /* Decrement the number of bytes we still need to copy. */
+            size = (uint32_t)(size - this_size);
 
-                /* If we are not peeking the data. */
-                if ((flags & FS_BUFFER_INPLACE) == 0)
-                {
-                    /* Decrement number of bytes we have left on this buffer
-                     * chain. */
-                    buffer_chain->total_length = (buffer_chain->total_length - this_size);
-                }
+            /* If we are returning the data. */
+            if ((data != NULL) && (reverse == FALSE))
+            {
+                /* Update the data pointer. */
+                data += this_size;
+            }
+
+            /* If we are not peeking the data. */
+            if ((flags & FS_BUFFER_INPLACE) == 0)
+            {
+                /* Decrement number of bytes we have left on this buffer
+                 * chain. */
+                buffer_chain->total_length = (buffer_chain->total_length - this_size);
             }
         }
-
-        /* Same as above. */
-        OS_ASSERT(status != SUCCESS);
+    }
+    else
+    {
+        /* Return an error. */
+        status = FS_BUFFER_NO_SPACE;
     }
 
     /* Return status to the caller. */
@@ -488,7 +409,7 @@ int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t
 } /* fs_buffer_chain_pull */
 
 /*
- * fs_buffer_push
+ * fs_buffer_one_push
  * @buffer: File buffer on which data is needed to be pushed.
  * @data: Buffer from which data is needed to pushed.
  * @size: Number of bytes needed to be pushed.
@@ -498,33 +419,28 @@ int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t
  * @return: Success if operation was successfully performed,
  *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
  *  buffer.
- * This function will add data in the buffer. If we are adding at the start the
- * buffer pointer will be updated to the newly added data.
+ * This function will add data in the buffer.
  */
-int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_one_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
 {
-    char *to;
     int32_t status = SUCCESS;
+    char *to;
 
     /* An empty buffer should not come here. */
     OS_ASSERT(buffer->data == NULL);
 
     /* If we do have enough space on the buffer. */
-    if ((flags & FS_BUFFER_HEAD) && (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) < size))
-    {
-        /* Return an error. */
-        status = FS_BUFFER_NO_SPACE;
-    }
-    else
+    if ( ((flags & FS_BUFFER_HEAD) && (FS_BUFFER_SPACE(buffer) >= size)) ||
+         (((flags & FS_BUFFER_HEAD) == 0) && (FS_BUFFER_TAIL_ROOM(buffer) >= size)) )
     {
         /* If we need to push data on the head. */
         if (flags & FS_BUFFER_HEAD)
         {
-            /* Check if we have some head room. */
-            if ((uint32_t)(buffer->buffer - buffer->data) < size)
+            /* Check if we have don't have enough head room. */
+            if (FS_BUFFER_HEAD_ROOM(buffer) < size)
             {
                 /* Add required head room. */
-                status = fs_buffer_add_head(buffer, (size - (uint32_t)(buffer->buffer - buffer->data)));
+                status = fs_buffer_add_head(buffer, (size - FS_BUFFER_HEAD_ROOM(buffer)));
             }
 
             if (status == SUCCESS)
@@ -566,11 +482,156 @@ int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
             buffer->length += size;
         }
     }
+    else
+    {
+        /* Return an error. */
+        status = FS_BUFFER_NO_SPACE;
+    }
 
     /* Return status to the caller. */
     return (status);
 
-} /* fs_buffer_push */
+} /* fs_buffer_one_push */
+
+/*
+ * fs_buffer_chain_push
+ * @buffer_chain: File buffer chain on which data is needed to be pushed.
+ * @data: Buffer from which data is needed to pushed.
+ * @size: Number of bytes needed to be pushed.
+ * @flags: Defines how we will be pushing the data.
+ *  FS_BUFFER_MSB_FIRST: If we need to push the last byte first.
+ *  FS_BUFFER_HEAD: If data is needed to be pushed on the head.
+ * @return: Success if operation was successfully performed,
+ *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
+ *  file descriptor for new buffers.
+ * This function will add data in the buffer chain.
+ */
+int32_t fs_buffer_chain_push(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t size, uint8_t flags)
+{
+    int32_t status = SUCCESS;
+    FS_BUFFER *buffer;
+    uint32_t this_size;
+    uint8_t reverse = ((flags & FS_BUFFER_MSB_FIRST) != 0);
+    char *from;
+
+    /* While we have data to copy. */
+    while ((status == SUCCESS) && (size > 0))
+    {
+        /* If we need to push data on the head. */
+        if (flags & FS_BUFFER_HEAD)
+        {
+            /* Pick the head buffer. */
+            buffer = buffer_chain->list.head;
+
+            /* Either we don't have a buffer in the chain or there is no space
+             * on the head buffer. */
+            if ((buffer == NULL) || (FS_BUFFER_SPACE(buffer) == 0))
+            {
+                /* Need to allocate a new buffer to be pushed on the head. */
+                buffer = fs_buffer_get(buffer_chain->fd, FS_BUFFER_FREE, 0);
+
+                /* If a buffer was allocated. */
+                if (buffer)
+                {
+                    /* Use all the space in this buffer as head room. */
+                    OS_ASSERT(fs_buffer_add_head(buffer, buffer->length) != SUCCESS);
+
+                    /* Add this buffer on the head of the buffer chain. */
+                    sll_push(buffer_chain, buffer, OFFSETOF(FS_BUFFER, next));
+                }
+            }
+
+            if (buffer != NULL)
+            {
+                /* Pick the number of bytes we can copy on this buffer. */
+                this_size = FS_BUFFER_SPACE(buffer);
+
+                /* If we have more space then we require. */
+                if (this_size > size)
+                {
+                    /* Copy the required amount of data. */
+                    this_size = size;
+                }
+            }
+            else
+            {
+                /* There is no space on the file descriptor. */
+                status = FS_BUFFER_NO_SPACE;
+            }
+        }
+        else
+        {
+            /* Pick the tail buffer. */
+            buffer = buffer_chain->list.tail;
+
+            /* Either we don't have a buffer in the chain or there is no space
+             * on the tail buffer. */
+            if ((buffer == NULL) || (FS_BUFFER_TAIL_ROOM(buffer) == 0))
+            {
+                /* Need to allocate a new buffer to be appended on the tail. */
+                buffer = fs_buffer_get(buffer_chain->fd, FS_BUFFER_FREE, 0);
+
+                /* If a buffer was allocated. */
+                if (buffer)
+                {
+                    /* Append this buffer at the end of buffer chain. */
+                    sll_append(buffer_chain, buffer, OFFSETOF(FS_BUFFER, next));
+                }
+            }
+
+            if (buffer != NULL)
+            {
+                /* Pick the number of bytes we can copy on this buffer. */
+                this_size = FS_BUFFER_TAIL_ROOM(buffer);
+
+                /* If we have more space then we require. */
+                if (this_size > size)
+                {
+                    /* Copy the required amount of data. */
+                    this_size = size;
+                }
+            }
+            else
+            {
+                /* There is no space on the file descriptor. */
+                status = FS_BUFFER_NO_SPACE;
+            }
+        }
+
+        if (status == SUCCESS)
+        {
+            /* Pick the source pointer. */
+            from = data;
+
+            /* If we need to copy data MSB first. */
+            if ((data != NULL) && (reverse == TRUE))
+            {
+                /* Move to the offset at the end of the provided buffer. */
+                from += (size - this_size);
+            }
+
+            /* Push data on the buffer we have selected. */
+            OS_ASSERT(fs_buffer_one_push(buffer, from, this_size, flags) != SUCCESS);
+
+            /* Update the buffer chain size. */
+            buffer_chain->total_length += this_size;
+
+            /* Decrement the bytes we have copied in this go. */
+            size = size - this_size;
+
+            /* If we are copying data normally. */
+            if ((data != NULL) && (reverse == FALSE))
+            {
+                /* Update the data pointer. */
+                data += this_size;
+            }
+        }
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* fs_buffer_chain_push */
 
 /*
  * fs_buffer_dataset
@@ -636,6 +697,7 @@ void fs_buffer_chain_add(FS_BUFFER_CHAIN *chain, uint32_t type, uint32_t flags)
             /* Add a buffer from the chain to the given file descriptor. */
             fs_buffer_add(chain->fd, buffer, type, flags);
         }
+
     } while (buffer != NULL);
 
     /* There are no more buffers, reset the chain length. */
