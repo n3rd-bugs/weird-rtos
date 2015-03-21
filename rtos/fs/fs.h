@@ -112,7 +112,10 @@ typedef struct _fs_buffer_chain
     } list;
 
     /* Total length of buffers. */
-    uint32_t length;
+    uint32_t    length;
+
+    /* File descriptor from which this chain was allocated. */
+    FD          fd;
 
 } FS_BUFFER_CHAIN;
 
@@ -300,7 +303,7 @@ int32_t fs_buffer_add_head(FS_BUFFER *, uint32_t);
 void fs_buffer_update(FS_BUFFER *, char *, uint32_t);
 void fs_buffer_chain_push(FS_BUFFER_CHAIN *, FS_BUFFER *, uint8_t);
 int32_t fs_buffer_one_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
-int32_t fs_buffer_pull(void *, char *, uint32_t, uint8_t);
+int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *, char *, uint32_t, uint8_t);
 int32_t fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
 
 /* Search functions. */
@@ -309,7 +312,7 @@ uint8_t fs_buffer_serach_first(void *, void *);
 
 /* File system buffer management APIs. */
 void fs_buffer_dataset(FD, FS_BUFFER_DATA *, int32_t);
-void fs_buffer_chain_add(FD, FS_BUFFER_CHAIN *, uint32_t, uint32_t);
+void fs_buffer_chain_add(FS_BUFFER_CHAIN *, uint32_t, uint32_t);
 void fs_buffer_add(FD, FS_BUFFER *, uint32_t, uint32_t);
 FS_BUFFER *fs_buffer_get(FD, uint32_t, uint32_t);
 void fs_buffer_divide(FD, FS_BUFFER *, FS_BUFFER **, char *, uint32_t);
