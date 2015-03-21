@@ -145,6 +145,9 @@ int32_t fs_buffer_add_head(FS_BUFFER *buffer, uint32_t size)
 {
     int32_t status = SUCCESS;
 
+    /* An empty buffer should not come here. */
+    OS_ASSERT(buffer->data == NULL);
+
     /* Validate that there is enough space on the buffer. */
     if (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) < size)
     {
@@ -185,20 +188,51 @@ void fs_buffer_update(FS_BUFFER *buffer, char *data, uint32_t size)
 } /* fs_buffer_update */
 
 /*
- * fs_buffer_pull
+ * fs_buffer_chain_add
+ * @chain: Buffer chain to which a buffer is needed to be added.
+ * @buffer: Buffer needed to be added.
+ * @flags: Defines where the given buffer is needed to be added.
+ *  FS_BUFFER_HEAD: If we need to add this buffer on the chain head.
+ * This function will add a given to a given buffer chain.
+ */
+void fs_buffer_chain_add(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer,
+                         uint8_t flag)
+{
+    /* If we need to add this buffer on the head. */
+    if (flag & FS_BUFFER_HEAD)
+    {
+        /* Add this buffer on the head of the list. */
+        sll_push(chain, buffer, OFFSETOF(FS_BUFFER, next));
+    }
+
+    else
+    {
+        /* Add this buffer at the end of the list. */
+        sll_append(chain, buffer, OFFSETOF(FS_BUFFER, next));
+    }
+
+    /* Update the total length of this buffer chain. */
+    chain->length += buffer->length;
+
+} /* fs_buffer_chain_add */
+
+/*
+ * fs_buffer_one_pull
  * @buffer: File buffer from which data is needed to be pulled.
  * @data: Buffer in which data is needed to be pulled.
  * @size: Number of bytes needed to be pulled.
  * @flags: Defines how we will be pulling the data.
  *  FS_BUFFER_MSB_FIRST: If we need to pull the last byte first.
  *  FS_BUFFER_TAIL: If we need to pull data from the tail.
+ *  FS_BUFFER_INPLACE: If we are just peeking and don't want data to be removed
+ *      actually.
  * @return: Success if operation was successfully performed,
  *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
  *  buffer.
- * This function will remove data from the start of the buffer. If given will
- * also copy the data in the provided buffer.
+ * This function will remove data from a given buffer. If given will also copy
+ * the data in the provided buffer.
  */
-int32_t fs_buffer_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_one_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
 {
     char *from;
     int32_t status = SUCCESS;
@@ -222,8 +256,12 @@ int32_t fs_buffer_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
             /* Pick the data from the start of the buffer. */
             from = buffer->buffer;
 
-            /* Advance the buffer pointer. */
-            buffer->buffer += size;
+            /* If we don't want data to be removed. */
+            if ((flags & FS_BUFFER_INPLACE) == 0)
+            {
+                /* Advance the buffer pointer. */
+                buffer->buffer += size;
+            }
         }
 
         /* If we need to actually need to return the pulled data. */
@@ -241,8 +279,209 @@ int32_t fs_buffer_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
             }
         }
 
-        /* Update the buffer length. */
-        buffer->length -= size;
+        /* If we don't want data to be removed. */
+        if ((flags & FS_BUFFER_INPLACE) == 0)
+        {
+            /* Update the buffer length. */
+            buffer->length -= size;
+        }
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* fs_buffer_one_pull */
+
+/*
+ * fs_buffer_serach_last
+ * @node: An existing buffer in the list.
+ * @priv_data: File buffer search parameter.
+ * @return: If we have found the last buffer according to given parameter
+ *  returns true, otherwise false will be returned.
+ * This is search function to find the last non zero buffer.
+ */
+uint8_t fs_buffer_serach_last(void *node, void *priv_data)
+{
+    BUFFER_PARAM *param = (BUFFER_PARAM *)priv_data;
+    uint8_t break_loop = FALSE;
+
+    /* Check if we have not gone over over search. */
+    if (node != param->last_buffer)
+    {
+        /* Check if we have some data on this buffer. */
+        if (((FS_BUFFER *)node)->length != 0)
+        {
+            /* Save this buffer as it could be required buffer. */
+            *param->return_buffer = (FS_BUFFER *)node;
+        }
+
+        /* If we are at the second last buffer. */
+        if (((FS_BUFFER *)node)->next == param->last_buffer)
+        {
+            /* We may or may not have found the required buffer but still we need
+             * to break here. */
+            break_loop = TRUE;
+        }
+    }
+    else
+    {
+        /* This could again be the first buffer break the loop
+         * here. */
+        break_loop = TRUE;
+    }
+
+    /* This is a search function always return false. */
+    return (break_loop);
+
+} /* fs_buffer_serach_last. */
+
+/*
+ * fs_buffer_serach_first
+ * @node: An existing buffer in the list.
+ * @none: Unused parameter.
+ * @return: If we have a non zero length buffer true will be returned, otherwise
+ *  false will be returned.
+ * This is search function to find the first non zero buffer.
+ */
+uint8_t fs_buffer_serach_first(void *node, void *none)
+{
+    uint8_t this_buffer = FALSE;
+
+    /* Remove some compiler warning. */
+    UNUSED_PARAM(none);
+
+    /* Check if we have some data on this buffer and we have not already found
+     * a buffer that does have some data. */
+    if (((FS_BUFFER *)node)->length != 0)
+    {
+        this_buffer = TRUE;
+    }
+
+    /* Check if we can use this buffer. */
+    return (this_buffer);
+
+} /* fs_buffer_serach_first. */
+
+/*
+ * fs_buffer_pull
+ * @pointer: File buffer from which data is needed to be pulled, if the next
+ *  pointer is set then it will be treated as a buffer chain.
+ * @data: Buffer in which data is needed to be pulled.
+ * @size: Number of bytes needed to be pulled.
+ * @flags: Defines how we will be pulling the data.
+ *  FS_BUFFER_MSB_FIRST: If we need to pull the last byte first.
+ *  FS_BUFFER_TAIL: If we need to pull data from the tail.
+ *  FS_BUFFER_INPLACE: If we are just peeking and don't want data to be removed
+ *      actually.
+ * @return: Success if operation was successfully performed,
+ *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
+ *  buffer.
+ * This function will remove data from a buffer or a buffer chain. If given will
+ * also copy the data in the provided buffer.
+ */
+int32_t fs_buffer_pull(void *pointer, char *data, uint32_t size, uint8_t flags)
+{
+    BUFFER_PARAM param;
+    FS_BUFFER *buffer = (FS_BUFFER *)pointer;
+    FS_BUFFER_CHAIN *buffer_chain;
+    int32_t status = SUCCESS;
+    uint32_t this_size;
+
+    /* If this is a chained buffer. */
+    if (buffer->next != NULL)
+    {
+        /* Initialize search parameter. */
+        param.last_buffer = NULL;
+        param.return_buffer = &buffer;
+
+        /* We will treat the given buffer as a chain. */
+        buffer_chain = (FS_BUFFER_CHAIN *)pointer;
+
+        /* Validate if we do have that much data on the buffer chain. */
+        if (buffer_chain->length < size)
+        {
+            /* Return an error. */
+            status = FS_BUFFER_NO_SPACE;
+        }
+        else
+        {
+            /* While we have some data to copy. */
+            while ((status == SUCCESS) &&
+                   (size > 0))
+            {
+                /* Reset the buffer pointer. */
+                buffer = NULL;
+
+                /* If we need to pull data from the tail. */
+                if (flags & FS_BUFFER_TAIL)
+                {
+                    /* Pick the last non-zero buffer. */
+                    sll_search(&buffer_chain->list, NULL, &fs_buffer_serach_last,
+                               &param, OFFSETOF(FS_BUFFER, next));
+
+                    /* Save this buffer in the parameter so we can return a non
+                     * zero buffer before this one in next call. */
+                    param.last_buffer = buffer;
+                }
+                else
+                {
+                    /* Pick the first non-zero buffer. */
+                    buffer = sll_search(&buffer_chain->list, NULL, &fs_buffer_serach_first,
+                                        NULL, OFFSETOF(FS_BUFFER, next));
+                }
+
+                /* We have already verified that we have enough length on the
+                 * buffer chain, if don't get a buffer here then it is an
+                 * exception. */
+                OS_ASSERT(buffer == NULL);
+
+                /* Check if we need to do a partial read of this buffer. */
+                if (size > buffer->length)
+                {
+                    /* Only copy the number of bytes that can be copied from
+                     * this buffer. */
+                    this_size = buffer->length;
+                }
+                else
+                {
+                    /* Copy the given number of bytes. */
+                    this_size = size;
+                }
+
+                /* Pull data from this buffer. */
+                status = fs_buffer_one_pull(buffer, data, this_size, flags);
+
+                if (status == SUCCESS)
+                {
+                    /* Decrement the number of bytes we still need to copy. */
+                    size = (uint32_t)(size - this_size);
+
+                    if (data != NULL)
+                    {
+                        /* Update the data pointer. */
+                        data += this_size;
+                    }
+
+                    /* If we are not peeking the data. */
+                    if ((flags & FS_BUFFER_INPLACE) == 0)
+                    {
+                        /* Decrement number of bytes we have left on this buffer
+                         * chain. */
+                        buffer_chain->length = (buffer_chain->length - this_size);
+                    }
+                }
+            }
+
+            /* Same as above. */
+            OS_ASSERT(status != SUCCESS);
+        }
+    }
+
+    /* This is a single buffer. */
+    else
+    {
+        /* Pull data from this buffer. */
+        status = fs_buffer_one_pull(buffer, data, size, flags);
     }
 
     /* Return status to the caller. */
@@ -268,6 +507,9 @@ int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
 {
     char *to;
     int32_t status = SUCCESS;
+
+    /* An empty buffer should not come here. */
+    OS_ASSERT(buffer->data == NULL);
 
     /* If we do have enough space on the buffer. */
     if ((flags & FS_BUFFER_HEAD) && (((buffer->max_length - buffer->length) - (uint32_t)(buffer->buffer - buffer->data)) < size))
@@ -333,14 +575,14 @@ int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
 } /* fs_buffer_push */
 
 /*
- * fs_buffer_data_set
- * @fd: File descriptor for which buffer data is needed to be set.
+ * fs_buffer_dataset
+ * @fd: File descriptor for which buffer data-set is needed to be set.
  * @data: Pointer to buffer data structure.
  * This function will set the buffer structure to be used by this file
  * descriptor also sets the flag to tell others that this will be a buffered
  * file descriptor.
  */
-void fs_buffer_data_set(FD fd, FS_BUFFER_DATA *data)
+void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data)
 {
     /* Should never happen. */
     OS_ASSERT(data == NULL);
@@ -366,84 +608,101 @@ void fs_buffer_data_set(FD fd, FS_BUFFER_DATA *data)
         ((FS *)fd)->release_lock((void *)fd);
     }
 
-} /* fs_buffer_data_set */
+} /* fs_buffer_dataset */
 
 /*
  * fs_buffer_add
  * @fd: File descriptor on which a free buffer is needed to be added.
  * @type: Type of buffer needed to be added.
- *  FS_BUFFER_FREE: if this is a free buffer.
- *  FS_BUFFER_RX: if this is a receive buffer.
- *  FS_BUFFER_TX: if this is a transmit buffer.
+ *  FS_BUFFER_FREE: If this is a free buffer.
+ *  FS_BUFFER_RX: If this is a receive buffer.
+ *  FS_BUFFER_TX: If this is a transmit buffer.
  * @flags: Operation flags.
- *  FS_BUFFER_ACTIVE: actively add the buffer and invoke the any callbacks.
+ *  FS_BUFFER_ACTIVE: Actively add the buffer and invoke the any callbacks.
  * This function will add a new buffer in the file descriptor for the required
  * type.
  */
 void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
 {
     FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
+    FS_BUFFER *next_buffer = buffer;
 
     /* Should never happen. */
     OS_ASSERT(data == NULL);
 
-    /* Type of buffer we are adding. */
-    switch (type)
+    /* Add all the buffers in the chain to specified list. */
+    do
     {
-    case (FS_BUFFER_FREE):
+        /* Pick the buffer we need to process. */
+        buffer = next_buffer;
+        next_buffer = buffer->next;
 
-        /* Initialize this buffer. */
-        buffer->buffer = buffer->data;
-        buffer->length = 0;
-
-        /* Just add this buffer in the free buffer list. */
-        sll_append(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
-
-#ifdef FS_BUFFER_TRACE
-        /* Increment the number of buffers on free list. */
-        data->free_buffer_list.buffers ++;
-#endif
-
-        /* If we are doing this actively. */
-        if (flags & FS_BUFFER_ACTIVE)
+        /* Type of buffer we are adding. */
+        switch (type)
         {
-            /* Some space is now available. */
-            fd_space_available(fd);
-        }
+        case (FS_BUFFER_FREE):
+            /* Initialize this buffer. */
+            buffer->buffer = buffer->data;
+            buffer->length = 0;
 
-        break;
-
-    case (FS_BUFFER_RX):
-
-        /* Just add this buffer in the receive buffer list. */
-        sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+            /* Just add this buffer in the free buffer list. */
+            sll_append(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
-        /* Increment the number of buffers on receive list. */
-        data->rx_buffer_list.buffers ++;
+            /* Increment the number of buffers on free list. */
+            data->free_buffer_list.buffers ++;
 #endif
 
-        /* If we are doing this actively. */
-        if (flags & FS_BUFFER_ACTIVE)
-        {
-            /* Some new data is now available. */
-            fd_data_available(fd);
-        }
+            /* If we are doing this actively. */
+            if (flags & FS_BUFFER_ACTIVE)
+            {
+                /* Some space is now available. */
+                fd_space_available(fd);
+            }
+            else
+            {
+                /* Just set flag that some data is available. */
+                ((FS *)fd)->flags |= FS_SPACE_AVAILABLE;
+            }
 
-        break;
+            break;
 
-    case (FS_BUFFER_TX):
+        case (FS_BUFFER_RX):
 
-        /* Just add this buffer in the transmit buffer list. */
-        sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+            /* Just add this buffer in the receive buffer list. */
+            sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
-        /* Increment the number of buffers on transmit list. */
-        data->tx_buffer_list.buffers ++;
+            /* Increment the number of buffers on receive list. */
+            data->rx_buffer_list.buffers ++;
+#endif
+            /* If we are doing this actively. */
+            if (flags & FS_BUFFER_ACTIVE)
+            {
+                /* Some new data is now available. */
+                fd_data_available(fd);
+            }
+            else
+            {
+                /* Just set the flags that data is available. */
+                ((FS *)fd)->flags |= FS_DATA_AVAILABLE;
+            }
+
+            break;
+
+        case (FS_BUFFER_TX):
+
+            /* Just add this buffer in the transmit buffer list. */
+            sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+
+#ifdef FS_BUFFER_TRACE
+            /* Increment the number of buffers on transmit list. */
+            data->tx_buffer_list.buffers ++;
 #endif
 
-        break;
-    }
+            break;
+        }
+    } while (next_buffer != NULL);
 
 } /* fs_buffer_add */
 
@@ -451,12 +710,11 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
  * fs_buffer_get
  * @fd: File descriptor from which a free buffer is needed.
  * @type: Type of buffer needed to be added.
- *  FS_BUFFER_FREE: if this is a free buffer.
- *  FS_BUFFER_RX: if this is a receive buffer.
- *  FS_BUFFER_TX: if this is a transmit buffer.
+ *  FS_BUFFER_FREE: If this is a free buffer.
+ *  FS_BUFFER_RX: If this is a receive buffer.
+ *  FS_BUFFER_TX: If this is a transmit buffer.
  * @flags: Operation flags.
- *  FS_BUFFER_ACTIVE: actively pickup the buffer and invoke the any callbacks.
- *  FS_BUFFER_INPLACE: will not remove the buffer from the list just return a
+ *  FS_BUFFER_INPLACE: Will not remove the buffer from the list just return a
  *      pointer to it.
  * This function return a buffer from a required buffer list for this file
  * descriptor.
@@ -494,9 +752,8 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
             }
 #endif
 
-            /* If we are doing this actively. */
-            if ((flags & FS_BUFFER_ACTIVE) &&
-                (data->free_buffer_list.head == NULL))
+            /* If we don't have any more free space on this file descriptor. */
+            if (data->free_buffer_list.head == NULL)
             {
                 /* Tell the file system to block the write until there is some
                  * space available. */
@@ -528,9 +785,8 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
             }
 #endif
 
-            /* If we are doing this actively. */
-            if ((flags & FS_BUFFER_ACTIVE) &&
-                (data->rx_buffer_list.head == NULL))
+            /* If we don't have any more data to read. */
+            if (data->rx_buffer_list.head == NULL)
             {
                 /* No more data is available to read. */
                 fd_data_flushed(fd);
@@ -565,18 +821,68 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
         break;
     }
 
+    /* If we are returning a buffer. */
+    if ( (buffer) &&
+         ((flags & FS_BUFFER_INPLACE) == 0) )
+    {
+        /* Clear the next buffer pointer. */
+        buffer->next = NULL;
+    }
+
     /* Return the buffer. */
     return (buffer);
 
 } /* fs_buffer_get */
 
 /*
- * fs_set_data_watcher
+ * fs_buffer_divide
+ * @fd: File descriptor from which given buffer allocated.
+ * @buffer: Buffer for which data is needed to be divided.
+ * @new_buffer: Buffer that will have the remaining data of this buffer.
+ * @data_ptr: Pointer in the original buffer at which this buffer is needed to
+ *  be divided.
+ * @data_len: Number of bytes valid in the second buffer.
+ * This function will divide the given buffer into two buffers. An empty buffer
+ * will allocated to hold the remaining portion of buffer.
+ */
+void fs_buffer_divide(FD fd, FS_BUFFER *buffer, FS_BUFFER **new_buffer,
+                      char *data_ptr, uint32_t data_len)
+{
+    FS_BUFFER *ret_buffer = NULL;
+
+    /* Divide the original buffer. */
+    buffer->length -= data_len;
+
+    /* Check if we really do need return the remaining buffer. */
+    if (new_buffer != NULL)
+    {
+        /* Allocate a free buffer. */
+        ret_buffer = fs_buffer_get(fd, FS_BUFFER_FREE, 0);
+
+        /* If a free buffer was allocated. */
+        if (ret_buffer != NULL)
+        {
+            /* Check if the new buffer has enough space to copy the data. */
+            OS_ASSERT(ret_buffer->max_length < data_len);
+
+            /* Copy data from old buffer to the new buffer. */
+            memcpy(ret_buffer->buffer, data_ptr, data_len);
+            ret_buffer->length = data_len;
+        }
+
+        /* Return the new buffer. */
+        *new_buffer = ret_buffer;
+    }
+
+} /* fs_buffer_divide */
+
+/*
+ * fs_data_watcher_set
  * @fd: File descriptor for which data is needed to be monitored.
  * @watcher: Data watcher needed to be registered.
  * This function will add a data watcher for the given file system.
  */
-void fs_set_data_watcher(FD fd, FS_DATA_WATCHER *watcher)
+void fs_data_watcher_set(FD fd, FS_DATA_WATCHER *watcher)
 {
     if (((FS *)fd)->get_lock)
     {
@@ -593,15 +899,15 @@ void fs_set_data_watcher(FD fd, FS_DATA_WATCHER *watcher)
         ((FS *)fd)->release_lock((void *)fd);
     }
 
-} /* fs_set_data_watcher */
+} /* fs_data_watcher_set */
 
 /*
- * fs_set_connection_watcher
+ * fs_connection_watcher_set
  * @fd: File descriptor for which connection is needed to be monitored.
  * @watcher: Connection watcher needed to be registered.
  * This function will add a connection watcher for given file system.
  */
-void fs_set_connection_watcher(FD fd, FS_CONNECTION_WATCHER *watcher)
+void fs_connection_watcher_set(FD fd, FS_CONNECTION_WATCHER *watcher)
 {
     if (((FS *)fd)->get_lock)
     {
@@ -618,7 +924,7 @@ void fs_set_connection_watcher(FD fd, FS_CONNECTION_WATCHER *watcher)
         ((FS *)fd)->release_lock((void *)fd);
     }
 
-} /* fs_set_connection_watcher */
+} /* fs_connection_watcher_set */
 
 /*
  * fs_connected

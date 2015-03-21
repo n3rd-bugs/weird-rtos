@@ -101,6 +101,21 @@ struct _fs_buffer
     uint32_t    length;
 };
 
+/* Buffer chain structure. */
+typedef struct _fs_buffer_chain
+{
+    /* List of buffers in this chain. */
+    struct _fs_buffer_chain_list
+    {
+        FS_BUFFER   *head;
+        FS_BUFFER   *tail;
+    } list;
+
+    /* Total length of buffers. */
+    uint32_t length;
+
+} FS_BUFFER_CHAIN;
+
 /* File system buffer data. */
 typedef struct _fs_buffer_data
 {
@@ -114,7 +129,7 @@ typedef struct _fs_buffer_data
 #endif
     } free_buffer_list;
 
-    /* Free buffer list. */
+    /* Transmit buffer list. */
     struct _fs_tx_buffer_list
     {
         FS_BUFFER       *head;
@@ -124,7 +139,7 @@ typedef struct _fs_buffer_data
 #endif
     } tx_buffer_list;
 
-    /* Free buffer list. */
+    /* Receive buffer list. */
     struct _fs_rx_buffer_list
     {
         FS_BUFFER       *head;
@@ -133,6 +148,7 @@ typedef struct _fs_buffer_data
         int32_t        buffers;
 #endif
     } rx_buffer_list;
+
 } FS_BUFFER_DATA;
 
 /* File system descriptor. */
@@ -253,6 +269,13 @@ typedef struct _node_param
     void        *priv;
 } NODE_PARAM;
 
+/* Search parameter for fs_buffer_serach_last. */
+typedef struct _buffer_param
+{
+    FS_BUFFER   **return_buffer;
+    FS_BUFFER   *last_buffer;
+} BUFFER_PARAM;
+
 /* Function prototypes. */
 void fs_init();
 
@@ -266,19 +289,27 @@ int32_t fs_ioctl(FD, uint32_t, void *);
 
 /* File system buffer manipulation APIs. */
 #define FS_BUFFER_RESET(b)  fs_buffer_init(b, b->data, b->max_length)
+#define FS_BUFFER_LEN(b)    ((b->next == NULL) ? b->length : ((FS_BUFFER_CHAIN *)b)->length)
 void fs_buffer_init(FS_BUFFER *, char *, uint32_t);
 int32_t fs_buffer_add_head(FS_BUFFER *, uint32_t);
 void fs_buffer_update(FS_BUFFER *, char *, uint32_t);
-int32_t fs_buffer_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
+void fs_buffer_chain_add(FS_BUFFER_CHAIN *, FS_BUFFER *, uint8_t);
+int32_t fs_buffer_one_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
+int32_t fs_buffer_pull(void *, char *, uint32_t, uint8_t);
 int32_t fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
 
+/* Search functions. */
+uint8_t fs_buffer_serach_last(void *, void *);
+uint8_t fs_buffer_serach_first(void *, void *);
+
 /* File system buffer management APIs. */
-void fs_buffer_data_set(FD, FS_BUFFER_DATA *);
+void fs_buffer_dataset(FD, FS_BUFFER_DATA *);
 void fs_buffer_add(FD, FS_BUFFER *, uint32_t, uint32_t);
 FS_BUFFER *fs_buffer_get(FD, uint32_t, uint32_t);
+void fs_buffer_divide(FD, FS_BUFFER *, FS_BUFFER **, char *, uint32_t);
 
-void fs_set_data_watcher(FD, FS_DATA_WATCHER *);
-void fs_set_connection_watcher(FD, FS_CONNECTION_WATCHER *);
+void fs_data_watcher_set(FD, FS_DATA_WATCHER *);
+void fs_connection_watcher_set(FD, FS_CONNECTION_WATCHER *);
 void fs_connected(FD);
 void fs_disconnected(FD);
 void fs_connect(FD, FD);
