@@ -24,24 +24,28 @@
  * This function will parse the PPP protocol field in the given buffer and
  * return it's value.
  */
-int32_t ppp_packet_protocol_parse(FS_BUFFER *buffer, uint16_t *protocol, uint8_t pfc)
+int32_t ppp_packet_protocol_parse(FS_BUFFER_CHAIN *buffer, uint16_t *protocol, uint8_t pfc)
 {
     int32_t status = SUCCESS;
+    uint8_t proto[2];
 
     /* We must have 2 bytes on the buffer to pull the PPP protocol field. */
     if (buffer->length > 2)
     {
+        /* Peek first two bytes of the buffer. */
+        OS_ASSERT(fs_buffer_pull(buffer, (char *)proto, 2, FS_BUFFER_INPLACE) != SUCCESS);
+
         /* First byte of protocol must be even and second must be odd. */
-        if ((!(buffer->buffer[0] & 0x1)) && (buffer->buffer[1] & 0x1))
+        if ((!(proto[0] & 0x1)) && (proto[1] & 0x1))
         {
             /* Pull the protocol field. */
             OS_ASSERT(fs_buffer_pull(buffer, (char *)protocol, sizeof(uint16_t), FS_BUFFER_MSB_FIRST) != SUCCESS);
         }
 
-        else if ((buffer->buffer[0] & 0x1) && (pfc))
+        else if ((proto[0] & 0x1) && (pfc))
         {
             /* First byte is zero and elided. */
-            *protocol = (uint16_t)(buffer->buffer[0]);
+            *protocol = (uint16_t)(proto[0]);
         }
 
         else
@@ -49,6 +53,12 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER *buffer, uint16_t *protocol, uint8_t
             /* Invalid protocol parsed, return an error. */
             status = PPP_INVALID_HEADER;
         }
+    }
+
+    else
+    {
+        /* Invalid header, return an error. */
+        status = PPP_INVALID_HEADER;
     }
 
     /* Return status to the caller. */

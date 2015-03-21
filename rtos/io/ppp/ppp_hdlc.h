@@ -21,13 +21,15 @@
 #define HDLC_STREAM_ERROR       -1000
 
 /* HDLC protocol definitions. */
+#define PPP_FLAG                (0x7E)
 #define PPP_ESCAPE              (0x7D)
 
 /* Function prototypes. */
-int32_t ppp_hdlc_header_parse(FS_BUFFER *, uint8_t);
+int32_t ppp_hdlc_header_parse(FS_BUFFER_CHAIN *, uint8_t);
+int32_t ppp_hdlc_unescape(FS_BUFFER_CHAIN *buffer);
+void ppp_hdlc_unescape_one(FS_BUFFER *, uint8_t *);
 int32_t ppp_hdlc_header_add(FS_BUFFER *, uint32_t *, uint8_t, uint8_t);
 int32_t ppp_hdlc_escape(FS_BUFFER *, uint32_t *, uint8_t);
-int32_t ppp_hdlc_unescape(FS_BUFFER *);
 
 #endif /* CONFIG_PPP */
 

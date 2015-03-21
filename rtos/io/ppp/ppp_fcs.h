@@ -21,10 +21,11 @@
 #define PPP_FCS16_INIT      0xffff
 #define PPP_FCS16_MAGIC     0xf0b8
 
-#define PPP_FCS16_IS_VALID(b, n)    (ppp_fcs16_calculate(b, n) == PPP_FCS16_MAGIC)
+#define PPP_FCS16_IS_VALID(b)    (ppp_fcs16_buffer_calculate(b, PPP_FCS16_INIT) == PPP_FCS16_MAGIC)
 
 /* Function prototypes. */
-uint16_t ppp_fcs16_calculate(char *, uint32_t);
+uint16_t ppp_fcs16_calculate(char *, uint32_t, uint16_t);
+uint16_t ppp_fcs16_buffer_calculate(FS_BUFFER *buffer, uint16_t fcs);
 
 #endif /* CONFIG_PPP */
 

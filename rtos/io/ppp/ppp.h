@@ -27,10 +27,11 @@
 #define PPP_INVALID_HEADER          -900
 #define PPP_NOT_SUPPORTED           -901
 #define PPP_VALUE_NOT_VALID         -902
-#define PPP_NO_NEXT_OPTION          -903
-#define PPP_NO_BUFFERS              -904
-#define PPP_NO_SPACE                -905
-#define PPP_INTERNAL_ERROR          -906
+#define PPP_PARTIAL_READ            -903
+#define PPP_NO_NEXT_OPTION          -904
+#define PPP_NO_BUFFERS              -905
+#define PPP_NO_SPACE                -906
+#define PPP_INTERNAL_ERROR          -907
 
 /* PPP instance states. */
 #define PPP_STATE_CONNECTED         1
@@ -76,7 +77,6 @@
 #define PPP_IPCP_OPT_ADDRESS        3
 
 /* PPP protocol definitions. */
-#define PPP_FLAG                    (0x7E)
 #define PPP_ADDRESS                 (0xFF)
 #define PPP_CONTROL                 (0x03)
 
@@ -117,6 +117,9 @@ typedef struct _ppp_data
     /* Configured IP addresses. */
     uint32_t    remote_ip_address;
     uint32_t    local_ip_address;
+
+    /* Receive buffer chain. */
+    FS_BUFFER_CHAIN     rx_buffer;
 
     union _ppp_state_data
     {
