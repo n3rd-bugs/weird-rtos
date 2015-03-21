@@ -30,9 +30,9 @@
                                 }
 #else
 #define OS_ASSERT(raise)        {                                               \
-                                    if (raise != FALSE)                         \
+                                    if ((raise) != FALSE)                         \
                                     {                                           \
-                                        system_assert(raise, "", 0,             \
+                                        system_assert((raise), "", 0,             \
                                                       get_current_task());      \
                                     }                                           \
                                 }
