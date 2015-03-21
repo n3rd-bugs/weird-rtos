@@ -345,7 +345,7 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packe
                 if (status == SUCCESS)
                 {
                     /* Add the HDLC header. */
-                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), TRUE);
+                    status = ppp_hdlc_header_add(fd, tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), TRUE);
                 }
 
                 if (status == SUCCESS)

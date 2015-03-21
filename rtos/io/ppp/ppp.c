@@ -165,20 +165,13 @@ void ppp_process_modem_chat(void *fd, PPP *ppp)
          * so if someone else is exacting it, can receive this buffer. */
         if (status == SUCCESS)
         {
-            /* Free the received buffer. */
-            fs_buffer_add(fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
-
             /* We are in LCP state now. */
             ppp->state = PPP_STATE_LCP;
             ppp_lcp_state_initialize(ppp);
         }
 
-        /* If we are not ignoring the received buffer. */
-        else if (status != MODEM_CHAT_IGNORE)
-        {
-            /* Free the received buffer. */
-            fs_buffer_add(fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
-        }
+        /* Free the received buffer. */
+        fs_buffer_add(fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
 
 } /* ppp_process_modem_chat */
@@ -366,7 +359,7 @@ void ppp_configuration_process(void *fd, PPP *ppp, FS_BUFFER *buffer, PPP_PROTO 
                 if (status == SUCCESS)
                 {
                     /* Add the HDLC header. */
-                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), (proto->protocol == PPP_PROTO_LCP));
+                    status = ppp_hdlc_header_add(fd, tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), (proto->protocol == PPP_PROTO_LCP));
                 }
 
                 if (status == SUCCESS)
@@ -482,7 +475,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             }
 
             /* Add this complete or partial received buffer on the receive buffer. */
-            fs_buffer_chain_add(&ppp->rx_buffer, buffer, 0);
+            fs_buffer_chain_push(&ppp->rx_buffer, buffer, 0);
         }
 
         /* We will wait to receive required amount of flags so that we can
@@ -498,7 +491,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             else
             {
                 /* Add this partial received buffer on the receive buffer. */
-                fs_buffer_chain_add(&ppp->rx_buffer, buffer, 0);
+                fs_buffer_chain_push(&ppp->rx_buffer, buffer, 0);
             }
 
             /* We don't have a buffer to continue. */
@@ -510,7 +503,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
     if (status == SUCCESS)
     {
         /* Verify and skim the HDLC headers. */
-        status = ppp_hdlc_header_parse(&ppp->rx_buffer, PPP_IS_ACFC_VALID(ppp));
+        status = ppp_hdlc_header_parse(fd, &ppp->rx_buffer, PPP_IS_ACFC_VALID(ppp));
 
         if (status == SUCCESS)
         {
@@ -551,19 +544,9 @@ void ppp_process_frame(void *fd, PPP *ppp)
         }
 
         /* Free the received buffer. */
-        fs_buffer_add(fd, ppp->rx_buffer.list.head, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
-
-        if ((((FS *)fd)->buffer->free_buffer_list.buffers +
-             ((FS *)fd)->buffer->rx_buffer_list.buffers +
-             ((FS *)fd)->buffer->tx_buffer_list.buffers) < (CDC_NUM_BUFFERS - 2))
-        {
-            status = -1;
-        }
-
-        /* Reset the receive buffer list. */
-        memset(&ppp->rx_buffer, 0, sizeof(FS_BUFFER_CHAIN));
-
+        fs_buffer_chain_add(fd, &ppp->rx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
+
 } /* ppp_process_frame */
 
 /*
