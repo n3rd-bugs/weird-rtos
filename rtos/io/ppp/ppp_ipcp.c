@@ -153,7 +153,7 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_pack
     int32_t status = SUCCESS;
     PPP_PKT_OPT option;
     FS_BUFFER *tx_buffer = NULL;
-    uint8_t ip[4] = PPP_LOCAL_IP_ADDRESS;
+    //uint8_t ip[4] = PPP_LOCAL_IP_ADDRESS;
 
     /* If we have not received an ACK for our configuration. */
     if (ppp->local_ip_address == 0)
@@ -179,15 +179,15 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_pack
             tx_packet->id = ++(ppp->state_data.ipcp_id);
 
             /* Add IP configuration option in the transmit buffer. */
-            option.data = ip;
+            memcpy(option.data, (uint8_t [])PPP_LOCAL_IP_ADDRESS, 4);
             option.length = 6;
             option.type = PPP_IPCP_OPT_IP;
-            status = ppp_packet_configuration_option_add(&option, tx_buffer);
+            status = ppp_packet_configuration_option_add(tx_buffer, &option);
 
             if (status == SUCCESS)
             {
                 /* Push the PPP header on the buffer. */
-                status = ppp_packet_configuration_header_add(tx_packet, tx_buffer);
+                status = ppp_packet_configuration_header_add(tx_buffer, tx_packet);
 
                 if (status == SUCCESS)
                 {
@@ -198,7 +198,7 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_pack
                 if (status == SUCCESS)
                 {
                     /* Add the HDLC header. */
-                    status = ppp_hdlc_header_add(fd, tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), FALSE);
+                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), FALSE);
                 }
 
                 if (status == SUCCESS)

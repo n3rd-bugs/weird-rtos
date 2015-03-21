@@ -88,7 +88,7 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
 {
     PPP_PKT_OPT option;
     int32_t random, status = SUCCESS;
-    uint8_t i, opt_len, opt_value[4];
+    uint8_t i, opt_len;
     uint8_t *db_value;
 
     for (i = 0; (status == SUCCESS) && (i < LCP_OPT_DB_NUM_OPTIONS); i++)
@@ -105,25 +105,17 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
             {
                 /* Generate and put a random value. */
                 random = (int32_t)current_system_tick();
-                fs_memcpy_r((char *)opt_value, (char *)&random, (uint32_t)(opt_len - 2));
-                option.data = opt_value;
-            }
-
-            /* Check if this option does not take a value. */
-            else if (db_value == (const uint8_t *)(LCP_OPT_NO_VALUE))
-            {
-                option.data = NULL;
+                fs_memcpy_r((char *)option.data, (char *)&random, (uint32_t)(opt_len - 2));
             }
 
             /* Check if we have specified a value for this option. */
             else if (db_value != NULL)
             {
                 /* Copy the given value in the option buffer. */
-                fs_memcpy_r((char *)opt_value, (char *)db_value, (uint32_t)(opt_len - 2));
-                option.data = opt_value;
+                fs_memcpy_r((char *)option.data, (char *)db_value, (uint32_t)(opt_len - 2));
             }
 
-            else
+            else if (db_value != (const uint8_t *)(LCP_OPT_NO_VALUE))
             {
                 /* Should not happen return an error. */
                 status = PPP_INTERNAL_ERROR;
@@ -136,7 +128,7 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
                 option.length = opt_len;
 
                 /* Add this option in the transmit buffer. */
-                status = ppp_packet_configuration_option_add(&option, buffer);
+                status = ppp_packet_configuration_option_add(buffer, &option);
             }
         }
     }
@@ -334,7 +326,7 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packe
             if (status == SUCCESS)
             {
                 /* Push the PPP header on the buffer. */
-                status = ppp_packet_configuration_header_add(tx_packet, tx_buffer);
+                status = ppp_packet_configuration_header_add(tx_buffer, tx_packet);
 
                 if (status == SUCCESS)
                 {
@@ -345,7 +337,7 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packe
                 if (status == SUCCESS)
                 {
                     /* Add the HDLC header. */
-                    status = ppp_hdlc_header_add(fd, tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), TRUE);
+                    status = ppp_hdlc_header_add(tx_buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), TRUE);
                 }
 
                 if (status == SUCCESS)

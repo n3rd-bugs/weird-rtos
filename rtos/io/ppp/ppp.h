@@ -157,7 +157,7 @@ void ppp_tx_watcher(void *, void *);
 uint32_t ppp_get_buffer_head_room(PPP *);
 void ppp_process_modem_chat(void *, PPP *);
 void ppp_process_frame(void *, PPP *);
-void ppp_configuration_process(void *, PPP *, FS_BUFFER *, PPP_PROTO *);
+void ppp_configuration_process(void *, PPP *, FS_BUFFER_CHAIN *, PPP_PROTO *);
 
 #ifdef PPP_MODEM_CHAT
 #include <modem_chat.h>
