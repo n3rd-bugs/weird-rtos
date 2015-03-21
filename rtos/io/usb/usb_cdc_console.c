@@ -54,7 +54,7 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
     fs_data_watcher_set(&cdc_cons->console, &cdc_cons->data_watcher);
 
     /* Set the buffer data structure for this file descriptor. */
-    fs_buffer_dataset(&cdc_cons->console, &cdc_cons->fs_buffer_data);
+    fs_buffer_dataset(&cdc_cons->console, &cdc_cons->fs_buffer_data, CDC_NUM_BUFFERS);
 
     /* Add buffer for this console. */
     for (i = 0; i < CDC_NUM_BUFFERS; i++)
