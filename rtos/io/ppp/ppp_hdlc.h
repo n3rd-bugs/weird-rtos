@@ -25,11 +25,11 @@
 #define PPP_ESCAPE              (0x7D)
 
 /* Function prototypes. */
-int32_t ppp_hdlc_header_parse(FS_BUFFER_CHAIN *, uint8_t);
-int32_t ppp_hdlc_unescape(FS_BUFFER_CHAIN *buffer);
-void ppp_hdlc_unescape_one(FS_BUFFER *, uint8_t *);
-int32_t ppp_hdlc_header_add(FS_BUFFER_CHAIN *, uint32_t *, uint8_t, uint8_t);
-int32_t ppp_hdlc_escape(FS_BUFFER_CHAIN *, FS_BUFFER_CHAIN *, uint32_t *, uint8_t);
+int32_t ppp_hdlc_header_parse(FS_BUFFER *, uint8_t);
+int32_t ppp_hdlc_unescape(FS_BUFFER *buffer);
+void ppp_hdlc_unescape_one(FS_BUFFER_ONE *, uint8_t *);
+int32_t ppp_hdlc_header_add(FS_BUFFER *, uint32_t *, uint8_t, uint8_t);
+int32_t ppp_hdlc_escape(FS_BUFFER *, FS_BUFFER *, uint32_t *, uint8_t);
 
 #endif /* CONFIG_PPP */
 

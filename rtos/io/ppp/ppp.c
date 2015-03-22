@@ -132,7 +132,7 @@ void ppp_connection_terminated(void *fd, void *ppp)
  */
 void ppp_process_modem_chat(void *fd, PPP *ppp)
 {
-    FS_BUFFER *buffer;
+    FS_BUFFER_ONE *buffer;
     int32_t status;
 
     /* Peek a packet from the receive list. */
@@ -171,16 +171,16 @@ void ppp_process_modem_chat(void *fd, PPP *ppp)
  * @proto: PPP protocol data.
  * This function will be called to process PPP configuration packets.
  */
-void ppp_configuration_process(PPP *ppp, FS_BUFFER_CHAIN *buffer, PPP_PROTO *proto)
+void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
 {
     PPP_CONF_PKT rx_packet, tx_packet;
     PPP_CONF_OPT option;
-    FS_BUFFER_CHAIN tx_buffer;
+    FS_BUFFER tx_buffer;
     int32_t status;
 
     /* Clear the packet structure and transmit buffers. */
     memset(&rx_packet, 0, sizeof(PPP_CONF_PKT));
-    memset(&tx_buffer, 0, sizeof(FS_BUFFER_CHAIN));
+    memset(&tx_buffer, 0, sizeof(FS_BUFFER));
 
     /* Parse the configuration header. */
     status = ppp_packet_configuration_header_parse(buffer, &rx_packet);
@@ -365,7 +365,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER_CHAIN *buffer, PPP_PROTO *pro
  */
 void ppp_process_frame(void *fd, PPP *ppp)
 {
-    FS_BUFFER *buffer, *new_buffer;
+    FS_BUFFER_ONE *buffer, *new_buffer;
     PPP_PROTO *proto;
     int32_t status = SUCCESS;
     uint16_t protocol;
@@ -536,7 +536,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
  * file descriptor attached to the given buffer. Caller is responsible for
  * freeing the given buffer if this function returns an error.
  */
-int32_t ppp_transmit_buffer(PPP *ppp, FS_BUFFER_CHAIN *buffer, uint16_t proto)
+int32_t ppp_transmit_buffer(PPP *ppp, FS_BUFFER *buffer, uint16_t proto)
 {
     int32_t status;
 

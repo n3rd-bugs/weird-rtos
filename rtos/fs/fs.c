@@ -119,10 +119,10 @@ void fs_unregister(FS *file_system)
  * @size: Size of the data allocated for this buffer.
  * This function will initialize a buffer with given data.
  */
-void fs_buffer_init(FS_BUFFER *buffer, char *data, uint32_t size)
+void fs_buffer_init(FS_BUFFER_ONE *buffer, char *data, uint32_t size)
 {
     /* Clear this buffer. */
-    memset(buffer, 0, sizeof(FS_BUFFER));
+    memset(buffer, 0, sizeof(FS_BUFFER_ONE));
 
     /* Initialize this buffer. */
     buffer->data = buffer->buffer = data;
@@ -141,7 +141,7 @@ void fs_buffer_init(FS_BUFFER *buffer, char *data, uint32_t size)
  * some data on the buffer it will be moved. If it already has some head room
  * it will be maintained.
  */
-int32_t fs_buffer_add_head(FS_BUFFER *buffer, uint32_t size)
+int32_t fs_buffer_add_head(FS_BUFFER_ONE *buffer, uint32_t size)
 {
     int32_t status = SUCCESS;
 
@@ -179,7 +179,7 @@ int32_t fs_buffer_add_head(FS_BUFFER *buffer, uint32_t size)
  * @size: Size of valid data in the buffer.
  * This function will update a buffer data pointers.
  */
-void fs_buffer_update(FS_BUFFER *buffer, char *data, uint32_t size)
+void fs_buffer_update(FS_BUFFER_ONE *buffer, char *data, uint32_t size)
 {
     /* Update the buffer data. */
     buffer->buffer = data;
@@ -195,19 +195,19 @@ void fs_buffer_update(FS_BUFFER *buffer, char *data, uint32_t size)
  *  FS_BUFFER_HEAD: If we need to add this buffer on the chain head.
  * This function will add a given to a given buffer chain.
  */
-void fs_buffer_chain_append(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer, uint8_t flag)
+void fs_buffer_chain_append(FS_BUFFER *chain, FS_BUFFER_ONE *buffer, uint8_t flag)
 {
     /* If we need to add this buffer on the head. */
     if (flag & FS_BUFFER_HEAD)
     {
         /* Add this buffer on the head of the list. */
-        sll_push(chain, buffer, OFFSETOF(FS_BUFFER, next));
+        sll_push(chain, buffer, OFFSETOF(FS_BUFFER_ONE, next));
     }
 
     else
     {
         /* Add this buffer at the end of the list. */
-        sll_append(chain, buffer, OFFSETOF(FS_BUFFER, next));
+        sll_append(chain, buffer, OFFSETOF(FS_BUFFER_ONE, next));
     }
 
     /* Update the total length of this buffer chain. */
@@ -231,7 +231,7 @@ void fs_buffer_chain_append(FS_BUFFER_CHAIN *chain, FS_BUFFER *buffer, uint8_t f
  * This function will remove data from a given buffer. If given will also copy
  * the data in the provided buffer.
  */
-int32_t fs_buffer_one_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_one_pull(FS_BUFFER_ONE *buffer, char *data, uint32_t size, uint8_t flags)
 {
     char *from;
     int32_t status = SUCCESS;
@@ -307,9 +307,9 @@ int32_t fs_buffer_one_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t
  * This function will remove data from a buffer chain. If given will also copy
  * the data in the provided buffer.
  */
-int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_chain_pull(FS_BUFFER *buffer_chain, char *data, uint32_t size, uint8_t flags)
 {
-    FS_BUFFER *buffer;
+    FS_BUFFER_ONE *buffer;
     int32_t status = SUCCESS;
     uint32_t this_size;
     uint8_t reverse = ((flags & FS_BUFFER_MSB_FIRST) != 0);
@@ -372,7 +372,7 @@ int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t
             if (buffer->length == 0)
             {
                 /* We no longer need this buffer on our buffer chain. */
-                OS_ASSERT(sll_remove(&buffer_chain->list, buffer, OFFSETOF(FS_BUFFER, next)) != buffer);
+                OS_ASSERT(sll_remove(&buffer_chain->list, buffer, OFFSETOF(FS_BUFFER_ONE, next)) != buffer);
 
                 /* Actively free this buffer. */
                 fs_buffer_add(buffer_chain->fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
@@ -421,7 +421,7 @@ int32_t fs_buffer_chain_pull(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t
  *  buffer.
  * This function will add data in the buffer.
  */
-int32_t fs_buffer_one_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_one_push(FS_BUFFER_ONE *buffer, char *data, uint32_t size, uint8_t flags)
 {
     int32_t status = SUCCESS;
     char *to;
@@ -506,10 +506,10 @@ int32_t fs_buffer_one_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t
  *  file descriptor for new buffers.
  * This function will add data in the buffer chain.
  */
-int32_t fs_buffer_chain_push(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_chain_push(FS_BUFFER *buffer_chain, char *data, uint32_t size, uint8_t flags)
 {
     int32_t status = SUCCESS;
-    FS_BUFFER *buffer;
+    FS_BUFFER_ONE *buffer;
     uint32_t this_size;
     uint8_t reverse = ((flags & FS_BUFFER_MSB_FIRST) != 0);
     char *from;
@@ -537,7 +537,7 @@ int32_t fs_buffer_chain_push(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t
                     OS_ASSERT(fs_buffer_add_head(buffer, buffer->length) != SUCCESS);
 
                     /* Add this buffer on the head of the buffer chain. */
-                    sll_push(buffer_chain, buffer, OFFSETOF(FS_BUFFER, next));
+                    sll_push(buffer_chain, buffer, OFFSETOF(FS_BUFFER_ONE, next));
                 }
             }
 
@@ -575,7 +575,7 @@ int32_t fs_buffer_chain_push(FS_BUFFER_CHAIN *buffer_chain, char *data, uint32_t
                 if (buffer)
                 {
                     /* Append this buffer at the end of buffer chain. */
-                    sll_append(buffer_chain, buffer, OFFSETOF(FS_BUFFER, next));
+                    sll_append(buffer_chain, buffer, OFFSETOF(FS_BUFFER_ONE, next));
                 }
             }
 
@@ -683,14 +683,14 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
  * This function will add a buffer chain in the file descriptor for the required
  * type.
  */
-void fs_buffer_chain_add(FS_BUFFER_CHAIN *chain, uint32_t type, uint32_t flags)
+void fs_buffer_chain_add(FS_BUFFER *chain, uint32_t type, uint32_t flags)
 {
-    FS_BUFFER *buffer;
+    FS_BUFFER_ONE *buffer;
 
     do
     {
         /* Pick a buffer from the buffer list. */
-        buffer = sll_pop(chain, OFFSETOF(FS_BUFFER, next));
+        buffer = sll_pop(chain, OFFSETOF(FS_BUFFER_ONE, next));
 
         if (buffer)
         {
@@ -718,7 +718,7 @@ void fs_buffer_chain_add(FS_BUFFER_CHAIN *chain, uint32_t type, uint32_t flags)
  * This function will add a new buffer in the file descriptor for the required
  * type.
  */
-void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
+void fs_buffer_add(FD fd, FS_BUFFER_ONE *buffer, uint32_t type, uint32_t flags)
 {
     FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
 
@@ -734,7 +734,7 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
         buffer->length = 0;
 
         /* Just add this buffer in the free buffer list. */
-        sll_append(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        sll_append(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER_ONE, next));
 
 #ifdef FS_BUFFER_TRACE
         /* Increment the number of buffers on free list. */
@@ -766,7 +766,7 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
     case (FS_BUFFER_RX):
 
         /* Just add this buffer in the receive buffer list. */
-        sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER_ONE, next));
 
 #ifdef FS_BUFFER_TRACE
         /* Increment the number of buffers on receive list. */
@@ -798,7 +798,7 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
     case (FS_BUFFER_TX):
 
         /* Just add this buffer in the transmit buffer list. */
-        sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER_ONE, next));
 
 #ifdef FS_BUFFER_TRACE
         /* Increment the number of buffers on transmit list. */
@@ -831,10 +831,10 @@ void fs_buffer_add(FD fd, FS_BUFFER *buffer, uint32_t type, uint32_t flags)
  * This function return a buffer from a required buffer list for this file
  * descriptor.
  */
-FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
+FS_BUFFER_ONE *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
 {
     FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
-    FS_BUFFER *buffer = NULL;
+    FS_BUFFER_ONE *buffer = NULL;
 
     /* Should never happen. */
     OS_ASSERT(data == NULL);
@@ -853,7 +853,7 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
         else
         {
             /* Pop a buffer from this file descriptor's free buffer list. */
-            buffer = sll_pop(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&data->free_buffer_list, OFFSETOF(FS_BUFFER_ONE, next));
 
 #ifdef FS_BUFFER_TRACE
             /* If we are returning a buffer. */
@@ -886,7 +886,7 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
         else
         {
             /* Pop a buffer from this file descriptor's receive buffer list. */
-            buffer = sll_pop(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&data->rx_buffer_list, OFFSETOF(FS_BUFFER_ONE, next));
 
 #ifdef FS_BUFFER_TRACE
             /* If we are returning a buffer. */
@@ -918,7 +918,7 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
         else
         {
             /* Pop a buffer from this file descriptor's transmit buffer list. */
-            buffer = sll_pop(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&data->tx_buffer_list, OFFSETOF(FS_BUFFER_ONE, next));
 
 #ifdef FS_BUFFER_TRACE
             /* If we are returning a buffer. */
@@ -962,10 +962,10 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
  * This function will divide the given buffer into two buffers. An empty buffer
  * will allocated to hold the remaining portion of buffer.
  */
-void fs_buffer_divide(FD fd, FS_BUFFER *buffer, FS_BUFFER **new_buffer,
+void fs_buffer_divide(FD fd, FS_BUFFER_ONE *buffer, FS_BUFFER_ONE **new_buffer,
                       char *data_ptr, uint32_t data_len)
 {
-    FS_BUFFER *ret_buffer = NULL;
+    FS_BUFFER_ONE *ret_buffer = NULL;
 
     /* Divide the original buffer. */
     buffer->length -= data_len;

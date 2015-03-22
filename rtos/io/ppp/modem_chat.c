@@ -23,9 +23,9 @@
  *  MODEM_CHAT_IGNORE is returned if data was not recognized.
  * This function will process modem initialization.
  */
-int32_t modem_chat_process(FD fd, FS_BUFFER *rx_buffer)
+int32_t modem_chat_process(FD fd, FS_BUFFER_ONE *rx_buffer)
 {
-    FS_BUFFER *tx_buffer;
+    FS_BUFFER_ONE *tx_buffer;
     int32_t status = SUCCESS;
 
     /* For now we will just wait for the "CLIENT" string from the other end. */

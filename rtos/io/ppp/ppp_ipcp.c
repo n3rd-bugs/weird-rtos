@@ -152,14 +152,14 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
 {
     int32_t status = SUCCESS;
     PPP_CONF_OPT option;
-    FS_BUFFER_CHAIN tx_buffer;
+    FS_BUFFER tx_buffer;
 
     /* If we have not received an ACK for our configuration. */
     if (ppp->local_ip_address == 0)
     {
         /* Clear the transmit packet and buffer chain structures. */
         memset(tx_packet, 0, sizeof(PPP_CONF_PKT));
-        memset(&tx_buffer, 0, sizeof(FS_BUFFER_CHAIN));
+        memset(&tx_buffer, 0, sizeof(FS_BUFFER));
         tx_buffer.fd = fd;
 
         /* We have successfully ACKed a configuration request we will send our

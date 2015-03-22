@@ -38,11 +38,11 @@ typedef struct _cdc_console
 
     /* File system buffers. */
     FS_BUFFER_DATA  fs_buffer_data;
-    FS_BUFFER   fs_buffer[CDC_NUM_BUFFERS];
+    FS_BUFFER_ONE   fs_buffer[CDC_NUM_BUFFERS];
 
     /* Current buffers being used. */
-    FS_BUFFER   *rx_buffer;
-    FS_BUFFER   *tx_buffer;
+    FS_BUFFER_ONE   *rx_buffer;
+    FS_BUFFER_ONE   *tx_buffer;
 
     /* Command buffer. */
     char        cmd_buffer[CDC_CMD_PACKET_SIZE];
@@ -61,7 +61,7 @@ void usb_cdc_console_handle_disconnect(CDC_CONSOLE *);
 /* Device driver APIs. */
 void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *, uint32_t);
 void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *);
-FS_BUFFER *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *);
+FS_BUFFER_ONE *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *);
 void usb_cdc_fun_console_handle_ctrl(CDC_CONSOLE *, uint32_t, char *, int32_t);
 
 #endif /* USB_CDC_CONSOLE */

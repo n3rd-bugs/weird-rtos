@@ -21,7 +21,7 @@
 #define MODEM_CHAT_IGNORE       -930
 
 /* Function prototypes. */
-int32_t modem_chat_process(FD, FS_BUFFER *);
+int32_t modem_chat_process(FD, FS_BUFFER_ONE *);
 
 #endif /* PPP_MODEM_CHAT */
 

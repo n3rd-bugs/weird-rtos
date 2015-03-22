@@ -113,7 +113,7 @@ void usb_cdc_console_handle_disconnect(CDC_CONSOLE *cdc_cons)
  */
 void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
 {
-    FS_BUFFER *rx_buffer;
+    FS_BUFFER_ONE *rx_buffer;
 
     /* We are in interrupt so just try to obtain semaphore here. */
     if (cdc_cons->console.fs.get_lock((FD)(&cdc_cons->console)) == SUCCESS)
@@ -187,9 +187,9 @@ void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *cdc_cons)
  * function will see if we need to send some data and copy the required data
  * in the given buffer.
  */
-FS_BUFFER *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
+FS_BUFFER_ONE *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
 {
-    FS_BUFFER *buffer = NULL;
+    FS_BUFFER_ONE *buffer = NULL;
 
     /* We are in interrupt so just try to obtain semaphore here. */
     if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
@@ -256,7 +256,7 @@ static void usb_cdc_fun_console_rx_consumed(void *fd, void *buffer)
     if (buffer)
     {
         /* Push this buffer back to the free list. */
-        fs_buffer_add((FD)(&cdc->console), (FS_BUFFER *)buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+        fs_buffer_add((FD)(&cdc->console), (FS_BUFFER_ONE *)buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
 
 } /* usb_cdc_fun_console_rx_consumed */
@@ -272,7 +272,7 @@ static void usb_cdc_fun_console_rx_consumed(void *fd, void *buffer)
 static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
-    FS_BUFFER *fs_buffer = fs_buffer_get(((FD)&cdc->console), FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+    FS_BUFFER_ONE *fs_buffer = fs_buffer_get(((FD)&cdc->console), FS_BUFFER_RX, FS_BUFFER_ACTIVE);
 
     /* If we do have received a buffer. */
     if (fs_buffer)
@@ -343,7 +343,7 @@ static void usb_cdc_fun_console_space_available(void *fd, void *priv_data)
 static int32_t usb_cdc_fun_console_write(void *fd, char *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
-    FS_BUFFER *fs_buffer = fs_buffer_get(((FD)&cdc->console), FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+    FS_BUFFER_ONE *fs_buffer = fs_buffer_get(((FD)&cdc->console), FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
 
     /* If we do have a free buffer that can be used to transmit this data. */
     if (fs_buffer)

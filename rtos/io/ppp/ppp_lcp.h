@@ -42,7 +42,7 @@ extern PPP_PROTO ppp_proto_lcp;
 
 /* Function prototypes. */
 void ppp_lcp_state_initialize(PPP *);
-int32_t ppp_lcp_configuration_add(FS_BUFFER_CHAIN *);
+int32_t ppp_lcp_configuration_add(FS_BUFFER *);
 uint8_t ppp_lcp_option_negotiable(PPP *, PPP_CONF_OPT *);
 int32_t ppp_lcp_option_pocess(PPP *, PPP_CONF_OPT *, PPP_CONF_PKT *);
 uint8_t ppp_lcp_option_length_valid(PPP *, PPP_CONF_OPT *);

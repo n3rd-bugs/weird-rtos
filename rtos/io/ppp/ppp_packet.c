@@ -24,7 +24,7 @@
  * This function will parse the PPP protocol field in the given buffer and
  * return it's value.
  */
-int32_t ppp_packet_protocol_parse(FS_BUFFER_CHAIN *buffer, uint16_t *protocol, uint8_t pfc)
+int32_t ppp_packet_protocol_parse(FS_BUFFER *buffer, uint16_t *protocol, uint8_t pfc)
 {
     int32_t status = SUCCESS;
     uint16_t ret_protocol;
@@ -113,7 +113,7 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER_CHAIN *buffer, uint16_t *protocol, u
  *  add protocol.
  * This function will add PPP protocol field in the given buffer.
  */
-int32_t ppp_packet_protocol_add(FS_BUFFER_CHAIN *buffer, uint16_t protocol, uint8_t pfc)
+int32_t ppp_packet_protocol_add(FS_BUFFER *buffer, uint16_t protocol, uint8_t pfc)
 {
     int32_t status;
     uint8_t proto_len = 2;
@@ -142,7 +142,7 @@ int32_t ppp_packet_protocol_add(FS_BUFFER_CHAIN *buffer, uint16_t protocol, uint
  * This function will parse the PPP header for configuration packets in the
  * given buffer and populate the PPP packet structure.
  */
-int32_t ppp_packet_configuration_header_parse(FS_BUFFER_CHAIN *buffer, PPP_CONF_PKT *packet)
+int32_t ppp_packet_configuration_header_parse(FS_BUFFER *buffer, PPP_CONF_PKT *packet)
 {
     int32_t status = SUCCESS;
 
@@ -182,7 +182,7 @@ int32_t ppp_packet_configuration_header_parse(FS_BUFFER_CHAIN *buffer, PPP_CONF_
  * This function will parse a PPP option in the given buffer and populate the
  * PPP option structure.
  */
-int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_CONF_OPT *option)
+int32_t ppp_packet_configuration_option_parse(FS_BUFFER *buffer, PPP_CONF_OPT *option)
 {
     int32_t status = SUCCESS;
 
@@ -240,7 +240,7 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_CONF_
  *  header.
  * This function will add a PPP configuration option header in the provided buffer.
  */
-int32_t ppp_packet_configuration_header_add(FS_BUFFER_CHAIN *buffer, PPP_CONF_PKT *packet)
+int32_t ppp_packet_configuration_header_add(FS_BUFFER *buffer, PPP_CONF_PKT *packet)
 {
     int32_t status = SUCCESS;
 
@@ -278,7 +278,7 @@ int32_t ppp_packet_configuration_header_add(FS_BUFFER_CHAIN *buffer, PPP_CONF_PK
  *  data.
  * This function will add a PPP configuration option in the provided buffer.
  */
-int32_t ppp_packet_configuration_option_add(FS_BUFFER_CHAIN *buffer, PPP_CONF_OPT *option)
+int32_t ppp_packet_configuration_option_add(FS_BUFFER *buffer, PPP_CONF_OPT *option)
 {
     int32_t status = SUCCESS;
 

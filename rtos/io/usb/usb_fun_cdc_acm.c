@@ -511,7 +511,7 @@ static uint32_t usb_fun_cdc_acm_ep0_rx_ready(void *usb_device)
  */
 static uint32_t usb_fun_cdc_acm_data_in(void *usb_device, uint8_t epnum)
 {
-    FS_BUFFER *buffer;
+    FS_BUFFER_ONE *buffer;
 
     /* Remove compiler warning. */
     UNUSED_PARAM(epnum);
@@ -568,7 +568,7 @@ void usb_fun_cdc_acm_data_out_enable(void *usb_device)
  */
 static uint32_t usb_fun_cdc_acm_sof(void *usb_device)
 {
-    FS_BUFFER *buffer;
+    FS_BUFFER_ONE *buffer;
 
     /* Check if there is some data available to be sent. */
     buffer = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);

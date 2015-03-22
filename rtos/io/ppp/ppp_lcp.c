@@ -89,7 +89,7 @@ void ppp_lcp_state_initialize(PPP *ppp)
  * This function will add our LCP configuration options so that a configuration
  * request can be sent.
  */
-int32_t ppp_lcp_configuration_add(FS_BUFFER_CHAIN *buffer)
+int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
 {
     PPP_CONF_OPT option;
     int32_t random, status = SUCCESS;
@@ -303,7 +303,7 @@ uint8_t ppp_lcp_option_length_valid(PPP *ppp, PPP_CONF_OPT *option)
 int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT *tx_packet)
 {
     int32_t status = SUCCESS;
-    FS_BUFFER_CHAIN tx_buffer;
+    FS_BUFFER tx_buffer;
 
     /* Check if we have received a request and we have sent an ACK in
      * response, send our own configuration. */
@@ -312,7 +312,7 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
     {
         /* Clear the transmit packet and buffer chain structures. */
         memset(tx_packet, 0, sizeof(PPP_CONF_PKT));
-        memset(&tx_buffer, 0, sizeof(FS_BUFFER_CHAIN));
+        memset(&tx_buffer, 0, sizeof(FS_BUFFER));
         tx_buffer.fd = fd;
 
         /* We have successfully ACKed a configuration request we will send our

@@ -101,7 +101,7 @@ typedef struct _ppp_data
     uint32_t    local_ip_address;
 
     /* Receive buffer chain. */
-    FS_BUFFER_CHAIN     rx_buffer;
+    FS_BUFFER     rx_buffer;
 
     union _ppp_state_data
     {
@@ -142,8 +142,8 @@ void ppp_tx_watcher(void *, void *);
 /* PPP internal APIs. */
 void ppp_process_modem_chat(void *, PPP *);
 void ppp_process_frame(void *, PPP *);
-int32_t ppp_transmit_buffer(PPP *, FS_BUFFER_CHAIN *, uint16_t);
-void ppp_configuration_process(PPP *, FS_BUFFER_CHAIN *, PPP_PROTO *);
+int32_t ppp_transmit_buffer(PPP *, FS_BUFFER *, uint16_t);
+void ppp_configuration_process(PPP *, FS_BUFFER *, PPP_PROTO *);
 
 /* Include PPP supported configuration protocol definitions. */
 #include <ppp_lcp.h>

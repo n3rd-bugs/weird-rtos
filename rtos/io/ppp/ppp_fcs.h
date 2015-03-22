@@ -25,7 +25,7 @@
 
 /* Function prototypes. */
 uint16_t ppp_fcs16_calculate(char *, uint32_t, uint16_t);
-uint16_t ppp_fcs16_buffer_calculate(FS_BUFFER_CHAIN *, uint16_t);
+uint16_t ppp_fcs16_buffer_calculate(FS_BUFFER *, uint16_t);
 
 #endif /* CONFIG_PPP */
 

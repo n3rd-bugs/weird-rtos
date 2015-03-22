@@ -81,9 +81,9 @@ uint16_t ppp_fcs16_calculate(char *data, uint32_t length, uint16_t fcs)
  * @return: Calculated FCS value.
  * This function will calculate and return the 16-bit FCS for the given buffer.
  */
-uint16_t ppp_fcs16_buffer_calculate(FS_BUFFER_CHAIN *buffer, uint16_t fcs)
+uint16_t ppp_fcs16_buffer_calculate(FS_BUFFER *buffer, uint16_t fcs)
 {
-    FS_BUFFER *next_buffer = buffer->list.head;
+    FS_BUFFER_ONE *next_buffer = buffer->list.head;
 
     /* While we have buffer to process. */
     while (next_buffer != NULL)
