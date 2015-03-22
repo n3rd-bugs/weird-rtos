@@ -34,7 +34,7 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER *buffer, uint16_t *protocol, uint8_t
     if (buffer->total_length >= 1)
     {
         /* Peek the first byte of the buffer. */
-        OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)proto, 1, FS_BUFFER_INPLACE) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull(buffer, (char *)proto, 1, FS_BUFFER_INPLACE) != SUCCESS);
 
         /* Put the first byte of protocol as it is. */
         ret_protocol = proto[0];
@@ -48,7 +48,7 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER *buffer, uint16_t *protocol, uint8_t
                 /* First byte of sent protocol is zero and elided. */
 
                 /* Pull and consume the protocol byte. */
-                OS_ASSERT(fs_buffer_chain_pull(buffer, NULL, 1, 0) != SUCCESS);
+                OS_ASSERT(fs_buffer_pull(buffer, NULL, 1, 0) != SUCCESS);
             }
 
             else
@@ -63,13 +63,13 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER *buffer, uint16_t *protocol, uint8_t
         else if (buffer->total_length >= 2)
         {
             /* Peek the first two byte of the buffer. */
-            OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&proto, 2, FS_BUFFER_INPLACE) != SUCCESS);
+            OS_ASSERT(fs_buffer_pull(buffer, (char *)&proto, 2, FS_BUFFER_INPLACE) != SUCCESS);
 
             /* First byte of protocol must be even and second must be odd. */
             if ((!(proto[0] & 0x1)) && (proto[1] & 0x1))
             {
                 /* Pull the protocol field. */
-                OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&ret_protocol, sizeof(uint16_t), FS_BUFFER_MSB_FIRST) != SUCCESS);
+                OS_ASSERT(fs_buffer_pull(buffer, (char *)&ret_protocol, sizeof(uint16_t), FS_BUFFER_MSB_FIRST) != SUCCESS);
             }
 
             else
@@ -126,7 +126,7 @@ int32_t ppp_packet_protocol_add(FS_BUFFER *buffer, uint16_t protocol, uint8_t pf
     }
 
     /* Push protocol for this packet. */
-    status = fs_buffer_chain_push(buffer, (char *)&(protocol), proto_len, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD));
+    status = fs_buffer_push(buffer, (char *)&(protocol), proto_len, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD));
 
     /* Return status to the caller. */
     return (status);
@@ -150,9 +150,9 @@ int32_t ppp_packet_configuration_header_parse(FS_BUFFER *buffer, PPP_CONF_PKT *p
     if (buffer->total_length >= 4)
     {
         /* Pull the code, id and length. */
-        OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&packet->code, 1, 0) != SUCCESS);
-        OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&packet->id, 1, 0) != SUCCESS);
-        OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&packet->length, 2, FS_BUFFER_MSB_FIRST) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull(buffer, (char *)&packet->code, 1, 0) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull(buffer, (char *)&packet->id, 1, 0) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull(buffer, (char *)&packet->length, 2, FS_BUFFER_MSB_FIRST) != SUCCESS);
 
         /* If header has invalid length of data left. */
         if (buffer->total_length != (uint32_t)(packet->length - 4))
@@ -190,8 +190,8 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER *buffer, PPP_CONF_OPT *o
     if (buffer->total_length >= 2)
     {
         /* Pull the option type and length. */
-        OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&option->type, 1, 0) != SUCCESS);
-        OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&option->length, 1, 0) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull(buffer, (char *)&option->type, 1, 0) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull(buffer, (char *)&option->length, 1, 0) != SUCCESS);
 
         /* If this option has some data. */
         if (option->length > 2)
@@ -202,7 +202,7 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER *buffer, PPP_CONF_OPT *o
                 ((uint32_t)(option->length - 2) <= PPP_MAX_OPTION_SIZE))
             {
                 /* Just pull the data and copy it in the option data buffer. */
-                OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)option->data, (uint32_t)(option->length - 2), 0) != SUCCESS);
+                OS_ASSERT(fs_buffer_pull(buffer, (char *)option->data, (uint32_t)(option->length - 2), 0) != SUCCESS);
             }
             else
             {
@@ -248,20 +248,20 @@ int32_t ppp_packet_configuration_header_add(FS_BUFFER *buffer, PPP_CONF_PKT *pac
     packet->length = (uint16_t)(buffer->total_length + 4);
 
     /* Push length for this packet. */
-    status = fs_buffer_chain_push(buffer, (char *)&packet->length, 2, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD));
+    status = fs_buffer_push(buffer, (char *)&packet->length, 2, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD));
 
     /* If length was successfully added. */
     if (status == SUCCESS)
     {
         /* Push configuration packet ID. */
-        status = fs_buffer_chain_push(buffer, (char *)&packet->id, 1, FS_BUFFER_HEAD);
+        status = fs_buffer_push(buffer, (char *)&packet->id, 1, FS_BUFFER_HEAD);
     }
 
     /* If packet ID was successfully added. */
     if (status == SUCCESS)
     {
         /* Push configuration packet code. */
-        status = fs_buffer_chain_push(buffer, (char *)&packet->code, 1, FS_BUFFER_HEAD);
+        status = fs_buffer_push(buffer, (char *)&packet->code, 1, FS_BUFFER_HEAD);
     }
 
     /* Return status to the caller. */
@@ -283,20 +283,20 @@ int32_t ppp_packet_configuration_option_add(FS_BUFFER *buffer, PPP_CONF_OPT *opt
     int32_t status = SUCCESS;
 
     /* Add type of this option. */
-    status = fs_buffer_chain_push(buffer, (char *)&option->type, 1, 0);
+    status = fs_buffer_push(buffer, (char *)&option->type, 1, 0);
 
     /* If type was successfully added. */
     if (status == SUCCESS)
     {
         /* Add length for this option. */
-        status = fs_buffer_chain_push(buffer, (char *)&option->length, 1, 0);
+        status = fs_buffer_push(buffer, (char *)&option->length, 1, 0);
     }
 
     /* Check if we need to add value data in the option. */
     if (option->length > 2)
     {
         /* Add the option value. */
-        status = fs_buffer_chain_push(buffer, (char *)option->data, (uint32_t)(option->length - 2), 0);
+        status = fs_buffer_push(buffer, (char *)option->data, (uint32_t)(option->length - 2), 0);
     }
 
     /* Return status to the caller. */
