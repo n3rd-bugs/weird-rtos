@@ -67,7 +67,7 @@ void usb_function_stm32f407_init()
 #elif defined(STM32F407_USB_CDC_ACM_PPP)
 
     /* Register USB CDC with PPP. */
-    ppp_register_fd(&ppp_instance, (FD)&usb_cdc_device.cdc_console);
+    ppp_register_fd(&ppp_instance, (FD)&usb_cdc_device.cdc_console, TRUE);
 #endif
 #endif
 
