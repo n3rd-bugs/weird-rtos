@@ -12,8 +12,10 @@ This list is needed to be updated whenever a new error code is added.
     PPP_INVALID_HEADER      -900
     PPP_NOT_SUPPORTED       -901
     PPP_VALUE_NOT_VALID     -902
-    PPP_NO_NEXT_OPTION      -903
-    PPP_NO_BUFFERS          -904
-    PPP_NO_SPACE            -905
-    PPP_INTERNAL_ERROR      -906
-    HDLC_STREAM_ERROR       -1000
+    PPP_PARTIAL_READ        -903
+    PPP_NO_NEXT_OPTION      -904
+    PPP_NO_BUFFERS          -905
+    PPP_NO_SPACE            -906
+    PPP_INTERNAL_ERROR      -907
+    HDLC_STREAM_ERROR       -920
+    MODEM_CHAT_IGNORE       -930
