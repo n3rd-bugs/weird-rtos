@@ -88,8 +88,13 @@ int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_
             /* Remote has same IP address. */
             else
             {
+#ifdef OS_LITTLE_ENDIAN
                 /* Copy the configured remote IP address in the PPP structure. */
                 fs_memcpy_r((char *)&ppp->remote_ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+#else
+                /* Copy the configured remote IP address in the PPP structure. */
+                memcpy((char *)&ppp->remote_ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+#endif
 
                 /* Return success. */
                 status = SUCCESS;
@@ -99,8 +104,13 @@ int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_
         /* If this is a ACK for our configuration. */
         if (rx_packet->code == PPP_CONFIG_ACK)
         {
+#ifdef OS_LITTLE_ENDIAN
             /* Copy the configured local IP address in the PPP structure. */
             fs_memcpy_r((char *)&ppp->local_ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+#else
+            /* Copy the configured local IP address in the PPP structure. */
+            memcpy((char *)&ppp->local_ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+#endif
 
             /* Return success. */
             status = SUCCESS;

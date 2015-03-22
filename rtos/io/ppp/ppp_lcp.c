@@ -118,7 +118,11 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
             else if (db_value != NULL)
             {
                 /* Copy the given value in the option buffer. */
+#ifdef OS_LITTLE_ENDIAN
                 fs_memcpy_r((char *)option.data, (char *)db_value, (uint32_t)(opt_len - 2));
+#else
+                memcpy((char *)option.data, (char *)db_value, (uint32_t)(opt_len - 2));
+#endif
             }
 
             else if (db_value != (const uint8_t *)(LCP_OPT_NO_VALUE))
@@ -185,7 +189,11 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         if (rx_packet->code == PPP_CONFIG_ACK)
         {
             /* Save the received MRU value. */
+#ifdef OS_LITTLE_ENDIAN
             fs_memcpy_r((char *)&(ppp->mru), (char *)option->data, (uint32_t)(option->length - 2));
+#else
+            memcpy((char *)&(ppp->mru), (char *)option->data, (uint32_t)(option->length - 2));
+#endif
         }
 
         /* Break out of this switch. */
@@ -198,14 +206,22 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         if (rx_packet->code == PPP_CONFIG_REQ)
         {
             /* Pull the ACCM in PPP configuration as receive ACCM. */
+#ifdef OS_LITTLE_ENDIAN
             fs_memcpy_r((char *)&(ppp->rx_accm), (char *)option->data, (uint32_t)(option->length - 2));
+#else
+            memcpy((char *)&(ppp->rx_accm), (char *)option->data, (uint32_t)(option->length - 2));
+#endif
         }
 
         /* If we have received an ACK for this configuration. */
         else if (rx_packet->code == PPP_CONFIG_ACK)
         {
             /* Pull the ACCM in PPP configuration as transmit ACCM. */
+#ifdef OS_LITTLE_ENDIAN
             fs_memcpy_r((char *)&(ppp->tx_accm[0]), (char *)option->data, (uint32_t)(option->length - 2));
+#else
+            memcpy((char *)&(ppp->tx_accm[0]), (char *)option->data, (uint32_t)(option->length - 2));
+#endif
         }
 
         break;
