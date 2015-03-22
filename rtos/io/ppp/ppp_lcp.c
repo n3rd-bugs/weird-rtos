@@ -71,7 +71,7 @@ const uint8_t ppp_lcp_option_valid_lengths[LCP_OPT_DB_NUM_OPTIONS_VALID] =
 void ppp_lcp_state_initialize(PPP *ppp)
 {
     /* Initialize PPP connection state. */
-    ppp->lcp_flags = 0;
+    ppp->flags &= ~(PPP_FALG_ACFC | PPP_FLAG_PFC);
     ppp->rx_accm = (0xFFFFFFFF);
     ppp->tx_accm[0] = (0xFFFFFFFF);
     ppp->tx_accm[1] = (0x0);
@@ -242,7 +242,7 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         {
             /* Set the flag in PPP structure that we might
              * receive compressed protocol field. */
-            ppp->lcp_flags |= PPP_FLAG_PFC;
+            ppp->flags |= PPP_FLAG_PFC;
         }
 
         break;
@@ -255,7 +255,7 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         {
             /* Set the flag in PPP structure that we might
              * receive compressed address and control fields. */
-            ppp->lcp_flags |= PPP_FALG_ACFC;
+            ppp->flags |= PPP_FALG_ACFC;
         }
 
         break;

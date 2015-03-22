@@ -20,9 +20,11 @@
  * ppp_register_fd
  * @ppp: PPP instance data.
  * @fd: File descriptor to hook with this PPP instance.
+ * @dedicated: If true the registered FD will be considered as dedicated and
+ *  packets not parsed correctly will be dropped.
  * This function will register a file descriptor with PPP.
  */
-void ppp_register_fd(PPP *ppp, FD fd)
+void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
 {
     /* Will only work with buffered file descriptors. */
     OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
@@ -49,6 +51,12 @@ void ppp_register_fd(PPP *ppp, FD fd)
     /* Assume that we are already connected. */
     ppp->state = PPP_STATE_CONNECTED;
     ppp->state_data.lcp_id = 0;
+
+    if (dedicated == TRUE)
+    {
+        /* Set the dedicated file descriptor flag. */
+        ppp->flags |= PPP_DEDICATED_FD;
+    }
 
 #ifdef CONFIG_SEMAPHORE
     /* Create the PPP instance semaphore. */
@@ -146,7 +154,7 @@ void ppp_process_modem_chat(void *fd, PPP *ppp)
 
         /* If this was our buffer. If not buffer will lie on the file descriptor
          * so that if someone else is exacting it, can receive this buffer. */
-        if ( (status == SUCCESS) || (status != MODEM_CHAT_IGNORE))
+        if ( (ppp->flags & PPP_DEDICATED_FD) || (status == SUCCESS) || (status != MODEM_CHAT_IGNORE))
         {
             /* Remove the buffer from the receive list and free it. */
             OS_ASSERT(fs_buffer_one_get(fd, FS_BUFFER_RX, 0) != buffer);
@@ -216,8 +224,9 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
             tx_packet.id = rx_packet.id;
         }
 
-        /* Don't process data in terminate request. */
-        if (rx_packet.code != PPP_TREM_REQ)
+        /* Don't process data if we don't have a configuration request or
+         * configuration acknowledgment. */
+        if ((rx_packet.code == PPP_CONFIG_REQ) || (rx_packet.code == PPP_CONFIG_ACK))
         {
             /* Parse all the in-line packet options. */
             while (status == SUCCESS)
@@ -311,6 +320,13 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                     break;
                 }
             }
+        }
+
+        /* If it is not a terminate request. */
+        else if (rx_packet.code != PPP_TREM_REQ)
+        {
+            /* This PPP code is not supported. */
+            status = PPP_NOT_SUPPORTED;
         }
 
         /* If options in the packets were successfully parsed. */

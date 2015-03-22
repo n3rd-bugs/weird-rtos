@@ -43,10 +43,11 @@
 /* PPP configuration flags. */
 #define PPP_FALG_ACFC               0x01
 #define PPP_FLAG_PFC                0x02
+#define PPP_DEDICATED_FD            0x04
 
 /* ACFC and PFC helper macros. */
-#define PPP_IS_ACFC_VALID(ppp)      ((ppp)->lcp_flags & PPP_FALG_ACFC)
-#define PPP_IS_PFC_VALID(ppp)       ((ppp)->lcp_flags & PPP_FLAG_PFC)
+#define PPP_IS_ACFC_VALID(ppp)      ((ppp)->flags & PPP_FALG_ACFC)
+#define PPP_IS_PFC_VALID(ppp)       ((ppp)->flags & PPP_FLAG_PFC)
 
 /* LCP code definitions. */
 #define PPP_CONFIG_NONE             0
@@ -86,8 +87,8 @@ typedef struct _ppp_data
     /* PPP instance state. */
     uint32_t    state;
 
-    /* PPP LCP configuration flags. */
-    uint32_t    lcp_flags;
+    /* PPP configuration flags. */
+    uint32_t    flags;
 
     /* ACCM definitions. */
     uint32_t    tx_accm[8];
@@ -133,7 +134,7 @@ typedef struct _ppp_proto
 } PPP_PROTO;
 
 /* Function prototypes. */
-void ppp_register_fd(PPP *, FD fd);
+void ppp_register_fd(PPP *, FD, uint8_t);
 void ppp_connection_established(void *, void *);
 void ppp_connection_terminated(void *, void *);
 void ppp_rx_watcher(void *, void *);
