@@ -21,18 +21,19 @@
 #define PPP_LOCAL_IP_ADDRESS    {192, 168, 0, 1}
 #define PPP_REMOTE_IP_ADDRESS   {192, 168, 0, 2}
 
-/* IPCP option definitions. */
-#define PPP_IPCP_OPT_COMP   2
-#define PPP_IPCP_OPT_IP     3
+/* IPCP option type definitions. */
+#define PPP_IPCP_OPT_IPS        1
+#define PPP_IPCP_OPT_COMP       2
+#define PPP_IPCP_OPT_IP         3
 
 /* Exported variables. */
 extern PPP_PROTO ppp_proto_ipcp;
 
 /* Function prototypes. */
-uint8_t ppp_ipcp_option_negotiable(PPP *, PPP_PKT_OPT *);
-int32_t ppp_ipcp_option_pocess(PPP *, PPP_PKT_OPT *, PPP_PKT *);
-uint8_t ppp_ipcp_option_length_valid(PPP *, PPP_PKT_OPT *);
-int32_t ppp_ipcp_update(void *, PPP *, PPP_PKT *, PPP_PKT *);
+uint8_t ppp_ipcp_option_negotiable(PPP *, PPP_CONF_OPT *);
+int32_t ppp_ipcp_option_pocess(PPP *, PPP_CONF_OPT *, PPP_CONF_PKT *);
+uint8_t ppp_ipcp_option_length_valid(PPP *, PPP_CONF_OPT *);
+int32_t ppp_ipcp_update(void *, PPP *, PPP_CONF_PKT *, PPP_CONF_PKT *);
 
 #endif /* CONFIG_PPP */
 

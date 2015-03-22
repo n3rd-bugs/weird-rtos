@@ -16,8 +16,8 @@
 #include <string.h>
 
 /*
- * hdlc_parse_header
- * @buffer: Buffer needed to be processed.
+ * ppp_hdlc_header_parse
+ * @buffer: Buffer chain needed to be processed.
  * @acfc: If address and control fields may be compressed.
  * @return: A success status will be returned if header was successfully parsed,
  *  PPP_INVALID_HEADER will be returned if an invalid header was parsed.
@@ -34,16 +34,21 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER_CHAIN *buffer, uint8_t acfc)
     /* First un-escape the data. */
     status = ppp_hdlc_unescape(buffer);
 
+
+    /* RFC-1662:
+     * +----------+----------+----------+----------+----------+----------+----------+
+     * |   Flag   | Address  | Control  | Protocol |    PPP   |   FCS    |   Flag   |
+     * | 01111110 | 11111111 | 00000011 | 8/16 bits|  Payload |16/32 bits| 01111110 |
+     * +----------+----------+----------+----------+----------+----------+----------+
+     * We will process start/end flags, address and control fields and the
+     * trailing FCS at the end.
+     */
+
+    /* Verify start flag. */
     if (status == SUCCESS)
     {
-        /* RFC-1662:
-         * +----------+----------+----------+----------+----------+----------+----------+
-         * |   Flag   | Address  | Control  | Protocol |    PPP   |   FCS    |   Flag   |
-         * | 01111110 | 11111111 | 00000011 | 8/16 bits|  Payload |16/32 bits| 01111110 |
-         * +----------+----------+----------+----------+----------+----------+----------+
-         */
-        /* To successfully parse HDLC frame we must need 6 bytes on the buffer. */
-        if (buffer->total_length >= 6)
+        /* To successfully parse HDLC frame we must need 4 bytes on the buffer. */
+        if (buffer->total_length >= 4)
         {
             /* Peek the start buffer. */
             OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&flag, 1, FS_BUFFER_INPLACE) != SUCCESS);
@@ -62,6 +67,7 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER_CHAIN *buffer, uint8_t acfc)
         }
     }
 
+    /* Verify end flag. */
     if (status == SUCCESS)
     {
         /* Clear the previous flag. */
@@ -78,16 +84,15 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER_CHAIN *buffer, uint8_t acfc)
         }
     }
 
+    /* If start and end flags were successfully parsed. */
     if (status == SUCCESS)
     {
-        /* Skim the start flag. */
+        /* Skim the start and end flags. */
         OS_ASSERT(fs_buffer_chain_pull(buffer, NULL, 1, 0) != SUCCESS);
-
-        /* Pull the end flag. */
         OS_ASSERT(fs_buffer_chain_pull(buffer, NULL, 1, FS_BUFFER_TAIL) != SUCCESS);
 
         /* Compute and verify the FCS. */
-        if (PPP_FCS16_IS_VALID(buffer->list.head))
+        if (PPP_FCS16_IS_VALID(buffer))
         {
             /* Pull the FCS from the buffer.
              * RFC-1662: The FCS field is calculated over all bits of the
@@ -98,33 +103,36 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER_CHAIN *buffer, uint8_t acfc)
              * Sequences nor the FCS field itself.*/
             OS_ASSERT(fs_buffer_chain_pull(buffer, NULL, 2, FS_BUFFER_TAIL) != SUCCESS);
 
-            /* Peek the address and control fields. */
-            OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)acf, 2, FS_BUFFER_INPLACE) != SUCCESS);
-
-            /* Verify that we have address and control fields as specified
-             * by the RFC-1662. */
-            if ((acf[0] == PPP_ADDRESS) && (acf[1] == PPP_CONTROL))
+            if (buffer->total_length >= 2)
             {
-                /* Skim the address and control fields. */
-                OS_ASSERT(fs_buffer_chain_pull(buffer, NULL, 2, 0) != SUCCESS);
+                /* Peek the address and control fields. */
+                OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)acf, 2, FS_BUFFER_INPLACE) != SUCCESS);
 
-                /* HDLC frame was successfully verified. */
-                status = SUCCESS;
+                /* Verify that we have address and control fields as specified
+                 * by the RFC-1662. */
+                if ((acf[0] == PPP_ADDRESS) && (acf[1] == PPP_CONTROL))
+                {
+                    /* Skim the address and control fields. */
+                    OS_ASSERT(fs_buffer_chain_pull(buffer, NULL, 2, 0) != SUCCESS);
+                }
+
+                /* When ACFC is negotiated these two fields can be left out, if
+                 * not these should have been inline.  */
+                else if ( ((acf[0] != PPP_ADDRESS) || (acf[1] != PPP_CONTROL)) &&
+                          (acfc != TRUE) )
+                {
+                    /* Return an error here. */
+                    status = PPP_INVALID_HEADER;
+                }
             }
 
-            /* When ACFC is negotiated these two fields will be left out.  */
-            else if ( ((acf[0] != PPP_ADDRESS) || (acf[1] != PPP_CONTROL)) &&
-                      (acfc == TRUE) )
+            /* If ACFC is not enabled we should have something here. */
+            else if (acfc != TRUE)
             {
-                /* Address and control field are elided. */
-                /* HDLC frame was successfully verified. */
-                status = SUCCESS;
+                /* Return an error here. */
+                status = PPP_INVALID_HEADER;
             }
         }
-    }
-    else
-    {
-        status = -1;
     }
 
     /* Return status to the caller. */
@@ -161,9 +169,10 @@ int32_t ppp_hdlc_unescape(FS_BUFFER_CHAIN *buffer)
         this_buffer = this_buffer->next;
     }
 
+    /* If we have got a escape flag but no next byte. */
     if (last_escaped == TRUE)
     {
-        /* Should not happen return an error. */
+        /* This is a parsing error, return an error. */
         status = HDLC_STREAM_ERROR;
     }
 
@@ -175,6 +184,8 @@ int32_t ppp_hdlc_unescape(FS_BUFFER_CHAIN *buffer)
 /*
  * ppp_hdlc_unescape_one
  * @buffer: Buffer needed to be processed.
+ * @last_escaped: If we got a escape byte at the end of a buffer, this flag
+ *  will be set to true so that we can escape the first byte on next buffer.
  * This function will un-escaping a HDLC buffer.
  */
 void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
@@ -185,9 +196,11 @@ void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
     /* If we need to escape first byte on this buffer. */
     if ((buffer->length > 0) && (*last_escaped == TRUE))
     {
-        /* Compute the byte to return. */
+        /* Escape the first byte. */
         data[converted] = (buffer->buffer[0] ^ 0x20);
         converted ++;
+
+        /* Reest the escape flag. */
         *last_escaped = FALSE;
 
         /* Consume this byte. */
@@ -203,16 +216,17 @@ void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
             /* If we have enough length on source buffer. */
             if (buffer->length > 1)
             {
-                /* Compute the byte to return. */
+                /* Escape this byte and put it back on the buffer in-line with
+                 * other bytes. */
                 data[converted] = (buffer->buffer[1] ^ 0x20);
                 converted ++;
 
-                /* Consume 2 bytes. */
+                /* Consume 2 bytes from the given buffer. */
                 OS_ASSERT(fs_buffer_one_pull(buffer, NULL, 2, 0) != SUCCESS);
             }
             else
             {
-                /* Consume this byte. */
+                /* Consume this byte from the given buffer. */
                 OS_ASSERT(fs_buffer_one_pull(buffer, NULL, 1, 0) != SUCCESS);
 
                 /* First byte in the next buffer is needed to be escaped. */
@@ -222,16 +236,16 @@ void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
 
         else
         {
-            /* Put this byte on the destination buffer. */
+            /* Put this byte on the destination buffer as it is. */
             data[converted] = buffer->buffer[0];
             converted ++;
 
-            /* Consume this byte. */
+            /* Consume this byte from the given buffer. */
             OS_ASSERT(fs_buffer_one_pull(buffer, NULL, 1, 0) != SUCCESS);
         }
     }
 
-    /* if we have processed the whole stream. */
+    /* If we have processed the whole buffer. */
     if (buffer->length == 0)
     {
         /* Reinitialize buffer data. */
@@ -242,70 +256,82 @@ void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
 
 /*
  * ppp_hdlc_header_add
- * @buffer: Buffer needed to be processed.
+ * @buffer: Buffer on which we need to put an HDLC header.
  * @accm: Array of 4 bytes of transmit ACCM to be used to escape the data.
  * @acfc: If address and control fields may be compressed.
  * @lcp: If we are sending a LCP request.
  * @return: A success status will be returned if header was successfully added,
  *  PPP_NO_SPACE will be returned if there was not enough space on the buffer
  *  to add this header.
- * This function will process the HDLC header. Nothing is needed to be returned
- * here other then verifying and stripping the FCS at the end of the packet and
- * verifying other constant data like flags, address and control fields.
- * [TDOD] Add support for multiple buffers here or multiple packets in a buffer.
+ * This function will add an HDLC header on the given buffer, also this function
+ * is responsible for escaping the data after computing and appending the FCS.
  */
 int32_t ppp_hdlc_header_add(FS_BUFFER_CHAIN *buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp)
 {
-    int32_t status = SUCCESS;
-    uint8_t value_uint8;
-    uint16_t fcs;
     FS_BUFFER_CHAIN destination;
+    int32_t status = SUCCESS;
+    uint16_t fcs;
 
     /* When ACFC is negotiated we can optionally drop address and control
-     * fields. */
+     * fields. We will still need to add these fields if we are sending a LCP
+     * frame. */
     if ((lcp == TRUE) || (acfc == FALSE))
     {
         /* Add control field. */
-        value_uint8 = PPP_CONTROL;
-        OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
+        status = fs_buffer_chain_push(buffer, (char []){ (char)PPP_CONTROL }, 1, FS_BUFFER_HEAD);
 
-        /* Add address field. */
-        value_uint8 = PPP_ADDRESS;
-        OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
+        if (status == SUCCESS)
+        {
+            /* Add address field. */
+            status = fs_buffer_chain_push(buffer, (char []){ (char)PPP_ADDRESS }, 1, FS_BUFFER_HEAD);
+        }
     }
 
-    /* Calculate the FCS of the data. */
-    fcs = ppp_fcs16_buffer_calculate(buffer->list.head, PPP_FCS16_INIT);
-    fcs ^= 0xffff;
-
-    /* Push the FCS at the end of buffer. */
-    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&fcs, 2, 0) != SUCCESS);
-
-    /* Initialize a destination chain buffer. */
-    memset(&destination, 0, sizeof(FS_BUFFER_CHAIN));
-    destination.fd = buffer->fd;
-
-    /* Escape the data. */
-    status = ppp_hdlc_escape(buffer, &destination, accm, lcp);
-
-    /* If there is still some data left on the source buffer then the status
-     * is not success, we still need to clean up the things. */
-    if (buffer->total_length > 0)
+    /* If address and control fields were successfully added. */
+    if (status == SUCCESS)
     {
-        /* Free the remaining buffers. */
-        fs_buffer_chain_add(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+        /* Calculate the FCS of the data. */
+        fcs = ppp_fcs16_buffer_calculate(buffer, PPP_FCS16_INIT);
+        fcs ^= 0xffff;
+
+        /* Push the FCS at the end of buffer. */
+        status = fs_buffer_chain_push(buffer, (char *)&fcs, 2, 0);
     }
 
-    /* Copy our chain buffer to the provided buffer. */
-    memcpy(buffer, &destination, sizeof(FS_BUFFER_CHAIN));
+    /* If FCS was successfully appended. */
+    if (status == SUCCESS)
+    {
+        /* Initialize a destination chain buffer. */
+        memset(&destination, 0, sizeof(FS_BUFFER_CHAIN));
+        destination.fd = buffer->fd;
+
+        /* Escape the given buffer and initialize an other buffer with the result. */
+        status = ppp_hdlc_escape(buffer, &destination, accm, lcp);
+
+        /* If there is still some data left on the source buffer then the status
+         * is not success, we still need to clean up the things. */
+        if (buffer->total_length > 0)
+        {
+            /* Free the remaining buffers. */
+            fs_buffer_chain_add(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+        }
+    }
 
     /* If data was successfully escaped. */
     if (status == SUCCESS)
     {
-        /* Add start and end flags. */
-        value_uint8 = PPP_FLAG;
-        OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&value_uint8, 1, FS_BUFFER_HEAD) != SUCCESS);
-        OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&value_uint8, 1, 0) != SUCCESS);
+        /* Copy new chain buffer to the provided buffer. */
+        memcpy(buffer, &destination, sizeof(FS_BUFFER_CHAIN));
+
+        /* Add start flag. */
+        status = fs_buffer_chain_push(buffer, (char []){ PPP_FLAG }, 1, FS_BUFFER_HEAD);
+
+        /* If start flag was successfully added. */
+        if (status == SUCCESS)
+        {
+            /* Add end flag. */
+            status = fs_buffer_chain_push(buffer, (char []){ PPP_FLAG }, 1, 0);
+        }
     }
 
     /* Return status to the caller. */
@@ -317,10 +343,10 @@ int32_t ppp_hdlc_header_add(FS_BUFFER_CHAIN *buffer, uint32_t *accm, uint8_t acf
  * ppp_hdlc_escape
  * @src: Buffer needed to be processed.
  * @dst: Buffer in which escaped packet will be pushed.
- * @accm: Array of 4 bytes of transmit ACCM.
- * @lcp: If we are sending a LCP request.
- * This function will escape a HDLC buffer. This routine will leave room for
- * end and start flags.
+ * @accm: Array of 4 bytes of the negotiated transmit ACCM.
+ * @lcp: True if we are sending a LCP request.
+ * This function will escape a HDLC buffer. The result will be larger than the
+ * provided buffer so we cannot push the data in the same buffer.
  */
 int32_t ppp_hdlc_escape(FS_BUFFER_CHAIN *src, FS_BUFFER_CHAIN *dst, uint32_t *accm, uint8_t lcp)
 {

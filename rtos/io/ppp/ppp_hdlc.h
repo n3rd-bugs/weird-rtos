@@ -18,7 +18,7 @@
 #ifdef CONFIG_PPP
 
 /* Status code definitions. */
-#define HDLC_STREAM_ERROR       -1000
+#define HDLC_STREAM_ERROR       -920
 
 /* HDLC protocol definitions. */
 #define PPP_FLAG                (0x7E)

@@ -16,8 +16,8 @@
 
 /*
  * ppp_packet_protocol_parse
- * @buffer: FS buffer needed to be parsed.
- * @protocol: PPP protocol will be returned here.
+ * @buffer: Received buffer needed to be parsed.
+ * @protocol: Parsed PPP protocol will be returned here.
  * @pfc: If true it means we might receive a protocol with first byte elided.
  * @return: A success status will be returned if header was successfully parsed,
  *  PPP_INVALID_HEADER will be returned if an invalid header was parsed.
@@ -27,25 +27,56 @@
 int32_t ppp_packet_protocol_parse(FS_BUFFER_CHAIN *buffer, uint16_t *protocol, uint8_t pfc)
 {
     int32_t status = SUCCESS;
+    uint16_t ret_protocol;
     uint8_t proto[2];
 
-    /* We must have 2 bytes on the buffer to pull the PPP protocol field. */
-    if (buffer->total_length > 2)
+    /* If we have at-least 1 bytes on the buffer to parse the protocol. */
+    if (buffer->total_length >= 1)
     {
-        /* Peek first two bytes of the buffer. */
-        OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)proto, 2, FS_BUFFER_INPLACE) != SUCCESS);
+        /* Peek the first byte of the buffer. */
+        OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)proto, 1, FS_BUFFER_INPLACE) != SUCCESS);
 
-        /* First byte of protocol must be even and second must be odd. */
-        if ((!(proto[0] & 0x1)) && (proto[1] & 0x1))
+        /* Put the first byte of protocol as it is. */
+        ret_protocol = proto[0];
+
+        /* If this is even. */
+        if (proto[0] & 0x1)
         {
-            /* Pull the protocol field. */
-            OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)protocol, sizeof(uint16_t), FS_BUFFER_MSB_FIRST) != SUCCESS);
+            /* If we have PFC negotiated. */
+            if (pfc == TRUE)
+            {
+                /* First byte of sent protocol is zero and elided. */
+
+                /* Pull and consume the protocol byte. */
+                OS_ASSERT(fs_buffer_chain_pull(buffer, NULL, 1, 0) != SUCCESS);
+            }
+
+            else
+            {
+                /* Invalid protocol field was given. */
+                status = PPP_INVALID_HEADER;
+            }
         }
 
-        else if ((proto[0] & 0x1) && (pfc))
+        /* If first byte is not even then we should have second byte of protocol
+         * too. */
+        else if (buffer->total_length >= 2)
         {
-            /* First byte is zero and elided. */
-            *protocol = (uint16_t)(proto[0]);
+            /* Peek the first two byte of the buffer. */
+            OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&proto, 2, FS_BUFFER_INPLACE) != SUCCESS);
+
+            /* First byte of protocol must be even and second must be odd. */
+            if ((!(proto[0] & 0x1)) && (proto[1] & 0x1))
+            {
+                /* Pull the protocol field. */
+                OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&ret_protocol, sizeof(uint16_t), FS_BUFFER_MSB_FIRST) != SUCCESS);
+            }
+
+            else
+            {
+                /* Invalid protocol parsed, return an error. */
+                status = PPP_INVALID_HEADER;
+            }
         }
 
         else
@@ -61,6 +92,12 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER_CHAIN *buffer, uint16_t *protocol, u
         status = PPP_INVALID_HEADER;
     }
 
+    if (status == SUCCESS)
+    {
+        /* Return the parsed protocol. */
+        *protocol = ret_protocol;
+    }
+
     /* Return status to the caller. */
     return (status);
 
@@ -68,7 +105,7 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER_CHAIN *buffer, uint16_t *protocol, u
 
 /*
  * ppp_packet_protocol_add
- * @buffer: FS buffer needed to be updated.
+ * @buffer: Buffer on which PPP protocol is needed to be added.
  * @protocol: PPP protocol needed to be added.
  * @pfc: If true it means we can compress the protocol field.
  * @return: A success status will be returned if protocol was successfully added.
@@ -78,7 +115,7 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER_CHAIN *buffer, uint16_t *protocol, u
  */
 int32_t ppp_packet_protocol_add(FS_BUFFER_CHAIN *buffer, uint16_t protocol, uint8_t pfc)
 {
-    int32_t status = SUCCESS;
+    int32_t status;
     uint8_t proto_len = 2;
 
     /* If we can compress the protocol field. */
@@ -98,19 +135,19 @@ int32_t ppp_packet_protocol_add(FS_BUFFER_CHAIN *buffer, uint16_t protocol, uint
 
 /*
  * ppp_packet_configuration_header_parse
- * @buffer: FS buffer needed to be parsed.
- * @packet: PPP packet needed to be populated.
+ * @buffer: Buffer from which PPP configuration header is needed to be parsed.
+ * @packet: PPP packet structure which will be populated with the parsed data.
  * @return: A success status will be returned if header was successfully parsed,
  *  PPP_INVALID_HEADER will be returned if an invalid header was parsed.
  * This function will parse the PPP header for configuration packets in the
  * given buffer and populate the PPP packet structure.
  */
-int32_t ppp_packet_configuration_header_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT *packet)
+int32_t ppp_packet_configuration_header_parse(FS_BUFFER_CHAIN *buffer, PPP_CONF_PKT *packet)
 {
     int32_t status = SUCCESS;
 
-    /* We must have 4 bytes on the buffer to pull the PPP header. */
-    if (buffer->total_length > 4)
+    /* We must have 4 bytes on the buffer to pull the PPP configuration header. */
+    if (buffer->total_length >= 4)
     {
         /* Pull the code, id and length. */
         OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)&packet->code, 1, 0) != SUCCESS);
@@ -120,13 +157,13 @@ int32_t ppp_packet_configuration_header_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT *
         /* If header has invalid length of data left. */
         if (buffer->total_length != (uint32_t)(packet->length - 4))
         {
-            /* Should not happen return an error. */
+            /* This is a parsing error. */
             status = PPP_INVALID_HEADER;
         }
     }
     else
     {
-        /* Should not happen return an error. */
+        /* This is a parsing error. */
         status = PPP_INVALID_HEADER;
     }
 
@@ -137,15 +174,15 @@ int32_t ppp_packet_configuration_header_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT *
 
 /*
  * ppp_packet_configuration_option_parse
- * @buffer: FS buffer needed to be parsed.
- * @option: PPP option needed to be populated.
+ * @buffer: Buffer from which a configuration option is needed to be parsed.
+ * @option: PPP option structure that will be populated with the parsed values.
  * @return: A success status will be returned if option was successfully parsed,
  *  PPP_NO_NEXT_OPTION will be returned if there is no option to parse,
  *  PPP_INVALID_HEADER will be returned if an invalid header was parsed.
  * This function will parse a PPP option in the given buffer and populate the
  * PPP option structure.
  */
-int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT_OPT *option)
+int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_CONF_OPT *option)
 {
     int32_t status = SUCCESS;
 
@@ -164,7 +201,7 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT_O
             if ((buffer->total_length >= (uint32_t)(option->length - 2)) &&
                 ((uint32_t)(option->length - 2) <= PPP_MAX_OPTION_SIZE))
             {
-                /* Just pull the data and discard it. */
+                /* Just pull the data and copy it in the option data buffer. */
                 OS_ASSERT(fs_buffer_chain_pull(buffer, (char *)option->data, (uint32_t)(option->length - 2), 0) != SUCCESS);
             }
             else
@@ -174,11 +211,15 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT_O
             }
         }
     }
+
+    /* If we don't have any data left on the buffer to parse. */
     else if (buffer->total_length == 0)
     {
         /* There is no next option to process. */
         status = PPP_NO_NEXT_OPTION;
     }
+
+    /* There is still some data but not enough to make an option out of it. */
     else
     {
         /* Should not happen return an error. */
@@ -193,23 +234,35 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *buffer, PPP_PKT_O
 /*
  * ppp_packet_configuration_header_add
  * @buffer: Buffer on which configuration header will be added.
- * @packet: Packet header needed to be added.
+ * @packet: PPP Packet header needed to be added.
  * @return: A success status will be returned if header was successfully added,
  *  PPP_NO_SPACE will be returned if there is no space on the buffer to add the
  *  header.
- * This function will add a PPP configuration option in the provided buffer.
+ * This function will add a PPP configuration option header in the provided buffer.
  */
-int32_t ppp_packet_configuration_header_add(FS_BUFFER_CHAIN *buffer, PPP_PKT *packet)
+int32_t ppp_packet_configuration_header_add(FS_BUFFER_CHAIN *buffer, PPP_CONF_PKT *packet)
 {
     int32_t status = SUCCESS;
 
     /* Calculate the packet length. */
     packet->length = (uint16_t)(buffer->total_length + 4);
 
-    /* Push length, id and code of this packet. */
-    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&packet->length, 2, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD)) != SUCCESS);
-    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&packet->id, 1, FS_BUFFER_HEAD) != SUCCESS);
-    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&packet->code, 1, FS_BUFFER_HEAD) != SUCCESS);
+    /* Push length for this packet. */
+    status = fs_buffer_chain_push(buffer, (char *)&packet->length, 2, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD));
+
+    /* If length was successfully added. */
+    if (status == SUCCESS)
+    {
+        /* Push configuration packet ID. */
+        status = fs_buffer_chain_push(buffer, (char *)&packet->id, 1, FS_BUFFER_HEAD);
+    }
+
+    /* If packet ID was successfully added. */
+    if (status == SUCCESS)
+    {
+        /* Push configuration packet code. */
+        status = fs_buffer_chain_push(buffer, (char *)&packet->code, 1, FS_BUFFER_HEAD);
+    }
 
     /* Return status to the caller. */
     return (status);
@@ -225,19 +278,25 @@ int32_t ppp_packet_configuration_header_add(FS_BUFFER_CHAIN *buffer, PPP_PKT *pa
  *  data.
  * This function will add a PPP configuration option in the provided buffer.
  */
-int32_t ppp_packet_configuration_option_add(FS_BUFFER_CHAIN *buffer, PPP_PKT_OPT *option)
+int32_t ppp_packet_configuration_option_add(FS_BUFFER_CHAIN *buffer, PPP_CONF_OPT *option)
 {
     int32_t status = SUCCESS;
 
-    /* Add type, length of this option. */
-    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&option->type, 1, 0) != SUCCESS);
-    OS_ASSERT(fs_buffer_chain_push(buffer, (char *)&option->length, 1, 0) != SUCCESS);
+    /* Add type of this option. */
+    status = fs_buffer_chain_push(buffer, (char *)&option->type, 1, 0);
+
+    /* If type was successfully added. */
+    if (status == SUCCESS)
+    {
+        /* Add length for this option. */
+        status = fs_buffer_chain_push(buffer, (char *)&option->length, 1, 0);
+    }
 
     /* Check if we need to add value data in the option. */
     if (option->length > 2)
     {
         /* Add the option value. */
-        OS_ASSERT(fs_buffer_chain_push(buffer, (char *)option->data, (uint32_t)(option->length - 2), 0) != SUCCESS);
+        status = fs_buffer_chain_push(buffer, (char *)option->data, (uint32_t)(option->length - 2), 0);
     }
 
     /* Return status to the caller. */

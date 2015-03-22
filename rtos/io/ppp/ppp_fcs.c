@@ -13,7 +13,9 @@
 #include <os.h>
 
 #ifdef CONFIG_PPP
-static uint16_t ppp_fcs_table[256] =
+
+/* FCS look-up table. */
+static const uint16_t ppp_fcs_table[256] =
 {
     0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
     0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
@@ -73,20 +75,21 @@ uint16_t ppp_fcs16_calculate(char *data, uint32_t length, uint16_t fcs)
 
 /*
  * ppp_fcs16_buffer_calculate
- * @buffer: File system buffer for which 16-bit FCS is needed to be calculated.
+ * @buffer: File system buffer chain for which 16-bit FCS is needed to be
+ *  calculated.
  * @fcs: Previous FCS value.
  * @return: Calculated FCS value.
  * This function will calculate and return the 16-bit FCS for the given buffer.
  */
-uint16_t ppp_fcs16_buffer_calculate(FS_BUFFER *buffer, uint16_t fcs)
+uint16_t ppp_fcs16_buffer_calculate(FS_BUFFER_CHAIN *buffer, uint16_t fcs)
 {
-    FS_BUFFER *next_buffer = buffer;
+    FS_BUFFER *next_buffer = buffer->list.head;
 
     /* While we have buffer to process. */
     while (next_buffer != NULL)
     {
         /* Calculate FCS for this buffer. */
-        fcs = ppp_fcs16_calculate(buffer->buffer, buffer->length, fcs);
+        fcs = ppp_fcs16_calculate(next_buffer->buffer, next_buffer->length, fcs);
 
         /* Pick the next buffer in the buffer chain. */
         next_buffer = next_buffer->next;

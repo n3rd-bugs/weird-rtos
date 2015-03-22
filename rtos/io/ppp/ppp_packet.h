@@ -20,33 +20,33 @@
 /* Maximum option value length for an option in PPP packet. */
 #define PPP_MAX_OPTION_SIZE     16
 
-/* PPP option structure. */
-typedef struct _ppp_pkt_opt
+/* PPP configuration option structure. */
+typedef struct _ppp_conf_opt
 {
     uint8_t     type;       /* Option type. */
     uint8_t     length;     /* Option length. */
     uint8_t     data[PPP_MAX_OPTION_SIZE];  /* Option data. */
     uint8_t     pad[2];     /* Option structure padding. */
 
-} PPP_PKT_OPT ;
+} PPP_CONF_OPT;
 
-/* PPP packet data. */
-typedef struct _ppp_pkt
+/* PPP configuration packet data. */
+typedef struct _ppp_conf_pkt
 {
     /* PPP packet data. */
     uint16_t    length;     /* PPP packet length (not including protocol). */
     uint8_t     code;       /* PPP packet code. */
     uint8_t     id;         /* PPP packet id. */
 
-} PPP_PKT;
+} PPP_CONF_PKT;
 
 /* Function prototypes. */
 int32_t ppp_packet_protocol_parse(FS_BUFFER_CHAIN *, uint16_t *, uint8_t);
 int32_t ppp_packet_protocol_add(FS_BUFFER_CHAIN *, uint16_t, uint8_t);
-int32_t ppp_packet_configuration_header_parse(FS_BUFFER_CHAIN *, PPP_PKT *);
-int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *, PPP_PKT_OPT *);
-int32_t ppp_packet_configuration_header_add(FS_BUFFER_CHAIN *, PPP_PKT *);
-int32_t ppp_packet_configuration_option_add(FS_BUFFER_CHAIN *, PPP_PKT_OPT *);
+int32_t ppp_packet_configuration_header_parse(FS_BUFFER_CHAIN *, PPP_CONF_PKT *);
+int32_t ppp_packet_configuration_option_parse(FS_BUFFER_CHAIN *, PPP_CONF_OPT *);
+int32_t ppp_packet_configuration_header_add(FS_BUFFER_CHAIN *, PPP_CONF_PKT *);
+int32_t ppp_packet_configuration_option_add(FS_BUFFER_CHAIN *, PPP_CONF_OPT *);
 
 #endif /* CONFIG_PPP */
 

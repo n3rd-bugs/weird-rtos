@@ -17,6 +17,15 @@
 
 #ifdef CONFIG_PPP
 
+/* LCP option type definitions. */
+#define PPP_LCP_OPT_MRU                 1
+#define PPP_LCP_OPT_ACCM                2
+#define PPP_LCP_OPT_AUTH_PROTO          3
+#define PPP_LCP_OPT_QUAL_PROTO          4
+#define PPP_LCP_OPT_MAGIC               5
+#define PPP_LCP_OPT_PFC                 7
+#define PPP_LCP_OPT_ACFC                8
+
 /* PPP option DB configuration. */
 #define LCP_OPT_DB_NUM_OPTIONS          (9)
 #define LCP_OPT_DB_NUM_OPTIONS_VALID    (5)
@@ -34,10 +43,10 @@ extern PPP_PROTO ppp_proto_lcp;
 /* Function prototypes. */
 void ppp_lcp_state_initialize(PPP *);
 int32_t ppp_lcp_configuration_add(FS_BUFFER_CHAIN *);
-uint8_t ppp_lcp_option_negotiable(PPP *, PPP_PKT_OPT *);
-int32_t ppp_lcp_option_pocess(PPP *, PPP_PKT_OPT *, PPP_PKT *);
-uint8_t ppp_lcp_option_length_valid(PPP *, PPP_PKT_OPT *);
-int32_t ppp_lcp_update(void *, PPP *, PPP_PKT *, PPP_PKT *);
+uint8_t ppp_lcp_option_negotiable(PPP *, PPP_CONF_OPT *);
+int32_t ppp_lcp_option_pocess(PPP *, PPP_CONF_OPT *, PPP_CONF_PKT *);
+uint8_t ppp_lcp_option_length_valid(PPP *, PPP_CONF_OPT *);
+int32_t ppp_lcp_update(void *, PPP *, PPP_CONF_PKT *, PPP_CONF_PKT *);
 
 #endif /* CONFIG_PPP */
 

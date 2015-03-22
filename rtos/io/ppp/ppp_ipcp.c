@@ -34,7 +34,7 @@ PPP_PROTO ppp_proto_ipcp =
  * This function will return if a given option type for IPCP is negotiable or
  * not.
  */
-uint8_t ppp_ipcp_option_negotiable(PPP *ppp, PPP_PKT_OPT *option)
+uint8_t ppp_ipcp_option_negotiable(PPP *ppp, PPP_CONF_OPT *option)
 {
     uint8_t negotiable = FALSE;
 
@@ -44,6 +44,7 @@ uint8_t ppp_ipcp_option_negotiable(PPP *ppp, PPP_PKT_OPT *option)
     /* For now only IP address option is negotiable. */
     if (option->type == PPP_IPCP_OPT_IP)
     {
+        /* This is negotiable. */
         negotiable = TRUE;
     }
 
@@ -59,14 +60,13 @@ uint8_t ppp_ipcp_option_negotiable(PPP *ppp, PPP_PKT_OPT *option)
  * @rx_packet: Parsed PPP packet.
  * @return: Return success if option was successfully parsed,
  *  PPP_VALUE_NOT_VALID will be returned if a option value is not valid and a
- *  valid option value is returned in the option,
- *  PPP_NOT_SUPPORTED will be returned if option type is not supported.
+ *  valid option value is returned in the option, PPP_NOT_SUPPORTED will be
+ *  returned if option type is not supported.
  * This function will process the data for a given option.
  */
-int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_PKT_OPT *option, PPP_PKT *rx_packet)
+int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_packet)
 {
     int32_t status = PPP_NOT_SUPPORTED;
-    uint8_t ip[4] = PPP_REMOTE_IP_ADDRESS;
 
     /* If we have a IP option. */
     if (option->type == PPP_IPCP_OPT_IP)
@@ -75,11 +75,11 @@ int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_PKT_OPT *option, PPP_PKT *rx_packet
         if (rx_packet->code == PPP_CONFIG_REQ)
         {
             /* If remote has a different IP address. */
-            if (memcmp(option->data, ip, (uint32_t)(option->length - 2)))
+            if (memcmp(option->data, (uint8_t [])PPP_REMOTE_IP_ADDRESS, (uint32_t)(option->length - 2)))
             {
                 /* Whatever IP address was given by the other end, overwrite it
                  * with our configured IP address. */
-                memcpy(option->data, ip, (uint32_t)(option->length - 2));
+                memcpy(option->data, (uint8_t [])PPP_REMOTE_IP_ADDRESS, (uint32_t)(option->length - 2));
 
                 /* Tell the other end to use this IP address. */
                 status = PPP_VALUE_NOT_VALID;
@@ -119,7 +119,7 @@ int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_PKT_OPT *option, PPP_PKT *rx_packet
  * @return: Returns true of option length is valid.
  * This function will provide valid length of a given option type.
  */
-uint8_t ppp_ipcp_option_length_valid(PPP *ppp, PPP_PKT_OPT *option)
+uint8_t ppp_ipcp_option_length_valid(PPP *ppp, PPP_CONF_OPT *option)
 {
     uint8_t valid = FALSE;
 
@@ -127,7 +127,7 @@ uint8_t ppp_ipcp_option_length_valid(PPP *ppp, PPP_PKT_OPT *option)
     UNUSED_PARAM(ppp);
 
     /* We only support IP option for now. */
-    if ( (option->type == PPP_IPCP_OPT_IP) && (option->length == 6) )
+    if ((option->type == PPP_IPCP_OPT_IP) && (option->length == 6))
     {
         /* Option length is valid. */
         valid = TRUE;
@@ -148,37 +148,38 @@ uint8_t ppp_ipcp_option_length_valid(PPP *ppp, PPP_PKT_OPT *option)
  * This function will be called when a IPCP configuration packet is processed
  * and a rely has already sent and internal state is needed to be updated.
  */
-int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packet)
+int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT *tx_packet)
 {
     int32_t status = SUCCESS;
-    PPP_PKT_OPT option;
+    PPP_CONF_OPT option;
     FS_BUFFER_CHAIN tx_buffer;
 
     /* If we have not received an ACK for our configuration. */
     if (ppp->local_ip_address == 0)
     {
         /* Clear the transmit packet and buffer chain structures. */
-        memset(tx_packet, 0, sizeof(PPP_PKT));
+        memset(tx_packet, 0, sizeof(PPP_CONF_PKT));
         memset(&tx_buffer, 0, sizeof(FS_BUFFER_CHAIN));
         tx_buffer.fd = fd;
 
-        /* We will be sending an ACK until we see a requirement
-         * for not to. */
+        /* We have successfully ACKed a configuration request we will send our
+         * configuration now.. */
         tx_packet->code = PPP_CONFIG_REQ;
         tx_packet->id = ++(ppp->state_data.ipcp_id);
 
         /* Add IP configuration option in the transmit buffer. */
         memcpy(option.data, (uint8_t [])PPP_LOCAL_IP_ADDRESS, 4);
-        option.length = 6;
         option.type = PPP_IPCP_OPT_IP;
-
+        option.length = 6;
         status = ppp_packet_configuration_option_add(&tx_buffer, &option);
 
+        /* If configuration option was successfully added. */
         if (status == SUCCESS)
         {
             /* Push the PPP header on the buffer. */
             status = ppp_packet_configuration_header_add(&tx_buffer, tx_packet);
 
+            /* If configuration header was successfully added. */
             if (status == SUCCESS)
             {
                 /* Send this buffer. */
@@ -186,14 +187,12 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_pack
             }
         }
 
+        /* If configuration packet was not initialized. */
         if (status != SUCCESS)
         {
-            /* If we have allocated a TX buffer. */
-            if (tx_buffer.list.head != NULL)
-            {
-                /* Free this buffer. */
-                fs_buffer_chain_add(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
-            }
+            /* We might have allocated some buffers, free them as we have not
+             * sent the packet. */
+            fs_buffer_chain_add(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
         }
     }
 

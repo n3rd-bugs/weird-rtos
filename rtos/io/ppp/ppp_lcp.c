@@ -26,7 +26,10 @@ PPP_PROTO ppp_proto_lcp =
 };
 
 /* PPP LCP option database. */
+/* To be negotiated ACCM value. */
 const uint32_t ppp_lcp_accm = 0x00000000;
+
+/* PPP option index look-up table. */
 const int8_t ppp_lcp_opt_index[LCP_OPT_DB_NUM_OPTIONS] =
 {
     -1,     /* 0: Invalid option. */
@@ -40,15 +43,7 @@ const int8_t ppp_lcp_opt_index[LCP_OPT_DB_NUM_OPTIONS] =
     4,      /* 7: PFC. */
 };
 
-const uint8_t ppp_lcp_option_valid_lengths[LCP_OPT_DB_NUM_OPTIONS_VALID] =
-{
-    0x04,   /* 1: MRU. */
-    0x06,   /* 2: ACCM. */
-    0x06,   /* 5: MAGIC. */
-    0x02,   /* 8: ACFC. */
-    0x02,   /* 7: PFC. */
-};
-
+/* Option valid value look-up table. */
 const uint8_t *ppp_lcp_option_values[LCP_OPT_DB_NUM_OPTIONS_VALID] =
 {
     NULL,                           /* 1: MRU. */
@@ -56,6 +51,16 @@ const uint8_t *ppp_lcp_option_values[LCP_OPT_DB_NUM_OPTIONS_VALID] =
     (uint8_t *)LCP_OPT_RANDOM,      /* 5: MAGIC. */
     (uint8_t *)LCP_OPT_NO_VALUE,    /* 8: ACFC. */
     (uint8_t *)LCP_OPT_NO_VALUE,    /* 7: PFC. */
+};
+
+/* Option valid length look-up table. */
+const uint8_t ppp_lcp_option_valid_lengths[LCP_OPT_DB_NUM_OPTIONS_VALID] =
+{
+    0x04,   /* 1: MRU. */
+    0x06,   /* 2: ACCM. */
+    0x06,   /* 5: MAGIC. */
+    0x02,   /* 8: ACFC. */
+    0x02,   /* 7: PFC. */
 };
 
 /*
@@ -73,7 +78,7 @@ void ppp_lcp_state_initialize(PPP *ppp)
     ppp->tx_accm[2] = (0x0);
     ppp->tx_accm[3] = (0x60000000);
 
-} /* ppp_lcp_configuration_add */
+} /* ppp_lcp_state_initialize */
 
 /*
  * ppp_lcp_configuration_add
@@ -86,19 +91,20 @@ void ppp_lcp_state_initialize(PPP *ppp)
  */
 int32_t ppp_lcp_configuration_add(FS_BUFFER_CHAIN *buffer)
 {
-    PPP_PKT_OPT option;
+    PPP_CONF_OPT option;
     int32_t random, status = SUCCESS;
-    uint8_t i, opt_len;
-    uint8_t *db_value;
+    uint8_t opt_type, opt_len, *db_value;
 
-    for (i = 0; (status == SUCCESS) && (i < LCP_OPT_DB_NUM_OPTIONS); i++)
+    /* Check all the possible options and see if we need to send them in our
+     * configuration packet. */
+    for (opt_type = 0; (status == SUCCESS) && (opt_type < LCP_OPT_DB_NUM_OPTIONS); opt_type++)
     {
         /* If we need to send this option. */
-        if (((1 << i) & PPP_LCP_OPTION_SEND_MASK))
+        if (((1 << opt_type) & PPP_LCP_OPTION_SEND_MASK))
         {
             /* Pick up the option value and lengths needed to be send. */
-            db_value = (uint8_t *)ppp_lcp_option_values[ppp_lcp_opt_index[i]];
-            opt_len = ppp_lcp_option_valid_lengths[ppp_lcp_opt_index[i]];
+            db_value = (uint8_t *)ppp_lcp_option_values[ppp_lcp_opt_index[opt_type]];
+            opt_len = ppp_lcp_option_valid_lengths[ppp_lcp_opt_index[opt_type]];
 
             /* Check if this option takes a random value. */
             if (db_value == (const uint8_t *)(LCP_OPT_RANDOM))
@@ -121,10 +127,11 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER_CHAIN *buffer)
                 status = PPP_INTERNAL_ERROR;
             }
 
+            /* If option was successfully picked from the option database. */
             if (status == SUCCESS)
             {
                 /* Initialize the option needed to be send. */
-                option.type = i;
+                option.type = opt_type;
                 option.length = opt_len;
 
                 /* Add this option in the transmit buffer. */
@@ -147,7 +154,7 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER_CHAIN *buffer)
  * This function will return if a given option type for LCP is negotiable or
  * not.
  */
-uint8_t ppp_lcp_option_negotiable(PPP *ppp, PPP_PKT_OPT *option)
+uint8_t ppp_lcp_option_negotiable(PPP *ppp, PPP_CONF_OPT *option)
 {
     /* Remove some compiler warnings. */
     UNUSED_PARAM(ppp);
@@ -166,7 +173,7 @@ uint8_t ppp_lcp_option_negotiable(PPP *ppp, PPP_PKT_OPT *option)
  * @return: Always return success.
  * This function will process the data for a given option.
  */
-int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_PKT_OPT *option, PPP_PKT *rx_packet)
+int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_packet)
 {
     /* Process the option data. */
     switch (option->type)
@@ -254,13 +261,15 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_PKT_OPT *option, PPP_PKT *rx_packet)
  * @return: Returns true of option length is valid.
  * This function will provide valid length of a given option type.
  */
-uint8_t ppp_lcp_option_length_valid(PPP *ppp, PPP_PKT_OPT *option)
+uint8_t ppp_lcp_option_length_valid(PPP *ppp, PPP_CONF_OPT *option)
 {
     uint8_t valid = FALSE;
     uint8_t opt_len;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(ppp);
+
+    /* Check if we have a value for this option in our database. */
     if ((option->type < LCP_OPT_DB_NUM_OPTIONS) &&
         (ppp_lcp_opt_index[option->type] != -1))
     {
@@ -291,7 +300,7 @@ uint8_t ppp_lcp_option_length_valid(PPP *ppp, PPP_PKT_OPT *option)
  * This function will be called when a LCP configuration packet is processed
  * and a rely has already sent and internal state is needed to be updated.
  */
-int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packet)
+int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT *tx_packet)
 {
     int32_t status = SUCCESS;
     FS_BUFFER_CHAIN tx_buffer;
@@ -302,23 +311,25 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packe
          (tx_packet->code == PPP_CONFIG_ACK) )
     {
         /* Clear the transmit packet and buffer chain structures. */
-        memset(tx_packet, 0, sizeof(PPP_PKT));
+        memset(tx_packet, 0, sizeof(PPP_CONF_PKT));
         memset(&tx_buffer, 0, sizeof(FS_BUFFER_CHAIN));
         tx_buffer.fd = fd;
 
-        /* We will be sending an ACK until we see a requirement
-         * for not to. */
+        /* We have successfully ACKed a configuration request we will send our
+         * configuration now.. */
         tx_packet->code = PPP_CONFIG_REQ;
         tx_packet->id = ++(ppp->state_data.lcp_id);
 
         /* Add configuration options we need to send. */
         status = ppp_lcp_configuration_add(&tx_buffer);
 
+        /* If LCP configuration options were successfully added. */
         if (status == SUCCESS)
         {
             /* Push the PPP header on the buffer. */
             status = ppp_packet_configuration_header_add(&tx_buffer, tx_packet);
 
+            /* If PPP configuration header was successfully added. */
             if (status == SUCCESS)
             {
                 /* Send this buffer. */
@@ -326,14 +337,11 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_PKT *rx_packet, PPP_PKT *tx_packe
             }
         }
 
+        /* If configuration request was not sent. */
         if (status != SUCCESS)
         {
-            /* If we have allocated a TX buffer. */
-            if (tx_buffer.list.head != NULL)
-            {
-                /* Free this buffer. */
-                fs_buffer_chain_add(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
-            }
+            /* We might have allocated packets for this request free them. */
+            fs_buffer_chain_add(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
         }
     }
 

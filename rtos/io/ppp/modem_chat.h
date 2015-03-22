@@ -18,7 +18,7 @@
 #ifdef PPP_MODEM_CHAT
 
 /* Status code definitions. */
-#define MODEM_CHAT_IGNORE       -2001
+#define MODEM_CHAT_IGNORE       -930
 
 /* Function prototypes. */
 int32_t modem_chat_process(FD, FS_BUFFER *);

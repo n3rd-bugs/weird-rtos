@@ -62,29 +62,13 @@
 #define PPP_ECHO_REP                10
 #define PPP_DIS_REQ                 11
 
-/* LCP option definitions. */
-#define PPP_LCP_OPT_MRU             1
-#define PPP_LCP_OPT_ACCM            2
-#define PPP_LCP_OPT_AUTH_PROTO      3
-#define PPP_LCP_OPT_QUAL_PROTO      4
-#define PPP_LCP_OPT_MAGIC           5
-#define PPP_LCP_OPT_PFC             7
-#define PPP_LCP_OPT_ACFC            8
-
-/* IPCP option definitions. */
-#define PPP_IPCP_OPT_ADDRESSES      1
-#define PPP_IPCP_OPT_COMP           2
-#define PPP_IPCP_OPT_ADDRESS        3
-
 /* PPP protocol definitions. */
 #define PPP_ADDRESS                 (0xFF)
 #define PPP_CONTROL                 (0x03)
 
-/* PPP packet type definitions. */
-#define PPP_PROTO_LCP               (0xC021)
+/* PPP protocol definitions. */
 #define PPP_PROTO_IPCP              (0x8021)
-
-/* PPP authentication protocol definitions. */
+#define PPP_PROTO_LCP               (0xC021)
 #define PPP_AUTH_PAP                (0xC023)
 #define PPP_AUTH_CHAP               (0xC223)
 
@@ -98,8 +82,6 @@ typedef struct _ppp_data
     /* File system watchers. */
     FS_DATA_WATCHER         data_watcher;
     FS_CONNECTION_WATCHER   connection_watcher;
-
-    uint8_t     magic_number[4];
 
     /* PPP instance state. */
     uint32_t    state;
@@ -137,12 +119,16 @@ typedef struct _ppp_data
 /* PPP protocol definition. */
 typedef struct _ppp_proto
 {
-    uint8_t (*negotiable)(PPP *, PPP_PKT_OPT *);
-    uint8_t (*length_valid)(PPP *, PPP_PKT_OPT *);
-    int32_t (*process)(PPP *, PPP_PKT_OPT *, PPP_PKT *);
-    int32_t (*update)(void *, PPP *, PPP_PKT *, PPP_PKT *);
+    /* PPP configuration protocol callbacks. */
+    uint8_t (*negotiable)(PPP *, PPP_CONF_OPT *);
+    uint8_t (*length_valid)(PPP *, PPP_CONF_OPT *);
+    int32_t (*process)(PPP *, PPP_CONF_OPT *, PPP_CONF_PKT *);
+    int32_t (*update)(void *, PPP *, PPP_CONF_PKT *, PPP_CONF_PKT *);
 
+    /* PPP protocol definition. */
     uint16_t protocol;
+
+    /* Structure padding. */
     uint8_t pad[2];
 } PPP_PROTO;
 
@@ -154,17 +140,18 @@ void ppp_rx_watcher(void *, void *);
 void ppp_tx_watcher(void *, void *);
 
 /* PPP internal APIs. */
-uint32_t ppp_get_buffer_head_room(PPP *);
 void ppp_process_modem_chat(void *, PPP *);
 void ppp_process_frame(void *, PPP *);
 int32_t ppp_transmit_buffer(PPP *, FS_BUFFER_CHAIN *, uint16_t);
-void ppp_configuration_process(void *, PPP *, FS_BUFFER_CHAIN *, PPP_PROTO *);
+void ppp_configuration_process(PPP *, FS_BUFFER_CHAIN *, PPP_PROTO *);
+
+/* Include PPP supported configuration protocol definitions. */
+#include <ppp_lcp.h>
+#include <ppp_ipcp.h>
 
 #ifdef PPP_MODEM_CHAT
 #include <modem_chat.h>
 #endif
-#include <ppp_lcp.h>
-#include <ppp_ipcp.h>
 
 #endif /* CONFIG_PPP */
 
