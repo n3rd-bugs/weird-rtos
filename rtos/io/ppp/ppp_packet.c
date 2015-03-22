@@ -69,7 +69,7 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER *buffer, uint16_t *protocol, uint8_t
             if ((!(proto[0] & 0x1)) && (proto[1] & 0x1))
             {
                 /* Pull the protocol field. */
-                OS_ASSERT(fs_buffer_pull(buffer, (char *)&ret_protocol, sizeof(uint16_t), FS_BUFFER_MSB_FIRST) != SUCCESS);
+                OS_ASSERT(fs_buffer_pull(buffer, (char *)&ret_protocol, sizeof(uint16_t), FS_BUFFER_PACKED) != SUCCESS);
             }
 
             else
@@ -126,7 +126,7 @@ int32_t ppp_packet_protocol_add(FS_BUFFER *buffer, uint16_t protocol, uint8_t pf
     }
 
     /* Push protocol for this packet. */
-    status = fs_buffer_push(buffer, (char *)&(protocol), proto_len, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD));
+    status = fs_buffer_push(buffer, (char *)&(protocol), proto_len, (FS_BUFFER_PACKED | FS_BUFFER_HEAD));
 
     /* Return status to the caller. */
     return (status);
@@ -152,7 +152,7 @@ int32_t ppp_packet_configuration_header_parse(FS_BUFFER *buffer, PPP_CONF_PKT *p
         /* Pull the code, id and length. */
         OS_ASSERT(fs_buffer_pull(buffer, (char *)&packet->code, 1, 0) != SUCCESS);
         OS_ASSERT(fs_buffer_pull(buffer, (char *)&packet->id, 1, 0) != SUCCESS);
-        OS_ASSERT(fs_buffer_pull(buffer, (char *)&packet->length, 2, FS_BUFFER_MSB_FIRST) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull(buffer, (char *)&packet->length, 2, FS_BUFFER_PACKED) != SUCCESS);
 
         /* If header has invalid length of data left. */
         if (buffer->total_length != (uint32_t)(packet->length - 4))
@@ -248,7 +248,7 @@ int32_t ppp_packet_configuration_header_add(FS_BUFFER *buffer, PPP_CONF_PKT *pac
     packet->length = (uint16_t)(buffer->total_length + 4);
 
     /* Push length for this packet. */
-    status = fs_buffer_push(buffer, (char *)&packet->length, 2, (FS_BUFFER_MSB_FIRST | FS_BUFFER_HEAD));
+    status = fs_buffer_push(buffer, (char *)&packet->length, 2, (FS_BUFFER_PACKED | FS_BUFFER_HEAD));
 
     /* If length was successfully added. */
     if (status == SUCCESS)

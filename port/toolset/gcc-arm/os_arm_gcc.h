@@ -22,4 +22,6 @@
 #define NAKED_ISR_FUN       void __attribute__ ((interrupt, naked))
 #define NAKED_FUN           void __attribute__ ((naked))
 
+#define OS_LITTLE_ENDIAN
+
 #endif /* OS_ARM_GCC_H */

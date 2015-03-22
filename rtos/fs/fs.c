@@ -221,7 +221,7 @@ void fs_buffer_append(FS_BUFFER *chain, FS_BUFFER_ONE *buffer, uint8_t flag)
  * @data: Buffer in which data is needed to be pulled.
  * @size: Number of bytes needed to be pulled.
  * @flags: Defines how we will be pulling the data.
- *  FS_BUFFER_MSB_FIRST: If we need to pull the last byte first.
+ *  FS_BUFFER_PACKED: If we need to pull a packet structure.
  *  FS_BUFFER_TAIL: If we need to pull data from the tail.
  *  FS_BUFFER_INPLACE: If we are just peeking and don't want data to be removed
  *      actually.
@@ -261,12 +261,14 @@ int32_t fs_buffer_one_pull(FS_BUFFER_ONE *buffer, char *data, uint32_t size, uin
         /* If we need to actually need to return the pulled data. */
         if (data != NULL)
         {
-            if (flags & FS_BUFFER_MSB_FIRST)
+#ifdef OS_LITTLE_ENDIAN
+            if (flags & FS_BUFFER_PACKED)
             {
                 /* Copy the last byte first. */
                 fs_memcpy_r(data, from, size);
             }
             else
+#endif
             {
                 /* Copy the data in the provided buffer. */
                 memcpy(data, from, size);
@@ -297,7 +299,7 @@ int32_t fs_buffer_one_pull(FS_BUFFER_ONE *buffer, char *data, uint32_t size, uin
  * @data: Buffer in which data is needed to be pulled.
  * @size: Number of bytes needed to be pulled.
  * @flags: Defines how we will be pulling the data.
- *  FS_BUFFER_MSB_FIRST: If we need to pull the last byte first.
+ *  FS_BUFFER_PACKED: If we need to pull a packet structure.
  *  FS_BUFFER_TAIL: If we need to pull data from the tail.
  *  FS_BUFFER_INPLACE: If we are just peeking and don't want data to be removed
  *      actually.
@@ -312,7 +314,9 @@ int32_t fs_buffer_pull(FS_BUFFER *buffer_chain, char *data, uint32_t size, uint8
     FS_BUFFER_ONE *buffer;
     int32_t status = SUCCESS;
     uint32_t this_size;
-    uint8_t reverse = ((flags & FS_BUFFER_MSB_FIRST) != 0);
+#ifdef OS_LITTLE_ENDIAN
+    uint8_t reverse = ((flags & FS_BUFFER_PACKED) != 0);
+#endif
     char *to;
 
     /* Validate if we do have that much data on the buffer chain. */
@@ -356,12 +360,14 @@ int32_t fs_buffer_pull(FS_BUFFER *buffer_chain, char *data, uint32_t size, uint8
             /* Pick the destination pointer. */
             to = data;
 
+#ifdef OS_LITTLE_ENDIAN
             /* If we need to copy data MSB first. */
             if ((data != NULL) && (reverse == TRUE))
             {
                 /* Move to the offset at the end of the provided buffer. */
                 to += (size - this_size);
             }
+#endif
 
             /* Pull data from this buffer. */
             /* We have already verified that we have enough length on the buffer
@@ -382,7 +388,11 @@ int32_t fs_buffer_pull(FS_BUFFER *buffer_chain, char *data, uint32_t size, uint8
             size = (uint32_t)(size - this_size);
 
             /* If we are returning the data. */
-            if ((data != NULL) && (reverse == FALSE))
+            if ( (data != NULL)
+#ifdef OS_LITTLE_ENDIAN
+                 && (reverse == FALSE)
+#endif
+                )
             {
                 /* Update the data pointer. */
                 data += this_size;
@@ -414,7 +424,7 @@ int32_t fs_buffer_pull(FS_BUFFER *buffer_chain, char *data, uint32_t size, uint8
  * @data: Buffer from which data is needed to pushed.
  * @size: Number of bytes needed to be pushed.
  * @flags: Defines how we will be pushing the data.
- *  FS_BUFFER_MSB_FIRST: If we need to push the last byte first.
+ *  FS_BUFFER_PACKED: If we need to push a packet structure.
  *  FS_BUFFER_HEAD: If data is needed to be pushed on the head.
  * @return: Success if operation was successfully performed,
  *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
@@ -465,13 +475,15 @@ int32_t fs_buffer_one_push(FS_BUFFER_ONE *buffer, char *data, uint32_t size, uin
             /* If we actually need to push some data. */
             if (data != NULL)
             {
-                if (flags & FS_BUFFER_MSB_FIRST)
+#ifdef OS_LITTLE_ENDIAN
+                if (flags & FS_BUFFER_PACKED)
                 {
                     /* Copy data from the provided buffer last byte first. */
                     fs_memcpy_r(to, data, size);
                 }
 
                 else
+#endif
                 {
                     /* Copy data from the provided buffer. */
                     memcpy(to, data, size);
@@ -499,7 +511,7 @@ int32_t fs_buffer_one_push(FS_BUFFER_ONE *buffer, char *data, uint32_t size, uin
  * @data: Buffer from which data is needed to pushed.
  * @size: Number of bytes needed to be pushed.
  * @flags: Defines how we will be pushing the data.
- *  FS_BUFFER_MSB_FIRST: If we need to push the last byte first.
+ *  FS_BUFFER_PACKED: If we need to push a packet structure.
  *  FS_BUFFER_HEAD: If data is needed to be pushed on the head.
  * @return: Success if operation was successfully performed,
  *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
@@ -511,7 +523,9 @@ int32_t fs_buffer_push(FS_BUFFER *buffer_chain, char *data, uint32_t size, uint8
     int32_t status = SUCCESS;
     FS_BUFFER_ONE *buffer;
     uint32_t this_size;
-    uint8_t reverse = ((flags & FS_BUFFER_MSB_FIRST) != 0);
+#ifdef OS_LITTLE_ENDIAN
+    uint8_t reverse = ((flags & FS_BUFFER_PACKED) != 0);
+#endif
     char *from;
 
     /* While we have data to copy. */
@@ -603,12 +617,14 @@ int32_t fs_buffer_push(FS_BUFFER *buffer_chain, char *data, uint32_t size, uint8
             /* Pick the source pointer. */
             from = data;
 
+#ifdef OS_LITTLE_ENDIAN
             /* If we need to copy data MSB first. */
             if ((data != NULL) && (reverse == TRUE))
             {
                 /* Move to the offset at the end of the provided buffer. */
                 from += (size - this_size);
             }
+#endif
 
             /* Push data on the buffer we have selected. */
             OS_ASSERT(fs_buffer_one_push(buffer, from, this_size, flags) != SUCCESS);
@@ -620,7 +636,11 @@ int32_t fs_buffer_push(FS_BUFFER *buffer_chain, char *data, uint32_t size, uint8
             size = size - this_size;
 
             /* If we are copying data normally. */
-            if ((data != NULL) && (reverse == FALSE))
+            if ( (data != NULL)
+#ifdef OS_LITTLE_ENDIAN
+                 && (reverse == FALSE)
+#endif
+                )
             {
                 /* Update the data pointer. */
                 data += this_size;

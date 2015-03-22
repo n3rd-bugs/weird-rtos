@@ -55,7 +55,7 @@ typedef void *FD;
 /* Buffer management flags. */
 #define FS_BUFFER_ACTIVE        0x0001
 #define FS_BUFFER_INPLACE       0x0002
-#define FS_BUFFER_MSB_FIRST     0x0004
+#define FS_BUFFER_PACKED        0x0004
 #define FS_BUFFER_TAIL          0x0008
 #define FS_BUFFER_HEAD          0x0010
 
