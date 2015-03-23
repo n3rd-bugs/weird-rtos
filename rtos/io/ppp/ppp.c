@@ -476,66 +476,66 @@ void ppp_process_frame(void *fd, PPP *ppp)
             /* We don't have a buffer to continue. */
             status = PPP_PARTIAL_READ;
         }
-    }
 
-    /* If we actually have a buffer to process. */
-    if (status == SUCCESS)
-    {
-        /* Verify and skim the HDLC headers. */
-        status = ppp_hdlc_header_parse(&ppp->rx_buffer, PPP_IS_ACFC_VALID(ppp));
-
-        /* TODO: Remove this. */
-        OS_ASSERT(status != SUCCESS);
-
-        /* If HDLC verification was successful. */
+        /* If we have a complete buffer to process a frame. */
         if (status == SUCCESS)
         {
-            /* Parse and pick the protocol field. */
-            status = ppp_packet_protocol_parse(&ppp->rx_buffer, &protocol, PPP_IS_PFC_VALID(ppp));
-        }
+            /* Verify and skim the HDLC headers. */
+            status = ppp_hdlc_header_parse(&ppp->rx_buffer, PPP_IS_ACFC_VALID(ppp));
 
-        /* If protocol was successfully parsed. */
-        if (status == SUCCESS)
-        {
-            /* Try to pick the an appropriate protocol to parse this packet. */
-            switch (protocol)
+            /* TODO: Remove this. */
+            OS_ASSERT(status != SUCCESS);
+
+            /* If HDLC verification was successful. */
+            if (status == SUCCESS)
             {
-            /* PPP LCP packets. */
-            case (PPP_PROTO_LCP):
-
-                /* Process LCP configuration. */
-                proto = &ppp_proto_lcp;
-
-                break;
-
-            /* PPP IPCP packets. */
-            case (PPP_PROTO_IPCP):
-
-                /* Process IPCP configuration. */
-                proto = &ppp_proto_ipcp;
-
-                break;
-
-            /* Not supported protocol. */
-            default:
-
-                /* Either protocol is not supported or an invalid header was given. */
-                status = PPP_NOT_SUPPORTED;
-
-                break;
+                /* Parse and pick the protocol field. */
+                status = ppp_packet_protocol_parse(&ppp->rx_buffer, &protocol, PPP_IS_PFC_VALID(ppp));
             }
-        }
 
-        /* If we have picked a protocol that is needed to be invoked to parse
-         * this packet. */
-        if (status == SUCCESS)
-        {
-            /* Process this configuration packet. */
-            ppp_configuration_process(ppp, &ppp->rx_buffer, proto);
-        }
+            /* If protocol was successfully parsed. */
+            if (status == SUCCESS)
+            {
+                /* Try to pick the an appropriate protocol to parse this packet. */
+                switch (protocol)
+                {
+                /* PPP LCP packets. */
+                case (PPP_PROTO_LCP):
 
-        /* Free the received buffer. */
-        fs_buffer_add_list(&ppp->rx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+                    /* Process LCP configuration. */
+                    proto = &ppp_proto_lcp;
+
+                    break;
+
+                /* PPP IPCP packets. */
+                case (PPP_PROTO_IPCP):
+
+                    /* Process IPCP configuration. */
+                    proto = &ppp_proto_ipcp;
+
+                    break;
+
+                /* Not supported protocol. */
+                default:
+
+                    /* Either protocol is not supported or an invalid header was given. */
+                    status = PPP_NOT_SUPPORTED;
+
+                    break;
+                }
+            }
+
+            /* If we have picked a protocol that is needed to be invoked to parse
+             * this packet. */
+            if (status == SUCCESS)
+            {
+                /* Process this configuration packet. */
+                ppp_configuration_process(ppp, &ppp->rx_buffer, proto);
+            }
+
+            /* Free the received buffer. */
+            fs_buffer_add_list(&ppp->rx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+        }
     }
 
 } /* ppp_process_frame */
