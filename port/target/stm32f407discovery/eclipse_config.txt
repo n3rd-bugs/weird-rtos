@@ -4,6 +4,7 @@ C Includes:
 "${workspace_loc:/${ProjName}/rtos/mem}"
 "${workspace_loc:/${ProjName}/rtos/console}"
 "${workspace_loc:/${ProjName}/rtos/fs}"
+"${workspace_loc:/${ProjName}/rtos/net}"
 "${workspace_loc:/${ProjName}/rtos/io/usb}"
 "${workspace_loc:/${ProjName}/rtos/io/ppp}"
 "${workspace_loc:/${ProjName}/port/os}"
