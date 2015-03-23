@@ -415,8 +415,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             }
 
             /* Search in this buffer and see if we have another flag. */
-            flag_ptr[this_flag] = memchr(flag_ptr[this_flag - 1] + 1, PPP_FLAG,
-                                         (uint32_t)((buffer->buffer + buffer->length) - (flag_ptr[this_flag - 1] + 1)));
+            flag_ptr[this_flag] = memchr(flag_ptr[this_flag - 1] + 1, PPP_FLAG, (uint32_t)((buffer->buffer + buffer->length) - (flag_ptr[this_flag - 1] + 1)));
         }
 
         /* Check if we have required amount of flags. */
@@ -442,8 +441,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             if (flag_ptr[this_flag] != &buffer->buffer[buffer->length - 1])
             {
                 /* Divide this buffer into two buffers. */
-                fs_buffer_one_divide(fd, buffer, &new_buffer, flag_ptr[this_flag] + 1,
-                                 (uint32_t)((buffer->buffer + buffer->length) - (flag_ptr[this_flag] + 1)));
+                fs_buffer_one_divide(fd, buffer, &new_buffer, flag_ptr[this_flag] + 1, (uint32_t)((buffer->buffer + buffer->length) - (flag_ptr[this_flag] + 1)));
 
                 if (new_buffer != NULL)
                 {
