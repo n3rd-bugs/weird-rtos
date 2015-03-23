@@ -319,7 +319,10 @@ uint8_t ppp_lcp_option_length_valid(PPP *ppp, PPP_CONF_OPT *option)
 int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT *tx_packet)
 {
     int32_t status = SUCCESS;
-    FS_BUFFER tx_buffer;
+    FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+
+    /* Should never happen. */
+    OS_ASSERT(tx_buffer == NULL);
 
     /* Check if we have received a request and we have sent an ACK in
      * response, send our own configuration. */
@@ -328,8 +331,6 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
     {
         /* Clear the transmit packet and buffer chain structures. */
         memset(tx_packet, 0, sizeof(PPP_CONF_PKT));
-        memset(&tx_buffer, 0, sizeof(FS_BUFFER));
-        tx_buffer.fd = fd;
 
         /* We have successfully ACKed a configuration request we will send our
          * configuration now.. */
@@ -337,13 +338,13 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
         tx_packet->id = ++(ppp->state_data.lcp_id);
 
         /* Add configuration options we need to send. */
-        status = ppp_lcp_configuration_add(&tx_buffer);
+        status = ppp_lcp_configuration_add(tx_buffer);
 
         /* If LCP configuration options were successfully added. */
         if (status == SUCCESS)
         {
             /* Push the PPP header on the buffer. */
-            status = ppp_packet_configuration_header_add(&tx_buffer, tx_packet);
+            status = ppp_packet_configuration_header_add(tx_buffer, tx_packet);
 
             /* If PPP configuration header was successfully added. */
             if (status == SUCCESS)
@@ -351,13 +352,6 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
                 /* Send this buffer. */
                 status = ppp_transmit_buffer(ppp, &tx_buffer, PPP_PROTO_LCP);
             }
-        }
-
-        /* If configuration request was not sent. */
-        if (status != SUCCESS)
-        {
-            /* We might have allocated packets for this request free them. */
-            fs_buffer_add_list(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
         }
     }
 
@@ -383,6 +377,9 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
         /* Move to the connected state. */
         ppp->state = PPP_STATE_CONNECTED;
     }
+
+    /* Free the buffer list allocated before and any buffers still left on it. */
+    fs_buffer_add(tx_buffer->fd, tx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
     /* Return status to the caller. */
     return (status);

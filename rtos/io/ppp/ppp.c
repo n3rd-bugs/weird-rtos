@@ -29,7 +29,7 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
     /* Will only work with buffered file descriptors. */
     OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
 
-    /* Clear the PPP global instance. */
+    /* Clear the PPP instance. */
     memset(ppp, 0, sizeof(PPP));
 
     /* Initialize data watcher. */
@@ -57,9 +57,6 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
         /* Set the dedicated file descriptor flag. */
         ppp->flags |= PPP_DEDICATED_FD;
     }
-
-    /* Initialize receive buffer. */
-    fs_buffer_init(&ppp->rx_buffer, fd);
 
 #ifdef CONFIG_SEMAPHORE
     /* Create the PPP instance semaphore. */
@@ -186,12 +183,14 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
 {
     PPP_CONF_PKT rx_packet, tx_packet;
     PPP_CONF_OPT option;
-    FS_BUFFER tx_buffer;
+    FS_BUFFER *tx_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
     int32_t status;
+
+    /* Should never happen. */
+    OS_ASSERT(tx_buffer == NULL);
 
     /* Clear the packet structure and transmit buffers. */
     memset(&rx_packet, 0, sizeof(PPP_CONF_PKT));
-    fs_buffer_init(&tx_buffer, buffer->fd);
 
     /* Parse the configuration header. */
     status = ppp_packet_configuration_header_parse(buffer, &rx_packet);
@@ -250,11 +249,11 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                             tx_packet.code = PPP_CONFIG_REJECT;
 
                             /* Remove any data already on the buffer. */
-                            fs_buffer_pull(&tx_buffer, NULL, tx_buffer.total_length, 0);
+                            fs_buffer_pull(tx_buffer, NULL, tx_buffer->total_length, 0);
                         }
 
                         /* Add this option in the transmit buffer. */
-                        status = ppp_packet_configuration_option_add(&tx_buffer, &option);
+                        status = ppp_packet_configuration_option_add(tx_buffer, &option);
                     }
                     else
                     {
@@ -274,7 +273,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                                 tx_packet.code = PPP_CONFIG_NAK;
 
                                 /* Remove any data already on the buffer. */
-                                fs_buffer_pull(&tx_buffer, NULL, tx_buffer.total_length, 0);
+                                fs_buffer_pull(tx_buffer, NULL, tx_buffer->total_length, 0);
                             }
 
                             /* If we have not accepted this option and we are not in the REJECT state. */
@@ -285,7 +284,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                                 tx_packet.code = PPP_CONFIG_REJECT;
 
                                 /* Remove any data already on the buffer. */
-                                fs_buffer_pull(&tx_buffer, NULL, tx_buffer.total_length, 0);
+                                fs_buffer_pull(tx_buffer, NULL, tx_buffer->total_length, 0);
                             }
 
                             /* If a value is not valid and we are rejecting this
@@ -304,7 +303,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                             else
                             {
                                 /* Add this option in the transmit buffer. */
-                                status = ppp_packet_configuration_option_add(&tx_buffer, &option);
+                                status = ppp_packet_configuration_option_add(tx_buffer, &option);
                             }
                         }
                         else
@@ -341,7 +340,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                  * in the buffer. */
 
                 /* Push the PPP header on the buffer. */
-                status = ppp_packet_configuration_header_add(&tx_buffer, &tx_packet);
+                status = ppp_packet_configuration_header_add(tx_buffer, &tx_packet);
 
                 /* If PPP configuration header was successfully added. */
                 if (status == SUCCESS)
@@ -350,13 +349,6 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                     status = ppp_transmit_buffer(ppp, &tx_buffer, proto->protocol);
                 }
             }
-        }
-
-        /* While processing we might have allocated some buffers, free them. */
-        if (status != SUCCESS)
-        {
-            /* Free any allocated buffer. */
-            fs_buffer_add_list(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
         }
     }
 
@@ -370,6 +362,9 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
             status = proto->update(buffer->fd, ppp, &rx_packet, &tx_packet);
         }
     }
+
+    /* Free the buffer list allocated before and any buffers still left on it. */
+    fs_buffer_add(tx_buffer->fd, tx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
 } /* ppp_configuration_process */
 
@@ -396,9 +391,18 @@ void ppp_process_frame(void *fd, PPP *ppp)
     /* If a buffer was removed from the file descriptor. */
     if (buffer)
     {
+        if (ppp->rx_buffer == NULL)
+        {
+            /* Get a buffer list. */
+            ppp->rx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+
+            /* Should never happen. */
+            OS_ASSERT(ppp->rx_buffer == NULL);
+        }
+
         /* If we are not waiting for a partial packet we need two flag to parse
          * next packet otherwise we need 1 flag. */
-        num_flags = (ppp->rx_buffer.list.head == NULL) + 1;
+        num_flags = (ppp->rx_buffer->list.head == NULL) + 1;
 
         /* Start from the buffer head. */
         flag_ptr[this_flag] = memchr(buffer->buffer, PPP_FLAG, buffer->length);
@@ -454,7 +458,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             }
 
             /* Add this complete or partial received buffer on the receive buffer. */
-            fs_buffer_append(&ppp->rx_buffer, buffer, 0);
+            fs_buffer_append(ppp->rx_buffer, buffer, 0);
         }
 
         /* We will wait to receive required amount of flags so that we can
@@ -470,7 +474,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             else
             {
                 /* Add this partial received buffer on the receive buffer. */
-                fs_buffer_append(&ppp->rx_buffer, buffer, 0);
+                fs_buffer_append(ppp->rx_buffer, buffer, 0);
             }
 
             /* We don't have a buffer to continue. */
@@ -481,7 +485,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
         if (status == SUCCESS)
         {
             /* Verify and skim the HDLC headers. */
-            status = ppp_hdlc_header_parse(&ppp->rx_buffer, PPP_IS_ACFC_VALID(ppp));
+            status = ppp_hdlc_header_parse(ppp->rx_buffer, PPP_IS_ACFC_VALID(ppp));
 
             /* TODO: Remove this. */
             OS_ASSERT(status != SUCCESS);
@@ -490,7 +494,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             if (status == SUCCESS)
             {
                 /* Parse and pick the protocol field. */
-                status = ppp_packet_protocol_parse(&ppp->rx_buffer, &protocol, PPP_IS_PFC_VALID(ppp));
+                status = ppp_packet_protocol_parse(ppp->rx_buffer, &protocol, PPP_IS_PFC_VALID(ppp));
             }
 
             /* If protocol was successfully parsed. */
@@ -530,11 +534,12 @@ void ppp_process_frame(void *fd, PPP *ppp)
             if (status == SUCCESS)
             {
                 /* Process this configuration packet. */
-                ppp_configuration_process(ppp, &ppp->rx_buffer, proto);
+                ppp_configuration_process(ppp, ppp->rx_buffer, proto);
             }
 
             /* Free the received buffer. */
-            fs_buffer_add_list(&ppp->rx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add(ppp->rx_buffer->fd, ppp->rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            ppp->rx_buffer = NULL;
         }
     }
 
@@ -549,12 +554,12 @@ void ppp_process_frame(void *fd, PPP *ppp)
  * file descriptor attached to the given buffer. Caller is responsible for
  * freeing the given buffer if this function returns an error.
  */
-int32_t ppp_transmit_buffer(PPP *ppp, FS_BUFFER *buffer, uint16_t proto)
+int32_t ppp_transmit_buffer(PPP *ppp, FS_BUFFER **buffer, uint16_t proto)
 {
     int32_t status;
 
     /* Add PPP protocol. */
-    status = ppp_packet_protocol_add(buffer, proto, PPP_IS_PFC_VALID(ppp));
+    status = ppp_packet_protocol_add(*buffer, proto, PPP_IS_PFC_VALID(ppp));
 
     /* If PPP protocol was successfully added. */
     if (status == SUCCESS)
@@ -567,7 +572,7 @@ int32_t ppp_transmit_buffer(PPP *ppp, FS_BUFFER *buffer, uint16_t proto)
     if (status == SUCCESS)
     {
         /* Add this buffer to the transmit list of the provided file descriptor. */
-        fs_buffer_add_list(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+        fs_buffer_add_list(*buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
     }
 
     /* Return status to the caller. */

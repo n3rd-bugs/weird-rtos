@@ -266,11 +266,14 @@ void ppp_hdlc_unescape_one(FS_BUFFER_ONE *buffer, uint8_t *last_escaped)
  * This function will add an HDLC header on the given buffer, also this function
  * is responsible for escaping the data after computing and appending the FCS.
  */
-int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp)
+int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp)
 {
-    FS_BUFFER destination;
+    FS_BUFFER *destination = fs_buffer_get((*buffer)->fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
     int32_t status = SUCCESS;
     uint16_t fcs;
+
+    /* Should never happen. */
+    OS_ASSERT(destination == NULL);
 
     /* When ACFC is negotiated we can optionally drop address and control
      * fields. We will still need to add these fields if we are sending a LCP
@@ -278,12 +281,12 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
     if ((lcp == TRUE) || (acfc == FALSE))
     {
         /* Add control field. */
-        status = fs_buffer_push(buffer, (char []){ (char)PPP_CONTROL }, 1, FS_BUFFER_HEAD);
+        status = fs_buffer_push(*buffer, (char []){ (char)PPP_CONTROL }, 1, FS_BUFFER_HEAD);
 
         if (status == SUCCESS)
         {
             /* Add address field. */
-            status = fs_buffer_push(buffer, (char []){ (char)PPP_ADDRESS }, 1, FS_BUFFER_HEAD);
+            status = fs_buffer_push(*buffer, (char []){ (char)PPP_ADDRESS }, 1, FS_BUFFER_HEAD);
         }
     }
 
@@ -291,47 +294,37 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
     if (status == SUCCESS)
     {
         /* Calculate the FCS of the data. */
-        fcs = ppp_fcs16_buffer_calculate(buffer, PPP_FCS16_INIT);
+        fcs = ppp_fcs16_buffer_calculate(*buffer, PPP_FCS16_INIT);
         fcs ^= 0xffff;
 
         /* Push the FCS at the end of buffer. */
-        status = fs_buffer_push(buffer, (char *)&fcs, 2, 0);
+        status = fs_buffer_push(*buffer, (char *)&fcs, 2, 0);
     }
 
     /* If FCS was successfully appended. */
     if (status == SUCCESS)
     {
-        /* Initialize a destination chain buffer. */
-        fs_buffer_init(&destination, buffer->fd);
-
         /* Escape the given buffer and initialize an other buffer with the result. */
-        status = ppp_hdlc_escape(buffer, &destination, accm, lcp);
-
-        /* If there is still some data left on the source buffer then the status
-         * is not success, we still need to clean up the things. */
-        if (buffer->total_length > 0)
-        {
-            /* Free the remaining buffers. */
-            fs_buffer_add_list(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
-        }
+        status = ppp_hdlc_escape(*buffer, destination, accm, lcp);
     }
 
     /* If data was successfully escaped. */
     if (status == SUCCESS)
     {
-        /* Copy new chain buffer to the provided buffer. */
-        memcpy(buffer, &destination, sizeof(FS_BUFFER));
-
         /* Add start flag. */
-        status = fs_buffer_push(buffer, (char []){ PPP_FLAG }, 1, FS_BUFFER_HEAD);
+        status = fs_buffer_push(destination, (char []){ PPP_FLAG }, 1, FS_BUFFER_HEAD);
 
         /* If start flag was successfully added. */
         if (status == SUCCESS)
         {
             /* Add end flag. */
-            status = fs_buffer_push(buffer, (char []){ PPP_FLAG }, 1, 0);
+            status = fs_buffer_push(destination, (char []){ PPP_FLAG }, 1, 0);
         }
     }
+
+    /* Free the buffer given by the caller and return the buffer we have allocated. */
+    fs_buffer_add(destination->fd, *buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    *buffer = destination;
 
     /* Return status to the caller. */
     return (status);

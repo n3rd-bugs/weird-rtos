@@ -162,15 +162,16 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
 {
     int32_t status = SUCCESS;
     PPP_CONF_OPT option;
-    FS_BUFFER tx_buffer;
+    FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+
+    /* Should never happen. */
+    OS_ASSERT(tx_buffer == NULL);
 
     /* If we have not received an ACK for our configuration. */
     if (ppp->local_ip_address == 0)
     {
         /* Clear the transmit packet and buffer chain structures. */
         memset(tx_packet, 0, sizeof(PPP_CONF_PKT));
-        memset(&tx_buffer, 0, sizeof(FS_BUFFER));
-        tx_buffer.fd = fd;
 
         /* We have successfully ACKed a configuration request we will send our
          * configuration now.. */
@@ -181,13 +182,13 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
         memcpy(option.data, (uint8_t [])PPP_LOCAL_IP_ADDRESS, 4);
         option.type = PPP_IPCP_OPT_IP;
         option.length = 6;
-        status = ppp_packet_configuration_option_add(&tx_buffer, &option);
+        status = ppp_packet_configuration_option_add(tx_buffer, &option);
 
         /* If configuration option was successfully added. */
         if (status == SUCCESS)
         {
             /* Push the PPP header on the buffer. */
-            status = ppp_packet_configuration_header_add(&tx_buffer, tx_packet);
+            status = ppp_packet_configuration_header_add(tx_buffer, tx_packet);
 
             /* If configuration header was successfully added. */
             if (status == SUCCESS)
@@ -195,14 +196,6 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
                 /* Send this buffer. */
                 status = ppp_transmit_buffer(ppp, &tx_buffer, PPP_PROTO_IPCP);
             }
-        }
-
-        /* If configuration packet was not initialized. */
-        if (status != SUCCESS)
-        {
-            /* We might have allocated some buffers, free them as we have not
-             * sent the packet. */
-            fs_buffer_add_list(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
         }
     }
 
@@ -212,6 +205,9 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
         /* We are now in network phase. */
         ppp->state = PPP_STATE_NETWORK;
     }
+
+    /* Free the buffer list allocated before and any buffers still left on it. */
+    fs_buffer_add(tx_buffer->fd, tx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
     /* Return status to the caller. */
     return (status);
