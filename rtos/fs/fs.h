@@ -59,6 +59,10 @@ typedef void *FD;
 #define FS_BUFFER_TAIL          0x0008
 #define FS_BUFFER_HEAD          0x0010
 
+/* Buffer structure IDs. */
+#define FS_BUFFER_ID_BUFFER     0x5630A516
+#define FS_BUFFER_ID_ONE        0x98C4E319
+
 /* Data watcher data. */
 typedef struct _fs_data_watcher FS_DATA_WATCHER;
 struct _fs_data_watcher
@@ -92,6 +96,9 @@ struct _fs_buffer_one
     /* Buffer list member. */
     FS_BUFFER_ONE   *next;
 
+    /* Structure ID. */
+    uint32_t    id;
+
     /* Actual buffer data. */
     char        *data;
     uint32_t    max_length;
@@ -102,8 +109,15 @@ struct _fs_buffer_one
 };
 
 /* Buffer chain structure. */
+typedef struct _fs_buffer FS_BUFFER;
 typedef struct _fs_buffer
 {
+    /* Buffer list member. */
+    FS_BUFFER   *next;
+
+    /* Structure ID. */
+    uint32_t    id;
+
     /* List of buffers in this chain. */
     struct _fs_buffer_list
     {
@@ -295,6 +309,7 @@ int32_t fs_ioctl(FD, uint32_t, void *);
 #define FS_BUFFER_HEAD_ROOM(b)  ((uint32_t)(b->buffer - b->data))
 #define FS_BUFFER_TAIL_ROOM(b)  (FS_BUFFER_SPACE(b) - FS_BUFFER_HEAD_ROOM(b))
 void fs_buffer_one_init(FS_BUFFER_ONE *, char *, uint32_t);
+void fs_buffer_init(FS_BUFFER *, FD);
 int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *, uint32_t);
 void fs_buffer_one_update(FS_BUFFER_ONE *, char *, uint32_t);
 void fs_buffer_append(FS_BUFFER *, FS_BUFFER_ONE *, uint8_t);
@@ -304,14 +319,15 @@ int32_t fs_buffer_one_push(FS_BUFFER_ONE *, char *, uint32_t, uint8_t);
 int32_t fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
 
 /* Search functions. */
-uint8_t fs_buffer_serach_last(void *, void *);
-uint8_t fs_buffer_serach_first(void *, void *);
+uint8_t fs_buffer_type_search(void *, void *);
 
 /* File system buffer management APIs. */
 void fs_buffer_dataset(FD, FS_BUFFER_DATA *, int32_t);
-void fs_buffer_add(FS_BUFFER *, uint32_t, uint32_t);
-void fs_buffer_one_add(FD, FS_BUFFER_ONE *, uint32_t, uint32_t);
-FS_BUFFER_ONE *fs_buffer_one_get(FD, uint32_t, uint32_t);
+void fs_buffer_add_list(FS_BUFFER *, uint32_t, uint32_t);
+void fs_buffer_add(FD, void *, uint32_t, uint32_t);
+#define fs_buffer_one_get(fd, type, flag)   (FS_BUFFER_ONE *)fs_buffer_id_get(fd, type, flag, FS_BUFFER_ID_ONE)
+#define fs_buffer_get(fd, type, flag)       (FS_BUFFER *)fs_buffer_id_get(fd, type, flag, FS_BUFFER_ID_BUFFER)
+void *fs_buffer_id_get(FD, uint32_t, uint32_t, uint32_t);
 void fs_buffer_one_divide(FD, FS_BUFFER_ONE *, FS_BUFFER_ONE **, char *, uint32_t);
 
 void fs_data_watcher_set(FD, FS_DATA_WATCHER *);
