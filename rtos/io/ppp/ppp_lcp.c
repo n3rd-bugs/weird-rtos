@@ -71,7 +71,7 @@ const uint8_t ppp_lcp_option_valid_lengths[LCP_OPT_DB_NUM_OPTIONS_VALID] =
 void ppp_lcp_state_initialize(PPP *ppp)
 {
     /* Initialize PPP connection state. */
-    ppp->flags &= ~(PPP_FALG_ACFC | PPP_FLAG_PFC);
+    ppp->flags &= (uint32_t)~(PPP_FALG_ACFC | PPP_FLAG_PFC);
     ppp->rx_accm = (0xFFFFFFFF);
     ppp->tx_accm[0] = (0xFFFFFFFF);
     ppp->tx_accm[1] = (0x0);
@@ -357,7 +357,7 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
         if (status != SUCCESS)
         {
             /* We might have allocated packets for this request free them. */
-            fs_buffer_add(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add_list(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
         }
     }
 

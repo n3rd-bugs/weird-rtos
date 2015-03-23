@@ -302,8 +302,7 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
     if (status == SUCCESS)
     {
         /* Initialize a destination chain buffer. */
-        memset(&destination, 0, sizeof(FS_BUFFER));
-        destination.fd = buffer->fd;
+        fs_buffer_init(&destination, buffer->fd);
 
         /* Escape the given buffer and initialize an other buffer with the result. */
         status = ppp_hdlc_escape(buffer, &destination, accm, lcp);
@@ -313,7 +312,7 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
         if (buffer->total_length > 0)
         {
             /* Free the remaining buffers. */
-            fs_buffer_add(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+            fs_buffer_add_list(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
         }
     }
 

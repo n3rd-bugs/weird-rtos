@@ -58,6 +58,9 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
         ppp->flags |= PPP_DEDICATED_FD;
     }
 
+    /* Initialize receive buffer. */
+    fs_buffer_init(&ppp->rx_buffer, fd);
+
 #ifdef CONFIG_SEMAPHORE
     /* Create the PPP instance semaphore. */
     semaphore_create(&ppp->lock, 1, 1, SEMAPHORE_PRIORITY);
@@ -158,7 +161,7 @@ void ppp_process_modem_chat(void *fd, PPP *ppp)
         {
             /* Remove the buffer from the receive list and free it. */
             OS_ASSERT(fs_buffer_one_get(fd, FS_BUFFER_RX, 0) != buffer);
-            fs_buffer_one_add(fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add(fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* If modem initialization was completed successfully. */
@@ -188,7 +191,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
 
     /* Clear the packet structure and transmit buffers. */
     memset(&rx_packet, 0, sizeof(PPP_CONF_PKT));
-    memset(&tx_buffer, 0, sizeof(FS_BUFFER));
+    fs_buffer_init(&tx_buffer, buffer->fd);
 
     /* Parse the configuration header. */
     status = ppp_packet_configuration_header_parse(buffer, &rx_packet);
@@ -201,9 +204,8 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
         if ( (rx_packet.code == PPP_CONFIG_REQ) ||
              (rx_packet.code == PPP_TREM_REQ) )
         {
-            /* Clear the transmit packet and buffer chain structures. */
+            /* Clear the transmit packet so that a reply can be initialized. */
             memset(&tx_packet, 0, sizeof(PPP_CONF_PKT));
-            tx_buffer.fd = buffer->fd;
 
             /* If this is a configuration request. */
             if (rx_packet.code == PPP_CONFIG_REQ)
@@ -257,7 +259,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                     else
                     {
                         /* Validate the option length. */
-                        if (proto->length_valid (ppp, &option))
+                        if (proto->length_valid(ppp, &option))
                         {
                             /* Process the option data. */
                             status = proto->process(ppp, &option, &rx_packet);
@@ -354,7 +356,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
         if (status != SUCCESS)
         {
             /* Free any allocated buffer. */
-            fs_buffer_add(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add_list(&tx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
         }
     }
 
@@ -447,7 +449,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                 {
                     /* Silently add new buffer on the receive list of the
                      * file descriptor we have received the data. */
-                    fs_buffer_one_add(fd, new_buffer, FS_BUFFER_RX, 0);
+                    fs_buffer_add(fd, new_buffer, FS_BUFFER_RX, 0);
                 }
             }
 
@@ -463,7 +465,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             if ((num_flags == 2) && (this_flag == 0))
             {
                 /* There is only junk in the buffer, so free it. */
-                fs_buffer_one_add(fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+                fs_buffer_add(fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
             }
             else
             {
@@ -479,9 +481,6 @@ void ppp_process_frame(void *fd, PPP *ppp)
     /* If we actually have a buffer to process. */
     if (status == SUCCESS)
     {
-        /* Save the file descriptor on which this buffer chain was build. */
-        ppp->rx_buffer.fd = fd;
-
         /* Verify and skim the HDLC headers. */
         status = ppp_hdlc_header_parse(&ppp->rx_buffer, PPP_IS_ACFC_VALID(ppp));
 
@@ -536,7 +535,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
         }
 
         /* Free the received buffer. */
-        fs_buffer_add(&ppp->rx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+        fs_buffer_add_list(&ppp->rx_buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
 
 } /* ppp_process_frame */
@@ -568,7 +567,7 @@ int32_t ppp_transmit_buffer(PPP *ppp, FS_BUFFER *buffer, uint16_t proto)
     if (status == SUCCESS)
     {
         /* Add this buffer to the transmit list of the provided file descriptor. */
-        fs_buffer_add(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+        fs_buffer_add_list(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
     }
 
     /* Return status to the caller. */

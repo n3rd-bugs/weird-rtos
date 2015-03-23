@@ -41,7 +41,7 @@ int32_t modem_chat_process(FD fd, FS_BUFFER_ONE *rx_buffer)
             OS_ASSERT(fs_buffer_one_push(tx_buffer, "CLIENTSERVER", (sizeof("CLIENTSERVER") - 1), 0) != SUCCESS);
 
             /* Add a transmit buffer. */
-            fs_buffer_one_add(fd, tx_buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+            fs_buffer_add(fd, tx_buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
         }
     }
     else
