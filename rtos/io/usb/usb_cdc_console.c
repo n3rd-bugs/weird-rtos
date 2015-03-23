@@ -66,6 +66,16 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
         fs_buffer_add((FD)&cdc_cons->console, &cdc_cons->fs_buffer[i], FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
     }
 
+    /* Add buffer lists for this console. */
+    for (i = 0; i < CDC_NUM_BUFFER_LISTS; i++)
+    {
+        /* Initialize a buffer. */
+        fs_buffer_init(&cdc_cons->fs_buffer_list[i], (FD)&cdc_cons->console);
+
+        /* Add this buffer to the free buffer list for this file descriptor. */
+        fs_buffer_add((FD)&cdc_cons->console, &cdc_cons->fs_buffer_list[i], FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    }
+
 } /* usb_cdc_console_register */
 
 /*

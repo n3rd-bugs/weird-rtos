@@ -39,6 +39,7 @@ typedef struct _cdc_console
     /* File system buffers. */
     FS_BUFFER_DATA  fs_buffer_data;
     FS_BUFFER_ONE   fs_buffer[CDC_NUM_BUFFERS];
+    FS_BUFFER       fs_buffer_list[CDC_NUM_BUFFER_LISTS];
 
     /* Current buffers being used. */
     FS_BUFFER_ONE   *rx_buffer;
