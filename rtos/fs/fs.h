@@ -49,8 +49,9 @@ typedef void *FD;
 
 /* Buffer type definition. */
 #define FS_BUFFER_FREE      1
-#define FS_BUFFER_RX        2
-#define FS_BUFFER_TX        3
+#define FS_BUFFER_LIST      2
+#define FS_BUFFER_RX        3
+#define FS_BUFFER_TX        4
 
 /* Buffer management flags. */
 #define FS_BUFFER_ACTIVE        0x0001
@@ -165,6 +166,16 @@ typedef struct _fs_buffer_data
         int32_t     buffers;
 #endif
     } rx_buffer_list;
+
+    /* Buffer lists list. */
+    struct _fs_buffers_list
+    {
+        FS_BUFFER       *head;
+        FS_BUFFER       *tail;
+#ifdef FS_BUFFER_TRACE
+        int32_t     buffers;
+#endif
+    } buffers_list;
 
 #ifdef FS_BUFFER_TRACE
     /* Number buffers in the system. */
