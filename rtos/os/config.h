@@ -23,6 +23,9 @@
 /* File system. */
 #define CONFIG_FS
 
+/* Networking stack. */
+//#define CONFIG_NET
+
 /* Device IO. */
 //#define CONFIG_USB
 //#define CONFIG_PPP

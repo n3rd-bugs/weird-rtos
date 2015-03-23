@@ -27,6 +27,9 @@
 #ifdef CONFIG_FS
 #include <fs.h>
 #endif
+#ifdef CONFIG_NET
+#include <net.h>
+#endif
 #ifdef CONFIG_USB
 #include <usb.h>
 #endif
