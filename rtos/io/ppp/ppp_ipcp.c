@@ -167,34 +167,39 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
     /* Should never happen. */
     OS_ASSERT(tx_buffer == NULL);
 
-    /* If we have not received an ACK for our configuration. */
-    if (ppp->local_ip_address == 0)
+    /* If we are sending an NAK it means we have the required configuration
+     * options and we can now send our configuration in reply. */
+    if (tx_packet->code == PPP_CONFIG_NAK)
     {
-        /* Clear the transmit packet and buffer chain structures. */
-        memset(tx_packet, 0, sizeof(PPP_CONF_PKT));
-
-        /* We have successfully ACKed a configuration request we will send our
-         * configuration now.. */
-        tx_packet->code = PPP_CONFIG_REQ;
-        tx_packet->id = ++(ppp->state_data.ipcp_id);
-
-        /* Add IP configuration option in the transmit buffer. */
-        memcpy(option.data, (uint8_t [])PPP_LOCAL_IP_ADDRESS, 4);
-        option.type = PPP_IPCP_OPT_IP;
-        option.length = 6;
-        status = ppp_packet_configuration_option_add(tx_buffer, &option);
-
-        /* If configuration option was successfully added. */
-        if (status == SUCCESS)
+        /* If we have not received an ACK for our configuration. */
+        if (ppp->local_ip_address == 0)
         {
-            /* Push the PPP header on the buffer. */
-            status = ppp_packet_configuration_header_add(tx_buffer, tx_packet);
+            /* Clear the transmit packet and buffer chain structures. */
+            memset(tx_packet, 0, sizeof(PPP_CONF_PKT));
 
-            /* If configuration header was successfully added. */
+            /* We have successfully ACKed a configuration request we will send our
+             * configuration now.. */
+            tx_packet->code = PPP_CONFIG_REQ;
+            tx_packet->id = ++(ppp->state_data.ipcp_id);
+
+            /* Add IP configuration option in the transmit buffer. */
+            memcpy(option.data, (uint8_t [])PPP_LOCAL_IP_ADDRESS, 4);
+            option.type = PPP_IPCP_OPT_IP;
+            option.length = 6;
+            status = ppp_packet_configuration_option_add(tx_buffer, &option);
+
+            /* If configuration option was successfully added. */
             if (status == SUCCESS)
             {
-                /* Send this buffer. */
-                status = ppp_transmit_buffer(ppp, &tx_buffer, PPP_PROTO_IPCP);
+                /* Push the PPP header on the buffer. */
+                status = ppp_packet_configuration_header_add(tx_buffer, tx_packet);
+
+                /* If configuration header was successfully added. */
+                if (status == SUCCESS)
+                {
+                    /* Send this buffer. */
+                    status = ppp_transmit_buffer(ppp, &tx_buffer, PPP_PROTO_IPCP);
+                }
             }
         }
     }

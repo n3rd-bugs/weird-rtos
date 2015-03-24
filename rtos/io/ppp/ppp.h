@@ -28,10 +28,11 @@
 #define PPP_NOT_SUPPORTED           -901
 #define PPP_VALUE_NOT_VALID         -902
 #define PPP_PARTIAL_READ            -903
-#define PPP_NO_NEXT_OPTION          -904
-#define PPP_NO_BUFFERS              -905
-#define PPP_NO_SPACE                -906
-#define PPP_INTERNAL_ERROR          -907
+#define PPP_BUFFER_FORWARDED        -904
+#define PPP_NO_NEXT_OPTION          -905
+#define PPP_NO_BUFFERS              -906
+#define PPP_NO_SPACE                -907
+#define PPP_INTERNAL_ERROR          -908
 
 /* PPP instance states. */
 #define PPP_STATE_CONNECTED         1
@@ -46,8 +47,8 @@
 #define PPP_DEDICATED_FD            0x04
 
 /* ACFC and PFC helper macros. */
-#define PPP_IS_ACFC_VALID(ppp)      ((ppp)->flags & PPP_FALG_ACFC)
-#define PPP_IS_PFC_VALID(ppp)       ((ppp)->flags & PPP_FLAG_PFC)
+#define PPP_IS_ACFC_VALID(ppp)      (((ppp)->flags & PPP_FALG_ACFC) != 0)
+#define PPP_IS_PFC_VALID(ppp)       (((ppp)->flags & PPP_FLAG_PFC) != 0)
 
 /* LCP code definitions. */
 #define PPP_CONFIG_NONE             0
@@ -68,6 +69,7 @@
 #define PPP_CONTROL                 (0x03)
 
 /* PPP protocol definitions. */
+#define PPP_PROTO_IPV4              (0x0021)
 #define PPP_PROTO_IPCP              (0x8021)
 #define PPP_PROTO_LCP               (0xC021)
 #define PPP_AUTH_PAP                (0xC023)

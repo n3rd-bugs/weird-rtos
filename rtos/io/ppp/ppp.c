@@ -519,6 +519,17 @@ void ppp_process_frame(void *fd, PPP *ppp)
 
                     break;
 
+                case (PPP_PROTO_IPV4):
+
+                    /* Send this buffer to the networking stack. */
+                    net_device_buffer_receive(ppp->rx_buffer);
+                    ppp->rx_buffer = NULL;
+
+                    /* This buffer will now be handled by networking stack. */
+                    status = PPP_BUFFER_FORWARDED;
+
+                    break;
+
                 /* Not supported protocol. */
                 default:
 
@@ -537,9 +548,13 @@ void ppp_process_frame(void *fd, PPP *ppp)
                 ppp_configuration_process(ppp, ppp->rx_buffer, proto);
             }
 
-            /* Free the received buffer. */
-            fs_buffer_add(ppp->rx_buffer->fd, ppp->rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-            ppp->rx_buffer = NULL;
+            /* If buffer was forwarded to the networking stack. */
+            if (status != PPP_BUFFER_FORWARDED)
+            {
+                /* Free the received buffer. */
+                fs_buffer_add(ppp->rx_buffer->fd, ppp->rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                ppp->rx_buffer = NULL;
+            }
         }
     }
 
