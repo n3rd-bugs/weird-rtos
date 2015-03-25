@@ -28,7 +28,8 @@
 #include <fs.h>
 #endif
 #ifdef CONFIG_NET
-#include <net.h>
+#include <net_buffer.h>
+#include <net_device.h>
 #endif
 #ifdef CONFIG_USB
 #include <usb.h>
