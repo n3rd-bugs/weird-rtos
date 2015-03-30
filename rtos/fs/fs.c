@@ -713,9 +713,9 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
  * fs_buffer_add_list
  * @chain: Buffer chain needed to be added.
  * @type: Type of buffer needed to be added.
- *  FS_BUFFER_FREE: If this is a free buffer.
- *  FS_BUFFER_RX: If this is a receive buffer.
- *  FS_BUFFER_TX: If this is a transmit buffer.
+ *  FS_BUFFER_FREE: If this is a free buffer list.
+ *  FS_BUFFER_RX: If this is a receive buffer list.
+ *  FS_BUFFER_TX: If this is a transmit buffer list.
  * @flags: Operation flags.
  *  FS_BUFFER_ACTIVE: Actively add the buffer and invoke the any callbacks.
  * This function will add a buffer chain in the file descriptor for the required
@@ -750,9 +750,9 @@ void fs_buffer_add_list(FS_BUFFER *chain, uint32_t type, uint32_t flags)
  * @buffer: Buffer needed to be added.
  * @type: Type of buffer needed to be added.
  *  FS_BUFFER_FREE: If this is a free buffer.
- *  FS_BUFFER_LIST: If this is a free list.
  *  FS_BUFFER_RX: If this is a receive buffer.
  *  FS_BUFFER_TX: If this is a transmit buffer.
+ *  FS_BUFFER_LIST: If this is a free buffer list.
  * @flags: Operation flags.
  *  FS_BUFFER_ACTIVE: Actively add the buffer and invoke the any callbacks.
  * This function will adds a buffer in the file descriptor for the required
@@ -912,9 +912,10 @@ uint8_t fs_buffer_type_search(void *buffer, void *param)
  * fs_buffer_id_get
  * @fd: File descriptor from which a free buffer is needed.
  * @type: Type of buffer needed to be added.
- *  FS_BUFFER_FREE: If this is a free buffer.
- *  FS_BUFFER_RX: If this is a receive buffer.
- *  FS_BUFFER_TX: If this is a transmit buffer.
+ *  FS_BUFFER_FREE: If a free buffer is needed.
+ *  FS_BUFFER_RX: If a receive buffer is needed.
+ *  FS_BUFFER_TX: If a transmit buffer is needed.
+ *  FS_BUFFER_LIST: If a list buffer is needed.
  * @flags: Operation flags.
  *  FS_BUFFER_INPLACE: Will not remove the buffer from the list just return a
  *      pointer to it.
