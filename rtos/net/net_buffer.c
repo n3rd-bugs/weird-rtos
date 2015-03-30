@@ -86,16 +86,15 @@ static void net_buffer_receive_task_entry(void *argv)
     /* This function should never return. */
     for (;;)
     {
-        /* Reset the buffer pointer. */
-        buffer = NULL;
-
         /* Read a buffer pointer from the file descriptor. */
         if (fs_read(net_buff_fd, (char *)(&buffer), sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
         {
-            /* TODO: Process this networking buffer. */
-
-            /* Free this buffer. */
-            fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            /* Process this buffer. */
+            if (net_buffer_process(buffer) == SUCCESS)
+            {
+                /* Free this buffer. */
+                fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            }
         }
     }
 

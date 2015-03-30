@@ -54,6 +54,8 @@ void net_register_fd(NET_DEV *net_device, FD fd)
 /*
  * net_device_buffer_receive
  * @buffer: A net buffer needed to be added in the receive list.
+ * @protocol: Packet protocol as parsed on the lower layer needed to parse the
+ *  contents of this buffer.
  * This function will be called by a device when it wants to transfer a buffer
  * to the networking stack, the device should already have registered itself
  * with the networking stack. Purpose of this task is to off-load the network
@@ -62,10 +64,13 @@ void net_register_fd(NET_DEV *net_device, FD fd)
  * to lock the networking buffer chain so this packet will lie in the receive
  * queue until a RX event is raised.
  */
-void net_device_buffer_receive(FS_BUFFER *buffer)
+void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
 {
     /* Assign this buffer a network buffer ID. */
     buffer->id = NET_BUFFER_ID;
+
+    /* Push the protocol on the buffer. */
+    OS_ASSERT(fs_buffer_push(buffer, (char *)&protocol, sizeof(uint8_t), FS_BUFFER_HEAD) != SUCCESS);
 
     /* Push this buffer in the receive list of the device. */
     fs_buffer_add(buffer->fd, buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);

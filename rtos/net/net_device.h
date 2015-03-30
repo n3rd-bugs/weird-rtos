@@ -31,7 +31,7 @@ typedef struct _net_dev
 
 /* Function prototypes. */
 void net_register_fd(NET_DEV *, FD);
-void net_device_buffer_receive(FS_BUFFER *);
+void net_device_buffer_receive(FS_BUFFER *, uint8_t);
 void net_device_connected(void *, void *);
 void net_device_disconnected(void *, void *);
 void net_device_rx_watcher(void *, void *);
