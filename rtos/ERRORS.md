@@ -19,3 +19,4 @@ This list is needed to be updated whenever a new error code is added.
     PPP_INTERNAL_ERROR      -907
     HDLC_STREAM_ERROR       -920
     MODEM_CHAT_IGNORE       -930
+    NET_BUFFER_CONSUMED     -1000
