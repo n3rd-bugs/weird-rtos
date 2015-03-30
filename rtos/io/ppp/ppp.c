@@ -522,7 +522,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                 case (PPP_PROTO_IPV4):
 
                     /* Send this buffer to the networking stack. */
-                    net_device_buffer_receive(ppp->rx_buffer);
+                    net_device_buffer_receive(ppp->rx_buffer, NET_PROTO_IPV4);
                     ppp->rx_buffer = NULL;
 
                     /* This buffer will now be handled by networking stack. */
