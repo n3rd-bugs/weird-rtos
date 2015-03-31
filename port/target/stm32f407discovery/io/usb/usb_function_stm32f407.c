@@ -14,6 +14,8 @@
 #include <string.h>
 
 #ifdef USB_FUNCTION
+#include <ppp.h>
+#include <net.h>
 
 #ifdef STM32F407_USB_CDC_ACM
 /* Needs to be word aligned. */

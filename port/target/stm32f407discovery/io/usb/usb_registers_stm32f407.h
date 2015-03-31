@@ -16,6 +16,7 @@
 #include <os.h>
 
 #ifdef CONFIG_USB
+#include <fs.h>
 
 /* USB definitions.  */
 #define USB_STM32F407_HS_BASE_ADDR          0x40040000

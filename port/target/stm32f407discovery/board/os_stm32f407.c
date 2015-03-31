@@ -11,8 +11,9 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <stdio.h>
-#include <os.h>
 #include <stdarg.h>
+#include <os.h>
+#include <fs.h>
 
 /* Used to manage 64 bit system clock. */
 uint32_t clock_64_high_32 = 0;
