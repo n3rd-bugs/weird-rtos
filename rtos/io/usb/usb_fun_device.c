@@ -11,6 +11,7 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
+#include <usb.h>
 
 #ifdef USB_FUNCTION
 

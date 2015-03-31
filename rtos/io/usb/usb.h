@@ -100,7 +100,7 @@ typedef struct _usb_device
 void usb_init();
 
 /* Include USB target configurations. */
-#include <os_target.h>
+#include <usb_target.h>
 
 #ifdef USB_FUNCTION
 #include <usb_function.h>

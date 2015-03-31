@@ -18,9 +18,6 @@
 #include <tasks.h>
 #include <scheduler.h>
 #include <assert.h>
-#ifdef CONFIG_USB
-#include <usb.h>
-#endif
 #include <os_target.h>
 
 /* Some return codes. */

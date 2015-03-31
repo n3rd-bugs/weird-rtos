@@ -104,23 +104,23 @@ typedef struct _usb_fun_desc
 /* USB function device callbacks. */
 typedef struct _usb_fun_cb
 {
-    uint32_t (*init)(void *, uint8_t);
-    uint32_t (*deinit)(void *, uint8_t);
+    uint32_t (*init)(USB_STM32F407_HANDLE *, uint8_t);
+    uint32_t (*deinit)(USB_STM32F407_HANDLE *, uint8_t);
 
-    uint32_t (*connected)(void *);
-    uint32_t (*disconnected)(void *);
+    uint32_t (*connected)(USB_STM32F407_HANDLE *);
+    uint32_t (*disconnected)(USB_STM32F407_HANDLE *);
 
     /* Control endpoints. */
-    uint32_t (*setup)(void *, USB_SETUP_REQ  *);
-    uint32_t (*ep0_tx_sent)(void *);
-    uint32_t (*ep0_rx_ready)(void *);
+    uint32_t (*setup)(USB_STM32F407_HANDLE *, USB_SETUP_REQ  *);
+    uint32_t (*ep0_tx_sent)(USB_STM32F407_HANDLE *);
+    uint32_t (*ep0_rx_ready)(USB_STM32F407_HANDLE *);
 
     /* Class Specific endpoints. */
-    uint32_t (*data_in)(void *, uint8_t);
-    uint32_t (*data_out)(void *, uint8_t);
-    uint32_t (*sof)(void *);
-    uint32_t (*iso_in_incomplete)(void *);
-    uint32_t (*iso_out_incomplete)(void *);
+    uint32_t (*data_in)(USB_STM32F407_HANDLE *, uint8_t);
+    uint32_t (*data_out)(USB_STM32F407_HANDLE *, uint8_t);
+    uint32_t (*sof)(USB_STM32F407_HANDLE *);
+    uint32_t (*iso_in_incomplete)(USB_STM32F407_HANDLE *);
+    uint32_t (*iso_out_incomplete)(USB_STM32F407_HANDLE *);
 
     uint8_t *(*get_config_descriptor)(uint8_t, uint16_t *);
     uint8_t *(*get_other_config_descriptor)(uint8_t, uint16_t *);

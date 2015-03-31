@@ -73,17 +73,9 @@ extern USB_FUN_CB usb_fun_cdc_acm_cb;
 #ifdef USB_CDC_CONSOLE
 #include <usb_cdc_console.h>
 #endif
-#include <os_target.h>
-
-/* USB CDC ACM function device descriptor. */
-typedef struct _usb_fun_cdc_acm_dev
-{
-    USB_STM32F407_HANDLE    usb;
-    CDC_CONSOLE             cdc_console;
-} USB_FUN_CDC_ACM_DEV;
 
 /* Function prototypes. */
-void usb_fun_cdc_acm_data_out_enable(void *);
+void usb_fun_cdc_acm_data_out_enable(USB_STM32F407_HANDLE *);
 
 #endif /* USB_FUNCTION_CDC_ACM */
 #endif /* _USB_FUN_CDC_ACM_H_ */

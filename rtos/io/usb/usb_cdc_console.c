@@ -11,10 +11,11 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
-#include <string.h>
-#include <sll.h>
+#include <usb.h>
 
 #ifdef USB_CDC_CONSOLE
+#include <string.h>
+#include <sll.h>
 
 /* Internal function prototypes. */
 static int32_t usb_cdc_fun_console_read(void *, char *, int32_t);

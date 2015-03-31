@@ -12,19 +12,20 @@
  */
 
 #include <os.h>
+#include <usb.h>
 
 #ifdef USB_FUNCTION_CDC_ACM
 
 /* Internal function prototypes. */
-static uint32_t usb_fun_cdc_acm_init(void *, uint8_t);
-static uint32_t usb_fun_cdc_acm_deinit(void *, uint8_t);
-static uint32_t usb_fun_cdc_acm_connected(void *);
-static uint32_t usb_fun_cdc_acm_disconnected(void *);
-static uint32_t usb_fun_cdc_acm_setup (void *, USB_SETUP_REQ *);
-static uint32_t usb_fun_cdc_acm_ep0_rx_ready(void *);
-static uint32_t usb_fun_cdc_acm_data_in(void *, uint8_t);
-static uint32_t usb_fun_cdc_acm_data_out(void *, uint8_t);
-static uint32_t usb_fun_cdc_acm_sof(void *);
+static uint32_t usb_fun_cdc_acm_init(USB_STM32F407_HANDLE *, uint8_t);
+static uint32_t usb_fun_cdc_acm_deinit(USB_STM32F407_HANDLE *, uint8_t);
+static uint32_t usb_fun_cdc_acm_connected(USB_STM32F407_HANDLE *);
+static uint32_t usb_fun_cdc_acm_disconnected(USB_STM32F407_HANDLE *);
+static uint32_t usb_fun_cdc_acm_setup (USB_STM32F407_HANDLE *, USB_SETUP_REQ *);
+static uint32_t usb_fun_cdc_acm_ep0_rx_ready(USB_STM32F407_HANDLE *);
+static uint32_t usb_fun_cdc_acm_data_in(USB_STM32F407_HANDLE *, uint8_t);
+static uint32_t usb_fun_cdc_acm_data_out(USB_STM32F407_HANDLE *, uint8_t);
+static uint32_t usb_fun_cdc_acm_sof(USB_STM32F407_HANDLE *);
 static uint8_t *usb_fun_cdc_acm_get_cfg_desc(uint8_t, uint16_t *);
 static uint8_t *usb_fun_cdc_acm_get_other_cfg_desc(uint8_t, uint16_t *);
 static uint8_t *usb_fun_cdc_acm_device_descriptor(uint8_t, uint16_t *);
@@ -295,7 +296,7 @@ USB_FUN_CB usb_fun_cdc_acm_cb =
  * @cfgidx: Configuration index.
  * Initializes USB CDC layer.
  */
-static uint32_t usb_fun_cdc_acm_init(void *usb_device, uint8_t cfgidx)
+static uint32_t usb_fun_cdc_acm_init(USB_STM32F407_HANDLE *usb_device, uint8_t cfgidx)
 {
     uint8_t *pbuf;
     extern uint8_t usb_fun_cdc_acm_device_desc[USB_DEVICE_DESC_SIZE];
@@ -304,10 +305,10 @@ static uint32_t usb_fun_cdc_acm_init(void *usb_device, uint8_t cfgidx)
     UNUSED_PARAM(cfgidx);
 
     /* Open IN endpoint. */
-    usb_fun_endpoint_open(usb_device, CDC_IN_EP, *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 57), EP_TYPE_BULK);
+    usb_fun_endpoint_open(usb_device, CDC_IN_EP, *(uint16_t *)(usb_device->device.config_desc + 57), EP_TYPE_BULK);
 
     /* Open OUT endpoint. */
-    usb_fun_endpoint_open(usb_device, CDC_OUT_EP, *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 64), EP_TYPE_BULK);
+    usb_fun_endpoint_open(usb_device, CDC_OUT_EP, *(uint16_t *)(usb_device->device.config_desc + 64), EP_TYPE_BULK);
 
     /* Open CMD endpoint. */
     usb_fun_endpoint_open(usb_device, CDC_CMD_EP, CDC_CMD_PACKET_SIZE, EP_TYPE_INTR);
@@ -317,8 +318,8 @@ static uint32_t usb_fun_cdc_acm_init(void *usb_device, uint8_t cfgidx)
     pbuf[5] = DEVICE_SUBCLASS_CDC;
 
     /* Initialize console data. */
-    ((USB_FUN_CDC_ACM_DEV *)usb_device)->usb.device.cmd = NO_CMD;
-    ((USB_FUN_CDC_ACM_DEV *)usb_device)->usb.device.altset = 0;
+    usb_device->device.cmd = NO_CMD;
+    usb_device->device.altset = 0;
 
     /* Return success. */
     return (SUCCESS);
@@ -331,7 +332,7 @@ static uint32_t usb_fun_cdc_acm_init(void *usb_device, uint8_t cfgidx)
  * @cfgidx: Configuration index.
  * Deinitialize CDC layer.
  */
-static uint32_t usb_fun_cdc_acm_deinit(void *usb_device, uint8_t cfgidx)
+static uint32_t usb_fun_cdc_acm_deinit(USB_STM32F407_HANDLE *usb_device, uint8_t cfgidx)
 {
     /* Remove compiler warning. */
     UNUSED_PARAM(cfgidx);
@@ -355,10 +356,10 @@ static uint32_t usb_fun_cdc_acm_deinit(void *usb_device, uint8_t cfgidx)
  * @usb_device: USB device instance.
  * Will be called when device is connected.
  */
-static uint32_t usb_fun_cdc_acm_connected(void *usb_device)
+static uint32_t usb_fun_cdc_acm_connected(USB_STM32F407_HANDLE *usb_device)
 {
     /* Handle connect event. */
-    usb_cdc_console_handle_connect(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
+    usb_cdc_console_handle_connect(usb_device->driver_data);
 
     /* Return success. */
     return (SUCCESS);
@@ -370,10 +371,10 @@ static uint32_t usb_fun_cdc_acm_connected(void *usb_device)
  * @usb_device: USB device instance.
  * Will be called when device is disconnected.
  */
-static uint32_t usb_fun_cdc_acm_disconnected(void *usb_device)
+static uint32_t usb_fun_cdc_acm_disconnected(USB_STM32F407_HANDLE *usb_device)
 {
     /* Handle disconnect event. */
-    usb_cdc_console_handle_disconnect(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
+    usb_cdc_console_handle_disconnect(usb_device->driver_data);
 
     /* Return success. */
     return (SUCCESS);
@@ -386,7 +387,7 @@ static uint32_t usb_fun_cdc_acm_disconnected(void *usb_device)
  * @req: USB request needed to be setup.
  * Handle the CDC specific requests.
  */
-static uint32_t usb_fun_cdc_acm_setup(void *usb_device, USB_SETUP_REQ *req)
+static uint32_t usb_fun_cdc_acm_setup(USB_STM32F407_HANDLE *usb_device, USB_SETUP_REQ *req)
 {
     uint16_t len;
     uint8_t *pbuf, ret = SUCCESS;
@@ -402,23 +403,23 @@ static uint32_t usb_fun_cdc_acm_setup(void *usb_device, USB_SETUP_REQ *req)
             if (req->bmRequest & 0x80)
             {
                 /* Get the data to be sent to host from interface layer. */
-                usb_cdc_fun_console_handle_ctrl(usb_device, req->bRequest, ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_buffer, req->wLength);
+                usb_cdc_fun_console_handle_ctrl(usb_device->driver_data, req->bRequest, ((CDC_CONSOLE*)usb_device->driver_data)->cmd_buffer, req->wLength);
 
                 /* Send the data to the host. */
-                usb_fun_control_tx(usb_device, (uint8_t *)((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_buffer, req->wLength);
+                usb_fun_control_tx(usb_device, (uint8_t *)((CDC_CONSOLE*)usb_device->driver_data)->cmd_buffer, req->wLength);
             }
 
             /* Host-to-device request. */
             else
             {
                 /* Set the value of the current command to be processed. */
-                ((USB_FUN_CDC_ACM_DEV *)usb_device)->usb.device.cmd = req->bRequest;
-                ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_len = req->wLength;
+                usb_device->device.cmd = req->bRequest;
+                ((CDC_CONSOLE*)usb_device->driver_data)->cmd_len = req->wLength;
 
                 /* Prepare the reception of the buffer over endpoint0.
                  * Next step: the received data will be managed in ep0_tx_sent
                  * function. */
-                usb_fun_control_rx(usb_device, (uint8_t *)((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_buffer, req->wLength);
+                usb_fun_control_rx(usb_device, (uint8_t *)((CDC_CONSOLE*)usb_device->driver_data)->cmd_buffer, req->wLength);
             }
         }
 
@@ -426,7 +427,7 @@ static uint32_t usb_fun_cdc_acm_setup(void *usb_device, USB_SETUP_REQ *req)
         else
         {
             /* Transfer the command to the interface layer. */
-            usb_cdc_fun_console_handle_ctrl(usb_device, req->bRequest, NULL, 0);
+            usb_cdc_fun_console_handle_ctrl(usb_device->driver_data, req->bRequest, NULL, 0);
         }
 
         break;
@@ -451,13 +452,13 @@ static uint32_t usb_fun_cdc_acm_setup(void *usb_device, USB_SETUP_REQ *req)
             break;
 
         case USB_REQ_GET_INTERFACE:
-            usb_fun_control_tx(usb_device, (uint8_t *)&((USB_FUN_CDC_ACM_DEV *)usb_device)->usb.device.altset, 1);
+            usb_fun_control_tx(usb_device, (uint8_t *)&usb_device->device.altset, 1);
             break;
 
         case USB_REQ_SET_INTERFACE:
             if ((uint8_t)(req->wValue) < USB_FUN_ITF_MAX_NUM)
             {
-                ((USB_FUN_CDC_ACM_DEV *)usb_device)->usb.device.altset = (uint8_t)(req->wValue);
+                usb_device->device.altset = (uint8_t)(req->wValue);
             }
             else
             {
@@ -486,15 +487,15 @@ static uint32_t usb_fun_cdc_acm_setup(void *usb_device, USB_SETUP_REQ *req)
  * @usb_device: USB device instance.
  * Handles event when data is received on control endpoint.
  */
-static uint32_t usb_fun_cdc_acm_ep0_rx_ready(void *usb_device)
+static uint32_t usb_fun_cdc_acm_ep0_rx_ready(USB_STM32F407_HANDLE *usb_device)
 {
-    if (((USB_FUN_CDC_ACM_DEV *)usb_device)->usb.device.cmd != NO_CMD)
+    if (usb_device->device.cmd != NO_CMD)
     {
         /* Process this command. */
-        usb_cdc_fun_console_handle_ctrl(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console, ((USB_FUN_CDC_ACM_DEV *)usb_device)->usb.device.cmd, ((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_buffer, (int32_t)((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.cmd_len);
+        usb_cdc_fun_console_handle_ctrl(usb_device->driver_data, usb_device->device.cmd, ((CDC_CONSOLE*)usb_device->driver_data)->cmd_buffer, (int32_t)((CDC_CONSOLE*)usb_device->driver_data)->cmd_len);
 
         /* Reset the command variable to default value. */
-        ((USB_FUN_CDC_ACM_DEV *)usb_device)->usb.device.cmd = NO_CMD;
+        usb_device->device.cmd = NO_CMD;
     }
 
     /* Return success. */
@@ -509,7 +510,7 @@ static uint32_t usb_fun_cdc_acm_ep0_rx_ready(void *usb_device)
  * Handles data TX a non-control endpoint, this is called when a previously
  * started TX completes.
  */
-static uint32_t usb_fun_cdc_acm_data_in(void *usb_device, uint8_t epnum)
+static uint32_t usb_fun_cdc_acm_data_in(USB_STM32F407_HANDLE *usb_device, uint8_t epnum)
 {
     FS_BUFFER_ONE *buffer;
 
@@ -517,10 +518,10 @@ static uint32_t usb_fun_cdc_acm_data_in(void *usb_device, uint8_t epnum)
     UNUSED_PARAM(epnum);
 
     /* Data TX complete. */
-    usb_cdc_fun_console_handle_tx_complete(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
+    usb_cdc_fun_console_handle_tx_complete(usb_device->driver_data);
 
     /* Check if there still is some data available to be sent. */
-    buffer = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
+    buffer = usb_cdc_fun_console_handle_tx(usb_device->driver_data);
 
     if (buffer)
     {
@@ -539,10 +540,10 @@ static uint32_t usb_fun_cdc_acm_data_in(void *usb_device, uint8_t epnum)
  * @epnum: Endpoint number on which data was received.
  * Handles data RX on non control endpoint.
  */
-static uint32_t usb_fun_cdc_acm_data_out(void *usb_device, uint8_t epnum)
+static uint32_t usb_fun_cdc_acm_data_out(USB_STM32F407_HANDLE *usb_device, uint8_t epnum)
 {
     /* Handle RX on CDC device. */
-    usb_cdc_fun_console_handle_rx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console, ((USB_STM32F407_HANDLE *)usb_device)->device.out_ep[epnum].xfer_count);
+    usb_cdc_fun_console_handle_rx(usb_device->driver_data, usb_device->device.out_ep[epnum].xfer_count);
 
     /* Return success. */
     return (SUCCESS);
@@ -554,10 +555,10 @@ static uint32_t usb_fun_cdc_acm_data_out(void *usb_device, uint8_t epnum)
  * @usb_device: USB device instance.
  * Enables OUT endpoint to receive new data.
  */
-void usb_fun_cdc_acm_data_out_enable(void *usb_device)
+void usb_fun_cdc_acm_data_out_enable(USB_STM32F407_HANDLE *usb_device)
 {
     /* Prepare out endpoint to receive next packet. */
-    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console.rx_buffer->buffer), *(uint16_t *)(((USB_STM32F407_HANDLE *)usb_device)->device.config_desc + 64));
+    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(((CDC_CONSOLE*)usb_device->driver_data)->rx_buffer->buffer), *(uint16_t *)(usb_device->device.config_desc + 64));
 
 } /* usb_fun_cdc_acm_data_out_enable */
 
@@ -566,12 +567,12 @@ void usb_fun_cdc_acm_data_out_enable(void *usb_device)
  * @usb_device: USB device instance.
  * Handles start of a frame.
  */
-static uint32_t usb_fun_cdc_acm_sof(void *usb_device)
+static uint32_t usb_fun_cdc_acm_sof(USB_STM32F407_HANDLE *usb_device)
 {
     FS_BUFFER_ONE *buffer;
 
     /* Check if there is some data available to be sent. */
-    buffer = usb_cdc_fun_console_handle_tx(&((USB_FUN_CDC_ACM_DEV *)usb_device)->cdc_console);
+    buffer = usb_cdc_fun_console_handle_tx(usb_device->driver_data);
 
     if (buffer)
     {

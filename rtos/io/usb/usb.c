@@ -14,6 +14,7 @@
 #include <os.h>
 
 #ifdef CONFIG_USB
+#include <usb.h>
 
 /*
  * usb_init

@@ -12,6 +12,7 @@
  */
 
 #include <os.h>
+#include <usb.h>
 
 #ifdef USB_FUNCTION
 
