@@ -11,9 +11,14 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
-#include <string.h>
+
+#ifdef CONFIG_PPP
+#include <ppp.h>
 
 #ifdef PPP_MODEM_CHAT
+#include <string.h>
+#include <fs.h>
+
 /*
  * modem_chat_process
  * @fd: File descriptor on which data was received and reply is needed to be
@@ -56,3 +61,4 @@ int32_t modem_chat_process(FD fd, FS_BUFFER_ONE *rx_buffer)
 } /* modem_chat_process */
 
 #endif /* PPP_MODEM_CHAT */
+#endif /* CONFIG_PPP */

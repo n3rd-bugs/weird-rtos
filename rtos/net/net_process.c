@@ -13,6 +13,7 @@
 #include <os.h>
 
 #ifdef CONFIG_NET
+#include <net.h>
 
 /*
  * net_buffer_process

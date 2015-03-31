@@ -49,10 +49,12 @@
  */
 
 #include <os.h>
-#include <string.h>
-#include <sll.h>
+#include <mem.h>
 
 #ifdef MEMGR_DYNAMIC
+#include <string.h>
+#include <sll.h>
+#include <semaphore.h>
 
 /* Local function prototypes. */
 static MEM_PAGE *mem_dynamic_search_region(MEM_DYNAMIC *mem_dynamic, uint32_t size, uint8_t force);

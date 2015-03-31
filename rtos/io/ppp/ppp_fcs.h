@@ -16,6 +16,7 @@
 #include <os.h>
 
 #ifdef CONFIG_PPP
+#include <fs.h>
 
 /* FCS magic and initial value definitions. */
 #define PPP_FCS16_INIT      0xffff

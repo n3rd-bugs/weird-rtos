@@ -15,6 +15,7 @@
 #include <os.h>
 
 #ifdef CONFIG_NET
+#include <fs.h>
 
 /* Function prototypes. */
 uint32_t net_buffer_process(FS_BUFFER *);

@@ -15,6 +15,8 @@
 #include <os.h>
 
 #ifdef CONFIG_NET
+#include <fs.h>
+#include <semaphore.h>
 
 /* Net buffer ID used to tell the networking stack that a buffer belongs to it. */
 #define NET_BUFFER_ID               0x8A6EF4C6

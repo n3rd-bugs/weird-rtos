@@ -15,6 +15,7 @@
 #ifdef CONFIG_NET
 #include <string.h>
 #include <sll.h>
+#include <net.h>
 
 /* Internal function prototypes. */
 static int32_t net_buffer_lock(void *);

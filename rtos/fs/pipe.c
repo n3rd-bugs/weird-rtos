@@ -12,10 +12,11 @@
  */
 
 #include <os.h>
-#include <string.h>
-#include <sll.h>
+#include <fs.h>
 
 #ifdef FS_PIPE
+#include <string.h>
+#include <sll.h>
 
 /* Pipe FS data. */
 static PIPE_DATA pipe_data;

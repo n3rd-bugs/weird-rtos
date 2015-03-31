@@ -14,6 +14,7 @@
 
 #ifdef CONFIG_NET
 #include <string.h>
+#include <net.h>
 
 /*
  * net_register_fd

@@ -12,12 +12,13 @@
  */
 
 #include <os.h>
+
+#ifdef CONFIG_FS
 #include <string.h>
 #include <sll.h>
 #include <path.h>
 #include <sleep.h>
-
-#ifdef CONFIG_FS
+#include <fs.h>
 
 /* Global variables. */
 static FS_DATA file_data;

@@ -14,6 +14,9 @@
 
 #ifdef CONFIG_PPP
 #include <string.h>
+#include <fs.h>
+#include <ppp.h>
+#include <ppp_hdlc.h>
 
 /*
  * ppp_hdlc_header_parse

@@ -13,6 +13,8 @@
 #include <os.h>
 
 #ifdef CONFIG_NET
+#include <net.h>
+
 /*
  * net_init
  * This function will initialize the networking stack.

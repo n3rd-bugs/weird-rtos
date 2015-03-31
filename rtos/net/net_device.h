@@ -15,6 +15,9 @@
 #include <os.h>
 
 #ifdef CONFIG_NET
+#include <fs.h>
+#include <semaphore.h>
+#include <net.h>
 
 /* Network device file descriptor. */
 typedef struct _net_dev

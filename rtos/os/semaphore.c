@@ -11,11 +11,12 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
+
+#ifdef CONFIG_SEMAPHORE
 #include <sleep.h>
 #include <sll.h>
 #include <string.h>
-
-#ifdef CONFIG_SEMAPHORE
+#include <semaphore.h>
 
 /*
  * semaphore_create

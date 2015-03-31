@@ -14,6 +14,9 @@
 
 #ifdef CONFIG_PPP
 #include <string.h>
+#include <fs.h>
+#include <ppp.h>
+#include <ppp_packet.h>
 
 /* PPP LCP protocol definition. */
 PPP_PROTO ppp_proto_lcp =

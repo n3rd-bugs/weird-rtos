@@ -13,6 +13,9 @@
 #include <os.h>
 
 #ifdef CONFIG_PPP
+#include <fs.h>
+#include <ppp.h>
+#include <ppp_packet.h>
 
 /*
  * ppp_packet_protocol_parse

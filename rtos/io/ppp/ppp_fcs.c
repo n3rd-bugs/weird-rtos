@@ -13,6 +13,8 @@
 #include <os.h>
 
 #ifdef CONFIG_PPP
+#include <fs.h>
+#include <ppp_fcs.h>
 
 /* FCS look-up table. */
 static const uint16_t ppp_fcs_table[256] =

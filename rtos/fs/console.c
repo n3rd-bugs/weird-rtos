@@ -12,11 +12,12 @@
  */
 
 #include <os.h>
+#include <fs.h>
+
+#ifdef FS_CONSOLE
 #include <string.h>
 #include <path.h>
 #include <sll.h>
-
-#ifdef FS_CONSOLE
 
 /* Console data. */
 static CONSOLE_DATA console_data;

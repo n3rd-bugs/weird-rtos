@@ -11,10 +11,11 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
-#include <os_target.h>
-#include <string.h>
+#include <mem.h>
 
 #ifdef MEMGR_STATIC
+#include <os_target.h>
+#include <string.h>
 
 /*
  * mem_static_init_region

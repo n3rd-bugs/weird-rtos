@@ -15,6 +15,10 @@
 #ifdef CONFIG_PPP
 #include <sll.h>
 #include <string.h>
+#include <fs.h>
+#include <ppp.h>
+#include <net.h>
+#include <ppp_packet.h>
 
 /*
  * ppp_register_fd

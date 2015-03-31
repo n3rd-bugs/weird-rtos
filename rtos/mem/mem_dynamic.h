@@ -15,6 +15,10 @@
 #define MEM_DYNAMIC_H
 
 #include <os.h>
+#include <mem.h>
+
+#ifdef MEMGR_DYNAMIC
+#include <semaphore.h>
 
 /* Dynamic memory configuration. */
 #define MEM_BNDRY_CHECK
@@ -153,4 +157,5 @@ void mem_dynamic_init_region(MEM_DYNAMIC *, char *, char *, uint32_t, MEM_DYN_CF
 char *mem_dynamic_alloc_region(MEM_DYNAMIC *, uint32_t);
 char *mem_dynamic_dealloc_region(char *);
 
+#endif /* MEMGR_DYNAMIC */
 #endif /* MEM_DYNAMIC_H */

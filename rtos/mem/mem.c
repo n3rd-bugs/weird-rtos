@@ -11,9 +11,10 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
-#include <os_target.h>
 
 #ifdef CONFIG_MEMGR
+#include <mem.h>
+#include <os_target.h>
 
 #ifdef MEMGR_STATIC
 MEM_STATIC mem_static_pool;

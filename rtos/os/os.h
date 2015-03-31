@@ -18,23 +18,8 @@
 #include <tasks.h>
 #include <scheduler.h>
 #include <assert.h>
-#ifdef CONFIG_SEMAPHORE
-#include <semaphore.h>
-#endif
-#ifdef CONFIG_MEMGR
-#include <mem.h>
-#endif
-#ifdef CONFIG_FS
-#include <fs.h>
-#endif
-#ifdef CONFIG_NET
-#include <net.h>
-#endif
 #ifdef CONFIG_USB
 #include <usb.h>
-#endif
-#ifdef CONFIG_PPP
-#include <ppp.h>
 #endif
 #include <os_target.h>
 
