@@ -15,6 +15,7 @@
 #include <os.h>
 
 #ifdef CONFIG_USB
+#include <usb.h>
 
 /* USB configurations. */
 #define STM32F407_USB_FS
@@ -72,9 +73,6 @@
 #define STM32F407_USB_HS_DEDICATED_EP1_ENABLED
 
 #endif
-
-/* Hook-up USB OS stack. */
-#define USB_TGT_INIT    usb_stm32f407_init
 
 #include <usb_registers_stm32f407.h>
 
@@ -216,6 +214,7 @@ typedef struct _usb_stm32f407_handle
 #ifdef STM32F407_USB_DEVICE_MODE
     USB_DEVICE                  device;
 #endif
+    void                        *driver_data;
 #ifdef STM32F407_USB_HOST_MODE
     HCD_DEV                     host;
 #endif

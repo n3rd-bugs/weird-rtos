@@ -18,10 +18,6 @@
 #include <stm32f407xx.h>
 #include <usart_stm32f407.h>
 
-#ifdef CONFIG_USB
-#include <usb_stm32f407.h>
-#endif
-
 /* Peripheral clock configuration. */
 #define SYS_FREQ                168000000
 #define PCLK_FREQ               84000000

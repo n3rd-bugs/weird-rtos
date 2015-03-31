@@ -11,15 +11,19 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
-#include <string.h>
+#include <usb.h>
 
 #ifdef USB_FUNCTION
+#include <string.h>
 #include <ppp.h>
 #include <net.h>
 
+#include <usb_stm32f407.h>
+USB_STM32F407_HANDLE stm32f407_usb_device __attribute__ ((aligned (0x10)));;
+
 #ifdef STM32F407_USB_CDC_ACM
-/* Needs to be word aligned. */
-USB_FUN_CDC_ACM_DEV stm32f407_usb_cdc_device __attribute__ ((aligned (0x10)));
+/* USB CDC console. */
+CDC_CONSOLE stm32f407_usb_cdc_console;
 #endif
 #ifdef STM32F407_USB_CDC_ACM_PPP
 PPP     stm32f407_usb_cdc_ppp_instance;
@@ -31,7 +35,7 @@ ISR_FUN usb_otg_interrupt()
     OS_ISR_ENTER();
 
 #ifdef STM32F407_USB_CDC_ACM
-    usb_function_stm32f407_interrupt_handler (&stm32f407_usb_cdc_device.usb);
+    usb_function_stm32f407_interrupt_handler (&stm32f407_usb_device);
 #endif
 
     OS_ISR_EXIT();
@@ -43,26 +47,30 @@ ISR_FUN usb_otg_interrupt()
  */
 void usb_function_stm32f407_init()
 {
+    /* Clear the USB device handle. */
+    memset(&stm32f407_usb_device, 0, sizeof(USB_STM32F407_HANDLE));
+
 #ifdef STM32F407_USB_CDC_ACM
 #ifdef STM32F407_USB_CDC_DEBUG
     extern FD debug_usart_fd;
 #endif
-
-    memset(&stm32f407_usb_cdc_device, 0, sizeof(USB_FUN_CDC_ACM_DEV));
+    /* Clear the ACM device structure. */
+    memset(&stm32f407_usb_cdc_console, 0, sizeof(CDC_CONSOLE));
+    stm32f407_usb_device.driver_data = &stm32f407_usb_cdc_console;
 
     /* Initialize BSP. */
-    usb_stm32f407_hw_initilaize((USB_STM32F407_HANDLE *)&stm32f407_usb_cdc_device);
+    usb_stm32f407_hw_initilaize(&stm32f407_usb_device);
 
     /* Initialize USB function device. */
-    usb_function_init((USB_STM32F407_HANDLE *)&stm32f407_usb_cdc_device, &usb_fun_cdc_acm_cb);
+    usb_function_init(&stm32f407_usb_device, &usb_fun_cdc_acm_cb);
 
     /* Initialize and register a console for this device. */
     /* For now we only support one CDC function console. */
-    stm32f407_usb_cdc_device.cdc_console.console.fs.name = "cdcacmf0";
-    usb_cdc_console_register(&stm32f407_usb_cdc_device.cdc_console, &stm32f407_usb_cdc_device);
+    stm32f407_usb_cdc_console.console.fs.name = "cdcacmf0";
+    usb_cdc_console_register(&stm32f407_usb_cdc_console, &stm32f407_usb_device);
 
     /* Enable interrupts. */
-    usb_stm32f407_enable_interrupt((USB_STM32F407_HANDLE *)&stm32f407_usb_cdc_device);
+    usb_stm32f407_enable_interrupt(&stm32f407_usb_device);
 
 #ifdef STM32F407_USB_CDC_DEBUG
     /* Connect this descriptor to the UART file descriptor. */
@@ -70,10 +78,10 @@ void usb_function_stm32f407_init()
 #elif defined(STM32F407_USB_CDC_ACM_PPP)
 
     /* Register USB CDC file descriptor with PPP. */
-    ppp_register_fd(&stm32f407_usb_cdc_ppp_instance, (FD)&stm32f407_usb_cdc_device.cdc_console, TRUE);
+    ppp_register_fd(&stm32f407_usb_cdc_ppp_instance, (FD)&stm32f407_usb_cdc_console, TRUE);
 
     /* Register USB CDC file descriptor with the networking stack. */
-    net_register_fd(&stm32f407_usb_cdc_net_device, (FD)&stm32f407_usb_cdc_device.cdc_console);
+    net_register_fd(&stm32f407_usb_cdc_net_device, (FD)&stm32f407_usb_cdc_console);
 #endif
 #endif
 
