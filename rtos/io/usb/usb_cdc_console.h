@@ -22,6 +22,8 @@
 #error "Console FS is needed for using USB CDC device."
 #endif
 
+#include <console.h>
+
 /* CDC console device structure. */
 typedef struct _cdc_console
 {

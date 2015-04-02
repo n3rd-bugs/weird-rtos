@@ -161,7 +161,7 @@ void net_device_rx_watcher(void *fd, void *net_device)
         do
         {
             /* Check if we have a networking buffer. */
-            buffer = fs_buffer_id_get(fd, FS_BUFFER_RX, FS_BUFFER_ACTIVE, NET_BUFFER_ID);
+            buffer = fs_buffer_get_by_id(fd, FS_BUFFER_RX, FS_BUFFER_ACTIVE, NET_BUFFER_ID);
 
             /* If we do have a buffer. */
             if (buffer)

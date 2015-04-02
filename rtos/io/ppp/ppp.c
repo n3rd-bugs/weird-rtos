@@ -462,7 +462,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             }
 
             /* Add this complete or partial received buffer on the receive buffer. */
-            fs_buffer_append(ppp->rx_buffer, buffer, 0);
+            fs_buffer_add_one(ppp->rx_buffer, buffer, 0);
         }
 
         /* We will wait to receive required amount of flags so that we can
@@ -478,7 +478,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             else
             {
                 /* Add this partial received buffer on the receive buffer. */
-                fs_buffer_append(ppp->rx_buffer, buffer, 0);
+                fs_buffer_add_one(ppp->rx_buffer, buffer, 0);
             }
 
             /* We don't have a buffer to continue. */

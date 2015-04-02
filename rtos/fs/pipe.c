@@ -17,6 +17,7 @@
 #ifdef FS_PIPE
 #include <string.h>
 #include <sll.h>
+#include <pipe.h>
 
 /* Pipe FS data. */
 static PIPE_DATA pipe_data;

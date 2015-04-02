@@ -15,16 +15,12 @@
 
 #include <os.h>
 
-#ifdef CONFIG_SEMAPHORE
-#include <semaphore.h>
-#endif
-
 #ifdef CONFIG_FS
+#include <semaphore.h>
 
 /* File system configuration. */
 #define FS_PIPE
 #define FS_CONSOLE
-#define FS_BUFFER_TRACE
 
 /* Error definitions. */
 #define FS_NODE_DELETED     -801
@@ -33,6 +29,9 @@
 
 /* File descriptor definitions. */
 typedef void *FD;
+
+/* Include file system buffer definitions. */
+#include <fs_buffer.h>
 
 /* File system specific flags. */
 #define FS_DATA_AVAILABLE   0x00000001
@@ -89,100 +88,6 @@ struct _fs_connection_watcher
     void        (*disconnected) (void *, void *);
     void        *data;
 };
-
-/* File system buffer definitions. */
-typedef struct _fs_buffer_one FS_BUFFER_ONE;
-struct _fs_buffer_one
-{
-    /* Buffer list member. */
-    FS_BUFFER_ONE   *next;
-
-    /* Structure ID. */
-    uint32_t    id;
-
-    /* Actual buffer data. */
-    char        *data;
-    uint32_t    max_length;
-
-    /* Buffer data. */
-    char        *buffer;
-    uint32_t    length;
-};
-
-/* Buffer chain structure. */
-typedef struct _fs_buffer FS_BUFFER;
-typedef struct _fs_buffer
-{
-    /* Buffer list member. */
-    FS_BUFFER   *next;
-
-    /* Structure ID. */
-    uint32_t    id;
-
-    /* List of buffers in this chain. */
-    struct _fs_buffer_list
-    {
-        FS_BUFFER_ONE   *head;
-        FS_BUFFER_ONE   *tail;
-    } list;
-
-    /* Total length of buffers. */
-    uint32_t    total_length;
-
-    /* File descriptor from which this chain was allocated. */
-    FD          fd;
-
-} FS_BUFFER;
-
-/* File system buffer data. */
-typedef struct _fs_buffer_data
-{
-    /* Free buffer list. */
-    struct _fs_free_buffer_list
-    {
-        FS_BUFFER_ONE   *head;
-        FS_BUFFER_ONE   *tail;
-#ifdef FS_BUFFER_TRACE
-        int32_t     buffers;
-#endif
-    } free_buffer_list;
-
-    /* Transmit buffer list. */
-    struct _fs_tx_buffer_list
-    {
-        FS_BUFFER_ONE   *head;
-        FS_BUFFER_ONE   *tail;
-#ifdef FS_BUFFER_TRACE
-        int32_t     buffers;
-#endif
-    } tx_buffer_list;
-
-    /* Receive buffer list. */
-    struct _fs_rx_buffer_list
-    {
-        FS_BUFFER_ONE   *head;
-        FS_BUFFER_ONE   *tail;
-#ifdef FS_BUFFER_TRACE
-        int32_t     buffers;
-#endif
-    } rx_buffer_list;
-
-    /* Buffer lists list. */
-    struct _fs_buffers_list
-    {
-        FS_BUFFER       *head;
-        FS_BUFFER       *tail;
-#ifdef FS_BUFFER_TRACE
-        int32_t     buffers;
-#endif
-    } buffers_list;
-
-#ifdef FS_BUFFER_TRACE
-    /* Number buffers in the system. */
-    int32_t        buffers;
-#endif
-
-} FS_BUFFER_DATA;
 
 /* File system descriptor. */
 typedef struct _fs FS;
@@ -313,34 +218,6 @@ int32_t fs_read(FD, char *, int32_t);
 int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
-/* File system buffer manipulation APIs. */
-#define FS_BUFFER_RESET(b)      fs_buffer_one_init(b, b->data, b->max_length)
-#define FS_BUFFER_LEN(b)        ((b->next == NULL) ? b->length : ((FS_BUFFER *)b)->length)
-#define FS_BUFFER_SPACE(b)      (b->max_length - b->length)
-#define FS_BUFFER_HEAD_ROOM(b)  ((uint32_t)(b->buffer - b->data))
-#define FS_BUFFER_TAIL_ROOM(b)  (FS_BUFFER_SPACE(b) - FS_BUFFER_HEAD_ROOM(b))
-void fs_buffer_one_init(FS_BUFFER_ONE *, char *, uint32_t);
-void fs_buffer_init(FS_BUFFER *, FD);
-int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *, uint32_t);
-void fs_buffer_one_update(FS_BUFFER_ONE *, char *, uint32_t);
-void fs_buffer_append(FS_BUFFER *, FS_BUFFER_ONE *, uint8_t);
-int32_t fs_buffer_one_pull(FS_BUFFER_ONE *, char *, uint32_t, uint8_t);
-int32_t fs_buffer_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
-int32_t fs_buffer_one_push(FS_BUFFER_ONE *, char *, uint32_t, uint8_t);
-int32_t fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
-
-/* Search functions. */
-uint8_t fs_buffer_type_search(void *, void *);
-
-/* File system buffer management APIs. */
-void fs_buffer_dataset(FD, FS_BUFFER_DATA *, int32_t);
-void fs_buffer_add_list(FS_BUFFER *, uint32_t, uint32_t);
-void fs_buffer_add(FD, void *, uint32_t, uint32_t);
-#define fs_buffer_one_get(fd, type, flag)   (FS_BUFFER_ONE *)fs_buffer_id_get(fd, type, flag, FS_BUFFER_ID_ONE)
-#define fs_buffer_get(fd, type, flag)       (FS_BUFFER *)fs_buffer_id_get(fd, type, flag, FS_BUFFER_ID_BUFFER)
-void *fs_buffer_id_get(FD, uint32_t, uint32_t, uint32_t);
-void fs_buffer_one_divide(FD, FS_BUFFER_ONE *, FS_BUFFER_ONE **, char *, uint32_t);
-
 void fs_data_watcher_set(FD, FS_DATA_WATCHER *);
 void fs_connection_watcher_set(FD, FS_CONNECTION_WATCHER *);
 void fs_connected(FD);
@@ -364,14 +241,6 @@ void fs_resume_tasks(void *, int32_t, FS_PARAM *, uint32_t);
 uint8_t fs_sreach_directory(void *, void *);
 uint8_t fs_sreach_node(void *, void *);
 void fs_memcpy_r(char *, char *, uint32_t);
-
-/* Include sub modules. */
-#ifdef FS_PIPE
-#include <pipe.h>
-#endif
-#ifdef FS_CONSOLE
-#include <console.h>
-#endif
 
 #endif /* CONFIG_FS */
 

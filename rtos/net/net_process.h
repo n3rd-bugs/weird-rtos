@@ -18,7 +18,7 @@
 #include <fs.h>
 
 /* Function prototypes. */
-uint32_t net_buffer_process(FS_BUFFER *);
+int32_t net_buffer_process(FS_BUFFER *);
 
 #endif /* CONFIG_NET */
 #endif /* _NET_PROCESS_H_ */

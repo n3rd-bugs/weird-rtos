@@ -23,9 +23,9 @@
  * caller that the buffer cannot be freed now.
  * This is will process a given buffer.
  */
-uint32_t net_buffer_process(FS_BUFFER *buffer)
+int32_t net_buffer_process(FS_BUFFER *buffer)
 {
-    uint32_t status = SUCCESS;
+    int32_t status = SUCCESS;
     uint8_t protocol;
 
     /* Skim the protocol from the buffer. */

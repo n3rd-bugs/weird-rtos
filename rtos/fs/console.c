@@ -18,6 +18,7 @@
 #include <string.h>
 #include <path.h>
 #include <sll.h>
+#include <console.h>
 
 /* Console data. */
 static CONSOLE_DATA console_data;
