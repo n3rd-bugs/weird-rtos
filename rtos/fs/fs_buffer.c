@@ -314,7 +314,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         OS_ASSERT(id != FS_BUFFER_ID_ONE);
 
         /* Pop a buffer from this file descriptor's free buffer list. */
-        buffer = sll_search_pop(&data->free_buffer_list, &fs_buffer_type_search, (void *)(FS_BUFFER_ID_ONE), OFFSETOF(FS_BUFFER, next));
+        buffer = sll_search_pop(&data->free_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
         /* If we are returning a buffer. */
@@ -347,7 +347,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         else
         {
             /* Pop a buffer from this file descriptor's receive buffer list. */
-            buffer = sll_search_pop(&data->rx_buffer_list, &fs_buffer_type_search, (void *)(id), OFFSETOF(FS_BUFFER, next));
+            buffer = sll_search_pop(&data->rx_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
             /* If we are returning a buffer. */
@@ -380,7 +380,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         else
         {
             /* Pop a buffer from this file descriptor's transmit buffer list. */
-            buffer = sll_search_pop(&data->tx_buffer_list, &fs_buffer_type_search, (void *)(id), OFFSETOF(FS_BUFFER, next));
+            buffer = sll_search_pop(&data->tx_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
             /* If we are returning a buffer. */
@@ -402,7 +402,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         OS_ASSERT(id != FS_BUFFER_ID_BUFFER);
 
         /* Pop a buffer from this file descriptor's buffer list. */
-        buffer = sll_search_pop(&data->buffers_list, &fs_buffer_type_search, (void *)(FS_BUFFER_ID_BUFFER), OFFSETOF(FS_BUFFER, next));
+        buffer = sll_search_pop(&data->buffers_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_TRACE
         /* If we are returning a buffer. */
@@ -977,7 +977,7 @@ uint8_t fs_buffer_type_search(void *buffer, void *param)
     uint8_t required = FALSE;
 
     /* Check if given ID matches the required buffer type. */
-    if (((FS_BUFFER *)buffer)->id == (uint32_t)param)
+    if (((FS_BUFFER *)buffer)->id == (*(uint32_t *)param))
     {
         /* We need to return this buffer. */
         required = TRUE;

@@ -40,7 +40,7 @@ struct _fs_buffer_one
 
 /* File system buffer structure. */
 typedef struct _fs_buffer FS_BUFFER;
-typedef struct _fs_buffer
+struct _fs_buffer
 {
     /* Buffer list member. */
     FS_BUFFER   *next;
@@ -61,7 +61,7 @@ typedef struct _fs_buffer
     /* File descriptor from which this chain was allocated. */
     FD          fd;
 
-} FS_BUFFER;
+};
 
 /* File system buffer data, need by a buffered file descriptor. */
 typedef struct _fs_buffer_data
