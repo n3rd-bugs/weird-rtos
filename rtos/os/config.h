@@ -18,7 +18,7 @@
 #define CONFIG_SEMAPHORE
 
 /* Memory manger. */
-#define CONFIG_MEMGR
+//#define CONFIG_MEMGR
 
 /* File system. */
 #define CONFIG_FS
