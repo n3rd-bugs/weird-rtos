@@ -14,6 +14,7 @@
 
 #ifdef CONFIG_NET
 #include <net.h>
+#include <net_ipv4.h>
 
 /*
  * net_buffer_process
@@ -35,7 +36,14 @@ int32_t net_buffer_process(FS_BUFFER *buffer)
     /* [TODO] In future this might be controlled by some sort of protocol plugin. */
     switch (protocol)
     {
+    /* IPv4 protocol. */
     case NET_PROTO_IPV4:
+
+        /* Process this IPv4 buffer. */
+        net_process_ipv4(buffer);
+
+        break;
+
     default:
         break;
     }
