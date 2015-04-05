@@ -126,6 +126,7 @@ void fs_buffer_one_update(FS_BUFFER_ONE *, char *, uint32_t);
 void fs_buffer_add_one(FS_BUFFER *, FS_BUFFER_ONE *, uint8_t);
 int32_t fs_buffer_one_pull(FS_BUFFER_ONE *, char *, uint32_t, uint8_t);
 int32_t fs_buffer_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
+int32_t fs_buffer_hdr_pull(void *, uint8_t *, uint32_t);
 int32_t fs_buffer_one_push(FS_BUFFER_ONE *, char *, uint32_t, uint8_t);
 int32_t fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
 
