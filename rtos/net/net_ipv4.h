@@ -15,8 +15,30 @@
 #include <os.h>
 
 #ifdef CONFIG_NET
+#ifdef NET_IPV4
 
+/* IPv4 data structure. */
+typedef struct _ipv4_hdr
+{
+    /* IPv4 source address. */
+    uint32_t    src_addr;
+
+    /* IPv4 destination address. */
+    uint32_t    dst_addr;
+
+    /* IPv4 total length. */
+    uint16_t    total_length;
+
+    /* IPv4 protocol. */
+    uint8_t     protocol;
+
+    uint8_t     pad[1];
+
+} IPV4_PKT_DATA;
+
+/* Function prototypes. */
 int32_t net_process_ipv4(FS_BUFFER *);
 
+#endif /* NET_IPV4 */
 #endif /* CONFIG_NET */
 #endif /* _NET_IPv4_H_ */

@@ -36,6 +36,7 @@ int32_t net_buffer_process(FS_BUFFER *buffer)
     /* [TODO] In future this might be controlled by some sort of protocol plugin. */
     switch (protocol)
     {
+#ifdef NET_IPV4
     /* IPv4 protocol. */
     case NET_PROTO_IPV4:
 
@@ -43,7 +44,7 @@ int32_t net_buffer_process(FS_BUFFER *buffer)
         net_process_ipv4(buffer);
 
         break;
-
+#endif
     default:
         break;
     }

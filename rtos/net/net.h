@@ -15,6 +15,11 @@
 #include <os.h>
 
 #ifdef CONFIG_NET
+
+/* Networking configuration. */
+#define NET_IPV4
+#define NET_ICMP
+
 #include <net_buffer.h>
 #include <net_device.h>
 #include <net_process.h>
