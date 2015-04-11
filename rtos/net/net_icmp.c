@@ -19,6 +19,7 @@
 #ifdef NET_ICMP
 #include <fs.h>
 #include <fs_buffer.h>
+#include <header.h>
 #include <net_icmp.h>
 #include <net_csum.h>
 
@@ -32,33 +33,25 @@
 int32_t icmp_header_add(FS_BUFFER *buffer, uint8_t type, uint8_t code)
 {
     int32_t status = SUCCESS;
+    HDR_GEN_MACHINE hdr_machine;
     uint16_t csum = 0;
+    HEADER headers[] =
+    {
+        {&type,                     1, 0},  /* ICMP type. */
+        {&code,                     1, 0},  /* ICMP code. */
+        {&csum,                     2, 0},  /* Checksum. */
+        {(uint8_t []){0, 0, 0, 0},  4, 0},  /* Unused data. */
+    };
 
     /* Push the ICMP header. */
 
     /* We already have the payload in the buffer. */
 
-    /* Add trailing data. */
-    status = fs_buffer_push(buffer, ((uint8_t []){0, 0, 0, 0}), 4, FS_BUFFER_HEAD);
+    /* Initialize header generator machine. */
+    header_gen_machine_init(&hdr_machine, &fs_buffer_hdr_push);
 
-    if (status == SUCCESS)
-    {
-        /* Add 0 checksum. */
-        status = fs_buffer_push(buffer, &csum, 2, FS_BUFFER_HEAD);
-    }
-
-    if (status == SUCCESS)
-    {
-        /* Add ICMP code. */
-        status = fs_buffer_push(buffer, &code, 1, FS_BUFFER_HEAD);
-    }
-
-    if (status == SUCCESS)
-    {
-        /* Add ICMP type. */
-        status = fs_buffer_push(buffer, &type, 1, FS_BUFFER_HEAD);
-    }
-
+    /* Push the ICMP header on the buffer. */
+    status = header_generate(&hdr_machine, headers, sizeof(headers)/sizeof(HEADER), buffer);
 
     if (status == SUCCESS)
     {
