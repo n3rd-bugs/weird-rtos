@@ -46,23 +46,6 @@ typedef void *FD;
 #define FS_BLOCK_READ       0x00000001
 #define FS_BLOCK_WRITE      0x00000002
 
-/* Buffer type definition. */
-#define FS_BUFFER_FREE      1
-#define FS_BUFFER_LIST      2
-#define FS_BUFFER_RX        3
-#define FS_BUFFER_TX        4
-
-/* Buffer management flags. */
-#define FS_BUFFER_ACTIVE        0x0001
-#define FS_BUFFER_INPLACE       0x0002
-#define FS_BUFFER_PACKED        0x0004
-#define FS_BUFFER_TAIL          0x0008
-#define FS_BUFFER_HEAD          0x0010
-
-/* Buffer structure IDs. */
-#define FS_BUFFER_ID_BUFFER     0x5630A516
-#define FS_BUFFER_ID_ONE        0x98C4E319
-
 /* Data watcher data. */
 typedef struct _fs_data_watcher FS_DATA_WATCHER;
 struct _fs_data_watcher
@@ -240,7 +223,7 @@ void fs_resume_tasks(void *, int32_t, FS_PARAM *, uint32_t);
 /* Helper APIs. */
 uint8_t fs_sreach_directory(void *, void *);
 uint8_t fs_sreach_node(void *, void *);
-void fs_memcpy_r(char *, char *, uint32_t);
+void fs_memcpy_r(void *, void *, uint32_t);
 
 #endif /* CONFIG_FS */
 

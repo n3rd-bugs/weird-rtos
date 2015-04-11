@@ -1218,16 +1218,19 @@ void fs_resume_tasks(void *fd, int32_t status, FS_PARAM *param, uint32_t n)
  * This function will copy n bytes from source to the destination buffer last
  * byte first.
  */
-void fs_memcpy_r(char *dst, char *src, uint32_t n)
+void fs_memcpy_r(void *dst, void *src, uint32_t n)
 {
+    uint8_t *dst_ptr = (uint8_t *)dst;
+    uint8_t *src_ptr = (uint8_t *)src;
+
     /* Go to the end of destination buffer. */
-    dst = dst + n;
+    dst_ptr = dst_ptr + n;
 
     /* While we have a byte to copy. */
     while (n --)
     {
         /* Copy a byte from source to the buffer. */
-        *(--dst) = *(src++);
+        *(--dst_ptr) = *(src_ptr++);
     }
 
 } /* fs_memcpy_r */

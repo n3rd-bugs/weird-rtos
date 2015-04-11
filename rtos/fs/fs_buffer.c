@@ -77,6 +77,40 @@ void fs_buffer_init(FS_BUFFER *buffer, FD fd)
 } /* fs_buffer_init */
 
 /*
+ * fs_buffer_one_init
+ * @buffer: File buffer needed to be initialized.
+ * @data: Data space needed to be used for this buffer.
+ * @size: Size of the data allocated for this buffer.
+ * This function will initialize a one buffer with given data.
+ */
+void fs_buffer_one_init(FS_BUFFER_ONE *one, char *data, uint32_t size)
+{
+    /* Clear this buffer. */
+    memset(one, 0, sizeof(FS_BUFFER_ONE));
+
+    /* Initialize this buffer. */
+    one->id = FS_BUFFER_ID_ONE;
+    one->data = one->buffer = data;
+    one->max_length = size;
+
+} /* fs_buffer_one_init */
+
+/*
+ * fs_buffer_one_update
+ * @buffer: File buffer needed to be updated.
+ * @data: New buffer pointer.
+ * @size: Size of valid data in the buffer.
+ * This function will update a buffer data pointers.
+ */
+void fs_buffer_one_update(FS_BUFFER_ONE *one, char *data, uint32_t size)
+{
+    /* Update the buffer data. */
+    one->buffer = data;
+    one->length = size;
+
+} /* fs_buffer_one_update */
+
+/*
  * fs_buffer_add_one
  * @buffer: Buffer to which a new buffer is needed to be added.
  * @one: One buffer needed to be added.
@@ -436,10 +470,11 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
 } /* fs_buffer_get_by_id */
 
 /*
- * fs_buffer_pull
+ * fs_buffer_pull_offset
  * @buffer: File buffer from which data is needed to be pulled.
  * @data: Buffer in which data is needed to be pulled.
  * @size: Number of bytes needed to be pulled.
+ * @offset: Number of bytes from start or end the required data lies.
  * @flags: Defines how we will be pulling the data.
  *  FS_BUFFER_PACKED: If we need to pull a packet structure.
  *  FS_BUFFER_TAIL: If we need to pull data from the tail.
@@ -451,47 +486,97 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
  * This function will remove data from a buffer. If given will also copy the
  * data in the provided buffer.
  */
-int32_t fs_buffer_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint32_t offset, uint8_t flags)
 {
     FS_BUFFER_ONE *one;
     int32_t status = SUCCESS;
-    uint32_t this_size;
+    uint32_t this_size, this_offset = offset;
 #ifdef OS_LITTLE_ENDIAN
     uint8_t reverse = ((flags & FS_BUFFER_PACKED) != 0);
 #endif
     char *to;
 
+    /* Validate that we do have enough space on this buffer. */
+    if (buffer->total_length >= (size + offset))
+    {
+        /* If an offset was given. */
+        if (offset != 0)
+        {
+            /* We should not be removing the data. */
+            OS_ASSERT((flags & FS_BUFFER_INPLACE) == 0);
+        }
+
+        /* If we are pulling data in place. */
+        if (flags & FS_BUFFER_INPLACE)
+        {
+            /* If need to pull from the tail. */
+            if (flags & FS_BUFFER_TAIL)
+            {
+                /* Adjust the offset to the start of buffer. */
+                this_offset = buffer->total_length - (this_offset + size);
+
+                /* Clear the tail flag. */
+                flags &= (uint8_t)~(FS_BUFFER_TAIL);
+            }
+
+            /* Pick the head buffer. */
+            one = buffer->list.head;
+
+            /* While we have some offset and the data in this buffer is greater
+             * than the offset. */
+            while ((this_offset > 0) && (one != NULL) && (this_offset > one->length))
+            {
+                /* Remove this buffer from the offset. */
+                this_offset -= one->length;
+
+                /* Pick the next buffer. */
+                one = one->next;
+            }
+
+            /* We should have a buffer here. */
+            OS_ASSERT(one == NULL);
+        }
+    }
+    else
+    {
+        /* Return an error. */
+        status = FS_BUFFER_NO_SPACE;
+    }
+
     /* Validate if we do have that much data on the buffer. */
-    if (buffer->total_length >= size)
+    if (status == SUCCESS)
     {
         /* While we have some data to copy. */
         while (size > 0)
         {
-            /* If we need to pull data from the tail. */
-            if (flags & FS_BUFFER_TAIL)
+            /* If we are not removing the pulled data. */
+            if ((flags & FS_BUFFER_INPLACE) == 0)
             {
-                /* Pick the tail buffer. */
-                one = buffer->list.tail;
-            }
-            else
-            {
-                /* Pick the head buffer. */
-                one = buffer->list.head;
+                /* If we need to pull data from the tail. */
+                if (flags & FS_BUFFER_TAIL)
+                {
+                    /* Pick the tail buffer. */
+                    one = buffer->list.tail;
+                }
+                else
+                {
+                    /* Pick the head buffer. */
+                    one = buffer->list.head;
+                }
             }
 
-            /* There is data in the buffer so there must a one buffer on the
-             * buffer. */
+            /* There is data in the buffer so we must have a one buffer. */
             OS_ASSERT(one == NULL);
 
             /* There should not be a zero length buffer. */
             OS_ASSERT(one->length == 0);
 
             /* Check if we need to do a partial read of this buffer. */
-            if (size > one->length)
+            if ((size + this_offset) >= one->length)
             {
                 /* Only copy the number of bytes that can be copied from
                  * this buffer. */
-                this_size = one->length;
+                this_size = (one->length - this_offset);
             }
             else
             {
@@ -514,7 +599,7 @@ int32_t fs_buffer_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
             /* Pull data from this buffer. */
             /* We have already verified that we have enough length on the buffer,
              * so we should never get an error here. */
-            OS_ASSERT(fs_buffer_one_pull(one, data, this_size, flags) != SUCCESS);
+            OS_ASSERT(fs_buffer_one_pull_offset(one, data, this_size, this_offset, flags) != SUCCESS);
 
             /* If there is no more valid data on this buffer. */
             if (one->length == 0)
@@ -546,42 +631,33 @@ int32_t fs_buffer_pull(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
                 /* Decrement number of bytes we have left on this buffer. */
                 buffer->total_length = (buffer->total_length - this_size);
             }
+
+            /* If we are not pulling data in place. */
+            if (flags & FS_BUFFER_INPLACE)
+            {
+                /* Reset the offset as this will not be required for next buffers. */
+                this_offset = 0;
+
+                /* Pick the next one buffer. */
+                one = one->next;
+            }
         }
-    }
-    else
-    {
-        /* Return an error. */
-        status = FS_BUFFER_NO_SPACE;
     }
 
     /* Return status to the caller. */
     return (status);
 
-} /* fs_buffer_pull */
+} /* fs_buffer_pull_offset */
 
 /*
- * fs_buffer_hdr_pull
- * @buffer: File buffer from which data is needed to be pulled.
- * @data: Buffer in which data is needed to be pulled.
- * @size: Number of bytes needed to be pulled.
- * @return: Success if operation was successfully performed,
- *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
- *  buffer.
- * This function is a abstraction function for header utility.
- */
-int32_t fs_buffer_hdr_pull(void *buffer, uint8_t *data, uint32_t size)
-{
-    /* Call the underlying buffer pull function. */
-    return (fs_buffer_pull((FS_BUFFER *)buffer, (char *)data, size, 0));
-
-} /* fs_buffer_hdr_pull */
-
-/*
- * fs_buffer_push
+ * fs_buffer_push_offset
  * @buffer: File buffer on which data is needed to be pushed.
  * @data: Buffer from which data is needed to pushed.
  * @size: Number of bytes needed to be pushed.
+ * @offset: Number of bytes from start or end the required data lies.
  * @flags: Defines how we will be pushing the data.
+ *  FS_BUFFER_UPDATE: If we are not adding new data and need to update the
+ *      existing data.
  *  FS_BUFFER_PACKED: If we need to push a packet structure.
  *  FS_BUFFER_HEAD: If data is needed to be pushed on the head.
  * @return: Success if operation was successfully performed,
@@ -589,65 +665,128 @@ int32_t fs_buffer_hdr_pull(void *buffer, uint8_t *data, uint32_t size)
  *  file descriptor for new buffers.
  * This function will add data to the buffer.
  */
-int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_push_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t offset, uint8_t flags)
 {
     int32_t status = SUCCESS;
     FS_BUFFER_ONE *one;
-    uint32_t this_size;
+    uint32_t this_size, this_offset = offset;
 #ifdef OS_LITTLE_ENDIAN
     uint8_t reverse = ((flags & FS_BUFFER_PACKED) != 0);
 #endif
     char *from;
 
-    /* While we have data to copy. */
+    /* If an offset was given. */
+    if (offset != 0)
+    {
+        /* We should be updating the existing data. */
+        OS_ASSERT((flags & FS_BUFFER_UPDATE) == 0);
+    }
+
+    /* If we are updating the existing data. */
+    if (flags & FS_BUFFER_UPDATE)
+    {
+        /* The buffer should already have the data we need to update. */
+        OS_ASSERT(buffer->total_length < (size + offset));
+
+        /* If we are not updating the data on the head. */
+        if ((flags & FS_BUFFER_HEAD) == 0)
+        {
+            /* Adjust the offset from the start. */
+            this_offset = (buffer->total_length - (size + this_offset));
+
+            /* Set the head flag. */
+            flags |= FS_BUFFER_HEAD;
+        }
+
+        /* Pick the head buffer. */
+        one = buffer->list.head;
+
+        /* While we have an offset and nothing is needed from this buffer. */
+        while ((this_offset > 0) && (one != NULL) && (this_offset >= one->length))
+        {
+            /* Remove data for this buffer from the offset. */
+            this_offset -= one->length;
+
+            /* Pick the next buffer. */
+            one = one->next;
+        }
+
+        /* If we don't have a one buffer. */
+        if (one == NULL)
+        {
+            /* There is no space in this buffer. */
+            status = FS_BUFFER_NO_SPACE;
+        }
+    }
+
+    /* While we have some data to copy. */
     while ((status == SUCCESS) && (size > 0))
     {
         /* If we need to push data on the head. */
         if (flags & FS_BUFFER_HEAD)
         {
-            /* Pick the head buffer. */
-            one = buffer->list.head;
-
-            /* Either we don't have a one buffer in the buffer or there is no
-             * space on the head buffer. */
-            if ((one == NULL) || (FS_BUFFER_SPACE(one) == 0))
+            /* If we are not updating the existing value. */
+            if ((flags & FS_BUFFER_UPDATE) == 0)
             {
-                /* Need to allocate a new buffer to be pushed on the head. */
-                one = fs_buffer_one_get(buffer->fd, FS_BUFFER_FREE, 0);
+                /* Pick the head buffer. */
+                one = buffer->list.head;
 
-                /* If a buffer was allocated. */
-                if (one)
+                /* Either we don't have a one buffer in the buffer or there is no
+                 * space on the head buffer. */
+                if ((one == NULL) || (FS_BUFFER_SPACE(one) == 0))
                 {
-                    /* Use all the space in this buffer as head room. */
-                    OS_ASSERT(fs_buffer_one_add_head(one, one->length) != SUCCESS);
+                    /* Need to allocate a new buffer to be pushed on the head. */
+                    one = fs_buffer_one_get(buffer->fd, FS_BUFFER_FREE, 0);
 
-                    /* Add this one buffer on the head of the buffer. */
-                    sll_push(&buffer->list, one, OFFSETOF(FS_BUFFER_ONE, next));
+                    /* If a buffer was allocated. */
+                    if (one)
+                    {
+                        /* Use all the space in this buffer as head room. */
+                        OS_ASSERT(fs_buffer_one_add_head(one, one->length) != SUCCESS);
+
+                        /* Add this one buffer on the head of the buffer. */
+                        sll_push(&buffer->list, one, OFFSETOF(FS_BUFFER_ONE, next));
+                    }
                 }
-            }
 
-            if (one != NULL)
-            {
-                /* Pick the number of bytes we can copy on this buffer. */
-                this_size = FS_BUFFER_SPACE(one);
-
-                /* If we have more space then we require. */
-                if (this_size > size)
+                if (one != NULL)
                 {
-                    /* Copy the required amount of data. */
-                    this_size = size;
+                    /* Pick the number of bytes we can copy on this buffer. */
+                    this_size = FS_BUFFER_SPACE(one);
+
+                    /* If we have more space then we require. */
+                    if (this_size > size)
+                    {
+                        /* Copy the required amount of data. */
+                        this_size = size;
+                    }
+                }
+                else
+                {
+                    /* There is no space on the file descriptor. */
+                    status = FS_BUFFER_NO_SPACE;
                 }
             }
             else
             {
-                /* There is no space on the file descriptor. */
-                status = FS_BUFFER_NO_SPACE;
+                /* Pick the number of bytes we need to copy. */
+                this_size = size;
+
+                /* If not all the data in this buffer can be updated. */
+                if ((this_size + this_offset) > one->length)
+                {
+                    /* Copy the data that can be copied in this buffer. */
+                    this_size = (one->length - this_offset);
+                }
             }
         }
         else
         {
             /* Pick the tail buffer. */
             one = buffer->list.tail;
+
+            /* We should not be updating the existing value. */
+            OS_ASSERT(flags & FS_BUFFER_UPDATE);
 
             /* Either we don't have a one buffer in the or there is no space
              * in the tail buffer. */
@@ -698,10 +837,14 @@ int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
 #endif
 
             /* Push data on the buffer we have selected. */
-            OS_ASSERT(fs_buffer_one_push(one, from, this_size, flags) != SUCCESS);
+            OS_ASSERT(fs_buffer_one_push_offset(one, from, this_size, this_offset, flags) != SUCCESS);
 
-            /* Update the buffer size. */
-            buffer->total_length += this_size;
+            /* If we are not updating the existing value. */
+            if ((flags & FS_BUFFER_UPDATE) == 0)
+            {
+                /* Update the buffer size. */
+                buffer->total_length += this_size;
+            }
 
             /* Decrement the bytes we have copied in this go. */
             size = size - this_size;
@@ -716,32 +859,23 @@ int32_t fs_buffer_push(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t fla
                 /* Update the data pointer. */
                 data += this_size;
             }
+
+            /* If we are updating the existing value. */
+            if (flags & FS_BUFFER_UPDATE)
+            {
+                /* Reset the offset. */
+                this_offset = 0;
+
+                /* Pick the next one buffer. */
+                one = one->next;
+            }
         }
     }
 
     /* Return status to the caller. */
     return (status);
 
-} /* fs_buffer_push */
-
-/*
- * fs_buffer_one_init
- * @buffer: File buffer needed to be initialized.
- * @data: Data space needed to be used for this buffer.
- * @size: Size of the data allocated for this buffer.
- * This function will initialize a one buffer with given data.
- */
-void fs_buffer_one_init(FS_BUFFER_ONE *one, char *data, uint32_t size)
-{
-    /* Clear this buffer. */
-    memset(one, 0, sizeof(FS_BUFFER_ONE));
-
-    /* Initialize this buffer. */
-    one->id = FS_BUFFER_ID_ONE;
-    one->data = one->buffer = data;
-    one->max_length = size;
-
-} /* fs_buffer_one_init */
+} /* fs_buffer_push_offset */
 
 /*
  * fs_buffer_one_add_head
@@ -786,25 +920,11 @@ int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *one, uint32_t size)
 } /* fs_buffer_one_add_head */
 
 /*
- * fs_buffer_one_update
- * @buffer: File buffer needed to be updated.
- * @data: New buffer pointer.
- * @size: Size of valid data in the buffer.
- * This function will update a buffer data pointers.
- */
-void fs_buffer_one_update(FS_BUFFER_ONE *one, char *data, uint32_t size)
-{
-    /* Update the buffer data. */
-    one->buffer = data;
-    one->length = size;
-
-} /* fs_buffer_one_update */
-
-/*
  * fs_buffer_one_pull
  * @buffer: File buffer from which data is needed to be pulled.
  * @data: Buffer in which data is needed to be pulled.
  * @size: Number of bytes needed to be pulled.
+ * @offset: Number of bytes from start or end the required data lies.
  * @flags: Defines how we will be pulling the data.
  *  FS_BUFFER_PACKED: If we need to pull a packet structure.
  *  FS_BUFFER_TAIL: If we need to pull data from the tail.
@@ -816,24 +936,31 @@ void fs_buffer_one_update(FS_BUFFER_ONE *one, char *data, uint32_t size)
  * This function will remove data from a given buffer. If given will also copy
  * the data in the provided buffer.
  */
-int32_t fs_buffer_one_pull(FS_BUFFER_ONE *one, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *one, char *data, uint32_t size, uint32_t offset, uint8_t flags)
 {
     char *from;
     int32_t status = SUCCESS;
 
-    /* Validate if we do have that much data on the buffer. */
-    if (one->length >= size)
+    /* If an offset was given. */
+    if (offset != 0)
+    {
+        /* We should not be removing the data. */
+        OS_ASSERT((flags & FS_BUFFER_INPLACE) == 0);
+    }
+
+    /* Validate if we do have required amount of data on the buffer. */
+    if (one->length >= (size + offset))
     {
         /* If we need to pull data from the tail. */
         if (flags & FS_BUFFER_TAIL)
         {
             /* Pick the data from the end of the buffer. */
-            from = &one->buffer[one->length - size];
+            from = &one->buffer[one->length - (size + offset)];
         }
         else
         {
             /* Pick the data from the start of the buffer. */
-            from = one->buffer;
+            from = &one->buffer[offset];
 
             /* If we don't want data to be removed. */
             if ((flags & FS_BUFFER_INPLACE) == 0)
@@ -876,14 +1003,17 @@ int32_t fs_buffer_one_pull(FS_BUFFER_ONE *one, char *data, uint32_t size, uint8_
     /* Return status to the caller. */
     return (status);
 
-} /* fs_buffer_one_pull */
+} /* fs_buffer_one_pull_offset */
 
 /*
  * fs_buffer_one_push
  * @buffer: File buffer on which data is needed to be pushed.
  * @data: Buffer from which data is needed to pushed.
  * @size: Number of bytes needed to be pushed.
+ * @offset: Number of bytes from start or end the required data lies.
  * @flags: Defines how we will be pushing the data.
+ *  FS_BUFFER_UPDATE: If we are not adding new data and need to update the
+ *      existing data.
  *  FS_BUFFER_PACKED: If we need to push a packet structure.
  *  FS_BUFFER_HEAD: If data is needed to be pushed on the head.
  * @return: Success if operation was successfully performed,
@@ -891,7 +1021,7 @@ int32_t fs_buffer_one_pull(FS_BUFFER_ONE *one, char *data, uint32_t size, uint8_
  *  buffer.
  * This function will add data in the buffer.
  */
-int32_t fs_buffer_one_push(FS_BUFFER_ONE *one, char *data, uint32_t size, uint8_t flags)
+int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, char *data, uint32_t size, uint32_t offset, uint8_t flags)
 {
     int32_t status = SUCCESS;
     char *to;
@@ -899,59 +1029,24 @@ int32_t fs_buffer_one_push(FS_BUFFER_ONE *one, char *data, uint32_t size, uint8_
     /* An empty buffer should not come here. */
     OS_ASSERT(one->data == NULL);
 
-    /* If we do have enough space on the buffer. */
-    if ( ((flags & FS_BUFFER_HEAD) && (FS_BUFFER_SPACE(one) >= size)) ||
-         (((flags & FS_BUFFER_HEAD) == 0) && (FS_BUFFER_TAIL_ROOM(one) >= size)) )
+    /* If an offset was given. */
+    if (offset != 0)
     {
-        /* If we need to push data on the head. */
-        if (flags & FS_BUFFER_HEAD)
+        /* We should be updating the existing data. */
+        OS_ASSERT((flags & FS_BUFFER_UPDATE) == 0);
+    }
+
+    /* If we do have enough space on the buffer. */
+    if ( ((flags & FS_BUFFER_UPDATE) && (one->length >= (size + offset))) ||
+         (((flags & FS_BUFFER_UPDATE) == 0) &&
+          (((flags & FS_BUFFER_HEAD) && (FS_BUFFER_SPACE(one) >= size)) ||
+           (((flags & FS_BUFFER_HEAD) == 0) && (FS_BUFFER_TAIL_ROOM(one) >= size)))) )
+    {
+        /* If we need to add head room on this buffer. */
+        if ( ((flags & FS_BUFFER_UPDATE) == 0) && (flags & FS_BUFFER_HEAD) && (FS_BUFFER_HEAD_ROOM(one) < size))
         {
-            /* Check if we have don't have enough head room. */
-            if (FS_BUFFER_HEAD_ROOM(one) < size)
-            {
-                /* Add required head room. */
-                status = fs_buffer_one_add_head(one, (size - FS_BUFFER_HEAD_ROOM(one)));
-            }
-
-            if (status == SUCCESS)
-            {
-                /* We will be adding data at the start of the existing data. */
-
-                /* Decrement the buffer pointer. */
-                one->buffer -= size;
-
-                /* Pick the pointer at which we will be adding data. */
-                to = one->buffer;
-            }
-        }
-        else
-        {
-            /* We will be pushing data at the end of the buffer. */
-            to = &one->buffer[one->length];
-        }
-
-        if (status == SUCCESS)
-        {
-            /* If we actually need to push some data. */
-            if (data != NULL)
-            {
-#ifdef OS_LITTLE_ENDIAN
-                if (flags & FS_BUFFER_PACKED)
-                {
-                    /* Copy data from the provided buffer last byte first. */
-                    fs_memcpy_r(to, data, size);
-                }
-
-                else
-#endif
-                {
-                    /* Copy data from the provided buffer. */
-                    memcpy(to, data, size);
-                }
-            }
-
-            /* Update the buffer length. */
-            one->length += size;
+            /* Add required head room. */
+            status = fs_buffer_one_add_head(one, (size - FS_BUFFER_HEAD_ROOM(one)));
         }
     }
     else
@@ -960,33 +1055,72 @@ int32_t fs_buffer_one_push(FS_BUFFER_ONE *one, char *data, uint32_t size, uint8_
         status = FS_BUFFER_NO_SPACE;
     }
 
+    if (status == SUCCESS)
+    {
+        /* If we need to push data on the head. */
+        if (flags & FS_BUFFER_HEAD)
+        {
+            /* We will be adding data at the start of the existing data. */
+
+            /* If we are not updating the existing value. */
+            if ((flags & FS_BUFFER_UPDATE) == 0)
+            {
+                /* Update the buffer pointer to the memory at which new data
+                 * will be added. */
+                one->buffer -= size;
+            }
+
+            /* Pick the pointer at which we will be adding data. */
+            to = one->buffer + offset;
+        }
+
+        else
+        {
+            /* If we are not updating the existing value. */
+            if ((flags & FS_BUFFER_UPDATE) == 0)
+            {
+                /* We will be pushing data at the end of the buffer, no need to
+                 * adjust for the offset. */
+                to = &one->buffer[one->length];
+            }
+            else
+            {
+                /* We will be updating data at the tail, adjust for the offset
+                 * and size of the data. */
+                to = &one->buffer[one->length - (size + offset)];
+            }
+        }
+
+        /* If we actually need to push some data. */
+        if (data != NULL)
+        {
+#ifdef OS_LITTLE_ENDIAN
+            if (flags & FS_BUFFER_PACKED)
+            {
+                /* Copy data from the provided buffer last byte first. */
+                fs_memcpy_r(to, data, size);
+            }
+
+            else
+#endif
+            {
+                /* Copy data from the provided buffer. */
+                memcpy(to, data, size);
+            }
+        }
+
+        /* If we are not updating the existing value. */
+        if ((flags & FS_BUFFER_UPDATE) == 0)
+        {
+            /* Update the buffer length. */
+            one->length += size;
+        }
+    }
+
     /* Return status to the caller. */
     return (status);
 
 } /* fs_buffer_one_push */
-
-/*
- * fs_buffer_type_search
- * @buffer: A buffer in the buffer list.
- * @param: Required type of buffer.
- * @return: True if this buffer is required, otherwise False will be returned.
- * This function return is the given buffer is of required type.
- */
-uint8_t fs_buffer_type_search(void *buffer, void *param)
-{
-    uint8_t required = FALSE;
-
-    /* Check if given ID matches the required buffer type. */
-    if (((FS_BUFFER *)buffer)->id == (*(uint32_t *)param))
-    {
-        /* We need to return this buffer. */
-        required = TRUE;
-    }
-
-    /* Return if we need to return this buffer or not. */
-    return (required);
-
-} /* fs_buffer_type_search */
 
 /*
  * fs_buffer_one_divide
@@ -1028,5 +1162,45 @@ void fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one, ch
     }
 
 } /* fs_buffer_one_divide */
+
+/*
+ * fs_buffer_hdr_pull
+ * @buffer: File buffer from which data is needed to be pulled.
+ * @data: Buffer in which data is needed to be pulled.
+ * @size: Number of bytes needed to be pulled.
+ * @return: Success if operation was successfully performed,
+ *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
+ *  buffer.
+ * This function is a abstraction function for header utility.
+ */
+int32_t fs_buffer_hdr_pull(void *buffer, uint8_t *data, uint32_t size)
+{
+    /* Call the underlying buffer pull function. */
+    return (fs_buffer_pull((FS_BUFFER *)buffer, (char *)data, size, 0));
+
+} /* fs_buffer_hdr_pull */
+
+/*
+ * fs_buffer_type_search
+ * @buffer: A buffer in the buffer list.
+ * @param: Required type of buffer.
+ * @return: True if this buffer is required, otherwise False will be returned.
+ * This function return is the given buffer is of required type.
+ */
+uint8_t fs_buffer_type_search(void *buffer, void *param)
+{
+    uint8_t required = FALSE;
+
+    /* Check if given ID matches the required buffer type. */
+    if (((FS_BUFFER *)buffer)->id == (*(uint32_t *)param))
+    {
+        /* We need to return this buffer. */
+        required = TRUE;
+    }
+
+    /* Return if we need to return this buffer or not. */
+    return (required);
+
+} /* fs_buffer_type_search */
 
 #endif /* CONFIG_FS */

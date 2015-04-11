@@ -19,6 +19,25 @@
 /* Buffer configuration. */
 #define FS_BUFFER_TRACE
 
+/* Buffer type definition. */
+#define FS_BUFFER_FREE      1
+#define FS_BUFFER_LIST      2
+#define FS_BUFFER_RX        3
+#define FS_BUFFER_TX        4
+
+/* Buffer management flags. */
+#define FS_BUFFER_ACTIVE        0x01
+#define FS_BUFFER_INPLACE       0x02
+#define FS_BUFFER_UPDATE        FS_BUFFER_INPLACE
+#define FS_BUFFER_PACKED        0x04
+#define FS_BUFFER_PACKED        0x04
+#define FS_BUFFER_TAIL          0x08
+#define FS_BUFFER_HEAD          0x10
+
+/* Buffer structure IDs. */
+#define FS_BUFFER_ID_BUFFER     0x5630A516
+#define FS_BUFFER_ID_ONE        0x98C4E319
+
 /* File system one buffer structure. */
 typedef struct _fs_buffer_one FS_BUFFER_ONE;
 struct _fs_buffer_one
@@ -113,34 +132,43 @@ typedef struct _fs_buffer_data
 
 } FS_BUFFER_DATA;
 
-/* File system buffer manipulation APIs. */
+/* One buffer helper macros. */
 #define FS_BUFFER_RESET(b)      fs_buffer_one_init(b, b->data, b->max_length)
 #define FS_BUFFER_LEN(b)        ((b->next == NULL) ? b->length : ((FS_BUFFER *)b)->length)
 #define FS_BUFFER_SPACE(b)      (b->max_length - b->length)
 #define FS_BUFFER_HEAD_ROOM(b)  ((uint32_t)(b->buffer - b->data))
 #define FS_BUFFER_TAIL_ROOM(b)  (FS_BUFFER_SPACE(b) - FS_BUFFER_HEAD_ROOM(b))
-void fs_buffer_one_init(FS_BUFFER_ONE *, char *, uint32_t);
-void fs_buffer_init(FS_BUFFER *, FD);
-int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *, uint32_t);
-void fs_buffer_one_update(FS_BUFFER_ONE *, char *, uint32_t);
-void fs_buffer_add_one(FS_BUFFER *, FS_BUFFER_ONE *, uint8_t);
-int32_t fs_buffer_one_pull(FS_BUFFER_ONE *, char *, uint32_t, uint8_t);
-int32_t fs_buffer_pull(FS_BUFFER *, char *, uint32_t, uint8_t);
-int32_t fs_buffer_hdr_pull(void *, uint8_t *, uint32_t);
-int32_t fs_buffer_one_push(FS_BUFFER_ONE *, char *, uint32_t, uint8_t);
-int32_t fs_buffer_push(FS_BUFFER *, char *, uint32_t, uint8_t);
-
-/* Search functions. */
-uint8_t fs_buffer_type_search(void *, void *);
+#define fs_buffer_one_get(fd, type, flag)   (FS_BUFFER_ONE *)fs_buffer_get_by_id(fd, type, flag, FS_BUFFER_ID_ONE)
+#define fs_buffer_get(fd, type, flag)       (FS_BUFFER *)fs_buffer_get_by_id(fd, type, flag, FS_BUFFER_ID_BUFFER)
 
 /* File system buffer management APIs. */
 void fs_buffer_dataset(FD, FS_BUFFER_DATA *, int32_t);
+void fs_buffer_init(FS_BUFFER *, FD);
+void fs_buffer_one_init(FS_BUFFER_ONE *, char *, uint32_t);
+void fs_buffer_one_update(FS_BUFFER_ONE *, char *, uint32_t);
+void fs_buffer_add_one(FS_BUFFER *, FS_BUFFER_ONE *, uint8_t);
 void fs_buffer_add_list(FS_BUFFER *, uint32_t, uint32_t);
 void fs_buffer_add(FD, void *, uint32_t, uint32_t);
-#define fs_buffer_one_get(fd, type, flag)   (FS_BUFFER_ONE *)fs_buffer_get_by_id(fd, type, flag, FS_BUFFER_ID_ONE)
-#define fs_buffer_get(fd, type, flag)       (FS_BUFFER *)fs_buffer_get_by_id(fd, type, flag, FS_BUFFER_ID_BUFFER)
 void *fs_buffer_get_by_id(FD, uint32_t, uint32_t, uint32_t);
+
+
+/* File system buffer manipulation APIs. */
+#define fs_buffer_pull(b, d, l, f)      fs_buffer_pull_offset(b, d, l, 0, f)
+int32_t fs_buffer_pull_offset(FS_BUFFER *, char *, uint32_t, uint32_t, uint8_t);
+#define fs_buffer_push(b, d, l, f)      fs_buffer_push_offset(b, d, l, 0, f)
+int32_t fs_buffer_push_offset(FS_BUFFER *, char *, uint32_t, uint8_t, uint8_t);
+
+/* File system one buffer manipulation APIs. */
+int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *, uint32_t);
+#define fs_buffer_one_pull(o, d, l, f)  fs_buffer_one_pull_offset(o, d, l, 0, f)
+int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *, char *, uint32_t, uint32_t, uint8_t);
+#define fs_buffer_one_push(o, d, l, f)  fs_buffer_one_push_offset(o, d, l, 0, f)
+int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *, char *, uint32_t, uint32_t, uint8_t);
 void fs_buffer_one_divide(FD, FS_BUFFER_ONE *, FS_BUFFER_ONE **, char *, uint32_t);
+
+/* Helper routines. */
+int32_t fs_buffer_hdr_pull(void *, uint8_t *, uint32_t);
+uint8_t fs_buffer_type_search(void *, void *);
 
 #endif /* CONFIG_FS */
 #endif /* FS_BUFFER_H */
