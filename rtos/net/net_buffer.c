@@ -88,7 +88,7 @@ static void net_buffer_receive_task_entry(void *argv)
     for (;;)
     {
         /* Read a buffer pointer from the file descriptor. */
-        if (fs_read(net_buff_fd, (char *)(&buffer), sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
+        if (fs_read(net_buff_fd, (char *)&buffer, sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
         {
             /* Process this buffer. */
             if (net_buffer_process(buffer) == SUCCESS)

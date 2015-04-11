@@ -387,7 +387,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
     int32_t status = SUCCESS;
     uint16_t protocol;
     uint8_t num_flags, this_flag = 0;
-    char *flag_ptr[2];
+    uint8_t *flag_ptr[2];
 
     /* Get the buffer from the receive list. */
     buffer = fs_buffer_one_get(fd, FS_BUFFER_RX, FS_BUFFER_ACTIVE);

@@ -61,7 +61,7 @@ static const uint16_t ppp_fcs_table[256] =
  * @return: Calculated FCS value.
  * This function will calculate and return the 16-bit FCS for the given data.
  */
-uint16_t ppp_fcs16_calculate(char *data, uint32_t length, uint16_t fcs)
+uint16_t ppp_fcs16_calculate(uint8_t *data, uint32_t length, uint16_t fcs)
 {
     /* While we have some data. */
     while (length--)

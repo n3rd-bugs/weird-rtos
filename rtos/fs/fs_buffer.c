@@ -83,14 +83,14 @@ void fs_buffer_init(FS_BUFFER *buffer, FD fd)
  * @size: Size of the data allocated for this buffer.
  * This function will initialize a one buffer with given data.
  */
-void fs_buffer_one_init(FS_BUFFER_ONE *one, char *data, uint32_t size)
+void fs_buffer_one_init(FS_BUFFER_ONE *one, void *data, uint32_t size)
 {
     /* Clear this buffer. */
     memset(one, 0, sizeof(FS_BUFFER_ONE));
 
     /* Initialize this buffer. */
     one->id = FS_BUFFER_ID_ONE;
-    one->data = one->buffer = data;
+    one->data = one->buffer = (uint8_t *)data;
     one->max_length = size;
 
 } /* fs_buffer_one_init */
@@ -102,10 +102,10 @@ void fs_buffer_one_init(FS_BUFFER_ONE *one, char *data, uint32_t size)
  * @size: Size of valid data in the buffer.
  * This function will update a buffer data pointers.
  */
-void fs_buffer_one_update(FS_BUFFER_ONE *one, char *data, uint32_t size)
+void fs_buffer_one_update(FS_BUFFER_ONE *one, void *data, uint32_t size)
 {
     /* Update the buffer data. */
-    one->buffer = data;
+    one->buffer = (uint8_t *)data;
     one->length = size;
 
 } /* fs_buffer_one_update */
@@ -486,7 +486,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
  * This function will remove data from a buffer. If given will also copy the
  * data in the provided buffer.
  */
-int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint32_t offset, uint8_t flags)
+int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint32_t offset, uint8_t flags)
 {
     FS_BUFFER_ONE *one;
     int32_t status = SUCCESS;
@@ -494,7 +494,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint
 #ifdef OS_LITTLE_ENDIAN
     uint8_t reverse = ((flags & FS_BUFFER_PACKED) != 0);
 #endif
-    char *to;
+    uint8_t *to;
 
     /* Validate that we do have enough space on this buffer. */
     if (buffer->total_length >= (size + offset))
@@ -585,7 +585,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint
             }
 
             /* Pick the destination pointer. */
-            to = data;
+            to = (uint8_t *)data;
 
 #ifdef OS_LITTLE_ENDIAN
             /* If we need to copy data MSB first. */
@@ -599,7 +599,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint
             /* Pull data from this buffer. */
             /* We have already verified that we have enough length on the buffer,
              * so we should never get an error here. */
-            OS_ASSERT(fs_buffer_one_pull_offset(one, data, this_size, this_offset, flags) != SUCCESS);
+            OS_ASSERT(fs_buffer_one_pull_offset(one, to, this_size, this_offset, flags) != SUCCESS);
 
             /* If there is no more valid data on this buffer. */
             if (one->length == 0)
@@ -622,7 +622,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint
                 )
             {
                 /* Update the data pointer. */
-                data += this_size;
+                data = ((uint8_t *)data + this_size);
             }
 
             /* If we are not peeking the data. */
@@ -665,7 +665,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint
  *  file descriptor for new buffers.
  * This function will add data to the buffer.
  */
-int32_t fs_buffer_push_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint8_t offset, uint8_t flags)
+int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint8_t offset, uint8_t flags)
 {
     int32_t status = SUCCESS;
     FS_BUFFER_ONE *one;
@@ -673,7 +673,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint
 #ifdef OS_LITTLE_ENDIAN
     uint8_t reverse = ((flags & FS_BUFFER_PACKED) != 0);
 #endif
-    char *from;
+    uint8_t *from;
 
     /* If an offset was given. */
     if (offset != 0)
@@ -825,7 +825,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint
         if (status == SUCCESS)
         {
             /* Pick the source pointer. */
-            from = data;
+            from = (uint8_t *)data;
 
 #ifdef OS_LITTLE_ENDIAN
             /* If we need to copy data MSB first. */
@@ -857,7 +857,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, char *data, uint32_t size, uint
                 )
             {
                 /* Update the data pointer. */
-                data += this_size;
+                data = (uint8_t *)data + this_size;
             }
 
             /* If we are updating the existing value. */
@@ -936,9 +936,9 @@ int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *one, uint32_t size)
  * This function will remove data from a given buffer. If given will also copy
  * the data in the provided buffer.
  */
-int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *one, char *data, uint32_t size, uint32_t offset, uint8_t flags)
+int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *one, void *data, uint32_t size, uint32_t offset, uint8_t flags)
 {
-    char *from;
+    uint8_t *from;
     int32_t status = SUCCESS;
 
     /* If an offset was given. */
@@ -1021,10 +1021,10 @@ int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *one, char *data, uint32_t size,
  *  buffer.
  * This function will add data in the buffer.
  */
-int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, char *data, uint32_t size, uint32_t offset, uint8_t flags)
+int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, void *data, uint32_t size, uint32_t offset, uint8_t flags)
 {
     int32_t status = SUCCESS;
-    char *to;
+    uint8_t *to;
 
     /* An empty buffer should not come here. */
     OS_ASSERT(one->data == NULL);
@@ -1133,7 +1133,7 @@ int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, char *data, uint32_t size,
  * This function will divide the given buffer into two buffers. An empty buffer
  * will allocated to hold the remaining portion of buffer.
  */
-void fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one, char *data_ptr, uint32_t data_len)
+void fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one, void *data_ptr, uint32_t data_len)
 {
     FS_BUFFER_ONE *ret_one = NULL;
 
@@ -1176,7 +1176,7 @@ void fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one, ch
 int32_t fs_buffer_hdr_pull(void *buffer, uint8_t *data, uint32_t size)
 {
     /* Call the underlying buffer pull function. */
-    return (fs_buffer_pull((FS_BUFFER *)buffer, (char *)data, size, 0));
+    return (fs_buffer_pull((FS_BUFFER *)buffer, data, size, 0));
 
 } /* fs_buffer_hdr_pull */
 

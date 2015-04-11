@@ -30,7 +30,7 @@ int32_t net_buffer_process(FS_BUFFER *buffer)
     uint8_t protocol;
 
     /* Skim the protocol from the buffer. */
-    OS_ASSERT(fs_buffer_pull(buffer, (char *)&protocol, sizeof(uint8_t), 0) != SUCCESS);
+    OS_ASSERT(fs_buffer_pull(buffer, &protocol, sizeof(uint8_t), 0) != SUCCESS);
 
     /* Interpret the protocol. */
     /* [TODO] In future this might be controlled by some sort of protocol plugin. */

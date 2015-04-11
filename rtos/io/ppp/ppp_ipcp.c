@@ -93,10 +93,10 @@ int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_
             {
 #ifdef OS_LITTLE_ENDIAN
                 /* Copy the configured remote IP address in the PPP structure. */
-                fs_memcpy_r((char *)&ppp->remote_ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+                fs_memcpy_r(&ppp->remote_ip_address, option->data, (uint32_t)(option->length - 2));
 #else
                 /* Copy the configured remote IP address in the PPP structure. */
-                memcpy((char *)&ppp->remote_ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+                memcpy(&ppp->remote_ip_address, option->data, (uint32_t)(option->length - 2));
 #endif
 
                 /* Return success. */
@@ -109,10 +109,10 @@ int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_
         {
 #ifdef OS_LITTLE_ENDIAN
             /* Copy the configured local IP address in the PPP structure. */
-            fs_memcpy_r((char *)&ppp->local_ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+            fs_memcpy_r(&ppp->local_ip_address, option->data, (uint32_t)(option->length - 2));
 #else
             /* Copy the configured local IP address in the PPP structure. */
-            memcpy((char *)&ppp->local_ip_address, (char *)option->data, (uint32_t)(option->length - 2));
+            memcpy(&ppp->local_ip_address, option->data, (uint32_t)(option->length - 2));
 #endif
 
             /* Return success. */

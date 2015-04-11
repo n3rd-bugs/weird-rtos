@@ -114,7 +114,7 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
             {
                 /* Generate and put a random value. */
                 random = (int32_t)current_system_tick();
-                fs_memcpy_r((char *)option.data, (char *)&random, (uint32_t)(opt_len - 2));
+                fs_memcpy_r(option.data, &random, (uint32_t)(opt_len - 2));
             }
 
             /* Check if we have specified a value for this option. */
@@ -122,9 +122,9 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
             {
                 /* Copy the given value in the option buffer. */
 #ifdef OS_LITTLE_ENDIAN
-                fs_memcpy_r((char *)option.data, (char *)db_value, (uint32_t)(opt_len - 2));
+                fs_memcpy_r(option.data, db_value, (uint32_t)(opt_len - 2));
 #else
-                memcpy((char *)option.data, (char *)db_value, (uint32_t)(opt_len - 2));
+                memcpy(option.data, db_value, (uint32_t)(opt_len - 2));
 #endif
             }
 
@@ -193,9 +193,9 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         {
             /* Save the received MRU value. */
 #ifdef OS_LITTLE_ENDIAN
-            fs_memcpy_r((char *)&(ppp->mru), (char *)option->data, (uint32_t)(option->length - 2));
+            fs_memcpy_r(&(ppp->mru), option->data, (uint32_t)(option->length - 2));
 #else
-            memcpy((char *)&(ppp->mru), (char *)option->data, (uint32_t)(option->length - 2));
+            memcpy(&(ppp->mru), option->data, (uint32_t)(option->length - 2));
 #endif
         }
 
@@ -210,9 +210,9 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         {
             /* Pull the ACCM in PPP configuration as receive ACCM. */
 #ifdef OS_LITTLE_ENDIAN
-            fs_memcpy_r((char *)&(ppp->rx_accm), (char *)option->data, (uint32_t)(option->length - 2));
+            fs_memcpy_r(&(ppp->rx_accm), option->data, (uint32_t)(option->length - 2));
 #else
-            memcpy((char *)&(ppp->rx_accm), (char *)option->data, (uint32_t)(option->length - 2));
+            memcpy(&(ppp->rx_accm), option->data, (uint32_t)(option->length - 2));
 #endif
         }
 
@@ -221,9 +221,9 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         {
             /* Pull the ACCM in PPP configuration as transmit ACCM. */
 #ifdef OS_LITTLE_ENDIAN
-            fs_memcpy_r((char *)&(ppp->tx_accm[0]), (char *)option->data, (uint32_t)(option->length - 2));
+            fs_memcpy_r(&(ppp->tx_accm[0]), option->data, (uint32_t)(option->length - 2));
 #else
-            memcpy((char *)&(ppp->tx_accm[0]), (char *)option->data, (uint32_t)(option->length - 2));
+            memcpy(&(ppp->tx_accm[0]), option->data, (uint32_t)(option->length - 2));
 #endif
         }
 

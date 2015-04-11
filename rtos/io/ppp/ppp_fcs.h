@@ -25,7 +25,7 @@
 #define PPP_FCS16_IS_VALID(b)    (ppp_fcs16_buffer_calculate(b, PPP_FCS16_INIT) == PPP_FCS16_MAGIC)
 
 /* Function prototypes. */
-uint16_t ppp_fcs16_calculate(char *, uint32_t, uint16_t);
+uint16_t ppp_fcs16_calculate(uint8_t *, uint32_t, uint16_t);
 uint16_t ppp_fcs16_buffer_calculate(FS_BUFFER *, uint16_t);
 
 #endif /* CONFIG_PPP */

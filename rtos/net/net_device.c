@@ -71,7 +71,7 @@ void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
     buffer->id = NET_BUFFER_ID;
 
     /* Push the protocol on the buffer. */
-    OS_ASSERT(fs_buffer_push(buffer, (char *)&protocol, sizeof(uint8_t), FS_BUFFER_HEAD) != SUCCESS);
+    OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD) != SUCCESS);
 
     /* Push this buffer in the receive list of the device. */
     fs_buffer_add(buffer->fd, buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
