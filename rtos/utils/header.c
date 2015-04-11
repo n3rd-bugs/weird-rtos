@@ -122,6 +122,13 @@ int32_t header_machine_run(HDR_MACHINE *machine, void *data, const HEADER *heade
             /* If we need to process the header value. */
             if (header_ptr->flags & HEADER_PROCESS)
             {
+                /* If this is not a bit field. */
+                if ((header_ptr->flags & HEADER_BIT) == 0)
+                {
+                    /* Convert size to number of bytes. */
+                    bit_size /= 8;
+                }
+
                 /* Process this header value. */
                 header_ptr->process(data, proc_buf, bit_size);
             }
