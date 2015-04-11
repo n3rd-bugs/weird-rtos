@@ -20,3 +20,4 @@ This list is needed to be updated whenever a new error code is added.
     HDLC_STREAM_ERROR       -920
     MODEM_CHAT_IGNORE       -930
     NET_BUFFER_CONSUMED     -1000
+    NET_INVALID_HDR         -1001

@@ -1,5 +1,5 @@
 /*
- * net.h
+ * net_csum.c
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -10,26 +10,14 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#ifndef _NET_H_
-#define _NET_H_
+#ifndef NET_CSUM_H
+#define NET_CSUM_H
 #include <os.h>
 
 #ifdef CONFIG_NET
 
-/* Networking configuration. */
-#define NET_IPV4
-#define NET_ICMP
-
-#include <net_buffer.h>
-#include <net_device.h>
-#include <net_process.h>
-
-/* Status code definitions. */
-#define NET_BUFFER_CONSUMED     -1000
-#define NET_INVALID_HDR         -1001
-
 /* Function prototypes. */
-void net_init();
+uint16_t net_csum_calculate(FS_BUFFER *);
 
 #endif /* CONFIG_NET */
-#endif /* _NET_H_ */
+#endif /* NET_CSUM_H */

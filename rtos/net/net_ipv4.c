@@ -19,33 +19,9 @@
 
 #ifdef NET_IPV4
 #include <net_ipv4.h>
-
-/* Function prototypes. */
-int32_t ipv4_process_total_length(void *, uint8_t *, uint32_t);
-int32_t ipv4_process_protocol(void *, uint8_t *, uint32_t);
-int32_t ipv4_process_src_address(void *, uint8_t *, uint32_t);
-int32_t ipv4_process_dst_address(void *, uint8_t *, uint32_t);
-
-/* IPv4 header list. */
-const HEADER ipv4_hdr[] =
-{
-    /*  Header data                             Size,   Type flags,     */
-    {   0,                                      4,      HEADER_BIT,     },  /* Version */
-    {   0,                                      4,      HEADER_BIT,     },  /* Internet header length */
-    {   0,                                      1,      0,              },  /* Type of service */
-    {   &ipv4_process_total_length,             2,      HEADER_PROCESS, },  /* Total length */
-    {   0,                                      2,      0,              },  /* Identification */
-    {   0,                                      3,      HEADER_BIT,     },  /* Flags */
-    {   0,                                      13,     HEADER_BIT,     },  /* Fragment offset */
-    {   0,                                      1,      0,              },  /* Time to live */
-    {   &ipv4_process_protocol,                 1,      HEADER_PROCESS, },  /* Protocol */
-    {   0,                                      2,      0,              },  /* Checksum */
-    {   &ipv4_process_src_address,              4,      HEADER_PROCESS, },  /* Source address */
-    {   &ipv4_process_dst_address,              4,      HEADER_PROCESS, },  /* Destination address */
-    {   0,                                      3,      0,              },  /* Options */
-    {   0,                                      1,      0,              },  /* Padding */
-    {   0,                                      0,      HEADER_END,     },  /* --- */
-};
+#ifdef NET_ICMP
+#include <net_icmp.h>
+#endif
 
 /*
  * net_process_ipv4
@@ -55,19 +31,44 @@ const HEADER ipv4_hdr[] =
 int32_t net_process_ipv4(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
-    HDR_MACHINE machine;
-    uint8_t proc_buffer[5];
-    IPV4_PKT_DATA ipv4_pkt;
+    uint8_t proto, keep;
 
-    /* Initialize header machine. */
-    header_machine_init(&machine, &fs_buffer_hdr_pull);
+    /* Verify that we do have a valid IPv4 packet. */
+    if (buffer->total_length >= IPV4_HDR_SIZE)
+    {
+        /* Peek the IPv4 protocol and see if we do support it. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &proto, 1, IPV4_HDR_PROTO_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
 
-    /* Parse the header. */
-    header_machine_run(&machine, &ipv4_pkt, ipv4_hdr, buffer, proc_buffer);
+        /* Try to resolve the protocol to which this packet is needed to be
+         * forwarded. */
 
-    /* [TODO] Get next protocol to which this packet is needed to be forwarded. */
+        /* Protocol was not resolved. */
+        {
+#ifdef NET_ICMP
+            /* The internet header plus the first 64 bits of the original
+             * datagram's data.  This data is used by the host to match the
+             * message to the appropriate process.  If a higher level protocol
+             * uses port numbers, they are assumed to be in the first 64 data
+             * bits of the original datagram's data. */
+            keep = IPV4_HDR_SIZE + 8;
 
-    /* Protocol not supported. */
+            /* Check if we don't have 64 bits ahead. */
+            if (keep < buffer->total_length)
+            {
+                /* Pull the data that is not needed to be sent. */
+                OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - keep), FS_BUFFER_TAIL) != SUCCESS);
+            }
+
+            /* Generate an ICMP protocol unreachable message. */
+            status = icmp_header_add(buffer, ICMP_DST_UNREACHABLE, ICMP_DST_PROTO);
+#endif
+        }
+    }
+    else
+    {
+        /* This is an invalid packet. */
+        status = NET_INVALID_HDR;
+    }
 
     /* Return status to the caller. */
     return (status);
@@ -75,82 +76,18 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
 } /* net_process_ipv4 */
 
 /*
- * ipv4_process_total_length
- * @data: Pointer to the IPv4 packet data structure needed to be populated.
- * @value: Parsed header value.
- * @length: Length of header value.
- * This function will save the total length field of incoming IPv4 packet.
+ * ipv4_header_add
+ * @buffer: File system buffer on which IPv4 header is needed to be added.
+ * This function will add an IPv4 header on the given buffer.
  */
-int32_t ipv4_process_total_length(void *data, uint8_t *value, uint32_t length)
+int32_t ipv4_header_add(FS_BUFFER *buffer)
 {
-    IPV4_PKT_DATA *ipv4_hdr_data = (IPV4_PKT_DATA *)data;
+    int32_t status = SUCCESS;
 
-    /* Copy the IPv4 total length. */
-    fs_memcpy_r(&ipv4_hdr_data->total_length, value, length);
+    /* Return status to the caller. */
+    return (status);
 
-    /* Always return success. */
-    return (SUCCESS);
+} /* ipv4_header_add */
 
-} /* ipv4_process_total_length */
-
-/*
- * ipv4_process_protocol
- * @data: Pointer to the IPv4 packet data structure needed to be populated.
- * @value: Parsed header value.
- * @length: Length of header value.
- * This function will save the value of protocol field of incoming IPv4 packet.
- */
-int32_t ipv4_process_protocol(void *data, uint8_t *value, uint32_t length)
-{
-    IPV4_PKT_DATA *ipv4_hdr_data = (IPV4_PKT_DATA *)data;
-
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(length);
-
-    /* Copy the IPv4 source address. */
-    ipv4_hdr_data->protocol = *value;
-
-    /* Always return success. */
-    return (SUCCESS);
-
-} /* ipv4_process_protocol */
-
-/*
- * ipv4_process_src_address
- * @data: Pointer to the IPv4 packet data structure needed to be populated.
- * @value: Parsed header value.
- * @length: Length of header value.
- * This function will save the source address of the incoming IPv4 packet.
- */
-int32_t ipv4_process_src_address(void *data, uint8_t *value, uint32_t length)
-{
-    IPV4_PKT_DATA *ipv4_hdr_data = (IPV4_PKT_DATA *)data;
-
-    /* Copy the IPv4 source address. */
-    fs_memcpy_r(&ipv4_hdr_data->src_addr, value, length);
-
-    /* Always return success. */
-    return (SUCCESS);
-
-} /* ipv4_process_src_address */
-
-/*
- * ipv4_process_dst_address
- * @data: Pointer to the IPv4 packet data structure needed to be populated.
- * @value: Parsed header value.
- * @length: Length of header value.
- * This function will save the destination address of the incoming IPv4 packet.
- */
-int32_t ipv4_process_dst_address(void *data, uint8_t *value, uint32_t length)
-{
-    IPV4_PKT_DATA *ipv4_hdr_data = (IPV4_PKT_DATA *)data;
-
-    /* Copy the IPv4 destination address. */
-    fs_memcpy_r(&ipv4_hdr_data->dst_addr, value, length);
-
-    /* Always return success. */
-    return (SUCCESS);
-
-} /* ipv4_process_dst_address */
 #endif /* NET_IPV4 */
 #endif /* CONFIG_NET */

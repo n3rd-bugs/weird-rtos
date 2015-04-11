@@ -17,27 +17,25 @@
 #ifdef CONFIG_NET
 #ifdef NET_IPV4
 
-/* IPv4 data structure. */
-typedef struct _ipv4_hdr
-{
-    /* IPv4 source address. */
-    uint32_t    src_addr;
+/* IPv4 header definitions. */
+#define IPV4_HDR_SIZE               24
 
-    /* IPv4 destination address. */
-    uint32_t    dst_addr;
-
-    /* IPv4 total length. */
-    uint16_t    total_length;
-
-    /* IPv4 protocol. */
-    uint8_t     protocol;
-
-    uint8_t     pad[1];
-
-} IPV4_PKT_DATA;
+/* IPv4 header manipulation macros. */
+#define IPV4_HDR_VER_IHL_OFFSET     0
+#define IPV4_HDR_TOS_OFFSET         1
+#define IPV4_HDR_LENGTH_OFFSET      2
+#define IPV4_HDR_ID_OFFSET          4
+#define IPV4_HDR_FLAG_FRAG_OFFSET   6
+#define IPV4_HDR_TOL_OFFSET         8
+#define IPV4_HDR_PROTO_OFFSET       9
+#define IPV4_HDR_CSUM_OFFSET        10
+#define IPV4_HDR_SRC_OFFSET         12
+#define IPV4_HDR_DST_OFFSET         16
+#define IPV4_HDR_OPT_OFFSET         20
 
 /* Function prototypes. */
 int32_t net_process_ipv4(FS_BUFFER *);
+int32_t ipv4_header_add(FS_BUFFER *);
 
 #endif /* NET_IPV4 */
 #endif /* CONFIG_NET */
