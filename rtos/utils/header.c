@@ -15,21 +15,69 @@
 #include <string.h>
 
 /*
- * header_machine_init
+ * header_gen_machine_init
  * @machine: Header machine needed to be initialized.
- * @pull: Function that will be called to pull data from the buffer.
- * This function will initialize a header machine for further processing.
+ * @push: Function that will be called to push data on the buffer.
+ * This function will initialize a header generator machine for further
+ * processing.
  */
-void header_machine_init(HDR_MACHINE *machine, HRD_PULL *pull)
+void header_gen_machine_init(HDR_GEN_MACHINE *machine, HRD_PUSH *push)
 {
     /* Clear the machine data. */
-    memset(machine, 0, sizeof(HDR_MACHINE));
-    machine->pull = pull;
+    memset(machine, 0, sizeof(HDR_GEN_MACHINE));
+    machine->push = push;
 
-} /* header_machine_init */
+} /* header_gen_machine_init */
 
 /*
- * header_machine_run
+ * header_generate
+ * @headers: Header data needed to be populated.
+ * @data: Data needed to be forwarded to the process function.
+ * @header: Header definition being processed.
+ * @buffer: Buffer from which header is needed to be processed.
+ * @proc_buf: Process buffer that will be used to pass data to the process
+ *  function.
+ * This function will run the header machine.
+ */
+int32_t header_generate(HDR_GEN_MACHINE *machine, HEADER *header, uint32_t num_headers, void *buffer)
+{
+    int32_t status = SUCCESS;
+
+    /* Pick the last header. */
+    header += (num_headers - 1);
+
+    /* While we have a header to process and we have a success status. */
+    while ((status == SUCCESS) && (num_headers > 0))
+    {
+        /* Push this header on the buffer. */
+        status = machine->push(buffer, header->value, header->size, (FS_BUFFER_HEAD | header->flags));
+
+        /* Pick the next header. */
+        header--;
+        num_headers--;
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* header_generate */
+
+/*
+ * header_parse_machine_init
+ * @machine: Header machine needed to be initialized.
+ * @pull: Function that will be called to pull data from the buffer.
+ * This function will initialize a header parser machine for further processing.
+ */
+void header_parse_machine_init(HDR_PARSE_MACHINE *machine, HRD_PULL *pull)
+{
+    /* Clear the machine data. */
+    memset(machine, 0, sizeof(HDR_PARSE_MACHINE));
+    machine->pull = pull;
+
+} /* header_parse_machine_init */
+
+/*
+ * header_parse_machine_run
  * @machine: Header machine instance.
  * @data: Data needed to be forwarded to the process function.
  * @header: Header definition being processed.
@@ -38,7 +86,7 @@ void header_machine_init(HDR_MACHINE *machine, HRD_PULL *pull)
  *  function.
  * This function will run the header machine.
  */
-int32_t header_machine_run(HDR_MACHINE *machine, void *data, const HEADER *header, void *buffer, uint8_t *proc_buf)
+int32_t header_parse_machine_run(HDR_PARSE_MACHINE *machine, void *data, const HEADER *header, void *buffer, uint8_t *proc_buf)
 {
     int32_t status = SUCCESS;
     const HEADER *header_ptr = &header[machine->header];
@@ -130,7 +178,7 @@ int32_t header_machine_run(HDR_MACHINE *machine, void *data, const HEADER *heade
                 }
 
                 /* Process this header value. */
-                header_ptr->process(data, proc_buf, bit_size);
+                ((HRD_PROCESS *)header_ptr->value)(data, proc_buf, bit_size);
             }
 
             /* Process next header. */
@@ -141,4 +189,4 @@ int32_t header_machine_run(HDR_MACHINE *machine, void *data, const HEADER *heade
     /* Return status to the caller. */
     return (status);
 
-} /* header_machine_run */
+} /* header_parse_machine_run */

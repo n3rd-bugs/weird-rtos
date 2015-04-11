@@ -167,6 +167,7 @@ void fs_buffer_one_divide(FD, FS_BUFFER_ONE *, FS_BUFFER_ONE **, void *, uint32_
 
 /* Helper routines. */
 int32_t fs_buffer_hdr_pull(void *, uint8_t *, uint32_t);
+int32_t fs_buffer_hdr_push(void *, uint8_t *, uint32_t, uint16_t);
 uint8_t fs_buffer_type_search(void *, void *);
 
 #endif /* CONFIG_FS */
