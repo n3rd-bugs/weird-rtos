@@ -12,6 +12,8 @@
  */
 #include <os.h>
 #include <string.h>
+#include <fs.h>
+#include <console.h>
 
 #ifdef FS_CONSOLE
 /* Debug file descriptor. */
