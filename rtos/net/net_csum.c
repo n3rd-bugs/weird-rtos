@@ -19,21 +19,42 @@
 /*
  * net_csum_calculate
  * @buffer: File system buffer for which checksum is needed to be calculated.
+ * @num_bytes: Number of bytes for which the checksum is needed to be calculated.
  * This function will calculate and return the check of all the data in the
  * given buffer.
  */
-uint16_t net_csum_calculate(FS_BUFFER *buffer)
+uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes)
 {
     FS_BUFFER_ONE *one = buffer->list.head;
     uint32_t csum = 0, left;
     uint16_t *bytes;
     uint8_t last_left = FALSE;
 
-    while (one)
+    /* If we have negative number of bytes. */
+    if (num_bytes < 0)
+    {
+        /* Return the checksum for all the data in the buffer. */
+        num_bytes = (int32_t)buffer->total_length;
+    }
+
+    while ((one) && (num_bytes > 0))
     {
         /* Pick the number of bytes we have in this buffer. */
         left = one->length;
-        bytes = (uint16_t *)one->data;
+        bytes = (uint16_t *)one->buffer;
+
+        /* If this buffer has more data than required. */
+        if ((int32_t)left > num_bytes)
+        {
+            /* Only process required number of bytes. */
+            left = (uint32_t)num_bytes;
+            num_bytes = 0;
+        }
+        else
+        {
+            /* Decrement the number of bytes we will process from this buffer. */
+            num_bytes -= (int32_t)left;
+        }
 
         /* If we have a byte left from the last buffer. */
         if (last_left == TRUE)
@@ -80,8 +101,8 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer)
     }
 
     /* Add back the carry to the checksum. */
-    csum += (csum >> 16);
-    csum += (csum >> 16);
+    csum = (csum & 0xFFFF) + (csum >> 16);
+    csum = (csum & 0xFFFF) + (csum >> 16);
 
     /* Take one's complement of the checksum. */
     return (~(csum) & 0xFFFF);

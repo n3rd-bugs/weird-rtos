@@ -41,7 +41,7 @@ int32_t net_buffer_process(FS_BUFFER *buffer)
     case NET_PROTO_IPV4:
 
         /* Process this IPv4 buffer. */
-        net_process_ipv4(buffer);
+        status = net_process_ipv4(buffer);
 
         break;
 #endif

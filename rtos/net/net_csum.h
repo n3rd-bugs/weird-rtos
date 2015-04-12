@@ -17,7 +17,7 @@
 #ifdef CONFIG_NET
 
 /* Function prototypes. */
-uint16_t net_csum_calculate(FS_BUFFER *);
+uint16_t net_csum_calculate(FS_BUFFER *, int32_t);
 
 #endif /* CONFIG_NET */
 #endif /* NET_CSUM_H */

@@ -21,6 +21,9 @@
  */
 void net_init()
 {
+    /* Initialize networking devices. */
+    net_devices_init();
+
     /* Initialize networking buffers file system. */
     net_buffer_init();
 

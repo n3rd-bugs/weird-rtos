@@ -14,21 +14,47 @@
 
 #ifdef CONFIG_NET
 #include <string.h>
+#include <sll.h>
 #include <net.h>
+
+/* Global network device data. */
+NET_DEV_DATA net_dev_data;
+/*
+ * net_devices_init
+ * This function initialize global data structure for networking devices.
+ */
+void net_devices_init()
+{
+    /* Clear the global data. */
+    memset(&net_dev_data, 0, sizeof(NET_DEV_DATA));
+
+#ifdef CONFIG_SEMAPHORE
+    /* Create the PPP instance semaphore. */
+    semaphore_create(&net_dev_data.lock, 1, 1, SEMAPHORE_PRIORITY);
+#endif
+
+} /* net_devices_init */
 
 /*
  * net_register_fd
  * @net_device: Associated networking device structure.
  * @fd: File descriptor needed to be registered with networking layer.
+ * @tx: Transmit function that will be called to send a packet on this device.
  * This function will register a file descriptor with networking layer.
  */
-void net_register_fd(NET_DEV *net_device, FD fd)
+void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx)
 {
     /* Will only work with buffered file descriptors. */
     OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
 
     /* Clear the networking device instance data. */
     memset(net_device, 0, sizeof(NET_DEV));
+
+    /* Save the file descriptor for this networking device. */
+    net_device->fd = fd;
+
+    /* Save the transmit function. */
+    net_device->tx = tx;
 
     /* Initialize data watcher. */
     net_device->data_watcher.data = net_device;
@@ -46,11 +72,70 @@ void net_register_fd(NET_DEV *net_device, FD fd)
     fs_connection_watcher_set(fd, &net_device->connection_watcher);
 
 #ifdef CONFIG_SEMAPHORE
-    /* Create the PPP instance semaphore. */
+    /* Create the semaphore for this networking device. */
     semaphore_create(&net_device->lock, 1, 1, SEMAPHORE_PRIORITY);
+
+    /* Obtain the global data semaphore. */
+    OS_ASSERT(semaphore_obtain(&net_dev_data.lock, MAX_WAIT) != SUCCESS);
+#else
+    /* Lock the scheduler. */
+    scheduler_lock();
+#endif
+
+    /* Add this device on the global device list. */
+    sll_append(&net_dev_data.devices, net_device, OFFSETOF(NET_DEV, next));
+
+#ifndef CONFIG_SEMAPHORE
+    /* Enable scheduling. */
+    scheduler_unlock();
+#else
+    /* Release the global semaphore. */
+    semaphore_release(&net_dev_data.lock);
 #endif
 
 } /* net_register_fd */
+
+/*
+ * net_device_get_fd
+ * @fd: File descriptor for which networking device is required.
+ * @return: If not null the networking device associated with the given file
+ *  descriptor will be returned here.
+ * This function will return a networking device associated with given file
+ * descriptor.
+ */
+NET_DEV *net_device_get_fd(FD fd)
+{
+    NET_DEV *ret_device;
+#ifdef CONFIG_SEMAPHORE
+    /* Obtain the global data semaphore. */
+    OS_ASSERT(semaphore_obtain(&net_dev_data.lock, MAX_WAIT) != SUCCESS);
+#else
+    /* Lock the scheduler. */
+    scheduler_lock();
+#endif
+
+    /* Pick the device list head. */
+    ret_device = net_dev_data.devices.head;
+
+    /* Search the device list for the required device. */
+    while ((ret_device) && (ret_device->fd != fd))
+    {
+        /* Get the next device. */
+        ret_device = ret_device->next;
+    }
+
+#ifndef CONFIG_SEMAPHORE
+    /* Enable scheduling. */
+    scheduler_unlock();
+#else
+    /* Release the global semaphore. */
+    semaphore_release(&net_dev_data.lock);
+#endif
+
+    /* Return the required device. */
+    return (ret_device);
+
+} /* net_device_get_fd */
 
 /*
  * net_device_buffer_receive
@@ -77,6 +162,57 @@ void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
     fs_buffer_add(buffer->fd, buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
 
 } /* net_device_buffer_receive */
+
+/*
+ * net_device_buffer_transmit
+ * @buffer: A net buffer needed to be transmitted.
+ * @protocol: Packet protocol as parsed by the upper layers.
+ * @return: A success status will be returned if given buffer was successfully
+ *  transmitted.
+ * This function will be called by networking protocols when a packet is needed
+ * to be transmitted.
+ */
+int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
+{
+    int32_t status = SUCCESS;
+    NET_DEV *net_device = net_device_get_fd(buffer->fd);
+
+    /* If networking device was successfully resolved. */
+    if (net_device != NULL)
+    {
+#ifdef CONFIG_SEMAPHORE
+        /* Obtain the lock for this networking device. */
+        OS_ASSERT(semaphore_obtain(&net_device->lock, MAX_WAIT) != SUCCESS);
+#else
+        /* Lock the scheduler. */
+        scheduler_lock();
+#endif
+
+        /* Push the protocol on the buffer. */
+        OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD) != SUCCESS);
+
+        /* Transmit this buffer on the networking device. */
+        status = net_device->tx(buffer);
+
+#ifndef CONFIG_SEMAPHORE
+        /* Enable scheduling. */
+        scheduler_unlock();
+#else
+        /* Release the lock for this networking device. */
+        semaphore_release(&net_device->lock);
+#endif
+    }
+
+    else
+    {
+        /* We did not find a valid networking device for given buffer. */
+        status = NET_INVALID_FD;
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* net_device_buffer_transmit */
 
 /*
  * net_device_connected

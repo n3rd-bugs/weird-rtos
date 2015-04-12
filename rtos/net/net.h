@@ -27,6 +27,7 @@
 /* Status code definitions. */
 #define NET_BUFFER_CONSUMED     -1000
 #define NET_INVALID_HDR         -1001
+#define NET_INVALID_FD          -1002
 
 /* Function prototypes. */
 void net_init();

@@ -26,7 +26,7 @@
 #define NET_PROTO_IPV4              0x01
 
 /* Net buffer configuration. */
-#define NET_BUFFER_RX_STACK_SIZE    512
+#define NET_BUFFER_RX_STACK_SIZE    1024
 
 /* Global network buffer data. */
 typedef struct _net_buffer_fs

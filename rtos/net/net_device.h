@@ -19,9 +19,19 @@
 #include <semaphore.h>
 #include <net.h>
 
+/* Net transmit function definition. */
+typedef int32_t NET_TX (FS_BUFFER *);
+
 /* Network device file descriptor. */
-typedef struct _net_dev
+typedef struct _net_dev NET_DEV;
+struct _net_dev
 {
+    /* Networking device list member. */
+    NET_DEV     *next;
+
+    /* File descriptor linked with this networking device. */
+    FD          fd;
+
     /* File system watchers. */
     FS_DATA_WATCHER         data_watcher;
     FS_CONNECTION_WATCHER   connection_watcher;
@@ -30,11 +40,40 @@ typedef struct _net_dev
     /* Protection for this networking device. */
     SEMAPHORE   lock;
 #endif
-} NET_DEV;
+
+    /* Transmit function that will be called to send a packet. */
+    NET_TX      *tx;
+
+#ifdef NET_IPV4
+    /* IP address assigned to this interface. */
+    uint32_t    ipv4_address;
+#endif
+
+};
+
+/* Network device global data. */
+typedef struct _net_dev_data
+{
+    /* Networking devices list. */
+    struct _net_device_list
+    {
+        NET_DEV     *head;
+        NET_DEV     *tail;
+    } devices;
+
+#ifdef CONFIG_SEMAPHORE
+    /* Protection for global data. */
+    SEMAPHORE   lock;
+#endif
+
+} NET_DEV_DATA;
 
 /* Function prototypes. */
-void net_register_fd(NET_DEV *, FD);
+void net_devices_init();
+void net_register_fd(NET_DEV *, FD, NET_TX *);
+NET_DEV *net_device_get_fd(FD);
 void net_device_buffer_receive(FS_BUFFER *, uint8_t);
+int32_t net_device_buffer_transmit(FS_BUFFER *, uint8_t);
 void net_device_connected(void *, void *);
 void net_device_disconnected(void *, void *);
 void net_device_rx_watcher(void *, void *);

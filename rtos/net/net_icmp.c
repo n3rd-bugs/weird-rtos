@@ -56,7 +56,7 @@ int32_t icmp_header_add(FS_BUFFER *buffer, uint8_t type, uint8_t code)
     if (status == SUCCESS)
     {
         /* Compute and update the value of checksum field. */
-        csum = net_csum_calculate(buffer);
+        csum = net_csum_calculate(buffer, -1);
         status = fs_buffer_push_offset(buffer, &csum, 2, ICMP_HDR_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
     }
 

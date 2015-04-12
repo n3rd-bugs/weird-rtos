@@ -17,12 +17,18 @@
 #ifdef CONFIG_NET
 #ifdef NET_IPV4
 
+/* Protocol definitions. */
+#define IP_PROTO_ICMP               (1)
+
 /* IPv4 header definitions. */
-#define IPV4_HDR_SIZE               24
+#define IPV4_HDR_SIZE               (20)
+#define IPV4_HDR_VER                (0x40)
 
 /* IPv4 header manipulation macros. */
 #define IPV4_HDR_VER_IHL_OFFSET     0
-#define IPV4_HDR_TOS_OFFSET         1
+#define IPV4_HDR_VER_MASK           0xF0
+#define IPV4_HDR_IHL_MASK           0x0F
+#define IPV4_HDR_DSCP_OFFSET        1
 #define IPV4_HDR_LENGTH_OFFSET      2
 #define IPV4_HDR_ID_OFFSET          4
 #define IPV4_HDR_FLAG_FRAG_OFFSET   6
@@ -34,8 +40,10 @@
 #define IPV4_HDR_OPT_OFFSET         20
 
 /* Function prototypes. */
+int32_t ipv4_get_device_address(FD, uint32_t *);
+int32_t ipv4_set_device_address(FD, uint32_t);
 int32_t net_process_ipv4(FS_BUFFER *);
-int32_t ipv4_header_add(FS_BUFFER *);
+int32_t ipv4_header_add(FS_BUFFER *, uint8_t, uint32_t, uint32_t);
 
 #endif /* NET_IPV4 */
 #endif /* CONFIG_NET */
