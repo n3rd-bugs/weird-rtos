@@ -32,11 +32,8 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
     /* Should never happen. */
     OS_ASSERT(data == NULL);
 
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
-    }
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* This is a buffer file system. */
     ((FS *)fd)->flags |= FS_BUFFERED;
@@ -51,11 +48,8 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
     data->buffers = num_buffers;
 #endif
 
-    if (((FS *)fd)->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        ((FS *)fd)->release_lock((void *)fd);
-    }
+    /* Release lock for this file descriptor. */
+    fd_release_lock(fd);
 
 } /* fs_buffer_dataset */
 

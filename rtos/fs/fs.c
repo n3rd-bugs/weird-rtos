@@ -123,20 +123,14 @@ void fs_unregister(FS *file_system)
  */
 void fs_data_watcher_set(FD fd, FS_DATA_WATCHER *watcher)
 {
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
-    }
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Add this watcher is the watcher list. */
     sll_append(&((FS *)fd)->data_watcher_list, watcher, OFFSETOF(FS_DATA_WATCHER, next));
 
-    if (((FS *)fd)->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        ((FS *)fd)->release_lock((void *)fd);
-    }
+    /* Release lock for this file descriptor. */
+    fd_release_lock(fd);
 
 } /* fs_data_watcher_set */
 
@@ -148,20 +142,14 @@ void fs_data_watcher_set(FD fd, FS_DATA_WATCHER *watcher)
  */
 void fs_connection_watcher_set(FD fd, FS_CONNECTION_WATCHER *watcher)
 {
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
-    }
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Add this watcher is the watcher list. */
     sll_append(&((FS *)fd)->connection_watcher_list, watcher, OFFSETOF(FS_CONNECTION_WATCHER, next));
 
-    if (((FS *)fd)->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        ((FS *)fd)->release_lock((void *)fd);
-    }
+    /* Release lock for this file descriptor. */
+    fd_release_lock(fd);
 
 } /* fs_connection_watcher_set */
 
@@ -174,11 +162,8 @@ void fs_connected(FD fd)
 {
     FS_CONNECTION_WATCHER *watcher;
 
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
-    }
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Pick the first watcher data. */
     watcher = ((FS *)fd)->connection_watcher_list.head;
@@ -197,11 +182,8 @@ void fs_connected(FD fd)
         watcher = watcher->next;
     }
 
-    if (((FS *)fd)->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        ((FS *)fd)->release_lock((void *)fd);
-    }
+    /* Release lock for this file descriptor. */
+    fd_release_lock(fd);
 
 } /* console_connected */
 
@@ -214,11 +196,8 @@ void fs_disconnected(FD fd)
 {
     FS_CONNECTION_WATCHER *watcher;
 
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
-    }
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Pick the first watcher data. */
     watcher = ((FS *)fd)->connection_watcher_list.head;
@@ -237,11 +216,8 @@ void fs_disconnected(FD fd)
         watcher = watcher->next;
     }
 
-    if (((FS *)fd)->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        ((FS *)fd)->release_lock((void *)fd);
-    }
+    /* Release lock for this file descriptor. */
+    fd_release_lock(fd);
 
 } /* console_disconnected */
 
@@ -254,11 +230,8 @@ void fs_disconnected(FD fd)
  */
 void fs_connect(FD fd, FD fd_head)
 {
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
-    }
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Given file descriptor should not be a chain head. */
     OS_ASSERT(((FS *)fd)->flags & FS_CHAIN_HEAD);
@@ -269,17 +242,11 @@ void fs_connect(FD fd, FD fd_head)
     /* Save the list head. */
     ((FS *)fd)->fd_chain.fd_node.head = fd_head;
 
-    if (((FS *)fd)->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        ((FS *)fd)->release_lock((void *)fd);
-    }
+    /* Release lock for this file descriptor. */
+    fd_release_lock(fd);
 
-    if (((FS *)fd_head)->get_lock)
-    {
-        /* Get lock for head file descriptor. */
-        OS_ASSERT(((FS *)fd_head)->get_lock((void *)fd_head) != SUCCESS);
-    }
+    /* Get lock for head file descriptor. */
+    OS_ASSERT(fd_get_lock(fd_head) != SUCCESS);
 
     /* If head file descriptor is not a chain head. */
     if (!(((FS *)fd_head)->flags & FS_CHAIN_HEAD))
@@ -291,11 +258,8 @@ void fs_connect(FD fd, FD fd_head)
     /* Push this node on the list head. */
     sll_push(&((FS *)fd_head)->fd_chain.fd_list, fd, OFFSETOF(FS, fd_chain.fd_node.next));
 
-    if (((FS *)fd_head)->release_lock)
-    {
-        /* Release lock for head file descriptor. */
-        ((FS *)fd_head)->release_lock((void *)fd_head);
-    }
+    /* Release lock for head file descriptor. */
+    fd_release_lock(fd_head);
 
 } /* fs_connect */
 
@@ -310,11 +274,8 @@ void fs_destroy_chain(FD fd)
 {
     FS *fs;
 
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
-    }
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Get a file descriptor from list. */
     fs = (FS *)sll_pop(&((FS *)fd)->fd_chain.fd_list, OFFSETOF(FS, fd_chain.fd_node.next));
@@ -322,30 +283,21 @@ void fs_destroy_chain(FD fd)
     /* While we have file descriptor in the chain. */
     while (fs != NULL)
     {
-        if (fs->get_lock)
-        {
-            /* Get lock for head file descriptor. */
-            OS_ASSERT(fs->get_lock((void *)fs) != SUCCESS);
-        }
+        /* Get lock for head file system. */
+        OS_ASSERT(fd_get_lock(fs) != SUCCESS);
 
         /* Remove this file descriptor from the list. */
         fs->fd_chain.fd_node.head = NULL;
 
-        if (fs->release_lock)
-        {
-            /* Release lock for head file descriptor. */
-            fs->release_lock((void *)fs);
-        }
+        /* Release lock for head file descriptor. */
+        fd_release_lock(fs);
 
         /* Get next file descriptor. */
         fs = (FS *)sll_pop(&((FS *)fd)->fd_chain.fd_list, OFFSETOF(FS, fd_chain.fd_node.next));
     }
 
-    if (((FS *)fd)->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        ((FS *)fd)->release_lock((void *)fd);
-    }
+    /* Release lock for this file descriptor. */
+    fd_release_lock(fd);
 
 } /* fs_destroy_chain */
 
@@ -356,11 +308,8 @@ void fs_destroy_chain(FD fd)
  */
 void fs_disconnect(FD fd)
 {
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
-    }
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Given file descriptor should not be a chain head. */
     OS_ASSERT(((FS *)fd)->flags & FS_CHAIN_HEAD);
@@ -368,27 +317,18 @@ void fs_disconnect(FD fd)
     /* If we are part of a file descriptor chain. */
     if (((FS *)fd)->fd_chain.fd_node.head != NULL)
     {
-        if (((FS *)((FS *)fd)->fd_chain.fd_node.head)->get_lock)
-        {
-            /* Get lock for head file descriptor. */
-            OS_ASSERT(((FS *)((FS *)fd)->fd_chain.fd_node.head)->get_lock((void *)((FS *)fd)->fd_chain.fd_node.head) != SUCCESS);
-        }
+        /* Get lock for head file descriptor. */
+        OS_ASSERT(fd_get_lock(((FS *)fd)->fd_chain.fd_node.head) != SUCCESS);
 
         /* We must have removed this file descriptor from it's list. */
         OS_ASSERT(sll_remove(&((FS *)((FS *)fd)->fd_chain.fd_node.head)->fd_chain.fd_list, fd, OFFSETOF(FS, fd_chain.fd_node.next)) != fd);
 
-        if (((FS *)((FS *)fd)->fd_chain.fd_node.head)->release_lock)
-        {
-            /* Release lock for head file descriptor. */
-            ((FS *)((FS *)fd)->fd_chain.fd_node.head)->release_lock((void *)((FS *)fd)->fd_chain.fd_node.head);
-        }
+        /* Release lock for head file descriptor. */
+        fd_release_lock(((FS *)fd)->fd_chain.fd_node.head);
     }
 
-    if (((FS *)fd)->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        ((FS *)fd)->release_lock((void *)fd);
-    }
+    /* Release lock for this file descriptor. */
+    fd_release_lock(fd);
 
 } /* fs_disconnect */
 
@@ -540,6 +480,45 @@ void fs_close(FD *fd)
 } /* fs_close */
 
 /*
+ * fd_get_lock
+ * @fd: File descriptor from which lock is needed.
+ * @return: A success status will be returned if file descriptor lock was
+ *  successfully acquired.
+ * This function will acquire lock for given file descriptor.
+ */
+int32_t fd_get_lock(FD fd)
+{
+    int32_t status = SUCCESS;
+
+    /* If this file descriptor does have a acquire lock function. */
+    if (((FS *)fd)->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        status = ((FS *)fd)->get_lock((void *)fd);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* fd_get_lock */
+
+/*
+ * fd_release_lock
+ * @fd: File descriptor from which lock will be released.
+ * This function will release lock for given file descriptor.
+ */
+void fd_release_lock(FD fd)
+{
+    /* If this file descriptor do have a lock release function. */
+    if (((FS *)fd)->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        ((FS *)fd)->release_lock((void *)fd);
+    }
+
+} /* fd_release_lock */
+
+/*
  * fs_read
  * @fd: File descriptor from which data is needed to be read.
  * @buffer: Buffer in which data is needed to be read.
@@ -557,11 +536,8 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
     FS_PARAM param;
     int32_t read = 0, status = SUCCESS;
 
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        status = ((FS *)fd)->get_lock((void *)fd);
-    }
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* If lock was successfully obtained. */
     if (status == SUCCESS)
@@ -631,11 +607,8 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
             }
         }
 
-        if ((status != FS_NODE_DELETED) && (((FS *)fd)->release_lock))
-        {
-            /* Release lock for this file descriptor. */
-            ((FS *)fd)->release_lock((void *)fd);
-        }
+        /* Release lock for this file descriptor. */
+        fd_release_lock(fd);
     }
 
     /* Return number of bytes read. */
@@ -682,11 +655,8 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
         nbytes = nbytes_fd;
         buffer = buffer_start;
 
-        if (((FS *)fd)->get_lock)
-        {
-            /* Get lock for this file descriptor. */
-            status = ((FS *)fd)->get_lock((void *)fd);
-        }
+        /* Get lock for this file descriptor. */
+        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
         /* If lock was successfully obtained. */
         if (status == SUCCESS)
@@ -800,11 +770,8 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                 next_fd = ((FS *)fd)->fd_chain.fd_node.next;
             }
 
-            if (((FS *)fd)->release_lock)
-            {
-                /* Release lock for this file descriptor. */
-                ((FS *)fd)->release_lock((void *)fd);
-            }
+            /* Release lock for this file descriptor. */
+            fd_release_lock(fd);
         }
         else
         {
@@ -847,11 +814,8 @@ int32_t fs_ioctl(FD fd, uint32_t cmd, void *param)
 {
     int32_t status = SUCCESS;
 
-    if (((FS *)fd)->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        status = ((FS *)fd)->get_lock((void *)fd);
-    }
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* If lock was successfully obtained. */
     if (status == SUCCESS)
@@ -863,11 +827,8 @@ int32_t fs_ioctl(FD fd, uint32_t cmd, void *param)
             status = ((FS *)fd)->ioctl((void *)fd, cmd, param);
         }
 
-        if (((FS *)fd)->release_lock)
-        {
-            /* Release lock for this file descriptor. */
-            ((FS *)fd)->release_lock((void *)fd);
-        }
+        /* Release lock for this file descriptor. */
+        fd_release_lock(fd);
     }
 
     /* Return status to caller. */
@@ -960,11 +921,8 @@ int32_t fd_suspend_criteria(void *fd, FS_PARAM *param, uint32_t timeout)
      * is needed to be resumed again from an interrupt. */
     DISABLE_INTERRUPTS();
 
-    if (((FS *)fd)->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        ((FS *)fd)->release_lock((void *)fd);
-    }
+    /* Release lock for this file descriptor. */
+    fd_release_lock(fd);
 
     /* Task is being suspended. */
     tcb->status = TASK_SUSPENDED;
@@ -1005,12 +963,8 @@ int32_t fd_suspend_criteria(void *fd, FS_PARAM *param, uint32_t timeout)
      * lock. */
     if (status != FS_NODE_DELETED)
     {
-        /* Check if we need to get the lock. */
-        if (((FS *)fd)->get_lock)
-        {
-            /* Get lock for this file descriptor. */
-            OS_ASSERT(((FS *)fd)->get_lock((void *)fd) != SUCCESS);
-        }
+        /* Get lock for this file descriptor. */
+        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
     }
 
     /* Return status to the caller. */

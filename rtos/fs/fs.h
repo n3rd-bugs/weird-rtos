@@ -197,6 +197,9 @@ void fs_init();
 FD fs_open(char *, uint32_t);
 void fs_close(FD *);
 
+int32_t fd_get_lock(FD);
+void fd_release_lock(FD);
+
 int32_t fs_read(FD, char *, int32_t);
 int32_t fs_write(FD, char *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
