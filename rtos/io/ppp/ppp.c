@@ -20,6 +20,25 @@
 #include <net.h>
 #include <ppp_packet.h>
 
+/* PPP global data. */
+PPP_DATA ppp_data;
+
+/*
+ * ppp_init
+ * This function will initialize global PPP data.
+ */
+void ppp_init()
+{
+    /* Clear the global data. */
+    memset(&ppp_data, 0, sizeof(PPP_DATA));
+
+#ifdef CONFIG_SEMAPHORE
+    /* Create the PPP global data semaphore. */
+    semaphore_create(&ppp_data.lock, 1, 1, SEMAPHORE_PRIORITY);
+#endif
+
+} /* ppp_init */
+
 /*
  * ppp_register_fd
  * @ppp: PPP instance data.
@@ -35,6 +54,9 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
 
     /* Clear the PPP instance. */
     memset(ppp, 0, sizeof(PPP));
+
+    /* Assign the file descriptor with which this PPP instance is registered. */
+    ppp->fd = fd;
 
     /* Initialize data watcher. */
     ppp->data_watcher.data = ppp;
@@ -65,9 +87,71 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
 #ifdef CONFIG_SEMAPHORE
     /* Create the PPP instance semaphore. */
     semaphore_create(&ppp->lock, 1, 1, SEMAPHORE_PRIORITY);
+
+    /* Obtain the global data semaphore. */
+    OS_ASSERT(semaphore_obtain(&ppp_data.lock, MAX_WAIT) != SUCCESS);
+#else
+    /* Lock the scheduler. */
+    scheduler_lock();
 #endif
 
+    /* Add this device on the global instance list. */
+    sll_append(&ppp_data.ppp, ppp, OFFSETOF(PPP, next));
+
+#ifndef CONFIG_SEMAPHORE
+    /* Enable scheduling. */
+    scheduler_unlock();
+#else
+    /* Release the global semaphore. */
+    semaphore_release(&ppp_data.lock);
+#endif
+
+    /* Register networking device for this PPP instance. */
+    net_register_fd(&ppp->net_device, fd, &net_ppp_transmit);
+
 } /* ppp_register_fd */
+
+/*
+ * ppp_get_instance_fd
+ * @fd: File descriptor for which PPP instance is required.
+ * @return: If not null the PPP instance associated with this file descriptor
+ *  will be returned.
+ * This function will return the associated PPP instance for the given file
+ * descriptor.
+ */
+PPP *ppp_get_instance_fd(FD fd)
+{
+    PPP *ret_instance;
+#ifdef CONFIG_SEMAPHORE
+    /* Obtain the global data semaphore. */
+    OS_ASSERT(semaphore_obtain(&ppp_data.lock, MAX_WAIT) != SUCCESS);
+#else
+    /* Lock the scheduler. */
+    scheduler_lock();
+#endif
+
+    /* Pick the instance list head. */
+    ret_instance = ppp_data.ppp.head;
+
+    /* Search the instance list for the required PPP instance. */
+    while ((ret_instance) && (ret_instance->fd != fd))
+    {
+        /* Get the next instance. */
+        ret_instance = ret_instance->next;
+    }
+
+#ifndef CONFIG_SEMAPHORE
+    /* Enable scheduling. */
+    scheduler_unlock();
+#else
+    /* Release the global semaphore. */
+    semaphore_release(&ppp_data.lock);
+#endif
+
+    /* Return the required device. */
+    return (ret_instance);
+
+} /* ppp_get_instance_fd */
 
 /*
  * ppp_connection_established
@@ -350,7 +434,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                 if (status == SUCCESS)
                 {
                     /* Send a PPP configuration packet in reply. */
-                    status = ppp_transmit_buffer(ppp, &tx_buffer, proto->protocol);
+                    status = ppp_transmit_buffer_instance(ppp, &tx_buffer, proto->protocol);
                 }
             }
         }
@@ -565,7 +649,77 @@ void ppp_process_frame(void *fd, PPP *ppp)
 } /* ppp_process_frame */
 
 /*
- * ppp_transmit_buffer
+ * net_ppp_transmit
+ * @buffer: File system buffer needed to be transmitted.
+ * @return: If buffer was successfully transmitted, otherwise PPP_INVALID_FD
+ *  will be returned if the PPP instance was not resolved. PPP_INVALID_PROTO
+ *  will be returned if a valid protocol was not resolved.
+ * This function will transmit a PPP networking buffer.
+ */
+int32_t net_ppp_transmit(FS_BUFFER *buffer)
+{
+    int32_t status = SUCCESS;
+    PPP *ppp = ppp_get_instance_fd(buffer->fd);
+    uint16_t protocol = 0;
+    uint8_t net_proto;
+
+    if (ppp != NULL)
+    {
+#ifndef CONFIG_SEMAPHORE
+        /* Lock the scheduler. */
+        scheduler_lock();
+#else
+        /* Acquire data lock for PPP. */
+        OS_ASSERT(semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) != SUCCESS)
+#endif
+        /* Skim the protocol from the buffer. */
+        OS_ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
+
+        switch (net_proto)
+        {
+        /* IPv4 protocol. */
+        case NET_PROTO_IPV4:
+
+            /* Pick the PPP IPv4 protocol. */
+            protocol = PPP_PROTO_IPV4;
+            break;
+        default:
+
+            /* Unknown protocol. */
+            status = PPP_INVALID_PROTO;
+            break;
+        }
+
+        if (status == SUCCESS)
+        {
+            /* Transmit this PPP buffer. */
+            status = ppp_transmit_buffer_instance(ppp, &buffer, protocol);
+
+            /* Free this buffer in any case. */
+            fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        }
+
+#ifndef CONFIG_SEMAPHORE
+        /* Enable scheduling. */
+        scheduler_unlock();
+#else
+        /* Release the PPP instance lock. */
+        semaphore_release(&((PPP *)ppp)->lock);
+#endif
+    }
+    else
+    {
+        /* Return an error to the caller. */
+        status = PPP_INVALID_FD;
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* net_ppp_transmit */
+
+/*
+ * ppp_transmit_buffer_instance
  * @ppp: PPP private data.
  * @buffer: Buffer needed to be sent.
  * @proto: PPP protocol needed to be added in the header.
@@ -573,7 +727,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
  * file descriptor attached to the given buffer. Caller is responsible for
  * freeing the given buffer if this function returns an error.
  */
-int32_t ppp_transmit_buffer(PPP *ppp, FS_BUFFER **buffer, uint16_t proto)
+int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER **buffer, uint16_t proto)
 {
     int32_t status;
 
@@ -597,7 +751,7 @@ int32_t ppp_transmit_buffer(PPP *ppp, FS_BUFFER **buffer, uint16_t proto)
     /* Return status to the caller. */
     return (status);
 
-} /* ppp_transmit_buffer */
+} /* ppp_transmit_buffer_instance */
 
 /*
  * ppp_rx_watcher

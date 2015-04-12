@@ -19,6 +19,9 @@
 #include <ppp_fcs.h>
 #include <ppp_packet.h>
 #include <ppp_hdlc.h>
+#ifdef CONFIG_NET
+#include <net_device.h>
+#endif
 
 /* PPP configuration. */
 #define PPP_MODEM_CHAT
@@ -32,7 +35,9 @@
 #define PPP_NO_NEXT_OPTION          -905
 #define PPP_NO_BUFFERS              -906
 #define PPP_NO_SPACE                -907
-#define PPP_INTERNAL_ERROR          -908
+#define PPP_INVALID_PROTO           -908
+#define PPP_INVALID_FD              -909
+#define PPP_INTERNAL_ERROR          -910
 
 /* PPP instance states. */
 #define PPP_STATE_CONNECTED         1
@@ -75,12 +80,24 @@
 #define PPP_AUTH_PAP                (0xC023)
 #define PPP_AUTH_CHAP               (0xC223)
 
-/* PPP instance data. */
-typedef struct _ppp_data
+/* PPP instance structure. */
+typedef struct _ppp PPP;
+struct _ppp
 {
+    /* PPP instance list member. */
+    PPP         *next;
+
 #ifdef CONFIG_SEMAPHORE
     SEMAPHORE   lock;
 #endif
+
+#ifdef CONFIG_NET
+    /* Networking device structure. */
+    NET_DEV     net_device;
+#endif
+
+    /* File descriptor registered with PPP device. */
+    FD          fd;
 
     /* File system watchers. */
     FS_DATA_WATCHER         data_watcher;
@@ -117,7 +134,22 @@ typedef struct _ppp_data
 
     /* Structure padding. */
     uint8_t     pad[3];
-} PPP;
+};
+
+/* PPP global data structure. */
+typedef struct _ppp_data
+{
+    /* PPP instance list. */
+    struct _ppp_list
+    {
+        PPP     *head;
+        PPP     *tail;
+    } ppp;
+
+#ifdef CONFIG_SEMAPHORE
+    SEMAPHORE   lock;
+#endif
+} PPP_DATA;
 
 /* PPP protocol definition. */
 typedef struct _ppp_proto
@@ -136,7 +168,9 @@ typedef struct _ppp_proto
 } PPP_PROTO;
 
 /* Function prototypes. */
+void ppp_init();
 void ppp_register_fd(PPP *, FD, uint8_t);
+PPP *ppp_get_instance_fd(FD);
 void ppp_connection_established(void *, void *);
 void ppp_connection_terminated(void *, void *);
 void ppp_rx_watcher(void *, void *);
@@ -145,7 +179,8 @@ void ppp_tx_watcher(void *, void *);
 /* PPP internal APIs. */
 void ppp_process_modem_chat(void *, PPP *);
 void ppp_process_frame(void *, PPP *);
-int32_t ppp_transmit_buffer(PPP *, FS_BUFFER **, uint16_t);
+int32_t net_ppp_transmit(FS_BUFFER *);
+int32_t ppp_transmit_buffer_instance(PPP *, FS_BUFFER **, uint16_t);
 void ppp_configuration_process(PPP *, FS_BUFFER *, PPP_PROTO *);
 
 /* Include PPP supported configuration protocol definitions. */

@@ -17,6 +17,8 @@
 #include <fs.h>
 #include <ppp.h>
 #include <ppp_packet.h>
+#include <net.h>
+#include <net_ipv4.h>
 
 /* PPP IPCP protocol definition. */
 PPP_PROTO ppp_proto_ipcp =
@@ -201,7 +203,7 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
                 if (status == SUCCESS)
                 {
                     /* Send this buffer. */
-                    status = ppp_transmit_buffer(ppp, &tx_buffer, PPP_PROTO_IPCP);
+                    status = ppp_transmit_buffer_instance(ppp, &tx_buffer, PPP_PROTO_IPCP);
                 }
             }
         }
@@ -212,6 +214,9 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
     {
         /* We are now in network phase. */
         ppp->state = PPP_STATE_NETWORK;
+
+        /* Set the IPv4 address for this device. */
+        OS_ASSERT(ipv4_set_device_address(fd, ppp->local_ip_address) != SUCCESS);
     }
 
     /* Free the buffer list allocated before and any buffers still left on it. */
