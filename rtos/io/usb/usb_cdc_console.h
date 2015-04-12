@@ -66,6 +66,7 @@ void usb_cdc_console_handle_disconnect(CDC_CONSOLE *);
 /* Device driver APIs. */
 void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *, uint32_t);
 void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *);
+void usb_cdc_fun_console_handle_rx_start(CDC_CONSOLE *);
 FS_BUFFER_ONE *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *);
 void usb_cdc_fun_console_handle_ctrl(CDC_CONSOLE *, uint32_t, char *, int32_t);
 

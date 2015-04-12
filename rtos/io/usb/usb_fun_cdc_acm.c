@@ -15,6 +15,7 @@
 #include <usb.h>
 
 #ifdef USB_FUNCTION_CDC_ACM
+#include <fs_buffer.h>
 
 /* Internal function prototypes. */
 static uint32_t usb_fun_cdc_acm_init(USB_STM32F407_HANDLE *, uint8_t);
@@ -320,6 +321,7 @@ static uint32_t usb_fun_cdc_acm_init(USB_STM32F407_HANDLE *usb_device, uint8_t c
     /* Initialize console data. */
     usb_device->device.cmd = NO_CMD;
     usb_device->device.altset = 0;
+    usb_device->device.rx_enable = FALSE;
 
     /* Return success. */
     return (SUCCESS);
@@ -542,6 +544,9 @@ static uint32_t usb_fun_cdc_acm_data_in(USB_STM32F407_HANDLE *usb_device, uint8_
  */
 static uint32_t usb_fun_cdc_acm_data_out(USB_STM32F407_HANDLE *usb_device, uint8_t epnum)
 {
+    /* Assume that receive buffer will deactivated. */
+    usb_device->device.rx_enable = FALSE;
+
     /* Handle RX on CDC device. */
     usb_cdc_fun_console_handle_rx(usb_device->driver_data, usb_device->device.out_ep[epnum].xfer_count);
 
@@ -553,12 +558,16 @@ static uint32_t usb_fun_cdc_acm_data_out(USB_STM32F407_HANDLE *usb_device, uint8
 /*
  * usb_fun_cdc_acm_data_out_enable
  * @usb_device: USB device instance.
+ * @buffer: Buffer needed to be used to receive the incoming data.
  * Enables OUT endpoint to receive new data.
  */
-void usb_fun_cdc_acm_data_out_enable(USB_STM32F407_HANDLE *usb_device)
+void usb_fun_cdc_acm_data_out_enable(USB_STM32F407_HANDLE *usb_device, FS_BUFFER_ONE *buffer)
 {
     /* Prepare out endpoint to receive next packet. */
-    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(((CDC_CONSOLE*)usb_device->driver_data)->rx_buffer->buffer), *(uint16_t *)(usb_device->device.config_desc + 64));
+    usb_fun_endpoint_prepare_rx(usb_device, CDC_OUT_EP, (uint8_t*)(buffer->buffer), *(uint16_t *)(usb_device->device.config_desc + 64));
+
+    /* We have activated the receive buffer. */
+    usb_device->device.rx_enable = TRUE;
 
 } /* usb_fun_cdc_acm_data_out_enable */
 
@@ -578,6 +587,13 @@ static uint32_t usb_fun_cdc_acm_sof(USB_STM32F407_HANDLE *usb_device)
     {
         /* Prepare the available data buffer to be sent on IN endpoint. */
         usb_fun_endpoint_tx(usb_device, CDC_IN_EP, (uint8_t*)(buffer->buffer), buffer->length);
+    }
+
+    /* If we have a receive buffer but we have not activated yet. */
+    if (usb_device->device.rx_enable == FALSE)
+    {
+        /* Start receiving new data. */
+        usb_cdc_fun_console_handle_rx_start(usb_device->driver_data);
     }
 
     /* Return success. */

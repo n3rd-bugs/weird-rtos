@@ -155,7 +155,7 @@ void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
                 if (cdc_cons->rx_buffer != NULL)
                 {
                     /* Start receiving new data. */
-                    usb_fun_cdc_acm_data_out_enable(cdc_cons->usb_device);
+                    usb_fun_cdc_acm_data_out_enable(cdc_cons->usb_device, cdc_cons->rx_buffer);
                 }
             }
         }
@@ -191,6 +191,28 @@ void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *cdc_cons)
 } /* usb_cdc_fun_console_handle_tx_complete */
 
 /*
+ * usb_cdc_fun_console_handle_rx_start
+ * @cdc_cons: USB CDC function console context.
+ * This function will be called to start receive on the given USB CDC device.
+ */
+void usb_cdc_fun_console_handle_rx_start(CDC_CONSOLE *cdc_cons)
+{
+    /* We are in interrupt so just try to obtain semaphore here. */
+    if (fd_get_lock(&cdc_cons->console) == SUCCESS)
+    {
+        /* If we do have a receive buffer. */
+        if (cdc_cons->rx_buffer != NULL)
+        {
+            /* Start receiving new data. */
+            usb_fun_cdc_acm_data_out_enable(cdc_cons->usb_device, cdc_cons->rx_buffer);
+        }
+
+        /* Release lock. */
+        fd_release_lock(&cdc_cons->console);
+    }
+} /* usb_cdc_fun_console_handle_rx_start */
+
+/*
  * usb_cdc_fun_console_handle_tx
  * @cdc_cons: USB CDC function console context.
  * @return: Returns a transmit buffer if available.
@@ -217,12 +239,6 @@ FS_BUFFER_ONE *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
         {
             /* Try to pick a free buffer. */
             cdc_cons->rx_buffer = fs_buffer_one_get(((FD)&cdc_cons->console), FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
-
-            if (cdc_cons->rx_buffer != NULL)
-            {
-                /* Start receiving new data. */
-                usb_fun_cdc_acm_data_out_enable(cdc_cons->usb_device);
-            }
         }
 
         /* Release lock. */
@@ -333,12 +349,6 @@ static void usb_cdc_fun_console_space_available(void *fd, void *priv_data)
     {
         /* Pick a free buffer. */
         cdc->rx_buffer = fs_buffer_one_get(fd, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
-
-        if (cdc->rx_buffer != NULL)
-        {
-            /* Start receiving new data. */
-            usb_fun_cdc_acm_data_out_enable(cdc->usb_device);
-        }
     }
 
 } /* usb_cdc_fun_console_space_available */

@@ -91,7 +91,8 @@ typedef struct _usb_device
     uint8_t         state;
     uint8_t         status;
     uint8_t         address;
-    uint8_t         pad[3];
+    uint8_t         rx_enable;
+    uint8_t         pad[2];
 } USB_DEVICE;
 
 #endif /* USB_FUNCTION */
