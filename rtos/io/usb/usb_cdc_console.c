@@ -127,7 +127,7 @@ void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
     FS_BUFFER_ONE *rx_buffer;
 
     /* We are in interrupt so just try to obtain semaphore here. */
-    if (cdc_cons->console.fs.get_lock((FD)(&cdc_cons->console)) == SUCCESS)
+    if (fd_get_lock(&cdc_cons->console) == SUCCESS)
     {
         /* If we are actually receiving some data. */
         if (cdc_cons->rx_buffer != NULL)
@@ -161,7 +161,7 @@ void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
         }
 
         /* Release lock. */
-        cdc_cons->console.fs.release_lock((FD)(&cdc_cons->console));
+        fd_release_lock(&cdc_cons->console);
     }
 
 } /* usb_cdc_fun_console_handle_rx */
@@ -174,7 +174,7 @@ void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
 void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *cdc_cons)
 {
     /* We are in interrupt so just try to obtain semaphore here. */
-    if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
+    if (fd_get_lock(&cdc_cons->console) == SUCCESS)
     {
         if (cdc_cons->tx_buffer != NULL)
         {
@@ -186,7 +186,7 @@ void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *cdc_cons)
         }
 
         /* Release lock. */
-        cdc_cons->console.fs.release_lock(&cdc_cons->console);
+        fd_release_lock(&cdc_cons->console);
     }
 } /* usb_cdc_fun_console_handle_tx_complete */
 
@@ -203,7 +203,7 @@ FS_BUFFER_ONE *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
     FS_BUFFER_ONE *buffer = NULL;
 
     /* We are in interrupt so just try to obtain semaphore here. */
-    if (cdc_cons->console.fs.get_lock(&cdc_cons->console) == SUCCESS)
+    if (fd_get_lock(&cdc_cons->console) == SUCCESS)
     {
         /* If we have something to transmit. */
         if (cdc_cons->tx_buffer == NULL)
@@ -226,7 +226,7 @@ FS_BUFFER_ONE *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
         }
 
         /* Release lock. */
-        cdc_cons->console.fs.release_lock(&cdc_cons->console);
+        fd_release_lock(&cdc_cons->console);
     }
 
     /* Return buffer that can be sent on the console. */
