@@ -27,7 +27,6 @@ CDC_CONSOLE stm32f407_usb_cdc_console;
 #endif
 #ifdef STM32F407_USB_CDC_ACM_PPP
 PPP     stm32f407_usb_cdc_ppp_instance;
-NET_DEV stm32f407_usb_cdc_net_device;
 #endif
 
 ISR_FUN usb_otg_interrupt()
@@ -74,14 +73,11 @@ void usb_function_stm32f407_init()
 
 #ifdef STM32F407_USB_CDC_DEBUG
     /* Connect this descriptor to the UART file descriptor. */
-    fs_connect((FD)&USB_CDC_Device.cdc_console, debug_usart_fd);
+    fs_connect((FD)&stm32f407_usb_cdc_console, debug_usart_fd);
 #elif defined(STM32F407_USB_CDC_ACM_PPP)
 
     /* Register USB CDC file descriptor with PPP. */
     ppp_register_fd(&stm32f407_usb_cdc_ppp_instance, (FD)&stm32f407_usb_cdc_console, TRUE);
-
-    /* Register USB CDC file descriptor with the networking stack. */
-    net_register_fd(&stm32f407_usb_cdc_net_device, (FD)&stm32f407_usb_cdc_console);
 #endif
 #endif
 
