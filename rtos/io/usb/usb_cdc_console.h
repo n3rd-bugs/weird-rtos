@@ -30,10 +30,6 @@ typedef struct _cdc_console
     /* Console data for file system. */
     CONSOLE     console;
 
-    /* Data watcher that will be used to start receive if we are not already
-     * receiving. */
-    FS_DATA_WATCHER data_watcher;
-
     /* USB device. */
     void        *usb_device;
 
@@ -45,9 +41,14 @@ typedef struct _cdc_console
     FS_BUFFER_ONE   fs_buffer[CDC_NUM_BUFFERS];
     FS_BUFFER       fs_buffer_list[CDC_NUM_BUFFER_LISTS];
 
+    /* These should only be accessed/modified in ISR context. */
+
     /* Current buffers being used. */
     FS_BUFFER_ONE   *rx_buffer;
     FS_BUFFER_ONE   *tx_buffer;
+
+    /* Number of bytes valid in the receive buffer. */
+    uint32_t    rx_valid;
 
     /* Command buffer. */
     char        cmd_buffer[CDC_CMD_PACKET_SIZE];
@@ -64,6 +65,7 @@ void usb_cdc_console_handle_connect(CDC_CONSOLE *);
 void usb_cdc_console_handle_disconnect(CDC_CONSOLE *);
 
 /* Device driver APIs. */
+void usb_cdc_fun_console_handle_sof(CDC_CONSOLE *);
 void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *, uint32_t);
 void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *);
 void usb_cdc_fun_console_handle_rx_start(CDC_CONSOLE *);
