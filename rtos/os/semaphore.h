@@ -22,9 +22,10 @@
 #define SEMAPHORE_BUSY      -701
 #define SEMAPHORE_DELETED   -702
 
-/* Semaphore type definitions. */
+/* Semaphore type flags. */
 #define SEMAPHORE_FIFO      0x01
 #define SEMAPHORE_PRIORITY  0x02
+#define SEMAPHORE_IRQ       0x04
 
 typedef struct _semaphore
 {
@@ -33,6 +34,10 @@ typedef struct _semaphore
 
     /* Current owner of this semaphore if any. */
     TASK        *owner;
+
+    /* If semaphore is IRQ accessible this will store the IRQ status when this
+     * semaphore was acquired. */
+    uint32_t    irq_status;
 
     /* Current semaphore count. */
     uint8_t     count;
@@ -49,10 +54,11 @@ typedef struct _semaphore
 } SEMAPHORE;
 
 /* Function prototypes. */
-void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t type);
-void semaphore_destroy(SEMAPHORE *semaphore);
-int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait);
-void semaphore_release(SEMAPHORE *semaphore);
+void semaphore_create(SEMAPHORE *, uint8_t, uint8_t, uint8_t);
+void semaphore_update(SEMAPHORE *, uint8_t, uint8_t, uint8_t);
+void semaphore_destroy(SEMAPHORE *);
+int32_t semaphore_obtain(SEMAPHORE *, uint32_t);
+void semaphore_release(SEMAPHORE *);
 
 #endif /* CONFIG_SEMAPHORE */
 

@@ -23,6 +23,10 @@
  * @semaphore: Semaphore control block to be initialized.
  * @count: Initial count to be set for this semaphore.
  * @max_count: Maximum count for this semaphore.
+ * @type: Type flags for this semaphore.
+ *  SEMAPHORE_FIFO: FIFO semaphore task queue.
+ *  SEMAPHORE_PRIORITY: Priority based task queue.
+ *  SEMAPHORE_IRQ: This semaphore will also be accessed by IRQs.
  * This routine initializes a semaphore control block. After this the semaphore
  * can be used to protect important resources.
  */
@@ -43,6 +47,41 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
     semaphore->tasks.tail = NULL;
 
 } /* semaphore_create */
+
+/*
+ * semaphore_update
+ * @semaphore: Semaphore control block to be updated.
+ * @count: New initial count to be set for this semaphore.
+ * @max_count: New maximum count for this semaphore.
+ * @type: Type flags for this semaphore.
+ *  SEMAPHORE_FIFO: FIFO semaphore task queue.
+ *  SEMAPHORE_PRIORITY: Priority based task queue.
+ *  SEMAPHORE_IRQ: This semaphore will also be accessed by IRQs.
+ * This routine will update the semaphore parameters.
+ */
+void semaphore_update(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t type)
+{
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
+
+    /* Semaphore must not have been obtained. */
+    OS_ASSERT(semaphore->count != semaphore->max_count);
+    OS_ASSERT(semaphore->tasks.head != NULL);
+    OS_ASSERT(semaphore->tasks.tail != NULL);
+
+    /* Update semaphore count. */
+    semaphore->count = count;
+    semaphore->max_count = max_count;
+
+    /* Update semaphore type. */
+    semaphore->type = type;
+
+    /* Restore the IRQ interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
+} /* semaphore_update */
 
 /*
  * semaphore_destroy
@@ -100,12 +139,22 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     uint64_t    last_tick = current_system_tick();
 #endif /* CONFIG_SLEEP */
     TASK        *tcb;
-
-    /* Lock the scheduler. */
-    scheduler_lock();
+    uint32_t    interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Save the current task pointer. */
     tcb = get_current_task();
+
+    /* If this is IRQ accessible semaphore. */
+    if (semaphore->type & SEMAPHORE_IRQ)
+    {
+        /* Disable global interrupts. */
+        DISABLE_INTERRUPTS();
+    }
+    else
+    {
+        /* Lock the scheduler. */
+        scheduler_lock();
+    }
 
     /* Check if this semaphore is not available. */
     if (semaphore->count == 0)
@@ -135,14 +184,14 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 #endif /* CONFIG_SLEEP */
 
                 /* If this is a FIFO semaphore. */
-                if (semaphore->type == SEMAPHORE_FIFO)
+                if (semaphore->type & SEMAPHORE_FIFO)
                 {
                     /* Add this task at the end of task list. */
                     sll_append(&semaphore->tasks, tcb, OFFSETOF(TASK, next));
                 }
 
                 /* If this is a priority based semaphore. */
-                else if (semaphore->type == SEMAPHORE_PRIORITY)
+                else if (semaphore->type & SEMAPHORE_PRIORITY)
                 {
                     /* Add this task on the semaphore's task list. */
                     sll_insert(&semaphore->tasks, tcb, &task_priority_sort, OFFSETOF(TASK, next));
@@ -191,26 +240,37 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 
     if (status == SUCCESS)
     {
-        /* Check if this semaphore is available. */
-        if (semaphore->count > 0)
+        /* Should never happen. */
+        OS_ASSERT(semaphore->count == 0);
+
+        /* Save the owner for this semaphore. */
+        semaphore->owner = tcb;
+
+        /* Decrease the semaphore count. */
+        semaphore->count --;
+    }
+
+    /* If this is IRQ accessible semaphore. */
+    if (semaphore->type & SEMAPHORE_IRQ)
+    {
+        /* If semaphore was successfully obtained. */
+        if (status == SUCCESS)
         {
-            /* Save the owner for this semaphore. */
-            semaphore->owner = tcb;
-
-            /* Decrease the semaphore count. */
-            semaphore->count --;
+            /* Save the IRQ interrupt level. */
+            semaphore->irq_status = interrupt_level;
         }
-
-        /* We should never get here, if do return an error. */
         else
         {
-            /* Return error to the caller. */
-            status = SEMAPHORE_BUSY;
+            /* Restore old interrupt level. */
+            SET_INTERRUPT_LEVEL(interrupt_level);
         }
     }
 
-    /* Enable scheduling. */
-    scheduler_unlock();
+    else
+    {
+        /* Enable scheduling. */
+        scheduler_unlock();
+    }
 
     /* Return status to the caller. */
     return (status);
@@ -226,8 +286,12 @@ void semaphore_release(SEMAPHORE *semaphore)
 {
     TASK        *tcb;
 
-    /* Lock the scheduler. */
-    scheduler_lock();
+    /* If this is not a IRQ accessible semaphore. */
+    if ((semaphore->type & SEMAPHORE_IRQ) == 0)
+    {
+        /* Lock the scheduler. */
+        scheduler_lock();
+    }
 
     /* Semaphore double release. */
     OS_ASSERT(semaphore->count >= semaphore->max_count);
@@ -261,8 +325,17 @@ void semaphore_release(SEMAPHORE *semaphore)
         task_yield();
     }
 
-    /* Enable scheduling. */
-    scheduler_unlock();
+    /* If this is IRQ accessible semaphore. */
+    if (semaphore->type & SEMAPHORE_IRQ)
+    {
+        /* Restore the IRQ interrupt level. */
+        SET_INTERRUPT_LEVEL(semaphore->irq_status);
+    }
+    else
+    {
+        /* Lock the scheduler. */
+        scheduler_lock();
+    }
 
 } /* semaphore_release */
 
