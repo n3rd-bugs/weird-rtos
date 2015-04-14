@@ -498,7 +498,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
  */
 int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint32_t offset, uint8_t flags)
 {
-    FS_BUFFER_ONE *one;
+    FS_BUFFER_ONE *one = NULL;
     int32_t status = SUCCESS;
     uint32_t this_size, this_offset = offset;
 #ifdef OS_LITTLE_ENDIAN
@@ -678,7 +678,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
 int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint8_t offset, uint8_t flags)
 {
     int32_t status = SUCCESS;
-    FS_BUFFER_ONE *one;
+    FS_BUFFER_ONE *one = NULL;
     uint32_t this_size, this_offset = offset;
 #ifdef OS_LITTLE_ENDIAN
     uint8_t reverse = ((flags & FS_BUFFER_PACKED) != 0);
