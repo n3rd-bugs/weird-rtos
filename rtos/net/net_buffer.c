@@ -59,7 +59,7 @@ void net_buffer_init()
 
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect net buffer file descriptor. */
-    semaphore_create(&net_buffers_fs.lock, 1, 1, SEMAPHORE_PRIORITY);
+    semaphore_create(&net_buffers_fs.lock, 1, 1, (SEMAPHORE_PRIORITY | SEMAPHORE_IRQ));
 #endif
 
     /* Register net buffer file system. */
@@ -80,6 +80,7 @@ void net_buffer_init()
 static void net_buffer_receive_task_entry(void *argv)
 {
     FS_BUFFER *buffer;
+    FD buffer_fd;
 
     /* Set the global file descriptor for net buffers. */
     net_buff_fd = (FD)argv;
@@ -90,16 +91,24 @@ static void net_buffer_receive_task_entry(void *argv)
         /* Read a buffer pointer from the file descriptor. */
         if (fs_read(net_buff_fd, (char *)&buffer, sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
         {
-            OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
+            /* Save the file descriptor on which data was received. */
+            buffer_fd = buffer->fd;
+
+            /* TODO: This is quite expensive. */
+            /* Obtain lock for the file descriptor on which this semaphore was
+             * received, this is required as the buffer will return it's
+             * segments to the original file descriptor when applicable. */
+            OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
             /* Process this buffer. */
             if (net_buffer_process(buffer) == SUCCESS)
             {
                 /* Free this buffer. */
-                fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add(buffer_fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
             }
 
-            fd_release_lock(buffer->fd);
+            /* Release semaphore for the buffer. */
+            fd_release_lock(buffer_fd);
         }
     }
 

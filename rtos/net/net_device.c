@@ -303,7 +303,7 @@ void net_device_rx_watcher(void *fd, void *net_device)
             if (buffer)
             {
                 /* Write this buffer to the networking buffer file descriptor. */
-                fs_write(net_buff_fd, (char *)buffer, sizeof(FS_BUFFER *));
+                OS_ASSERT(fs_write(net_buff_fd, (char *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
             }
 
         } while (buffer != NULL);
