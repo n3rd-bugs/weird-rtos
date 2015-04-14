@@ -126,9 +126,8 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
 int32_t net_process_ipv4(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
-    uint16_t csum;
-    uint8_t proto, keep, ver_ihl;
     uint32_t sa, da;
+    uint8_t proto, keep, ver_ihl;
 
     /* We must have at least one byte to verify an IPv4 packet. */
     if (buffer->total_length >= 1)
@@ -166,11 +165,8 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
 
     if (status == SUCCESS)
     {
-        /* Verify the IPv4 header checksum. */
-        csum = net_csum_calculate(buffer, ver_ihl);
-
-        /* For checksum to valid this should be zero. */
-        if (csum != 0)
+        /* With a valid checksum the recalculation of checksum should return 0. */
+        if (net_csum_calculate(buffer, ver_ihl) != 0)
         {
             /* Return an error. */
             status = NET_INVALID_HDR;
@@ -182,10 +178,19 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         /* Peek the IPv4 protocol and see if we do support it. */
         OS_ASSERT(fs_buffer_pull_offset(buffer, &proto, 1, IPV4_HDR_PROTO_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
 
+#ifdef NET_ICMP
         /* Try to resolve the protocol to which this packet is needed to be
          * forwarded. */
+        if (proto == IP_PROTO_ICMP)
+        {
+            /* Process ICMP packet. */
+            net_process_icmp(buffer, ver_ihl);
+        }
 
         /* Protocol was not resolved. */
+        else
+#endif
+
         {
 #ifdef NET_ICMP
             /* Pick the address to which we will be sending the unsupported protocol reply. */
@@ -206,7 +211,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
             }
 
             /* Generate an ICMP protocol unreachable message. */
-            status = icmp_header_add(buffer, ICMP_DST_UNREACHABLE, ICMP_DST_PROTO);
+            status = icmp_header_add(buffer, ICMP_DST_UNREACHABLE, ICMP_DST_PROTO, 0);
 
             if (status == SUCCESS)
             {
@@ -220,13 +225,11 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
             if (status == SUCCESS)
             {
                 /* Transmit an IPv4 packet. */
-                status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4);
-            }
-
-            if (status == SUCCESS)
-            {
-                /* We have transmitted the same buffer. */
-                status = NET_BUFFER_CONSUMED;
+                if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4) == SUCCESS)
+                {
+                    /* We have transmitted the same buffer. */
+                    status = NET_BUFFER_CONSUMED;
+                }
             }
 #endif
         }
@@ -246,7 +249,7 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
 {
     int32_t status = SUCCESS;
     HDR_GEN_MACHINE hdr_machine;
-    uint8_t ver_ihl = ALLIGN_CEIL_N((IPV4_HDR_SIZE), 4) / 4, dscp = 0, ttl = 0;
+    uint8_t ver_ihl = ALLIGN_CEIL_N((IPV4_HDR_SIZE), 4) / 4, dscp = 0, ttl = 128;
     uint16_t id = 0, flag_offset = 0, csum = 0;
     uint16_t total_length = (uint16_t)(buffer->total_length + (uint32_t)(ver_ihl * 4));
     HEADER headers[] =

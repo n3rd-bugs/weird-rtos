@@ -42,7 +42,8 @@
 #define ICMP_HDR_PAYLOAD_OFFSET 8
 
 /* Function prototypes. */
-int32_t icmp_header_add(FS_BUFFER *, uint8_t, uint8_t);
+int32_t net_process_icmp(FS_BUFFER *, uint32_t);
+int32_t icmp_header_add(FS_BUFFER *, uint8_t, uint8_t, uint32_t);
 
 #endif /* NET_ICMP */
 #endif /* CONFIG_NET */
