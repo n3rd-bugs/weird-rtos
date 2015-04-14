@@ -656,7 +656,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
         buffer = buffer_start;
 
         /* Get lock for this file descriptor. */
-        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+        status = fd_get_lock(fd);
 
         /* If lock was successfully obtained. */
         if (status == SUCCESS)
