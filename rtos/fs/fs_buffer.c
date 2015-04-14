@@ -44,7 +44,7 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
     /* Clear the structure. */
     memset(data, 0, sizeof(FS_BUFFER_DATA));
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
     data->buffers = num_buffers;
 #endif
 
@@ -202,12 +202,12 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         /* Just add this buffer in the free buffer list. */
         sll_append(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         /* Increment the number of buffers on free list. */
         data->free_buffer_list.buffers ++;
 #endif
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         /* Should not happen. */
         OS_ASSERT(data->buffers == 0);
 
@@ -235,12 +235,12 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         /* Just add this buffer in the receive buffer list. */
         sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         /* Increment the number of buffers on receive list. */
         data->rx_buffer_list.buffers ++;
 #endif
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         /* Should not happen. */
         OS_ASSERT(data->buffers == 0);
 
@@ -268,12 +268,12 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         /* Just add this buffer in the transmit buffer list. */
         sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         /* Increment the number of buffers on transmit list. */
         data->tx_buffer_list.buffers ++;
 #endif
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         /* Should not happen. */
         OS_ASSERT(data->buffers == 0);
 
@@ -298,12 +298,20 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         /* Just add this buffer in the buffer list. */
         sll_append(&data->buffers_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         /* Increment the number of buffers on buffer list. */
         data->buffers_list.buffers ++;
 #endif
         break;
     }
+
+#ifdef FS_BUFFER_DEBUG
+    /* Validate this buffer lists for this file descriptors. */
+    OS_ASSERT((int32_t)sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
+    OS_ASSERT((int32_t)sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
+    OS_ASSERT((int32_t)sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
+    OS_ASSERT((int32_t)sll_num_items(&data->buffers_list, OFFSETOF(FS_BUFFER, next)) != data->buffers_list.buffers);
+#endif
 
 } /* fs_buffer_add */
 
@@ -344,7 +352,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         /* Pop a buffer from this file descriptor's free buffer list. */
         buffer = sll_search_pop(&data->free_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         /* If we are returning a buffer. */
         if (buffer)
         {
@@ -377,7 +385,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
             /* Pop a buffer from this file descriptor's receive buffer list. */
             buffer = sll_search_pop(&data->rx_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
             /* If we are returning a buffer. */
             if (buffer)
             {
@@ -410,7 +418,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
             /* Pop a buffer from this file descriptor's transmit buffer list. */
             buffer = sll_search_pop(&data->tx_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
             /* If we are returning a buffer. */
             if (buffer)
             {
@@ -432,7 +440,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         /* Pop a buffer from this file descriptor's buffer list. */
         buffer = sll_search_pop(&data->buffers_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         /* If we are returning a buffer. */
         if (buffer)
         {
@@ -452,11 +460,19 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         /* Clear the next buffer pointer. */
         ((FS_BUFFER *)buffer)->next = NULL;
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         /* Increase the number of buffers in the system. */
         data->buffers ++;
 #endif
     }
+
+#ifdef FS_BUFFER_DEBUG
+    /* Validate this buffer lists for this file descriptors. */
+    OS_ASSERT((int32_t)sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
+    OS_ASSERT((int32_t)sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
+    OS_ASSERT((int32_t)sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
+    OS_ASSERT((int32_t)sll_num_items(&data->buffers_list, OFFSETOF(FS_BUFFER, next)) != data->buffers_list.buffers);
+#endif
 
     /* Return the buffer. */
     return ((void *)buffer);
