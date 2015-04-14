@@ -21,8 +21,8 @@
 extern SCHEDULER sleep_scheduler;
 
 /* Function prototypes. */
-void sleep_add_to_list(TASK *tcb, uint64_t ticks);
-void sleep_remove_from_list(TASK *tcb);
+void sleep_add_to_list(TASK *, uint64_t);
+void sleep_remove_from_list(TASK *);
 
 #endif /* CONFIG_SLEEP */
 

@@ -70,14 +70,14 @@ void os_run();
 void task_yield();
 
 /* External function prototypes. */
-void sleep(uint32_t ticks);
+void sleep(uint32_t);
 #define sleep_ms(ms)            sleep( (ms * OS_TICKS_PER_SEC) / (1000) )
 
 /* Internal functions should not be called from user applications. */
 void os_process_system_tick();
 void task_waiting();
 
-void set_current_task(TASK *tcb);
+void set_current_task(TASK *);
 TASK *get_current_task();
 uint64_t current_system_tick();
 

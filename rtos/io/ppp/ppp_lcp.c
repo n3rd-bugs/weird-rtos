@@ -233,8 +233,7 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
     case (PPP_LCP_OPT_MAGIC):
 
         /* Keep the magic number as it is. */
-        /* TODO: If this not configuration request
-         * validate this. */
+        /* TODO: If this not configuration request validate this. */
         break;
 
     /* Protocol field compression. */

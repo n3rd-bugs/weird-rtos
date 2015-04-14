@@ -18,7 +18,7 @@
 #ifdef CONFIG_TASK_STATS
 
 /* Function prototypes. */
-uint32_t util_task_calc_free_stack(TASK *tcb);
+uint32_t util_task_calc_free_stack(TASK *);
 void util_print_sys_info();
 
 #endif /* CONFIG_TASK_STATS */
