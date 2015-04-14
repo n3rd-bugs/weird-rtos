@@ -50,7 +50,7 @@ int32_t header_generate(HDR_GEN_MACHINE *machine, HEADER *header, uint32_t num_h
     while ((status == SUCCESS) && (num_headers > 0))
     {
         /* Push this header on the buffer. */
-        status = machine->push(buffer, header->value, header->size, (FS_BUFFER_HEAD | header->flags));
+        status = machine->push(buffer, header->value, header->size, header->flags);
 
         /* Pick the next header. */
         header--;
