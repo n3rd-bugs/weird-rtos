@@ -86,7 +86,7 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
 
 #ifdef CONFIG_SEMAPHORE
     /* Create the PPP instance semaphore. */
-    semaphore_create(&ppp->lock, 1, 1, SEMAPHORE_PRIORITY);
+    semaphore_create(&ppp->lock, 1, 1, (SEMAPHORE_PRIORITY | SEMAPHORE_IRQ));
 
     /* Obtain the global data semaphore. */
     OS_ASSERT(semaphore_obtain(&ppp_data.lock, MAX_WAIT) != SUCCESS);
@@ -773,6 +773,7 @@ void ppp_rx_watcher(void *fd, void *priv_data)
     if (semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) == SUCCESS)
 #endif
     {
+
         /* Process the received buffer according to the PPP state. */
         switch (ppp->state)
         {
