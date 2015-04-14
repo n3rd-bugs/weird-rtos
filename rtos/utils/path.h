@@ -17,6 +17,6 @@
 #include <os.h>
 
 /* Function prototypes. */
-uint32_t util_path_match(char *requires, char **path);
+uint32_t util_path_match(char *, char **);
 
 #endif /* PATH_H */
