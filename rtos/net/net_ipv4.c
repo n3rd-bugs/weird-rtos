@@ -184,7 +184,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         if (proto == IP_PROTO_ICMP)
         {
             /* Process ICMP packet. */
-            net_process_icmp(buffer, ver_ihl);
+            status = net_process_icmp(buffer, ver_ihl);
         }
 
         /* Protocol was not resolved. */
