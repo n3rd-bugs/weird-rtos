@@ -338,3 +338,30 @@ void *sll_remove(void *list, void *node, int offset)
     return (list_node);
 
 } /* sll_remove */
+
+/*
+ * sll_num_items
+ * @list: List that is needed to be updated.
+ * @offset: Offset of the "next" member in a node structure.
+ * @return: Returns the number of item in this list.
+ * This function will return the number of items in a given list.
+ */
+uint32_t sll_num_items(void *list, int offset)
+{
+    void *list_node = ((SLL_HEAD *)list)->head;
+    uint32_t ret_num = 0;
+
+    /* While we have an item in this list. */
+    while (list_node != NULL)
+    {
+        /* We have an item. */
+        ret_num ++;
+
+        /* Get the next item from the list. */
+        list_node = ((SLL_NODE *)((uint8_t *)list_node + offset))->next;
+    }
+
+    /* Return the number of items in this list. */
+    return (ret_num);
+
+} /* sll_num_items */
