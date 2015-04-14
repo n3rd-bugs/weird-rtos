@@ -13,6 +13,8 @@
  * This is an example of how to create the tasks and using different components.
  */
 #include <os.h>
+#include <semaphore.h>
+#include <fs.h>
 #include <sys_info.h>
 
 char    stack_1[192];
