@@ -63,7 +63,11 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes)
             if (left > 0)
             {
                 /* Add first byte in checksum. */
+#ifdef OS_LITTLE_ENDIAN
+                csum += (uint16_t)(*((uint8_t *)bytes) << 8);
+#else
                 csum += *((uint8_t *)bytes);
+#endif
                 bytes = (uint16_t *)((uint8_t *)bytes + 1);
 
                 /* Reset the last left flag. */
@@ -86,7 +90,11 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes)
         if (left == 1)
         {
             /* Add last byte in checksum. */
-            csum += (uint16_t)((*(uint8_t *)bytes) << 8);
+#ifdef OS_LITTLE_ENDIAN
+            csum += *((uint8_t *)bytes);
+#else
+            csum += (uint16_t)(*((uint8_t *)bytes) << 8);
+#endif
 
             /* We we still need to process next byte. */
             if (one ->next != NULL)
