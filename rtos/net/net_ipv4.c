@@ -127,7 +127,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
     uint32_t sa, da;
-    uint8_t proto, keep, ver_ihl;
+    uint8_t proto, keep, ver_ihl, icmp_rep;
 
     /* We must have at least one byte to verify an IPv4 packet. */
     if (buffer->total_length >= 1)
@@ -193,7 +193,25 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
 
         {
 #ifdef NET_ICMP
-            /* Pick the address to which we will be sending the unsupported protocol reply. */
+            /* Pick the address to which this packet was addressed to. */
+            OS_ASSERT(fs_buffer_pull_offset(buffer, &da, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+            /* Get IPv4 address assigned to this device. */
+            OS_ASSERT(ipv4_get_device_address(buffer->fd, &sa) != SUCCESS);
+
+            /* If this packet for intended for us. */
+            if (sa == da)
+            {
+                /* Protocol not resolved. */
+                icmp_rep = ICMP_DST_PROTO;
+            }
+            else
+            {
+                /* Cannot forward this packet, destination unreachable. */
+                icmp_rep = ICMP_DST_HOST;
+            }
+
+            /* Pick the address to which we will be sending unreachable message. */
             OS_ASSERT(fs_buffer_pull_offset(buffer, &da, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
             /* The internet header plus the first 64 bits of the original
@@ -211,13 +229,10 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
             }
 
             /* Generate an ICMP protocol unreachable message. */
-            status = icmp_header_add(buffer, ICMP_DST_UNREACHABLE, ICMP_DST_PROTO, 0);
+            status = icmp_header_add(buffer, ICMP_DST_UNREACHABLE, icmp_rep, 0);
 
             if (status == SUCCESS)
             {
-                /* Get IPv4 address assigned to this device. */
-                OS_ASSERT(ipv4_get_device_address(buffer->fd, &sa) != SUCCESS);
-
                 /* Add IPv4 packet on the packet. */
                 status = ipv4_header_add(buffer, IP_PROTO_ICMP, sa, da);
             }
