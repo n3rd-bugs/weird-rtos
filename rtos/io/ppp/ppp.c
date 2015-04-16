@@ -773,7 +773,6 @@ void ppp_rx_watcher(void *fd, void *priv_data)
     if (semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) == SUCCESS)
 #endif
     {
-
         /* Process the received buffer according to the PPP state. */
         switch (ppp->state)
         {
