@@ -17,6 +17,7 @@
 
 #ifdef CONFIG_FS
 #include <semaphore.h>
+#include <condition.h>
 
 /* File system configuration. */
 #define FS_PIPE
@@ -95,6 +96,9 @@ struct _fs
     void        (*rx_consumed) (void *, void *);
     void        (*tx_available) (void *);
 
+    /* Condition data for a file system. */
+    CONDITION   condition;
+
     /* Data hook for this file descriptor. */
     struct _fs_rx_watcher_list
     {
@@ -108,13 +112,6 @@ struct _fs
         FS_CONNECTION_WATCHER   *head;
         FS_CONNECTION_WATCHER   *tail;
     } connection_watcher_list;
-
-    struct _fs_task_list
-    {
-        /* Link-list for the tasks waiting for data. */
-        TASK        *head;
-        TASK        *tail;
-    } task_list;
 
     union _fs_fd_chain
     {
@@ -219,9 +216,7 @@ void fd_data_available(void *);
 void fd_data_flushed(void *);
 void fd_space_available(void *);
 void fd_space_consumed(void *);
-void fd_handle_criteria(void *, FS_PARAM *);
-int32_t fd_suspend_criteria(void *, FS_PARAM *, uint32_t);
-void fs_resume_tasks(void *, int32_t, FS_PARAM *, uint32_t);
+void fd_handle_criteria(void *, FS_PARAM *, int32_t);
 
 /* Helper APIs. */
 uint8_t fs_sreach_directory(void *, void *);

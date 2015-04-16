@@ -100,7 +100,6 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
         pipe->fs.name = name;
         pipe->fs.read = &pipe_read;
         pipe->fs.write = &pipe_write;
-        memset(&pipe->fs.task_list, 0, sizeof(struct _fs_task_list));
         pipe->fs.flags = (FS_BLOCK | FS_SPACE_AVAILABLE);
         pipe->fs.timeout = MAX_WAIT;
         pipe->fs.get_lock = pipe_lock;
@@ -148,7 +147,7 @@ void pipe_destroy(PIPE *pipe)
     {
 #endif
         /* Resume all tasks waiting on this file descriptor. */
-        fs_resume_tasks((void *)pipe, FS_NODE_DELETED, NULL, (uint32_t)-1);
+        fd_handle_criteria((FD)pipe, NULL, FS_NODE_DELETED);
 
         /* Delete the pipe semaphore. */
         semaphore_destroy(&pipe->lock);

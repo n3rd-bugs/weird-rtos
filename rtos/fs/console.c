@@ -126,7 +126,7 @@ void console_unregister(CONSOLE *console)
     {
 #endif
         /* Resume all tasks waiting on this file descriptor. */
-        fs_resume_tasks((void *)console, FS_NODE_DELETED, NULL, (uint32_t)-1);
+        fd_handle_criteria((FD)console, NULL, FS_NODE_DELETED);
 
         /* Delete the console lock. */
         semaphore_destroy(&console->lock);
