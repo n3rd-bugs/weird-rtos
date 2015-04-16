@@ -18,6 +18,9 @@
 #include <string.h>
 #include <semaphore.h>
 
+/* Internal function prototypes. */
+static uint8_t semaphore_do_resume(void *, void *);
+
 /*
  * semaphore_create
  * @semaphore: Semaphore control block to be initialized.
@@ -42,10 +45,6 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
     /* Initialize semaphore type. */
     semaphore->type = type;
 
-    /* Initialize task list for this semaphore. */
-    semaphore->tasks.head = NULL;
-    semaphore->tasks.tail = NULL;
-
 } /* semaphore_create */
 
 /*
@@ -68,8 +67,6 @@ void semaphore_update(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
 
     /* Semaphore must not have been obtained. */
     OS_ASSERT(semaphore->count != semaphore->max_count);
-    OS_ASSERT(semaphore->tasks.head != NULL);
-    OS_ASSERT(semaphore->tasks.tail != NULL);
 
     /* Update semaphore count. */
     semaphore->count = count;
@@ -91,29 +88,14 @@ void semaphore_update(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
  */
 void semaphore_destroy(SEMAPHORE *semaphore)
 {
-    /* Get the first task that can be resumed now. */
-    TASK *tcb = (TASK *)sll_pop(&semaphore->tasks, OFFSETOF(TASK, next));
+    RESUME resume;
 
-    /* Resume all tasks waiting in this semaphore. */
-    while (tcb != NULL)
-    {
-        /* Task is being resumed because the given semaphore is being deleted. */
-        tcb->status = SEMAPHORE_DELETED;
+    /* Initialize resume data. */
+    resume.do_resume = resume.param = NULL;
+    resume.status = SEMAPHORE_DELETED;
 
-#ifdef CONFIG_SLEEP
-        /* Remove this task from sleeping tasks. */
-        sleep_remove_from_list(tcb);
-#endif /* CONFIG_SLEEP */
-
-        /* Try to reschedule this task. */
-        ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
-
-        /* Try to yield the current task. */
-        task_yield();
-
-        /* Get the next task that can be resumed. */
-        tcb = (TASK *)sll_pop(&semaphore->tasks, OFFSETOF(TASK, next));
-    }
+    /* Resume all tasks waiting on this semaphore. */
+    resume_condition(&semaphore->condition, &resume);
 
     /* Clear the semaphore memory. */
     memset(semaphore, 0,  sizeof(SEMAPHORE));
@@ -121,12 +103,43 @@ void semaphore_destroy(SEMAPHORE *semaphore)
 } /* semaphore_destroy */
 
 /*
+ * semaphore_do_resume
+ * @param_resume: Parameter for which we need to resume a task.
+ * @param_suspend: Parameter for which a task was suspended.
+ * @return: TRUE if we need to resume this task, FALSE if we cannot resume
+ *  this task.
+ * This is callback to see if we can resume a task suspended on a semaphore.
+ */
+static uint8_t semaphore_do_resume(void *param_resume, void *param_suspend)
+{
+    uint8_t resume = FALSE;
+    SEMAPHORE_PARAM *param = (SEMAPHORE_PARAM *)param_resume;
+
+    /* Suspend criteria is unused. */
+    UNUSED_PARAM(param_suspend);
+
+    /* Check if the waiting task fulfills our criteria. */
+    if (param->num > 0)
+    {
+        /* Decrement the number of tasks we need to resume. */
+        param->num --;
+
+        /* Resume this task. */
+        resume = TRUE;
+    }
+
+    /* Return if we need to stop the search or need to process more. */
+    return (resume);
+
+} /* semaphore_do_resume */
+
+/*
  * semaphore_obtain
  * @semaphore: Semaphore control block that is needed to be acquired.
  * @wait: The number of ticks to wait for this semaphore, MAX_WAIT should be
  *  used if user wants to wait for infinite time for this semaphore.
- * @return: SUCCESS if the semaphore was successfully acquired, SEMAPHORE_BUSY
- *  if the semaphore is busy and cannot be acquired, SEMAPHORE_TIMEOUT if system
+ * @return: SUCCESS if the semaphore was successfully acquired, CONDITION_TIMEOUT
+ *  if the semaphore is busy and cannot be acquired, CONDITION_TIMEOUT if system
  *  has exhausted the given timeout to obtain this semaphore. SEMAPHORE_DELETED
  *  is returned if the given semaphore has been deleted.
  * This function is called to acquire a semaphore. User can specify the number
@@ -134,12 +147,13 @@ void semaphore_destroy(SEMAPHORE *semaphore)
  */
 int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
-    int32_t     status = SUCCESS;
+    int32_t status = SUCCESS;
 #ifdef CONFIG_SLEEP
-    uint64_t    last_tick = current_system_tick();
+    uint64_t last_tick = current_system_tick();
 #endif /* CONFIG_SLEEP */
-    TASK        *tcb;
-    uint32_t    interrupt_level = GET_INTERRUPT_LEVEL();
+    SUSPEND suspend;
+    TASK *tcb;
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Save the current task pointer. */
     tcb = get_current_task();
@@ -162,6 +176,12 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         /* Check if we need to wait for semaphore to be free. */
         if ((wait > 0) && (tcb != NULL))
         {
+#ifdef CONFIG_SLEEP
+            /* Save the number of ticks we will be sleeping to acquire this
+             * semaphore. */
+            suspend.timeout = wait;
+#endif /* CONFIG_SLEEP */
+
             /* There is never a surety that if semaphore is released it will be
              * picked up by a waiting task as scheduler might decide to run
              * some other higher/same priority task and it might acquire the
@@ -174,55 +194,23 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
                 /* Check if we need to wait for a finite time. */
                 if (wait!= (uint32_t)(MAX_WAIT))
                 {
-                    /* Add the current task to the sleep list, if not available in
-                     * the allowed time the task will be resumed. */
-                    sleep_add_to_list(tcb, wait - (current_system_tick() - last_tick));
+                    /* If called again compensate for the time we have already waited. */
+                    suspend.timeout -= (uint32_t)(current_system_tick() - last_tick);
 
                     /* Save when we suspended last time. */
                     last_tick = current_system_tick();
                 }
 #endif /* CONFIG_SLEEP */
 
-                /* If this is a FIFO semaphore. */
-                if (semaphore->type & SEMAPHORE_FIFO)
+                /* Initialize the suspend data. */
+                suspend.param = NULL;
+                suspend.flags = (semaphore->type & SEMAPHORE_PRIORITY ? CONDITION_PRIORITY : 0);
+
+                /* Wait for data on this file descriptor. */
+                status = suspend_condition(&semaphore->condition, &suspend);
+
+                if (status != SUCCESS)
                 {
-                    /* Add this task at the end of task list. */
-                    sll_append(&semaphore->tasks, tcb, OFFSETOF(TASK, next));
-                }
-
-                /* If this is a priority based semaphore. */
-                else if (semaphore->type & SEMAPHORE_PRIORITY)
-                {
-                    /* Add this task on the semaphore's task list. */
-                    sll_insert(&semaphore->tasks, tcb, &task_priority_sort, OFFSETOF(TASK, next));
-                }
-
-                /* Task is being suspended. */
-                tcb->status = TASK_SUSPENDED;
-
-                /* Suspend and wait for being resumed by either semaphore
-                 * availability or wait timeout. */
-                task_waiting();
-
-                /* Check if we are resumed due to a timeout. */
-                if (tcb->status == TASK_RESUME_SLEEP)
-                {
-                    /* Return an error that we failed to get the semaphore in the
-                     * given timeout. */
-                    status = SEMAPHORE_TIMEOUT;
-
-                    /* Remove this task from the semaphore's task's list. */
-                    OS_ASSERT(sll_remove(&semaphore->tasks, tcb, OFFSETOF(TASK, next)) != tcb);
-
-                    /* Break and return error. */
-                    break;
-                }
-
-                else if (tcb->status != TASK_RESUME)
-                {
-                    /* Given semaphore has been deleted. */
-                    status = tcb->status;
-
                     /* The given context has been deleted. */
                     break;
                 }
@@ -284,7 +272,8 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
  */
 void semaphore_release(SEMAPHORE *semaphore)
 {
-    TASK        *tcb;
+    SEMAPHORE_PARAM param;
+    RESUME resume;
 
     /* If this is not a IRQ accessible semaphore. */
     if ((semaphore->type & SEMAPHORE_IRQ) == 0)
@@ -305,25 +294,16 @@ void semaphore_release(SEMAPHORE *semaphore)
     /* Clear the owner task. */
     semaphore->owner = NULL;
 
-    /* Get the first task that can be resumed now. */
-    tcb = (TASK *)sll_pop(&semaphore->tasks, OFFSETOF(TASK, next));
+    /* Save the number of tasks we can resume. */
+    param.num = semaphore->count;
 
-    if (tcb != NULL)
-    {
-        /* Task is resuming from a semaphore. */
-        tcb->status = TASK_RESUME;
+    /* Initialize resume parameters. */
+    resume.do_resume = &semaphore_do_resume;
+    resume.param = &param;
+    resume.status = TASK_RESUME;
 
-#ifdef CONFIG_SLEEP
-        /* Remove this task from sleeping tasks. */
-        sleep_remove_from_list(tcb);
-#endif /* CONFIG_SLEEP */
-
-        /* Try to reschedule this task. */
-        ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
-
-        /* Try to yield the current task. */
-        task_yield();
-    }
+    /* Resume tasks waiting on this semaphore. */
+    resume_condition(&semaphore->condition, &resume);
 
     /* If this is IRQ accessible semaphore. */
     if (semaphore->type & SEMAPHORE_IRQ)

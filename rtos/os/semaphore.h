@@ -16,6 +16,7 @@
 #include <os.h>
 
 #ifdef CONFIG_SEMAPHORE
+#include <condition.h>
 
 /* Some status definitions. */
 #define SEMAPHORE_TIMEOUT   -700
@@ -23,14 +24,20 @@
 #define SEMAPHORE_DELETED   -702
 
 /* Semaphore type flags. */
-#define SEMAPHORE_FIFO      0x01
-#define SEMAPHORE_PRIORITY  0x02
-#define SEMAPHORE_IRQ       0x04
+#define SEMAPHORE_PRIORITY  0x01
+#define SEMAPHORE_IRQ       0x02
 
+/* Semaphore resume parameter. */
+typedef struct _semaphore_param
+{
+    uint32_t    num;    /* Maximum number of tasks to resume. */
+} SEMAPHORE_PARAM;
+
+/* Semaphore data structure. */
 typedef struct _semaphore
 {
-    /* Lists of tasks waiting for this semaphore. */
-    TASK_LIST   tasks;
+    /* Semaphore condition structure. */
+    CONDITION   condition;
 
     /* Current owner of this semaphore if any. */
     TASK        *owner;
