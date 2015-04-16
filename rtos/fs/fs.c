@@ -687,13 +687,12 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
 #ifdef CONFIG_SLEEP
     uint64_t last_tick = current_system_tick();
 #endif
-    FS *fs = (FS *)fd;
+    FS *fs = (FS *)fd, *next_fs;
     FS_PARAM param;
     SUSPEND suspend;
     int32_t status = SUCCESS, written = 0, n_fd = 0, nbytes_fd;
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
     char *buffer_start;
-    FD next_fd = NULL;
     uint8_t is_list = FALSE;
 
     /* If this is a null terminated string. */
@@ -714,7 +713,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
         buffer = buffer_start;
 
         /* Get lock for this file descriptor. */
-        status = fd_get_lock(fd);
+        status = fd_get_lock(fs);
 
         /* If lock was successfully obtained. */
         if (status == SUCCESS)
@@ -776,7 +775,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                             DISABLE_INTERRUPTS();
 
                             /* Release lock for this file descriptor. */
-                            fd_release_lock(fd);
+                            fd_release_lock(fs);
 
                             /* Wait for space on this file descriptor. */
                             status = suspend_condition(&fs->condition, &suspend);
@@ -792,7 +791,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                             if (status != FS_NODE_DELETED)
                             {
                                 /* Get lock for this file descriptor. */
-                                OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+                                OS_ASSERT(fd_get_lock(fs) != SUCCESS);
                             }
 
                             /* If an error has occurred. */
@@ -809,7 +808,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                     if ((status == SUCCESS) && (fs->flags & FS_SPACE_AVAILABLE))
                     {
                         /* Transfer call to underlying API. */
-                        status = fs->write((void *)fd, buffer, nbytes);
+                        status = fs->write((void *)fs, buffer, nbytes);
 
                         if (status <= 0)
                         {
@@ -835,14 +834,14 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                 if (fs->flags & FS_DATA_AVAILABLE)
                 {
                     /* Resume any task waiting on this file descriptor. */
-                    fd_data_available(fd);
+                    fd_data_available(fs);
                 }
 
                 /* Some space is still available. */
                 if (fs->flags & FS_SPACE_AVAILABLE)
                 {
                     /* Resume any tasks waiting for space on this file descriptor. */
-                    fd_space_available(fd);
+                    fd_space_available(fs);
                 }
             }
 
@@ -856,17 +855,17 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                 is_list = TRUE;
 
                 /* Pick-up the list head. */
-                next_fd = fs->fd_chain.fd_list.head;
+                next_fs = (FS *)fs->fd_chain.fd_list.head;
             }
 
             else if (is_list == TRUE)
             {
                 /* Pick-up the next file descriptor. */
-                next_fd = fs->fd_chain.fd_node.next;
+                next_fs = (FS *)fs->fd_chain.fd_node.next;
             }
 
             /* Release lock for this file descriptor. */
-            fd_release_lock(fd);
+            fd_release_lock(fs);
         }
         else
         {
@@ -875,16 +874,16 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
         }
 
         /* Check if we need to process a file descriptor in the chain. */
-        if (next_fd != NULL)
+        if (next_fs != NULL)
         {
             /* Pick the next file descriptor. */
-            fd = next_fd;
+            fs = next_fs;
 
             /* Increment number of file descriptor processed. */
             n_fd++;
         }
 
-    } while (next_fd != NULL);
+    } while (next_fs != NULL);
 
     /* If we have written on more than one file descriptor. */
     if (n_fd > 1)
