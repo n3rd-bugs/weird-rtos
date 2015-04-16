@@ -16,10 +16,10 @@
 #include <os.h>
 
 /* Error codes. */
-#define CONDITION_TIMEOUT   -600
+#define CONDITION_TIMEOUT       -600
 
 /* Suspend flags. */
-#define CONDITION_PRIORITY  0x01
+#define CONDITION_PRIORITY      0x01
 
 /* User call back to check if this task satisfy the criteria. */
 typedef uint8_t CONDITION_DO_RESUME (void *, void *);

@@ -19,9 +19,8 @@
 #include <condition.h>
 
 /* Some status definitions. */
-#define SEMAPHORE_TIMEOUT   -700
-#define SEMAPHORE_BUSY      -701
-#define SEMAPHORE_DELETED   -702
+#define SEMAPHORE_BUSY      -700
+#define SEMAPHORE_DELETED   -701
 
 /* Semaphore type flags. */
 #define SEMAPHORE_PRIORITY  0x01

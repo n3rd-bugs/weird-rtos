@@ -3,12 +3,11 @@ This list is needed to be updated whenever a new error code is added.
 
     <Name>                  <Code>
     SUCCESS                 0
-    SEMAPHORE_TIMEOUT       -700
-    SEMAPHORE_BUSY          -701
-    SEMAPHORE_DELETED       -702
-    FS_NODE_DELETED         -801
-    FS_TIMEOUT              -802
-    FS_BUFFER_NO_SPACE      -803
+    CONDITION_TIMEOUT       -600
+    SEMAPHORE_BUSY          -700
+    SEMAPHORE_DELETED       -701
+    FS_NODE_DELETED         -800
+    FS_BUFFER_NO_SPACE      -801
     PPP_INVALID_HEADER      -900
     PPP_NOT_SUPPORTED       -901
     PPP_VALUE_NOT_VALID     -902

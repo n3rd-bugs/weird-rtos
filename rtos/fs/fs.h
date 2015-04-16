@@ -24,9 +24,8 @@
 #define FS_CONSOLE
 
 /* Error definitions. */
-#define FS_NODE_DELETED     -801
-#define FS_TIMEOUT          -802
-#define FS_BUFFER_NO_SPACE  -803
+#define FS_NODE_DELETED     -800
+#define FS_BUFFER_NO_SPACE  -801
 
 /* File descriptor definitions. */
 typedef void *FD;
