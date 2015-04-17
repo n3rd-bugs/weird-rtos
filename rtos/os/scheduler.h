@@ -79,6 +79,7 @@ TASK *scheduler_get_next_task();
 void scheduler_task_add(TASK *, uint8_t, uint32_t, uint64_t);
 void scheduler_task_remove(TASK *);
 void scheduler_lock();
+uint8_t scheduler_is_locked();
 void scheduler_unlock();
 
 #endif /* _SCHEDULER_H_ */

@@ -278,6 +278,27 @@ void scheduler_lock()
 } /* scheduler_lock */
 
 /*
+ * scheduler_is_locked
+ * This function will return if scheduler is locked or not.
+ */
+uint8_t scheduler_is_locked()
+{
+    TASK *tcb = get_current_task();
+    uint8_t locked = FALSE;
+
+    /* Check if we are not in a task or current task cannot be preempted. */
+    if ((tcb == NULL) || (tcb->flags & TASK_DONT_PREEMPT))
+    {
+        /* Scheduler is locked. */
+        locked = TRUE;
+    }
+
+    /* Return if scheduler is locked or not. */
+    return (locked);
+
+} /* scheduler_is_locked */
+
+/*
  * scheduler_unlock
  * This function will enable preemption for this task so that it can be
  * preempted.
