@@ -26,8 +26,8 @@
 static FS_DATA file_data;
 
 /* Internal function prototypes. */
-void fs_pre_suspend(void *);
-void fs_post_resume(void *, int32_t);
+void fs_condition_lock(void *);
+void fs_condition_unlock(void *);
 static uint8_t fs_do_suspend(void *, void *);
 static uint8_t fd_do_resume(void *, void *);
 
@@ -476,8 +476,8 @@ void fs_condition_init(FD fd)
 
     /* Initialize condition for this file descriptor. */
     fs->condition.data = fd;
-    fs->condition.post_resume = &fs_post_resume;
-    fs->condition.pre_suspend = &fs_pre_suspend;
+    fs->condition.lock = &fs_condition_lock;
+    fs->condition.unlock = &fs_condition_unlock;
 
 } /* fs_condition_init */
 
@@ -501,13 +501,6 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
 
     /* Initialize file system parameter. */
     param->flag = flag;
-
-    /* Initialize suspend criteria. */
-#ifdef CONFIG_SLEEP
-    /* Save the time out for which we might sleep, this can be updated by the
-     * caller. */
-    suspend->timeout = fs->timeout;
-#endif
     suspend->param = param;
     suspend->flags = (fs->flags & FS_PRIORITY_SORT ? CONDITION_PRIORITY : 0);
     suspend->do_suspend = &fs_do_suspend;
@@ -518,45 +511,32 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
 } /* fs_condition_get */
 
 /*
- * fs_pre_suspend
+ * fs_condition_lock
  * @data: Condition data that will be passed to check for a file system.
- * This function will called before we suspend for on a file descriptor
- * condition.
+ * This function will called when we need to lock a file system condition.
  */
-void fs_pre_suspend(void *data)
+void fs_condition_lock(void *data)
 {
     FD fd = (FD)data;
 
-    /* We need to suspend so disable preemption and release the lock
-     * this way releasing the lock will not pass the control to
-     * next task. */
+    /* Get lock for this file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
-    /* Disable preemption. */
-    scheduler_lock();
+} /* fs_condition_lock */
+
+/*
+ * fs_condition_unlock
+ * @data: Condition data that will be passed to check for a file system.
+ * This function will called when we want to unlock a file system condition.
+ */
+void fs_condition_unlock(void *data)
+{
+    FD fd = (FD)data;
 
     /* Release lock for this file descriptor. */
     fd_release_lock(fd);
 
-} /* fs_pre_suspend */
-
-/*
- * fs_post_resume
- * @data: Condition data that will be passed to check for a file system.
- * This function will called after we resume from a file descriptor condition.
- */
-void fs_post_resume(void *data, int32_t status)
-{
-    FD fd = (FD)data;
-
-    /* If the file node has been deleted then we should not try to get the
-     * lock. */
-    if (status != FS_NODE_DELETED)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
-    }
-
-} /* fs_post_resume */
+} /* fs_condition_unlock */
 
 /*
  * fs_do_suspend
@@ -628,7 +608,7 @@ void fd_handle_criteria(void *fd, FS_PARAM *param, int32_t status)
     resume.status = status;
 
     /* Resume tasks waiting for this condition. */
-    resume_condition(&fs->condition, &resume);
+    resume_condition(&fs->condition, &resume, TRUE);
 
 } /* fd_handle_criteria */
 
@@ -744,7 +724,7 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
                 fs_condition_get(fd, &condition, &suspend, &param, FS_BLOCK_READ);
 
                 /* Suspend on data to be available to read. */
-                status = suspend_condition(condition, &suspend);
+                status = suspend_condition(condition, &suspend, fs->timeout, NULL, TRUE);
             }
 
             /* Check if some data is available. */
@@ -840,7 +820,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                         fs_condition_get(fs, &condition, &suspend, &param, FS_BLOCK_WRITE);
 
                         /* Suspend on data to be available to read. */
-                        status = suspend_condition(condition, &suspend);
+                        status = suspend_condition(condition, &suspend, fs->timeout, NULL, TRUE);
                     }
 
                     /* Check if some space is available. */
