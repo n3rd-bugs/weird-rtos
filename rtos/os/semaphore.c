@@ -99,7 +99,7 @@ void semaphore_destroy(SEMAPHORE *semaphore)
     resume.status = SEMAPHORE_DELETED;
 
     /* Resume all tasks waiting on this semaphore. */
-    resume_condition(&semaphore->condition, &resume);
+    resume_condition(&semaphore->condition, &resume, TRUE);
 
     /* Clear the semaphore memory. */
     memset(semaphore, 0,  sizeof(SEMAPHORE));
@@ -114,17 +114,9 @@ void semaphore_destroy(SEMAPHORE *semaphore)
  * @timeout: Time to wait on this semaphore.
  * This function will return condition for release of this semaphore.
  */
-void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEND *suspend, uint32_t timeout)
+void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEND *suspend)
 {
     /* Initialize suspend criteria. */
-#ifdef CONFIG_SLEEP
-    /* Save the time out for which we might sleep, this can be updated by the
-     * caller. */
-    suspend->timeout = timeout;
-#else
-    /* Remove compiler warning. */
-    UNUSED_PARAM(timeout);
-#endif
     suspend->param = NULL;
     suspend->flags = (semaphore->type & SEMAPHORE_PRIORITY ? CONDITION_PRIORITY : 0);
     suspend->do_suspend = &semaphore_do_suspend;
@@ -233,10 +225,10 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         if ((wait > 0) && (tcb != NULL))
         {
             /* Initialize suspend condition for this semaphore. */
-            semaphore_condition_get(semaphore, &condition, &suspend, wait);
+            semaphore_condition_get(semaphore, &condition, &suspend);
 
             /* Start waiting on this semaphore. */
-            status = suspend_condition(condition, &suspend);
+            status = suspend_condition(condition, &suspend, wait, NULL, TRUE);
         }
 
         /* We are not waiting for this semaphore to be free. */
@@ -324,7 +316,7 @@ void semaphore_release(SEMAPHORE *semaphore)
     resume.status = TASK_RESUME;
 
     /* Resume tasks waiting on this semaphore. */
-    resume_condition(&semaphore->condition, &resume);
+    resume_condition(&semaphore->condition, &resume, TRUE);
 
     /* If this is IRQ accessible semaphore. */
     if (semaphore->type & SEMAPHORE_IRQ)
