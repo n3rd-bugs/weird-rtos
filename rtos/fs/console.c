@@ -94,6 +94,9 @@ void console_register(CONSOLE *console)
     console->fs.release_lock = console_unlock;
     console->fs.timeout = MAX_WAIT;
 
+    /* Initialize file system condition. */
+    fs_condition_init(&console->fs);
+
 #ifdef CONFIG_SEMAPHORE
     /* Release the global data lock. */
     semaphore_release(&console_data.lock);

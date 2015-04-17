@@ -26,6 +26,9 @@
 static FS_DATA file_data;
 
 /* Internal function prototypes. */
+void fs_pre_suspend(void *);
+void fs_post_resume(void *, int32_t);
+static uint8_t fs_do_suspend(void *, void *);
 static uint8_t fd_do_resume(void *, void *);
 
 /*
@@ -418,6 +421,218 @@ uint8_t fs_sreach_node(void *node, void *param)
 } /* fs_sreach_node */
 
 /*
+ * fd_get_lock
+ * @fd: File descriptor from which lock is needed.
+ * @return: A success status will be returned if file descriptor lock was
+ *  successfully acquired.
+ * This function will acquire lock for given file descriptor.
+ */
+int32_t fd_get_lock(FD fd)
+{
+    int32_t status = SUCCESS;
+    FS *fs = (FS *)fd;
+
+    /* If this file descriptor does have a acquire lock function. */
+    if (fs->get_lock)
+    {
+        /* Get lock for this file descriptor. */
+        status = fs->get_lock((void *)fd);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* fd_get_lock */
+
+/*
+ * fd_release_lock
+ * @fd: File descriptor from which lock will be released.
+ * This function will release lock for given file descriptor.
+ */
+void fd_release_lock(FD fd)
+{
+    FS *fs = (FS *)fd;
+
+    /* If this file descriptor do have a lock release function. */
+    if (fs->release_lock)
+    {
+        /* Release lock for this file descriptor. */
+        fs->release_lock((void *)fd);
+    }
+
+} /* fd_release_lock */
+
+/*
+ * fs_condition_init
+ * @fd: File descriptor for which condition is needed to be initialized.
+ * This function will initialize condition structure for a file descriptor.
+ */
+void fs_condition_init(FD fd)
+{
+    FS *fs = (FS *)fd;
+
+    /* Clear the condition structure. */
+    memset(&fs->condition, 0, sizeof(CONDITION));
+
+    /* Initialize condition for this file descriptor. */
+    fs->condition.data = fd;
+    fs->condition.post_resume = &fs_post_resume;
+    fs->condition.pre_suspend = &fs_pre_suspend;
+
+} /* fs_condition_init */
+
+/*
+ * fs_condition_get
+ * @fd: File descriptor for which condition is needed.
+ * @condition: Pointer where condition for this file descriptor will be
+ *  returned.
+ * @suspend: Suspend structure that will be populated for the required
+ *  condition.
+ * @param: File system parameter that will be used for suspend.
+ * @flag: On what event we need to suspend.
+ *  FS_BLOCK_READ: If we are suspending on read.
+ *  FS_BLOCK_WRITE: If we are suspending on write.
+ * This function will return condition for this file system, and also will also
+ * populate the suspend.
+ */
+void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *param, uint32_t flag)
+{
+    FS *fs = (FS *)fd;
+
+    /* Initialize file system parameter. */
+    param->flag = flag;
+
+    /* Initialize suspend criteria. */
+#ifdef CONFIG_SLEEP
+    /* Save the time out for which we might sleep, this can be updated by the
+     * caller. */
+    suspend->timeout = fs->timeout;
+#endif
+    suspend->param = param;
+    suspend->flags = (fs->flags & FS_PRIORITY_SORT ? CONDITION_PRIORITY : 0);
+    suspend->do_suspend = &fs_do_suspend;
+
+    /* Return the condition for this file system. */
+    *condition = &(fs->condition);
+
+} /* fs_condition_get */
+
+/*
+ * fs_pre_suspend
+ * @data: Condition data that will be passed to check for a file system.
+ * This function will called before we suspend for on a file descriptor
+ * condition.
+ */
+void fs_pre_suspend(void *data)
+{
+    FD fd = (FD)data;
+
+    /* We need to suspend so disable preemption and release the lock
+     * this way releasing the lock will not pass the control to
+     * next task. */
+
+    /* Disable preemption. */
+    scheduler_lock();
+
+    /* Release lock for this file descriptor. */
+    fd_release_lock(fd);
+
+} /* fs_pre_suspend */
+
+/*
+ * fs_post_resume
+ * @data: Condition data that will be passed to check for a file system.
+ * This function will called after we resume from a file descriptor condition.
+ */
+void fs_post_resume(void *data, int32_t status)
+{
+    FD fd = (FD)data;
+
+    /* If the file node has been deleted then we should not try to get the
+     * lock. */
+    if (status != FS_NODE_DELETED)
+    {
+        /* Get lock for this file descriptor. */
+        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    }
+
+} /* fs_post_resume */
+
+/*
+ * fs_do_suspend
+ * @data: Condition data that will be passed to check for a file system.
+ * @suspend_data: Suspend data that will hold why we were suspended.
+ * This function will called to see if we do need to suspend on the condition.
+ */
+static uint8_t fs_do_suspend(void *data, void *suspend_data)
+{
+    FS *fs = (FS *)data;
+    FS_PARAM *param = (FS_PARAM *)suspend_data;
+    uint8_t do_suspend = TRUE;
+
+    /* Check if the condition for which we were waiting is now met. */
+    if (((param->flag == FS_BLOCK_READ) && (fs->flags & FS_DATA_AVAILABLE)) || ((param->flag == FS_BLOCK_WRITE) && (fs->flags & FS_SPACE_AVAILABLE)))
+    {
+        /* Don't need to suspend. */
+        do_suspend = FALSE;
+    }
+
+    /* Return if we need to suspend or not. */
+    return (do_suspend);
+
+} /* fs_do_suspend */
+
+/*
+ * fd_do_resume
+ * @param_resume: Parameter for which we need to resume a task.
+ * @param_suspend: Parameter for which a task was suspended.
+ * @return: TRUE if we need to resume this task, FALSE if we cannot resume
+ *  this task.
+ * This is callback to see if we can resume a task suspended on a file
+ * descriptor for a given condition.
+ */
+static uint8_t fd_do_resume(void *param_resume, void *param_suspend)
+{
+    FS_PARAM *fs_resume = (FS_PARAM *)param_resume;
+    FS_PARAM *fs_suspend = (FS_PARAM *)param_suspend;
+    uint8_t resume = FALSE;
+
+    /* Check if the waiting task fulfills our criteria. */
+    if (fs_resume->flag & fs_suspend->flag)
+    {
+        /* Resume this task. */
+        resume = TRUE;
+    }
+
+    /* Return if we can resume this task. */
+    return (resume);
+
+} /* fd_do_resume */
+
+/*
+ * fd_handle_criteria
+ * @fd: File descriptor for which a criteria is needed to be handled.
+ * @param: Criteria needed to be handled.
+ * @status: Status needed to be returned to the task.
+ * This function will update and handle criteria for an FD, also resumes a
+ * task waiting for given criteria.
+ */
+void fd_handle_criteria(void *fd, FS_PARAM *param, int32_t status)
+{
+    FS *fs = (FS *)fd;
+    RESUME resume;
+
+    /* Initialize resume criteria. */
+    resume.do_resume = &fd_do_resume;
+    resume.param = param;
+    resume.status = status;
+
+    /* Resume tasks waiting for this condition. */
+    resume_condition(&fs->condition, &resume);
+
+} /* fd_handle_criteria */
+
+/*
  * fs_open
  * @name: File name to open.
  * @flags: Open flags.
@@ -493,48 +708,6 @@ void fs_close(FD *fd)
 } /* fs_close */
 
 /*
- * fd_get_lock
- * @fd: File descriptor from which lock is needed.
- * @return: A success status will be returned if file descriptor lock was
- *  successfully acquired.
- * This function will acquire lock for given file descriptor.
- */
-int32_t fd_get_lock(FD fd)
-{
-    int32_t status = SUCCESS;
-    FS *fs = (FS *)fd;
-
-    /* If this file descriptor does have a acquire lock function. */
-    if (fs->get_lock)
-    {
-        /* Get lock for this file descriptor. */
-        status = fs->get_lock((void *)fd);
-    }
-
-    /* Return status to the caller. */
-    return (status);
-
-} /* fd_get_lock */
-
-/*
- * fd_release_lock
- * @fd: File descriptor from which lock will be released.
- * This function will release lock for given file descriptor.
- */
-void fd_release_lock(FD fd)
-{
-    FS *fs = (FS *)fd;
-
-    /* If this file descriptor do have a lock release function. */
-    if (fs->release_lock)
-    {
-        /* Release lock for this file descriptor. */
-        fs->release_lock((void *)fd);
-    }
-
-} /* fd_release_lock */
-
-/*
  * fs_read
  * @fd: File descriptor from which data is needed to be read.
  * @buffer: Buffer in which data is needed to be read.
@@ -546,17 +719,14 @@ void fd_release_lock(FD fd)
  */
 int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
 {
-#ifdef CONFIG_SLEEP
-    uint64_t last_tick = current_system_tick();
-#endif
-    FS *fs = (FS *)fd;
     FS_PARAM param;
     SUSPEND suspend;
+    FS *fs = (FS *)fd;
+    CONDITION *condition;
     int32_t read = 0, status = SUCCESS;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Get lock for this file descriptor. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    status = fd_get_lock(fd);
 
     /* If lock was successfully obtained. */
     if (status == SUCCESS)
@@ -570,75 +740,11 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
                 (fs->flags & FS_BLOCK) &&
                 (get_current_task() != NULL))
             {
-#ifdef CONFIG_SLEEP
-                /* Save the time out for which we might sleep. */
-                suspend.timeout = fs->timeout;
-#endif
+                /* Get condition for this file descriptor. */
+                fs_condition_get(fd, &condition, &suspend, &param, FS_BLOCK_READ);
 
-                /* There is never a surety that if some data is available and
-                 * picked up by a waiting task as scheduler might decide to run
-                 * some other higher/same priority task and data can get consumed
-                 * by it before this waiting task can get it. */
-                /* This is not a bug and happen in a RTOS where different types of
-                 * schedulers are present. */
-                do
-                {
-#ifdef CONFIG_SLEEP
-                    /* If we don't need to wait indefinitely. */
-                    if (fs->timeout != (uint32_t)MAX_WAIT)
-                    {
-                        /* If called again compensate for the time we have already waited. */
-                        suspend.timeout -= (uint32_t)(current_system_tick() - last_tick);
-
-                        /* Save when we suspended last time. */
-                        last_tick = current_system_tick();
-                    }
-#endif
-                    /* Initialize file system parameter. */
-                    param.flag = FS_BLOCK_READ;
-
-                    /* Initialize suspend criteria. */
-                    suspend.param = &param;
-                    suspend.flags = (fs->flags & FS_PRIORITY_SORT ? CONDITION_PRIORITY : 0);
-
-                    /* We need to suspend so disable preemption and release the lock
-                     * this way releasing the lock will not pass the control to
-                     * next task. */
-
-                    /* Disable preemption. */
-                    scheduler_lock();
-
-                    /* Disable interrupts. */
-                    DISABLE_INTERRUPTS();
-
-                    /* Release lock for this file descriptor. */
-                    fd_release_lock(fd);
-
-                    /* Wait for data on this file descriptor. */
-                    status = suspend_condition(&fs->condition, &suspend);
-
-                    /* Restore old interrupt level. */
-                    SET_INTERRUPT_LEVEL(interrupt_level);
-
-                    /* Enable preemption. */
-                    scheduler_unlock();
-
-                    /* If the file node has been deleted then we should not try to get the
-                     * lock. */
-                    if (status != FS_NODE_DELETED)
-                    {
-                        /* Get lock for this file descriptor. */
-                        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
-                    }
-
-                    /* If an error has occurred. */
-                    if (status != SUCCESS)
-                    {
-                        /* Break out of this loop. */
-                        break;
-                    }
-
-                } while (!(fs->flags & FS_DATA_AVAILABLE));
+                /* Suspend on data to be available to read. */
+                status = suspend_condition(condition, &suspend);
             }
 
             /* Check if some data is available. */
@@ -684,14 +790,11 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
  */
 int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
 {
-#ifdef CONFIG_SLEEP
-    uint64_t last_tick = current_system_tick();
-#endif
-    FS *fs = (FS *)fd, *next_fs;
+    FS *fs = (FS *)fd, *next_fs = NULL;
     FS_PARAM param;
     SUSPEND suspend;
     int32_t status = SUCCESS, written = 0, n_fd = 0, nbytes_fd;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+    CONDITION *condition;
     char *buffer_start;
     uint8_t is_list = FALSE;
 
@@ -733,75 +836,11 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                         ((fs->flags & FS_BLOCK) &&
                          (!(fs->flags & FS_SPACE_AVAILABLE))))
                     {
-#ifdef CONFIG_SLEEP
-                        /* Save the time out for which we might sleep. */
-                        suspend.timeout = fs->timeout;
-#endif
+                        /* Get condition for this file descriptor. */
+                        fs_condition_get(fs, &condition, &suspend, &param, FS_BLOCK_WRITE);
 
-                        /* There is never a surety that if some space is available and
-                         * consumed up by a waiting task as scheduler might decide to run
-                         * some other higher/same priority task and spaced can get consumed
-                         * by it before this waiting task can get it. */
-                        /* This is not a bug and happen in a RTOS where different types of
-                         * schedulers are present. */
-                        do
-                        {
-#ifdef CONFIG_SLEEP
-                            /* If we don't need to wait indefinitely. */
-                            if (fs->timeout != (uint32_t)MAX_WAIT)
-                            {
-                                /* If called again compensate for the time we have already waited. */
-                                suspend.timeout -= (uint32_t)(current_system_tick() - last_tick);
-
-                                /* Save when we suspended last time. */
-                                last_tick = current_system_tick();
-                            }
-#endif
-                            /* Initialize suspend criteria. */
-                            param.flag = FS_BLOCK_WRITE;
-
-                            /* Initialize suspend criteria. */
-                            suspend.param = &param;
-                            suspend.flags = (fs->flags & FS_PRIORITY_SORT ? CONDITION_PRIORITY : 0);
-
-                            /* We need to suspend so disable preemption and release the lock
-                             * this way releasing the lock will not pass the control to
-                             * next task. */
-
-                            /* Disable preemption. */
-                            scheduler_lock();
-
-                            /* Disable interrupts. */
-                            DISABLE_INTERRUPTS();
-
-                            /* Release lock for this file descriptor. */
-                            fd_release_lock(fs);
-
-                            /* Wait for space on this file descriptor. */
-                            status = suspend_condition(&fs->condition, &suspend);
-
-                            /* Restore old interrupt level. */
-                            SET_INTERRUPT_LEVEL(interrupt_level);
-
-                            /* Enable preemption. */
-                            scheduler_unlock();
-
-                            /* If the file node has been deleted then we should not try to get the
-                             * lock. */
-                            if (status != FS_NODE_DELETED)
-                            {
-                                /* Get lock for this file descriptor. */
-                                OS_ASSERT(fd_get_lock(fs) != SUCCESS);
-                            }
-
-                            /* If an error has occurred. */
-                            if (status != SUCCESS)
-                            {
-                                /* Break out of this loop. */
-                                break;
-                            }
-
-                        } while (!(fs->flags & FS_SPACE_AVAILABLE));
+                        /* Suspend on data to be available to read. */
+                        status = suspend_condition(condition, &suspend);
                     }
 
                     /* Check if some space is available. */
@@ -1056,56 +1095,6 @@ void fd_space_consumed(void *fd)
     fs->flags &= (uint32_t)(~FS_SPACE_AVAILABLE);
 
 } /* fd_space_consumed */
-
-/*
- * fd_do_resume
- * @param_resume: Parameter for which we need to resume a task.
- * @param_suspend: Parameter for which a task was suspended.
- * @return: TRUE if we need to resume this task, FALSE if we cannot resume
- *  this task.
- * This is callback to see if we can resume a task suspended on a file
- * descriptor for a given condition.
- */
-static uint8_t fd_do_resume(void *param_resume, void *param_suspend)
-{
-    FS_PARAM *fs_resume = (FS_PARAM *)param_resume;
-    FS_PARAM *fs_suspend = (FS_PARAM *)param_suspend;
-    uint8_t resume = FALSE;
-
-    /* Check if the waiting task fulfills our criteria. */
-    if (fs_resume->flag & fs_suspend->flag)
-    {
-        /* Resume this task. */
-        resume = TRUE;
-    }
-
-    /* Return if we can resume this task. */
-    return (resume);
-
-} /* fd_do_resume */
-
-/*
- * fd_handle_criteria
- * @fd: File descriptor for which a criteria is needed to be handled.
- * @param: Criteria needed to be handled.
- * @status: Status needed to be returned to the task.
- * This function will update and handle criteria for an FD, also resumes a
- * task waiting for given criteria.
- */
-void fd_handle_criteria(void *fd, FS_PARAM *param, int32_t status)
-{
-    FS *fs = (FS *)fd;
-    RESUME resume;
-
-    /* Initialize resume criteria. */
-    resume.do_resume = &fd_do_resume;
-    resume.param = param;
-    resume.status = status;
-
-    /* Resume tasks waiting for this condition. */
-    resume_condition(&fs->condition, &resume);
-
-} /* fd_handle_criteria */
 
 /*
  * fs_memcpy_r

@@ -105,6 +105,9 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
         pipe->fs.get_lock = pipe_lock;
         pipe->fs.release_lock = pipe_unlock;
 
+        /* Initialize file system condition. */
+        fs_condition_init(&pipe->fs);
+
 #ifdef CONFIG_SEMAPHORE
         /* Create a semaphore to protect pipe data. */
         semaphore_create(&pipe->lock, 1, 1, SEMAPHORE_PRIORITY);

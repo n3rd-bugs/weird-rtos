@@ -57,6 +57,9 @@ void net_buffer_init()
     net_buffers_fs.fs.flags = (FS_SPACE_AVAILABLE | FS_BLOCK);
     net_buffers_fs.fs.timeout = MAX_WAIT;
 
+    /* Initialize file system condition. */
+    fs_condition_init(&net_buffers_fs.fs);
+
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect net buffer file descriptor. */
     semaphore_create(&net_buffers_fs.lock, 1, 1, (SEMAPHORE_PRIORITY | SEMAPHORE_IRQ));

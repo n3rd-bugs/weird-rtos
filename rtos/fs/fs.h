@@ -208,6 +208,10 @@ void fs_connect(FD, FD);
 void fs_destroy_chain(FD);
 void fs_disconnect(FD);
 
+void fs_condition_init(FD);
+void fs_condition_get(FD, CONDITION **, SUSPEND *, FS_PARAM *, uint32_t);
+void fd_handle_criteria(void *, FS_PARAM *, int32_t);
+
 /* File system functions. */
 void fs_register(FS *);
 void fs_unregister(FS *);
@@ -215,7 +219,6 @@ void fd_data_available(void *);
 void fd_data_flushed(void *);
 void fd_space_available(void *);
 void fd_space_consumed(void *);
-void fd_handle_criteria(void *, FS_PARAM *, int32_t);
 
 /* Helper APIs. */
 uint8_t fs_sreach_directory(void *, void *);
