@@ -24,8 +24,8 @@
 /* User call back to check if this task satisfy the criteria. */
 typedef uint8_t CONDITION_DO_RESUME (void *, void *);
 typedef uint8_t CONDITION_DO_SUSPEND (void *, void *);
-typedef void CONDITION_PRE_SUSPEND (void *);
-typedef void CONDITION_POST_RESUME (void *, int32_t);
+typedef void CONDITION_UNLOCK (void *);
+typedef void CONDITION_LOCK (void *);
 
 /* Resume data. */
 typedef struct _resume
@@ -44,9 +44,6 @@ typedef struct _suspend
     CONDITION_DO_SUSPEND *do_suspend;
 
     void        *param;     /* User defined criteria for the tasks. */
-#ifdef CONFIG_SLEEP
-    uint32_t    timeout;    /* If not zero will hold the number of ticks we need to wait for it. */
-#endif
     uint32_t    flags;      /* Suspend flags. */
 } SUSPEND;
 
@@ -60,11 +57,11 @@ typedef struct _condition
         TASK        *tail;
     } task_list;
 
-    /* Function that will be called before suspending for this condition. */
-    CONDITION_PRE_SUSPEND *pre_suspend;
+    /* Function that will be called to get lock for condition. */
+    CONDITION_LOCK      *lock;
 
-    /* Function that will be called after resuming from condition. */
-    CONDITION_POST_RESUME *post_resume;
+    /* Function that will be called to release lock for this condition. */
+    CONDITION_UNLOCK    *unlock;
 
     /* Private data that will be passed to the pre-suspend and post-resume
      * APIs.  */
@@ -73,7 +70,7 @@ typedef struct _condition
 } CONDITION;
 
 /* Function prototypes. */
-int32_t suspend_condition(CONDITION *, SUSPEND *);
-void resume_condition(CONDITION *, RESUME *);
+int32_t suspend_condition(CONDITION *, SUSPEND *, uint32_t, uint32_t *, uint8_t);
+void resume_condition(CONDITION *, RESUME *, uint8_t);
 
 #endif /* _CONDITION_H_ */
