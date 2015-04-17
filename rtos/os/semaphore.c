@@ -19,6 +19,7 @@
 #include <semaphore.h>
 
 /* Internal function prototypes. */
+static uint8_t semaphore_do_suspend(void *, void *);
 static uint8_t semaphore_do_resume(void *, void *);
 
 /*
@@ -44,6 +45,9 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
 
     /* Initialize semaphore type. */
     semaphore->type = type;
+
+    /* Initialize condition structure. */
+    semaphore->condition.data = semaphore;
 
 } /* semaphore_create */
 
@@ -103,6 +107,60 @@ void semaphore_destroy(SEMAPHORE *semaphore)
 } /* semaphore_destroy */
 
 /*
+ * semaphore_condition_get
+ * @semaphore: Semaphore for which release condition is needed.
+ * @condition: Pointer where condition will be returned.
+ * @suspend: Suspend needed to be populated.
+ * @timeout: Time to wait on this semaphore.
+ * This function will return condition for release of this semaphore.
+ */
+void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEND *suspend, uint32_t timeout)
+{
+    /* Initialize suspend criteria. */
+#ifdef CONFIG_SLEEP
+    /* Save the time out for which we might sleep, this can be updated by the
+     * caller. */
+    suspend->timeout = timeout;
+#else
+    /* Remove compiler warning. */
+    UNUSED_PARAM(timeout);
+#endif
+    suspend->param = NULL;
+    suspend->flags = (semaphore->type & SEMAPHORE_PRIORITY ? CONDITION_PRIORITY : 0);
+    suspend->do_suspend = &semaphore_do_suspend;
+
+    /* Return the condition for this semaphore. */
+    *condition = &semaphore->condition;
+
+} /* semaphore_condition_get */
+
+/*
+ * semaphore_do_suspend
+ * @data: Condition data that will be used to access the semaphore.
+ * @suspend_data: Suspend data, for now it is unused.
+ * This function will called to see if we do need to suspend on a semaphore.
+ */
+static uint8_t semaphore_do_suspend(void *data, void *suspend_data)
+{
+    SEMAPHORE *semaphore = (SEMAPHORE *)data;
+    uint8_t do_suspend = TRUE;
+
+    /* For now unused. */
+    UNUSED_PARAM(suspend_data);
+
+    /* Check if semaphore is available. */
+    if (semaphore->count == 0)
+    {
+        /* Don't need to suspend. */
+        do_suspend = FALSE;
+    }
+
+    /* Return if we need to suspend or not. */
+    return (do_suspend);
+
+} /* semaphore_do_suspend */
+
+/*
  * semaphore_do_resume
  * @param_resume: Parameter for which we need to resume a task.
  * @param_suspend: Parameter for which a task was suspended.
@@ -148,10 +206,8 @@ static uint8_t semaphore_do_resume(void *param_resume, void *param_suspend)
 int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
     int32_t status = SUCCESS;
-#ifdef CONFIG_SLEEP
-    uint64_t last_tick = current_system_tick();
-#endif /* CONFIG_SLEEP */
     SUSPEND suspend;
+    CONDITION *condition;
     TASK *tcb;
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
@@ -176,46 +232,11 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         /* Check if we need to wait for semaphore to be free. */
         if ((wait > 0) && (tcb != NULL))
         {
-#ifdef CONFIG_SLEEP
-            /* Save the number of ticks we will be sleeping to acquire this
-             * semaphore. */
-            suspend.timeout = wait;
-#endif /* CONFIG_SLEEP */
+            /* Initialize suspend condition for this semaphore. */
+            semaphore_condition_get(semaphore, &condition, &suspend, wait);
 
-            /* There is never a surety that if semaphore is released it will be
-             * picked up by a waiting task as scheduler might decide to run
-             * some other higher/same priority task and it might acquire the
-             * semaphore before the waiting task acquires it. */
-            /* This is not a bug and happen in a RTOS where different types of
-             * schedulers are present. */
-            do
-            {
-#ifdef CONFIG_SLEEP
-                /* Check if we need to wait for a finite time. */
-                if (wait!= (uint32_t)(MAX_WAIT))
-                {
-                    /* If called again compensate for the time we have already waited. */
-                    suspend.timeout -= (uint32_t)(current_system_tick() - last_tick);
-
-                    /* Save when we suspended last time. */
-                    last_tick = current_system_tick();
-                }
-#endif /* CONFIG_SLEEP */
-
-                /* Initialize the suspend data. */
-                suspend.param = NULL;
-                suspend.flags = (semaphore->type & SEMAPHORE_PRIORITY ? CONDITION_PRIORITY : 0);
-
-                /* Wait for data on this file descriptor. */
-                status = suspend_condition(&semaphore->condition, &suspend);
-
-                if (status != SUCCESS)
-                {
-                    /* The given context has been deleted. */
-                    break;
-                }
-
-            } while (semaphore->count == 0);
+            /* Start waiting on this semaphore. */
+            status = suspend_condition(condition, &suspend);
         }
 
         /* We are not waiting for this semaphore to be free. */

@@ -66,6 +66,8 @@ void semaphore_destroy(SEMAPHORE *);
 int32_t semaphore_obtain(SEMAPHORE *, uint32_t);
 void semaphore_release(SEMAPHORE *);
 
+void semaphore_condition_get(SEMAPHORE *, CONDITION **, SUSPEND *, uint32_t);
+
 #endif /* CONFIG_SEMAPHORE */
 
 #endif /* _SEMAPHORE_H_ */
