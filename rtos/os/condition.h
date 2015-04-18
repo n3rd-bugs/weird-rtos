@@ -13,8 +13,6 @@
 #ifndef _CONDITION_H_
 #define _CONDITION_H_
 
-#include <os.h>
-
 /* Error codes. */
 #define CONDITION_TIMEOUT       -600
 

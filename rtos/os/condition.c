@@ -72,7 +72,7 @@ static void suspend_unlock_condition(CONDITION *condition, uint32_t num, TASK *t
         }
 
         /* Pick next condition. */
-        condition++;
+        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
 
         /* This is now processed. */
         num--;
@@ -101,7 +101,7 @@ static void suspend_lock_condition(CONDITION *condition, uint32_t num, TASK *tcb
         }
 
         /* Pick next condition. */
-        condition++;
+        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
 
         /* This is now processed. */
         num--;
@@ -136,8 +136,8 @@ static void suspend_condition_add_task(CONDITION *condition, SUSPEND *suspend, u
         }
 
         /* Pick next condition. */
-        condition++;
-        suspend++;
+        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
+        suspend = (SUSPEND *)((uint8_t *)suspend + sizeof(SUSPEND *));
 
         /* This is now processed. */
         num--;
@@ -162,7 +162,7 @@ static void suspend_condition_remove_all(CONDITION *condition, uint32_t num, TAS
         OS_ASSERT(sll_remove(&condition->task_list, tcb, OFFSETOF(TASK, next)) != tcb);
 
         /* Pick next condition. */
-        condition++;
+        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
 
         /* This is now processed. */
         num--;
@@ -191,7 +191,7 @@ static void suspend_condition_remove(CONDITION *condition, uint32_t num, TASK *t
         if (tcb->suspend_data == condition)
         {
             /* Return the condition index that was matched. */
-            *return_num = (n + 1);
+            *return_num = n;
         }
         else
         {
@@ -201,7 +201,7 @@ static void suspend_condition_remove(CONDITION *condition, uint32_t num, TASK *t
         }
 
         /* Pick next condition. */
-        condition++;
+        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
     }
 
 } /* suspend_condition_remove */
@@ -233,11 +233,15 @@ static uint8_t suspend_do_suspend(CONDITION *condition, SUSPEND *suspend, uint32
             do_suspend = FALSE;
 
             /* Return index for this condition. */
-            *return_num = (n + 1);
+            *return_num = n;
 
             /* Break out of this loop. */
             break;
         }
+
+        /* Pick next condition. */
+        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
+        suspend = (SUSPEND *)((uint8_t *)suspend + sizeof(SUSPEND *));
     }
 
     /* Return if we need to suspend. */
