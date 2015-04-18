@@ -17,6 +17,7 @@
 #ifdef CONFIG_NET
 #include <fs.h>
 #include <semaphore.h>
+#include <net_condition.h>
 
 /* Net buffer ID used to tell the networking stack that a buffer belongs to it. */
 #define NET_BUFFER_ID               0x8A6EF4C6
@@ -24,9 +25,6 @@
 /* Protocol definitions that the networking stack will be expecting on a buffer
  * to invoke an interrupt routine for that. */
 #define NET_PROTO_IPV4              0x01
-
-/* Net buffer configuration. */
-#define NET_BUFFER_RX_STACK_SIZE    1024
 
 /* Global network buffer data. */
 typedef struct _net_buffer_fs
@@ -47,6 +45,9 @@ typedef struct _net_buffer_fs
     SEMAPHORE   lock;
 #endif
 
+    /* File system suspend parameter to be used to wait on this file descriptor. */
+    FS_PARAM    fs_param;
+
 } NET_BUFFER_FS;
 
 /* Exported variables. */
@@ -54,6 +55,7 @@ extern FD net_buff_fd;
 
 /* Function prototypes. */
 void net_buffer_init();
+void net_buffer_get_condition(CONDITION **, SUSPEND *, NET_CONDITION_PROCESS **);
 
 #endif /* CONFIG_NET */
 #endif /* _NET_BUFFER_H_ */

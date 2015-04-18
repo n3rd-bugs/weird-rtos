@@ -14,6 +14,7 @@
 
 #ifdef CONFIG_NET
 #include <net.h>
+#include <net_condition.h>
 
 /*
  * net_init
@@ -26,6 +27,9 @@ void net_init()
 
     /* Initialize networking buffers file system. */
     net_buffer_init();
+
+    /* Initialize networking conditions. */
+    net_condition_init();
 
 } /* net_buffer_init */
 

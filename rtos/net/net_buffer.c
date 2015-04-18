@@ -17,22 +17,18 @@
 #include <sll.h>
 #include <net.h>
 
+/* Exported networking buffer data. */
+FD net_buff_fd = (FD)NULL;
+
+/* Global net buffer data. */
+static NET_BUFFER_FS net_buffers_fs;
+
 /* Internal function prototypes. */
 static int32_t net_buffer_lock(void *);
 static void net_buffer_unlock(void *);
-static void net_buffer_receive_task_entry(void *);
+static void net_buffer_condition_callback();
 static int32_t net_buffer_write(void *, char *, int32_t);
 static int32_t net_buffer_read(void *, char *, int32_t);
-
-/* Global net buffer data. */
-NET_BUFFER_FS net_buffers_fs;
-
-/* Exported networking file descriptor. */
-FD net_buff_fd = (FD)NULL;
-
-/* Net buffer receive task data */
-TASK net_buffer_receive_tcb;
-char net_buffer_receive_stack[NET_BUFFER_RX_STACK_SIZE];
 
 /*
  * net_buffer_init
@@ -54,7 +50,7 @@ void net_buffer_init()
     net_buffers_fs.fs.read = &net_buffer_read;
 
     /* Initial file system configurations. */
-    net_buffers_fs.fs.flags = (FS_SPACE_AVAILABLE | FS_BLOCK);
+    net_buffers_fs.fs.flags = (FS_SPACE_AVAILABLE);
     net_buffers_fs.fs.timeout = MAX_WAIT;
 
     /* Initialize file system condition. */
@@ -68,58 +64,65 @@ void net_buffer_init()
     /* Register net buffer file system. */
     fs_register((FS *)&net_buffers_fs);
 
-    /* Create a task to process the incoming networking buffers. */
-    task_create(&net_buffer_receive_tcb, "NET-RX", net_buffer_receive_stack, NET_BUFFER_RX_STACK_SIZE, &net_buffer_receive_task_entry, (void *)(&net_buffers_fs), TASK_NO_RETURN);
-    scheduler_task_add(&net_buffer_receive_tcb, TASK_APERIODIC, 5, 0);
+    /* Set the global networking stack buffer descriptor. */
+    net_buff_fd = (FD)&net_buffers_fs;
 
 } /* net_buffer_init */
 
 /*
- * net_buffer_receive
- * @argv: Net buffer file descriptor on which we will be listening for data.
- * This is task entry function for receiving and processing the incoming
- * networking buffers.
+ * net_buffer_get_condition
+ * @condition: Pointer where condition will be returned.
+ * @suspend: Suspend needed to be populated.
+ * @process: Pointer where process will be returned.
+ * This function will return the condition to for networking buffers.
  */
-static void net_buffer_receive_task_entry(void *argv)
+void net_buffer_get_condition(CONDITION **condition, SUSPEND *suspend, NET_CONDITION_PROCESS **process)
+{
+    /* For networking buffers we will wait for data on networking buffer file descriptor. */
+    fs_condition_get((FD)&net_buffers_fs, condition, suspend, &net_buffers_fs.fs_param, FS_BLOCK_READ);
+
+    /* Set callback that is needed to be called when this condition is fulfilled. */
+    *process = &net_buffer_condition_callback;
+
+} /* net_buffer_get_condition */
+
+/*
+ * net_buffer_condition_callback
+ * Function that will be called when networking condition is valid.
+ */
+static void net_buffer_condition_callback()
 {
     FS_BUFFER *buffer;
     FD buffer_fd;
 
-    /* Set the global file descriptor for net buffers. */
-    net_buff_fd = (FD)argv;
-
-    /* This function should never return. */
-    for (;;)
+    /* Read a buffer pointer from the file descriptor. */
+    if (fs_read(net_buff_fd, (char *)&buffer, sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
     {
-        /* Read a buffer pointer from the file descriptor. */
-        if (fs_read(net_buff_fd, (char *)&buffer, sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
+        /* Save the file descriptor on which data was received. */
+        buffer_fd = buffer->fd;
+
+        /* TODO: This is quite expensive. */
+        /* Obtain lock for the file descriptor on which this semaphore was
+         * received, this is required as the buffer will return it's
+         * segments to the original file descriptor when applicable. */
+        OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+
+        /* Process this buffer. */
+        if (net_buffer_process(buffer) == SUCCESS)
         {
-            /* Save the file descriptor on which data was received. */
-            buffer_fd = buffer->fd;
-
-            /* TODO: This is quite expensive. */
-            /* Obtain lock for the file descriptor on which this semaphore was
-             * received, this is required as the buffer will return it's
-             * segments to the original file descriptor when applicable. */
-            OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
-
-            /* Process this buffer. */
-            if (net_buffer_process(buffer) == SUCCESS)
-            {
-                /* Free this buffer. */
-                fs_buffer_add(buffer_fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-            }
-
-            /* Release semaphore for the buffer. */
-            fd_release_lock(buffer_fd);
+            /* Free this buffer. */
+            fs_buffer_add(buffer_fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
         }
+
+        /* Release semaphore for the buffer. */
+        fd_release_lock(buffer_fd);
     }
 
-} /* net_buffer_receive */
+} /* net_buffer_condition_callback */
 
 /*
  * net_buffer_lock
- * @fd: Net buffer file descriptor.
+ * @fd: Networking buffer file descriptor.
  * This function will get the lock for net buffer file descriptor.
  */
 static int32_t net_buffer_lock(void *fd)
@@ -138,7 +141,7 @@ static int32_t net_buffer_lock(void *fd)
 
 /*
  * net_buffer_unlock
- * @fd: File descriptor for the console.
+ * @fd: File descriptor for the networking buffer.
  * This function will release the lock for net buffer file descriptor.
  */
 static void net_buffer_unlock(void *fd)
