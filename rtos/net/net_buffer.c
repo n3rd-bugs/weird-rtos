@@ -108,7 +108,7 @@ static void net_buffer_condition_callback()
         OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Process this buffer. */
-        if (net_buffer_process(buffer) == SUCCESS)
+        if (net_buffer_process(buffer) != NET_BUFFER_CONSUMED)
         {
             /* Free this buffer. */
             fs_buffer_add(buffer_fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
