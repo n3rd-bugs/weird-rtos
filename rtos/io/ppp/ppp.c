@@ -685,9 +685,9 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer)
         if (status == SUCCESS)
         {
             /* Transmit this PPP buffer. */
-            status = ppp_transmit_buffer_instance(ppp, &buffer, protocol);
+            (void)ppp_transmit_buffer_instance(ppp, &buffer, protocol);
 
-            /* Free this buffer in any case. */
+            /* As we might have switched the buffer so we do need to free it. */
             fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
         }
 
