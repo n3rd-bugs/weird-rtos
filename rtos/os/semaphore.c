@@ -198,7 +198,7 @@ static uint8_t semaphore_do_resume(void *param_resume, void *param_suspend)
 int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
     int32_t status = SUCCESS;
-    SUSPEND suspend;
+    SUSPEND suspend, *suspend_ptr = (&suspend);
     CONDITION *condition;
     TASK *tcb;
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
@@ -225,10 +225,10 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         if ((wait > 0) && (tcb != NULL))
         {
             /* Initialize suspend condition for this semaphore. */
-            semaphore_condition_get(semaphore, &condition, &suspend);
+            semaphore_condition_get(semaphore, &condition, suspend_ptr);
 
             /* Start waiting on this semaphore. */
-            status = suspend_condition(condition, &suspend, wait, NULL, TRUE);
+            status = suspend_condition(&condition, &suspend_ptr, wait, NULL, TRUE);
         }
 
         /* We are not waiting for this semaphore to be free. */

@@ -21,12 +21,12 @@
 
 /* Internal function prototypes. */
 static uint8_t suspend_sreach_task(void *, void *);
-static void suspend_lock_condition(CONDITION *, uint32_t, TASK *);
-static void suspend_unlock_condition(CONDITION *, uint32_t, TASK *);
-static void suspend_condition_add_task(CONDITION *, SUSPEND *, uint32_t, TASK *);
-static void suspend_condition_remove_all(CONDITION *, uint32_t, TASK *);
-static void suspend_condition_remove(CONDITION *, uint32_t, TASK *, uint32_t *);
-static uint8_t suspend_do_suspend(CONDITION *, SUSPEND *, uint32_t, uint32_t *);
+static void suspend_lock_condition(CONDITION **, uint32_t, TASK *);
+static void suspend_unlock_condition(CONDITION **, uint32_t, TASK *);
+static void suspend_condition_add_task(CONDITION **, SUSPEND **, uint32_t, TASK *);
+static void suspend_condition_remove_all(CONDITION **, uint32_t, TASK *);
+static void suspend_condition_remove(CONDITION **, uint32_t, TASK *, uint32_t *);
+static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint32_t, uint32_t *);
 
 /*
  * suspend_sreach_task
@@ -59,20 +59,20 @@ static uint8_t suspend_sreach_task(void *node, void *param)
  * This routine will unlock all the conditions in the condition list, except
  * the one that was returned on the resume.
  */
-static void suspend_unlock_condition(CONDITION *condition, uint32_t num, TASK *tcb)
+static void suspend_unlock_condition(CONDITION **condition, uint32_t num, TASK *tcb)
 {
     /* Unlock all conditions. */
     while (num)
     {
         /* If we can unlock this condition. */
-        if (((!tcb) || (tcb->suspend_data != condition)) && (condition->unlock))
+        if (((!tcb) || (tcb->suspend_data != (*condition))) && ((*condition)->unlock))
         {
             /* Call unlock for this condition. */
-            condition->unlock(condition->data);
+            (*condition)->unlock((*condition)->data);
         }
 
         /* Pick next condition. */
-        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
+        condition++;
 
         /* This is now processed. */
         num--;
@@ -88,20 +88,20 @@ static void suspend_unlock_condition(CONDITION *condition, uint32_t num, TASK *t
  *  which was returned on resume.
  * This routine will lock the conditions.
  */
-static void suspend_lock_condition(CONDITION *condition, uint32_t num, TASK *tcb)
+static void suspend_lock_condition(CONDITION **condition, uint32_t num, TASK *tcb)
 {
     /* For all conditions do post. */
     while (num)
     {
         /* If we can lock this condition. */
-        if (((!tcb) || (tcb->suspend_data != condition)) && (condition->lock))
+        if (((!tcb) || (tcb->suspend_data != (*condition))) && ((*condition)->lock))
         {
             /* Call lock for this condition. */
-            condition->lock(condition->data);
+            (*condition)->lock((*condition)->data);
         }
 
         /* Pick next condition. */
-        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
+        condition++;
 
         /* This is now processed. */
         num--;
@@ -117,27 +117,27 @@ static void suspend_lock_condition(CONDITION *condition, uint32_t num, TASK *tcb
  * @tcb: Current task pointer.
  * This routine will add given task on all the conditions we need to wait for.
  */
-static void suspend_condition_add_task(CONDITION *condition, SUSPEND *suspend, uint32_t num, TASK *tcb)
+static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend, uint32_t num, TASK *tcb)
 {
     /* For all conditions add this task. */
     while (num)
     {
         /* If we need to sort the list on priority. */
-        if (suspend->flags & CONDITION_PRIORITY)
+        if ((*suspend)->flags & CONDITION_PRIORITY)
         {
             /* Add this task on the task list. */
-            sll_insert(&condition->task_list, tcb, &task_priority_sort, OFFSETOF(TASK, next));
+            sll_insert(&(*condition)->task_list, tcb, &task_priority_sort, OFFSETOF(TASK, next));
         }
 
         else
         {
             /* Add this task at the end of task list. */
-            sll_append(&condition->task_list, tcb, OFFSETOF(TASK, next));
+            sll_append(&(*condition)->task_list, tcb, OFFSETOF(TASK, next));
         }
 
         /* Pick next condition. */
-        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
-        suspend = (SUSPEND *)((uint8_t *)suspend + sizeof(SUSPEND *));
+        condition++;
+        suspend++;
 
         /* This is now processed. */
         num--;
@@ -153,16 +153,16 @@ static void suspend_condition_add_task(CONDITION *condition, SUSPEND *suspend, u
  * This routine will remove the given task from all the conditions we were
  * waiting for.
  */
-static void suspend_condition_remove_all(CONDITION *condition, uint32_t num, TASK *tcb)
+static void suspend_condition_remove_all(CONDITION **condition, uint32_t num, TASK *tcb)
 {
     /* For all conditions remove this task. */
     while (num > 0)
     {
         /* Remove this task from the task list. */
-        OS_ASSERT(sll_remove(&condition->task_list, tcb, OFFSETOF(TASK, next)) != tcb);
+        OS_ASSERT(sll_remove(&(*condition)->task_list, tcb, OFFSETOF(TASK, next)) != tcb);
 
         /* Pick next condition. */
-        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
+        condition++;
 
         /* This is now processed. */
         num--;
@@ -180,7 +180,7 @@ static void suspend_condition_remove_all(CONDITION *condition, uint32_t num, TAS
  * This routine will remove the given task from all the conditions we were
  * waiting for except the one we resumed from.
  */
-static void suspend_condition_remove(CONDITION *condition, uint32_t num, TASK *tcb, uint32_t *return_num)
+static void suspend_condition_remove(CONDITION **condition, uint32_t num, TASK *tcb, uint32_t *return_num)
 {
     uint32_t n;
 
@@ -188,7 +188,7 @@ static void suspend_condition_remove(CONDITION *condition, uint32_t num, TASK *t
     for (n = 0; n < num; n++)
     {
         /* If this is the condition from which we got resumed. */
-        if (tcb->suspend_data == condition)
+        if (tcb->suspend_data == (*condition))
         {
             /* Return the condition index that was matched. */
             *return_num = n;
@@ -197,11 +197,11 @@ static void suspend_condition_remove(CONDITION *condition, uint32_t num, TASK *t
         {
             /* We are no longer waiting on this condition remove this task from
              * the condition. */
-            OS_ASSERT(sll_remove(&condition->task_list, tcb, OFFSETOF(TASK, next)) != tcb);
+            OS_ASSERT(sll_remove(&(*condition)->task_list, tcb, OFFSETOF(TASK, next)) != tcb);
         }
 
         /* Pick next condition. */
-        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
+        condition++;
     }
 
 } /* suspend_condition_remove */
@@ -218,7 +218,7 @@ static void suspend_condition_remove(CONDITION *condition, uint32_t num, TASK *t
  * them. If any of the condition is valid we will not suspend to wait for that
  * condition.
  */
-static uint8_t suspend_do_suspend(CONDITION *condition, SUSPEND *suspend, uint32_t num, uint32_t *return_num)
+static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint32_t num, uint32_t *return_num)
 {
     uint8_t do_suspend = TRUE;
     uint32_t n;
@@ -227,7 +227,7 @@ static uint8_t suspend_do_suspend(CONDITION *condition, SUSPEND *suspend, uint32
     for (n = 0; n < num; n++)
     {
         /* Check if we don't need to suspend for this condition. */
-        if (suspend->do_suspend(condition->data, suspend->param) == FALSE)
+        if ((*suspend)->do_suspend((*condition)->data, (*suspend)->param) == FALSE)
         {
             /* We don't need to suspend for this condition. */
             do_suspend = FALSE;
@@ -240,8 +240,8 @@ static uint8_t suspend_do_suspend(CONDITION *condition, SUSPEND *suspend, uint32
         }
 
         /* Pick next condition. */
-        condition = (CONDITION *)((uint8_t *)condition + sizeof(CONDITION *));
-        suspend = (SUSPEND *)((uint8_t *)suspend + sizeof(SUSPEND *));
+        condition++;
+        suspend++;
     }
 
     /* Return if we need to suspend. */
@@ -265,7 +265,7 @@ static uint8_t suspend_do_suspend(CONDITION *condition, SUSPEND *suspend, uint32
  *  for the condition.
  * This function will suspend the caller task to wait for a criteria.
  */
-int32_t suspend_condition(CONDITION *condition, SUSPEND *suspend, uint32_t timeout, uint32_t *num, uint8_t locked)
+int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t timeout, uint32_t *num, uint8_t locked)
 {
 #ifdef CONFIG_SLEEP
     uint64_t last_tick = current_system_tick();

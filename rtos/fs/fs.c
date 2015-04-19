@@ -700,7 +700,7 @@ void fs_close(FD *fd)
 int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
 {
     FS_PARAM param;
-    SUSPEND suspend;
+    SUSPEND suspend, *suspend_ptr = (&suspend);
     FS *fs = (FS *)fd;
     CONDITION *condition;
     int32_t read = 0, status = SUCCESS;
@@ -721,10 +721,10 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
                 (get_current_task() != NULL))
             {
                 /* Get condition for this file descriptor. */
-                fs_condition_get(fd, &condition, &suspend, &param, FS_BLOCK_READ);
+                fs_condition_get(fd, &condition, suspend_ptr, &param, FS_BLOCK_READ);
 
                 /* Suspend on data to be available to read. */
-                status = suspend_condition(condition, &suspend, fs->timeout, NULL, TRUE);
+                status = suspend_condition(&condition, &suspend_ptr, fs->timeout, NULL, TRUE);
             }
 
             /* Check if some data is available. */
@@ -772,7 +772,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
 {
     FS *fs = (FS *)fd, *next_fs = NULL;
     FS_PARAM param;
-    SUSPEND suspend;
+    SUSPEND suspend, *suspend_ptr = (&suspend);
     int32_t status = SUCCESS, written = 0, n_fd = 0, nbytes_fd;
     CONDITION *condition;
     char *buffer_start;
@@ -817,10 +817,10 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                          (!(fs->flags & FS_SPACE_AVAILABLE))))
                     {
                         /* Get condition for this file descriptor. */
-                        fs_condition_get(fs, &condition, &suspend, &param, FS_BLOCK_WRITE);
+                        fs_condition_get(fs, &condition, suspend_ptr, &param, FS_BLOCK_WRITE);
 
                         /* Suspend on data to be available to read. */
-                        status = suspend_condition(condition, &suspend, fs->timeout, NULL, TRUE);
+                        status = suspend_condition(&condition, &suspend_ptr, fs->timeout, NULL, TRUE);
                     }
 
                     /* Check if some space is available. */
