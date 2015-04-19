@@ -58,14 +58,6 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
     /* Assign the file descriptor with which this PPP instance is registered. */
     ppp->fd = fd;
 
-    /* Initialize data watcher. */
-    ppp->data_watcher.data = ppp;
-    ppp->data_watcher.data_available = &ppp_rx_watcher;
-    ppp->data_watcher.space_available = &ppp_tx_watcher;
-
-    /* Register data watcher. */
-    fs_data_watcher_set(fd, &ppp->data_watcher);
-
     /* Initialize connection watcher. */
     ppp->connection_watcher.data = ppp;
     ppp->connection_watcher.connected = &ppp_connection_established;
@@ -107,7 +99,7 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
 #endif
 
     /* Register networking device for this PPP instance. */
-    net_register_fd(&ppp->net_device, fd, &net_ppp_transmit);
+    net_register_fd(&ppp->net_device, fd, &net_ppp_transmit, &net_ppp_receive);
 
 } /* ppp_register_fd */
 
@@ -719,6 +711,68 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer)
 } /* net_ppp_transmit */
 
 /*
+ * net_ppp_receive
+ * @data: File descriptor on which data was received.
+ * Function that will be called to receive packets on PPP device.
+ */
+void net_ppp_receive(void *data)
+{
+    PPP *ppp = ppp_get_instance_fd((FD)data);
+
+#ifndef CONFIG_SEMAPHORE
+    /* Lock the scheduler. */
+    scheduler_lock();
+#else
+    /* Acquire global data lock for PPP. */
+    if (semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) == SUCCESS)
+#endif
+    {
+        /* Process the received buffer according to the PPP state. */
+        switch (ppp->state)
+        {
+        /* If physical medium is connected. */
+        case PPP_STATE_CONNECTED:
+
+            /* Link layer is connected, and we are expecting some modem
+             * initialization before formally start handling PPP packets. */
+            ppp_process_modem_chat(ppp->fd, ppp);
+
+            /* Break out of this switch. */
+            break;
+
+        /* If we are processing LCP, IPCP frames or we have our connection
+         * established. */
+        case PPP_STATE_LCP:
+        case PPP_STATE_IPCP:
+        case PPP_STATE_NETWORK:
+
+            /* Try to parse the packet and see if PPP needs to process it. */
+            ppp_process_frame(ppp->fd, ppp);
+
+            /* Break out of this switch. */
+            break;
+
+        /* If physical medium not connected. */
+        case PPP_STATE_DISCONNECTED:
+        default:
+            /* Nothing to do here. */
+
+            /* Just break out of this switch. */
+            break;
+        }
+
+#ifdef CONFIG_SEMAPHORE
+        /* Release the global data lock. */
+        semaphore_release(&((PPP *)ppp)->lock);
+#else
+        /* Enable scheduling. */
+        scheduler_unlock();
+#endif
+    }
+
+} /* net_ppp_receive */
+
+/*
  * ppp_transmit_buffer_instance
  * @ppp: PPP private data.
  * @buffer: Buffer needed to be sent.
@@ -752,85 +806,5 @@ int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER **buffer, uint16_t prot
     return (status);
 
 } /* ppp_transmit_buffer_instance */
-
-/*
- * ppp_rx_watcher
- * @fd: File descriptor for which this was called.
- * @ppp: PPP private data.
- * This function will be called when even there is some data available to read
- * from a file descriptor registered with a PPP instance.
- */
-void ppp_rx_watcher(void *fd, void *priv_data)
-{
-    /* Pick up the PPP instance structure. */
-    PPP *ppp = (PPP *)priv_data;
-
-#ifndef CONFIG_SEMAPHORE
-    /* Lock the scheduler. */
-    scheduler_lock();
-#else
-    /* Acquire global data lock for PPP. */
-    if (semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) == SUCCESS)
-#endif
-    {
-        /* Process the received buffer according to the PPP state. */
-        switch (ppp->state)
-        {
-        /* If physical medium is connected. */
-        case PPP_STATE_CONNECTED:
-
-            /* Link layer is connected, and we are expecting some modem
-             * initialization before formally start handling PPP packets. */
-            ppp_process_modem_chat(fd, ppp);
-
-            /* Break out of this switch. */
-            break;
-
-        /* If we are processing LCP, IPCP frames or we have our connection
-         * established. */
-        case PPP_STATE_LCP:
-        case PPP_STATE_IPCP:
-        case PPP_STATE_NETWORK:
-
-            /* Try to parse the packet and see if PPP needs to process it. */
-            ppp_process_frame(fd, ppp);
-
-            /* Break out of this switch. */
-            break;
-
-        /* If physical medium not connected. */
-        case PPP_STATE_DISCONNECTED:
-        default:
-            /* Nothing to do here. */
-
-            /* Just break out of this switch. */
-            break;
-        }
-
-#ifdef CONFIG_SEMAPHORE
-        /* Release the global data lock. */
-        semaphore_release(&((PPP *)ppp)->lock);
-#else
-        /* Enable scheduling. */
-        scheduler_unlock();
-#endif
-    }
-
-} /* ppp_rx_watcher */
-
-/*
- * ppp_tx_watcher
- * @fd: File descriptor for which this was called.
- * @ppp: PPP private data.
- * This function will be called when even there is some space available and we
- * can push new data on the file descriptor.
- */
-void ppp_tx_watcher(void *fd, void *ppp)
-{
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(ppp);
-    UNUSED_PARAM(fd);
-
-} /* ppp_tx_watcher */
 
 #endif /* CONFIG_PPP */

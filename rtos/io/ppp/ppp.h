@@ -16,12 +16,13 @@
 #include <os.h>
 
 #ifdef CONFIG_PPP
+#ifndef CONFIG_NET
+#error "PPP requires networking stack."
+#endif
 #include <ppp_fcs.h>
 #include <ppp_packet.h>
 #include <ppp_hdlc.h>
-#ifdef CONFIG_NET
-#include <net_device.h>
-#endif
+#include <net.h>
 
 /* PPP configuration. */
 #define PPP_MODEM_CHAT
@@ -91,16 +92,13 @@ struct _ppp
     SEMAPHORE   lock;
 #endif
 
-#ifdef CONFIG_NET
     /* Networking device structure. */
     NET_DEV     net_device;
-#endif
 
     /* File descriptor registered with PPP device. */
     FD          fd;
 
     /* File system watchers. */
-    FS_DATA_WATCHER         data_watcher;
     FS_CONNECTION_WATCHER   connection_watcher;
 
     /* PPP instance state. */
@@ -174,14 +172,14 @@ PPP *ppp_get_instance_fd(FD);
 void ppp_connection_established(void *, void *);
 void ppp_connection_terminated(void *, void *);
 void ppp_rx_watcher(void *, void *);
-void ppp_tx_watcher(void *, void *);
 
 /* PPP internal APIs. */
 void ppp_process_modem_chat(void *, PPP *);
+void ppp_configuration_process(PPP *, FS_BUFFER *, PPP_PROTO *);
 void ppp_process_frame(void *, PPP *);
 int32_t net_ppp_transmit(FS_BUFFER *);
+void net_ppp_receive(void *);
 int32_t ppp_transmit_buffer_instance(PPP *, FS_BUFFER **, uint16_t);
-void ppp_configuration_process(PPP *, FS_BUFFER *, PPP_PROTO *);
 
 /* Include PPP supported configuration protocol definitions. */
 #include <ppp_lcp.h>
