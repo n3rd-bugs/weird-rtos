@@ -46,7 +46,7 @@ void net_condition_init()
     net_buffer_get_condition(&condition, &net_buffer_suspend, &process);
 
     /* Add networking buffer condition. */
-    net_condition_add(condition, &net_buffer_suspend, process);
+    net_condition_add(condition, &net_buffer_suspend, process, NULL);
 
     /* Create a task to process the incoming networking buffers. */
     task_create(&net_condition_tcb, "NET-RX", net_condition_stack, NET_COND_STACK_SIZE, &net_condition_task_entry, (void *)(&net_condition_data), TASK_NO_RETURN);
@@ -59,9 +59,10 @@ void net_condition_init()
  * @condition: Already populated condition.
  * @suspend: Already populated suspend.
  * @process: Callback for this condition.
+ * @data: Data needed to be forwarded to the callback.
  * This will add a new condition that will be process by networking stack.
  */
-void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PROCESS *process)
+void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PROCESS *process, void *data)
 {
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
@@ -75,6 +76,7 @@ void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PRO
     net_condition_data.condition[net_condition_data.num] = condition;
     net_condition_data.suspend[net_condition_data.num] = suspend;
     net_condition_data.process[net_condition_data.num] = process;
+    net_condition_data.data[net_condition_data.num] = data;
 
     /* Increase the number of conditions. */
     net_condition_data.num++;
@@ -144,12 +146,14 @@ void net_condition_remove(CONDITION *condition)
         memcpy(net_condition_data.condition[index], net_condition_data.condition[index + 1], (sizeof(CONDITION *) * ((net_condition_data.num - 1) - (uint32_t)index)));
         memcpy(net_condition_data.suspend[index], net_condition_data.suspend[index + 1], (sizeof(SUSPEND *) * ((net_condition_data.num - 1) - (uint32_t)index)));
         memcpy(net_condition_data.process[index], net_condition_data.process[index + 1], (sizeof(NET_CONDITION_PROCESS *) * ((net_condition_data.num - 1) - (uint32_t)index)));
+        memcpy(net_condition_data.data[index], net_condition_data.data[index + 1], (sizeof(NET_CONDITION_PROCESS *) * ((net_condition_data.num - 1) - (uint32_t)index)));
     }
 
     /* Clear the last condition. */
     net_condition_data.condition[net_condition_data.num - 1] = NULL;
     net_condition_data.suspend[net_condition_data.num - 1] = NULL;
     net_condition_data.process[net_condition_data.num - 1] = NULL;
+    net_condition_data.data[net_condition_data.num - 1] = NULL;
 
     /* Decrement the number of conditions. */
     net_condition_data.num = (uint32_t)(net_condition_data.num - 1);
@@ -168,6 +172,7 @@ static void net_condition_task_entry(void *argv)
 {
     NET_CONDITION *net_cond = (NET_CONDITION *)argv;
     NET_CONDITION_PROCESS *process;
+    void *data;
     uint32_t interrupt_level, num_condition;
     int32_t status;
 
@@ -184,13 +189,14 @@ static void net_condition_task_entry(void *argv)
 
         /* Suspend until we have a condition to process. */
         num_condition = net_cond->num;
-        status = suspend_condition(net_cond->condition[0], net_cond->suspend[0], MAX_WAIT, &num_condition, FALSE);
+        status = suspend_condition(net_cond->condition, net_cond->suspend, MAX_WAIT, &num_condition, FALSE);
 
         /* If a condition was successful. */
         if ((status == SUCCESS) && (num_condition < net_cond->num))
         {
             /* Pick the condition data. */
             process = net_cond->process[num_condition];
+            data = net_cond->data[num_condition];
         }
 
         /* We have no need to protect the networking conditions. */
@@ -199,7 +205,7 @@ static void net_condition_task_entry(void *argv)
         SET_INTERRUPT_LEVEL(interrupt_level);
 
         /* Process this condition. */
-        process();
+        process(data);
     }
 
 } /* net_condition_task_entry */

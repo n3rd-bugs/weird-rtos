@@ -18,9 +18,11 @@
 #include <fs.h>
 #include <semaphore.h>
 #include <net.h>
+#include <net_condition.h>
 
 /* Net transmit function definition. */
 typedef int32_t NET_TX (FS_BUFFER *);
+typedef NET_CONDITION_PROCESS NET_RX;
 
 /* Network device file descriptor. */
 typedef struct _net_dev NET_DEV;
@@ -33,8 +35,12 @@ struct _net_dev
     FD          fd;
 
     /* File system watchers. */
-    FS_DATA_WATCHER         data_watcher;
     FS_CONNECTION_WATCHER   connection_watcher;
+
+    /* Networking condition data that will be used to process events on this
+     * device. */
+    FS_PARAM    fs_param;
+    SUSPEND     suspend;
 
 #ifdef CONFIG_SEMAPHORE
     /* Protection for this networking device. */
@@ -70,13 +76,12 @@ typedef struct _net_dev_data
 
 /* Function prototypes. */
 void net_devices_init();
-void net_register_fd(NET_DEV *, FD, NET_TX *);
+void net_register_fd(NET_DEV *, FD, NET_TX *, NET_RX *);
 NET_DEV *net_device_get_fd(FD);
 void net_device_buffer_receive(FS_BUFFER *, uint8_t);
 int32_t net_device_buffer_transmit(FS_BUFFER *, uint8_t);
 void net_device_connected(void *, void *);
 void net_device_disconnected(void *, void *);
-void net_device_rx_watcher(void *, void *);
 
 #endif /* CONFIG_NET */
 #endif /* _NET_DEVICE_H_ */

@@ -34,6 +34,7 @@ typedef struct _net_condition
     SUSPEND         *suspend[NET_COND_NUM_TOTAL];
     CONDITION       *condition[NET_COND_NUM_TOTAL];
     NET_CONDITION_PROCESS *process[NET_COND_NUM_TOTAL];
+    void            *data[NET_COND_NUM_TOTAL];
 
     /* Number of conditions on which network stack is listening. */
     uint32_t    num;
@@ -42,7 +43,7 @@ typedef struct _net_condition
 
 /* Function prototypes. */
 void net_condition_init();
-void net_condition_add(CONDITION *, SUSPEND *, NET_CONDITION_PROCESS *);
+void net_condition_add(CONDITION *, SUSPEND *, NET_CONDITION_PROCESS *, void *);
 void net_condition_remove(CONDITION *);
 
 #endif /* CONFIG_NET */

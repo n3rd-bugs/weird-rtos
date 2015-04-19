@@ -19,9 +19,6 @@
 #include <semaphore.h>
 #include <net_condition.h>
 
-/* Net buffer ID used to tell the networking stack that a buffer belongs to it. */
-#define NET_BUFFER_ID               0x8A6EF4C6
-
 /* Protocol definitions that the networking stack will be expecting on a buffer
  * to invoke an interrupt routine for that. */
 #define NET_PROTO_IPV4              0x01

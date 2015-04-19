@@ -29,7 +29,7 @@ void net_devices_init()
     memset(&net_dev_data, 0, sizeof(NET_DEV_DATA));
 
 #ifdef CONFIG_SEMAPHORE
-    /* Create the PPP instance semaphore. */
+    /* Create the networking device instance semaphore. */
     semaphore_create(&net_dev_data.lock, 1, 1, SEMAPHORE_PRIORITY);
 #endif
 
@@ -40,10 +40,13 @@ void net_devices_init()
  * @net_device: Associated networking device structure.
  * @fd: File descriptor needed to be registered with networking layer.
  * @tx: Transmit function that will be called to send a packet on this device.
+ * @rx: RX function that will be called to processing the incoming data.
  * This function will register a file descriptor with networking layer.
  */
-void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx)
+void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
 {
+    CONDITION *condition;
+
     /* Will only work with buffered file descriptors. */
     OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
 
@@ -55,13 +58,6 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx)
 
     /* Save the transmit function. */
     net_device->tx = tx;
-
-    /* Initialize data watcher. */
-    net_device->data_watcher.data = net_device;
-    net_device->data_watcher.data_available = &net_device_rx_watcher;
-
-    /* Register data watcher. */
-    fs_data_watcher_set(fd, &net_device->data_watcher);
 
     /* Initialize connection watcher. */
     net_device->connection_watcher.data = net_device;
@@ -92,6 +88,12 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx)
     /* Release the global semaphore. */
     semaphore_release(&net_dev_data.lock);
 #endif
+
+    /* Get the condition data for this file descriptor. */
+    fs_condition_get(fd, &condition, &net_device->suspend, &net_device->fs_param, FS_BLOCK_READ);
+
+    /* Add networking buffer condition for this file descriptor. */
+    net_condition_add(condition, &net_device->suspend, rx, fd);
 
 } /* net_register_fd */
 
@@ -152,14 +154,11 @@ NET_DEV *net_device_get_fd(FD fd)
  */
 void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
 {
-    /* Assign this buffer a network buffer ID. */
-    buffer->id = NET_BUFFER_ID;
-
     /* Push the protocol on the buffer. */
     OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD) != SUCCESS);
 
-    /* Push this buffer in the receive list of the device. */
-    fs_buffer_add(buffer->fd, buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+    /* Write this buffer to the networking buffer file descriptor. */
+    OS_ASSERT(fs_write(net_buff_fd, (char *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
 
 } /* net_device_buffer_receive */
 
@@ -217,7 +216,7 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
 /*
  * net_device_connected
  * @fd: File descriptor for which connection is established.
- * @ppp: PPP file descriptor data.
+ * @net_device: Networking device that is now connected.
  * This function will be called whenever a connection is established for a
  * registered file descriptor.
  */
@@ -227,7 +226,7 @@ void net_device_connected(void *fd, void *net_device)
     /* Lock the scheduler. */
     scheduler_lock();
 #else
-    /* Acquire global data lock for PPP. */
+    /* Acquire global data lock for networking devices. */
     OS_ASSERT(semaphore_obtain(&((NET_DEV *)net_device)->lock, MAX_WAIT) != SUCCESS)
 #endif
 
@@ -257,7 +256,7 @@ void net_device_disconnected(void *fd, void *net_device)
     /* Lock the scheduler. */
     scheduler_lock();
 #else
-    /* Acquire global data lock for PPP. */
+    /* Acquire global data lock for networking devices. */
     OS_ASSERT(semaphore_obtain(&((NET_DEV *)net_device)->lock, MAX_WAIT) != SUCCESS)
 #endif
 
@@ -273,50 +272,5 @@ void net_device_disconnected(void *fd, void *net_device)
 #endif
 
 } /* net_device_disconnected */
-
-/*
- * net_device_rx_watcher
- * @fd: File descriptor for which new data is available.
- * @net_device: Net device instance data.
- * This function will be called when even there is some data available to read
- * from a file descriptor.
- */
-void net_device_rx_watcher(void *fd, void *net_device)
-{
-    FS_BUFFER *buffer;
-
-#ifndef CONFIG_SEMAPHORE
-    /* Lock the scheduler. */
-    scheduler_lock();
-#else
-    /* Acquire global data lock for this networking device. */
-    if (semaphore_obtain(&((NET_DEV *)net_device)->lock, MAX_WAIT) == SUCCESS)
-#endif
-    {
-        /* Pull all the incoming net buffers on this device. */
-        do
-        {
-            /* Check if we have a networking buffer. */
-            buffer = fs_buffer_get_by_id(fd, FS_BUFFER_RX, FS_BUFFER_ACTIVE, NET_BUFFER_ID);
-
-            /* If we do have a buffer. */
-            if (buffer)
-            {
-                /* Write this buffer to the networking buffer file descriptor. */
-                OS_ASSERT(fs_write(net_buff_fd, (char *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
-            }
-
-        } while (buffer != NULL);
-
-#ifdef CONFIG_SEMAPHORE
-        /* Release the global data lock. */
-        semaphore_release(&((NET_DEV *)net_device)->lock);
-#else
-        /* Enable scheduling. */
-        scheduler_unlock();
-#endif
-    }
-
-} /* net_device_rx_watcher */
 
 #endif /* CONFIG_NET */
