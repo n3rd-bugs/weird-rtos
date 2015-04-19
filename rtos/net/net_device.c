@@ -92,7 +92,7 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     /* Get the condition data for this file descriptor. */
     fs_condition_get(fd, &condition, &net_device->suspend, &net_device->fs_param, FS_BLOCK_READ);
 
-    /* Add networking buffer condition for this file descriptor. */
+    /* Add networking condition for this file descriptor. */
     net_condition_add(condition, &net_device->suspend, rx, fd);
 
 } /* net_register_fd */
@@ -142,15 +142,11 @@ NET_DEV *net_device_get_fd(FD fd)
 /*
  * net_device_buffer_receive
  * @buffer: A net buffer needed to be added in the receive list.
- * @protocol: Packet protocol as parsed on the lower layer needed to parse the
- *  contents of this buffer.
+ * @protocol: Packet protocol as parsed on the lower layer required by upper
+ *  layers to parse the contents of this buffer.
  * This function will be called by a device when it wants to transfer a buffer
  * to the networking stack, the device should already have registered itself
- * with the networking stack. Purpose of this task is to off-load the network
- * packet manipulation to the networking receive task, in-case the driver uses
- * interrupts, please note that for the known reasons it is possible we miss
- * to lock the networking buffer chain so this packet will lie in the receive
- * queue until a RX event is raised.
+ * with the networking stack.
  */
 void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
 {

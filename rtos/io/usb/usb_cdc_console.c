@@ -45,7 +45,7 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
     console_register(&cdc_cons->console);
 
     /* This is IRQ accessible console. */
-    semaphore_update(&cdc_cons->console.lock, 1, 1, (SEMAPHORE_PRIORITY|SEMAPHORE_IRQ));
+    semaphore_update(&cdc_cons->console.lock, 1, 1, (SEMAPHORE_PRIORITY | SEMAPHORE_IRQ));
 
     /* This will block on read, and all data that will be given to write must
      * be flushed. */
