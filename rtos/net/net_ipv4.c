@@ -240,11 +240,13 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
             if (status == SUCCESS)
             {
                 /* Transmit an IPv4 packet. */
-                if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4) == SUCCESS)
-                {
-                    /* We have transmitted the same buffer. */
-                    status = NET_BUFFER_CONSUMED;
-                }
+                status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4);
+            }
+
+            if (status == SUCCESS)
+            {
+                /* We have transmitted the same buffer. */
+                status = NET_BUFFER_CONSUMED;
             }
 #endif
         }
@@ -264,9 +266,9 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
 {
     int32_t status = SUCCESS;
     HDR_GEN_MACHINE hdr_machine;
-    uint8_t ver_ihl = ALLIGN_CEIL_N((IPV4_HDR_SIZE), 4) / 4, dscp = 0, ttl = 128;
+    uint8_t ver_ihl, ihl = ALLIGN_CEIL_N((IPV4_HDR_SIZE), 4) / 4, dscp = 0, ttl = 128;
     uint16_t id = 0, flag_offset = 0, csum = 0;
-    uint16_t total_length = (uint16_t)(buffer->total_length + (uint32_t)(ver_ihl * 4));
+    uint16_t total_length = (uint16_t)(buffer->total_length + (uint32_t)(ihl * 4));
     HEADER headers[] =
     {
         {&ver_ihl,      1,  0 },                    /* Version and IHL. */
@@ -284,11 +286,11 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
     /* A packet size must not exceed this. */
     OS_ASSERT(buffer->total_length > (65535 - IPV4_HDR_SIZE));
 
-    /* Add IPv4 version field. */
-    ver_ihl |= IPV4_HDR_VER;
+    /* Create the version and header length headers. */
+    ver_ihl = (ihl | IPV4_HDR_VER);
 
     /* If we need to add IPv4 header options. */
-    if (ver_ihl > (IPV4_HDR_SIZE / 4))
+    if (ihl > (IPV4_HDR_SIZE / 4))
     {
         /* [TODO] Add IPv4 header options. */
     }
@@ -302,7 +304,7 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
     if (status == SUCCESS)
     {
         /* Compute and update the value of checksum field. */
-        csum = net_csum_calculate(buffer, (ver_ihl * 8));
+        csum = net_csum_calculate(buffer, (ihl << 2));
         status = fs_buffer_push_offset(buffer, &csum, 2, IPV4_HDR_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
     }
 
