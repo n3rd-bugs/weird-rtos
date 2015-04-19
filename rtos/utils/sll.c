@@ -341,7 +341,7 @@ void *sll_remove(void *list, void *node, int offset)
 
 /*
  * sll_num_items
- * @list: List that is needed to be updated.
+ * @list: List that is needed to be counted.
  * @offset: Offset of the "next" member in a node structure.
  * @return: Returns the number of item in this list.
  * This function will return the number of items in a given list.
@@ -365,3 +365,38 @@ uint32_t sll_num_items(void *list, int offset)
     return (ret_num);
 
 } /* sll_num_items */
+
+/*
+ * sll_in_list
+ * @list: List that is needed to be searched.
+ * @node: Node needed to be searched.
+ * @offset: Offset of the "next" member in a node structure.
+ * @return: Returns if a member already exists in a list.
+ * This function will return if a member already exists in a list.
+ */
+uint8_t sll_in_list(void *list, void *node, int offset)
+{
+    void *list_node = ((SLL_HEAD *)list)->head;
+    uint8_t in_list = FALSE;
+
+    /* While we have an item in this list. */
+    while (list_node != NULL)
+    {
+        /* Check if this is same as the node. */
+        if (node == list_node)
+        {
+            /* Return true. */
+            in_list = TRUE;
+
+            /* Break out of this loop. */
+            break;
+        }
+
+        /* Get the next item from the list. */
+        list_node = ((SLL_NODE *)((uint8_t *)list_node + offset))->next;
+    }
+
+    /* Return if a given node do exist in a list. */
+    return (in_list);
+
+} /* sll_in_list */
