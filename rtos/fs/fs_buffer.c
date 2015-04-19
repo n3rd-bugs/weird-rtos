@@ -187,6 +187,14 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
     /* Should never happen. */
     OS_ASSERT(data == NULL);
 
+#ifdef FS_BUFFER_DEBUG
+    /* Check if this node already exists on any of the file descriptor lists. */
+    OS_ASSERT(sll_in_list(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
+    OS_ASSERT(sll_in_list(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
+    OS_ASSERT(sll_in_list(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
+    OS_ASSERT(sll_in_list(&data->buffers_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
+#endif
+
     /* Type of buffer we are adding. */
     switch (type)
     {
