@@ -126,7 +126,7 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
 int32_t net_process_ipv4(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
-    uint32_t sa, da;
+    uint32_t sa = 0, da;
     uint8_t proto, keep, ver_ihl, icmp_rep;
 
     /* We must have at least one byte to verify an IPv4 packet. */

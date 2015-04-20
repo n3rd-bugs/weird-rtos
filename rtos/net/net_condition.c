@@ -191,12 +191,17 @@ static void net_condition_task_entry(void *argv)
         num_condition = net_cond->num;
         status = suspend_condition(net_cond->condition, net_cond->suspend, MAX_WAIT, &num_condition, FALSE);
 
-        /* If a condition was successful. */
+        /* If a condition was successful became valid. */
         if ((status == SUCCESS) && (num_condition < net_cond->num))
         {
             /* Pick the condition data. */
             process = net_cond->process[num_condition];
             data = net_cond->data[num_condition];
+        }
+        else
+        {
+            /* We don't have a valid condition to process. */
+            process = data = NULL;
         }
 
         /* We have no need to protect the networking conditions. */
@@ -204,8 +209,12 @@ static void net_condition_task_entry(void *argv)
         /* Restore old interrupt level. */
         SET_INTERRUPT_LEVEL(interrupt_level);
 
-        /* Process this condition. */
-        process(data);
+        /* If we have a valid condition to process. */
+        if (process != NULL)
+        {
+            /* Process this condition. */
+            process(data);
+        }
     }
 
 } /* net_condition_task_entry */
