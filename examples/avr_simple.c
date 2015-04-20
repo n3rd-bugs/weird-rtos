@@ -111,7 +111,7 @@ int main(void)
     /* Initialize file system. */
     fs_init();
 
-    semaphore_create(&semaphore, 1, 1, SEMAPHORE_FIFO);
+    semaphore_create(&semaphore, 1, 1, 0);
 
     task_create(&task_cb_1, "TSK_1", stack_1, 192, &led_task_delayed, (void *)0x07, TASK_NO_RETURN);
     task_create(&task_cb_2, "TSK_2", stack_2, 128, &led_task_periodic, (void *)0x06, TASK_NO_RETURN);
