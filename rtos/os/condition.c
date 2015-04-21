@@ -27,6 +27,7 @@ static void suspend_condition_add_task(CONDITION **, SUSPEND **, uint32_t, TASK 
 static void suspend_condition_remove_all(CONDITION **, uint32_t, TASK *);
 static void suspend_condition_remove(CONDITION **, uint32_t, TASK *, uint32_t *);
 static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint32_t, uint32_t *);
+static uint32_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
 
 /*
  * suspend_sreach_task
@@ -214,6 +215,7 @@ static void suspend_condition_remove(CONDITION **condition, uint32_t num, TASK *
  * @num: Number of conditions.
  * @return_num: If a condition is valid the index for that condition will be
  *  returned here.
+ * @return: Will return true if we do need to suspend on a condition.
  * This routine will check for all the conditions if we do need to suspend on
  * them. If any of the condition is valid we will not suspend to wait for that
  * condition.
@@ -250,10 +252,54 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
 } /* suspend_do_suspend */
 
 /*
+ * suspend_timeout_get_min
+ * @condition: Condition list for which we will calculate the the minimum
+ *  timeout we need to wait.
+ * @suspend: Suspend list from which we will search for timeout for
+ *  corresponding condition.
+ * @num: Number of conditions.
+ * @return_num: The index at which first minimum timeout was found will be
+ *  returned here.
+ * @return: Minimum timeout calculated will be returned here.
+ * This routine will calculate the minimum number of times we need to wait on
+ * the given conditions before returning a timeout.
+ */
+static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
+{
+    uint32_t n, min_timeout = (*suspend)->timeout, min_index = 0;
+
+    /* Pick next condition. */
+    suspend++;
+
+    /* For all conditions search the minimum timeout. */
+    for (n = 1; n < num; n++)
+    {
+        /* Check if we don't need to suspend for this condition. */
+        if ((*suspend)->timeout < min_timeout)
+        {
+            /* Update the minimum timeout. */
+            min_timeout = (*suspend)->timeout;
+
+            /* Save the entry index. */
+            min_index = n;
+        }
+
+        /* Pick next condition. */
+        suspend++;
+    }
+
+    /* Return the condition index. */
+    *return_num = min_index;
+
+    /* Return the calculated minimum timeout. */
+    return (min_timeout);
+
+} /* suspend_timeout_get_min */
+
+/*
  * suspend_condition
  * @condition: Condition for which we need to suspend this task.
  * @suspend: Suspend data.
- * @timeout: Number of ticks we need to suspend on this condition.
  * @num: Pointer to number of conditions we are waiting for. Can be null for
  *  one condition otherwise the index of the condition for which we resumed
  *  will be returned here.
@@ -265,14 +311,14 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
  *  for the condition.
  * This function will suspend the caller task to wait for a criteria.
  */
-int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t timeout, uint32_t *num, uint8_t locked)
+int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *num, uint8_t locked)
 {
 #ifdef CONFIG_SLEEP
     uint64_t last_tick = current_system_tick();
 #endif
     TASK *tcb = get_current_task();
     int32_t status = SUCCESS, task_status = TASK_RESUME;
-    uint32_t num_conditions = *num;
+    uint32_t num_conditions = *num, timeout, timeout_index;
     uint8_t sch_locked = scheduler_is_locked();
 
 #ifndef CONFIG_SLEEP
@@ -312,6 +358,9 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t tim
         /* We have only one condition to process. */
         num_conditions = 1;
     }
+
+    /* Calculate the minimum timeout we need to wait for the conditions. */
+    timeout = suspend_timeout_get_min(suspend, num_conditions, &timeout_index);
 
     /* There is never a surety that if a condition is satisfied for a task when
      * it is resumed, as some other high priority task may again trigger in
@@ -374,6 +423,15 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t tim
         {
             /* Remove this task from all the conditions. */
             suspend_condition_remove_all(condition, num_conditions, tcb);
+
+            /* Return an error we failed to achieve the condition. */
+            status = CONDITION_TIMEOUT;
+
+            /* Return the index of the timed out condition. */
+            *num = timeout_index;
+
+            /* Break out of the loop. */
+            break;
         }
 
         else
@@ -381,26 +439,16 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t tim
             /* Remove the task from all the conditions except the one from
              * which we resumed. */
             suspend_condition_remove(condition, num_conditions, tcb, num);
-        }
 
-        /* Check if we are resumed due to a timeout. */
-        if (task_status == TASK_RESUME_SLEEP)
-        {
-            /* Return an error we failed to achieve the condition. */
-            status = CONDITION_TIMEOUT;
+            /* If we did not resume normally. */
+            if (task_status != TASK_RESUME)
+            {
+                /* Return the error returned by the task. */
+                status = task_status;
 
-            /* Break out of the loop. */
-            break;
-        }
-
-        /* If we did not resume normally. */
-        if (task_status != TASK_RESUME)
-        {
-            /* Return the error returned by the task. */
-            status = task_status;
-
-            /* Break out of the loop. */
-            break;
+                /* Break out of the loop. */
+                break;
+            }
         }
     }
 

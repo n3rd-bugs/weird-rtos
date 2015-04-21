@@ -43,6 +43,8 @@ typedef struct _suspend
 
     void        *param;     /* User defined criteria for the tasks. */
     uint32_t    flags;      /* Suspend flags. */
+    uint32_t    timeout;    /* Number of ticks we need to suspend on this
+                             * condition. */
 } SUSPEND;
 
 /* Condition data. */
@@ -68,7 +70,7 @@ typedef struct _condition
 } CONDITION;
 
 /* Function prototypes. */
-int32_t suspend_condition(CONDITION **, SUSPEND **, uint32_t, uint32_t *, uint8_t);
+int32_t suspend_condition(CONDITION **, SUSPEND **, uint32_t *, uint8_t);
 void resume_condition(CONDITION *, RESUME *, uint8_t);
 
 #endif /* _CONDITION_H_ */
