@@ -43,6 +43,7 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl)
     /* Peek the type of the ICMP packet. */
     OS_ASSERT(fs_buffer_pull_offset(buffer, &type, 1, (ihl + ICMP_HDR_TYPE_OFFSET), FS_BUFFER_INPLACE) != SUCCESS);
 
+#ifdef ICMP_ENABLE_PING
     /* If this is an Echo request. */
     if (type == ICMP_ECHO_REQUEST)
     {
@@ -86,6 +87,7 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl)
             }
         }
     }
+#endif /* ICMP_ENABLE_PING */
 
     /* Return status to the caller. */
     return (status);

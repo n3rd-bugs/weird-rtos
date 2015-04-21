@@ -19,6 +19,9 @@
 
 #ifdef NET_ICMP
 
+/* ICMP configuration. */
+#define ICMP_ENABLE_PING
+
 /* ICMP definitions. */
 #define ICMP_ECHO_REPLY         0
 #define ICMP_DST_UNREACHABLE    3

@@ -121,6 +121,12 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
 /*
  * net_process_ipv4
  * @buffer: File system buffer needed to be processed.
+ * @return: A success status will be returned if IPv4 packet was successfully
+ *  processed.
+ *  NET_BUFFER_CONSUMED will be returned if buffer was consumed and
+ *  should not be freed by the caller.
+ *  NET_INVALID_HDR will be returned if an invalid header was parsed.
+ *  NET_NOT_SUPPORTED will be returned if an unsupported IPv4 header was parsed.
  * This function will process an incoming IPv4 packet.
  */
 int32_t net_process_ipv4(FS_BUFFER *buffer)
@@ -128,6 +134,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
     int32_t status = SUCCESS;
     uint32_t sa = 0, da;
     uint8_t proto, keep, ver_ihl, icmp_rep;
+    uint16_t flag_offset;
 
     /* We must have at least one byte to verify an IPv4 packet. */
     if (buffer->total_length >= 1)
@@ -170,6 +177,20 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         {
             /* Return an error. */
             status = NET_INVALID_HDR;
+        }
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Verify that this is not a fragmented packet, as we don't support
+         * it. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+
+        /* If this packet will be fragmented. */
+        if ((flag_offset & IPV4_HDR_FALG_MF) || ((flag_offset & IPV4_HDR_FRAG_MASK) != 0))
+        {
+            /* We don't support fragmentation. */
+            status = NET_NOT_SUPPORTED;
         }
     }
 
