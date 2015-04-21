@@ -504,6 +504,7 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
     suspend->param = param;
     suspend->flags = (fs->flags & FS_PRIORITY_SORT ? CONDITION_PRIORITY : 0);
     suspend->do_suspend = &fs_do_suspend;
+    suspend->timeout = fs->timeout;
 
     /* Return the condition for this file system. */
     *condition = &(fs->condition);
@@ -724,7 +725,7 @@ int32_t fs_read(FD fd, char *buffer, int32_t nbytes)
                 fs_condition_get(fd, &condition, suspend_ptr, &param, FS_BLOCK_READ);
 
                 /* Suspend on data to be available to read. */
-                status = suspend_condition(&condition, &suspend_ptr, fs->timeout, NULL, TRUE);
+                status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
             }
 
             /* Check if some data is available. */
@@ -820,7 +821,7 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
                         fs_condition_get(fs, &condition, suspend_ptr, &param, FS_BLOCK_WRITE);
 
                         /* Suspend on data to be available to read. */
-                        status = suspend_condition(&condition, &suspend_ptr, fs->timeout, NULL, TRUE);
+                        status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
                     }
 
                     /* Check if some space is available. */

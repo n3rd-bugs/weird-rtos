@@ -67,7 +67,7 @@ int32_t semaphore_obtain(SEMAPHORE *, uint32_t);
 void semaphore_release(SEMAPHORE *);
 
 /* Semaphore condition APIs. */
-void semaphore_condition_get(SEMAPHORE *, CONDITION **, SUSPEND *);
+void semaphore_condition_get(SEMAPHORE *, CONDITION **, SUSPEND *, uint32_t);
 
 #endif /* CONFIG_SEMAPHORE */
 

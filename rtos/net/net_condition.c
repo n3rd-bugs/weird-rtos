@@ -189,7 +189,7 @@ static void net_condition_task_entry(void *argv)
 
         /* Suspend until we have a condition to process. */
         num_condition = net_cond->num;
-        status = suspend_condition(net_cond->condition, net_cond->suspend, MAX_WAIT, &num_condition, FALSE);
+        status = suspend_condition(net_cond->condition, net_cond->suspend, &num_condition, FALSE);
 
         /* If a condition was successful became valid. */
         if ((status == SUCCESS) && (num_condition < net_cond->num))

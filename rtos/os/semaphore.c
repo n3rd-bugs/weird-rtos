@@ -114,12 +114,13 @@ void semaphore_destroy(SEMAPHORE *semaphore)
  * @timeout: Time to wait on this semaphore.
  * This function will return condition for release of this semaphore.
  */
-void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEND *suspend)
+void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEND *suspend, uint32_t timeout)
 {
     /* Initialize suspend criteria. */
     suspend->param = NULL;
     suspend->flags = (semaphore->type & SEMAPHORE_PRIORITY ? CONDITION_PRIORITY : 0);
     suspend->do_suspend = &semaphore_do_suspend;
+    suspend->timeout = timeout;
 
     /* Return the condition for this semaphore. */
     *condition = &semaphore->condition;
@@ -225,10 +226,10 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         if ((wait > 0) && (tcb != NULL))
         {
             /* Initialize suspend condition for this semaphore. */
-            semaphore_condition_get(semaphore, &condition, suspend_ptr);
+            semaphore_condition_get(semaphore, &condition, suspend_ptr, wait);
 
             /* Start waiting on this semaphore. */
-            status = suspend_condition(&condition, &suspend_ptr, wait, NULL, TRUE);
+            status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
         }
 
         /* We are not waiting for this semaphore to be free. */
