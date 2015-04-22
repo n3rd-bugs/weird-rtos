@@ -80,6 +80,7 @@ void ppp_lcp_state_initialize(PPP *ppp)
     ppp->tx_accm[1] = (0x0);
     ppp->tx_accm[2] = (0x0);
     ppp->tx_accm[3] = (0x60000000);
+    ppp->mru = 1500;
 
 } /* ppp_lcp_state_initialize */
 
@@ -321,7 +322,7 @@ uint8_t ppp_lcp_option_length_valid(PPP *ppp, PPP_CONF_OPT *option)
 int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT *tx_packet)
 {
     int32_t status = SUCCESS;
-    FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
 
     /* Should never happen. */
     OS_ASSERT(tx_buffer == NULL);
@@ -367,6 +368,9 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
 
         /* Clear the assigned IP addresses. */
         ppp->local_ip_address = ppp->remote_ip_address = 0;
+
+        /* Set the MTU for this networking device. */
+        net_device_set_mtu(fd, ppp->mru);
     }
 
     /* Check if connection was terminated. */
