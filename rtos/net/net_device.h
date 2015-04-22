@@ -56,6 +56,9 @@ struct _net_dev
 #ifdef NET_IPV4
     /* IP address assigned to this interface. */
     uint32_t    ipv4_address;
+
+    /* IPv4 fragments for this device. */
+    IPV4_FRAGMENT   ipv4_fragments[IPV4_NUM_FRAGS];
 #endif
 
 };

@@ -17,6 +17,12 @@
 #ifdef CONFIG_NET
 #ifdef NET_IPV4
 
+/* IPv4 stack configuration. */
+#define IPV4_ENABLE_FRAG
+
+/* IPv4 fragmentation configuration. */
+#define IPV4_NUM_FRAGS              2
+
 /* Protocol definitions. */
 #define IP_PROTO_ICMP               (1)
 
@@ -41,6 +47,35 @@
 #define IPV4_HDR_SRC_OFFSET         12
 #define IPV4_HDR_DST_OFFSET         16
 #define IPV4_HDR_OPT_OFFSET         20
+
+/* IPv4 fragment flag definitions. */
+#define IPV4_FRAG_IN_USE            0x01
+#define IPV4_FRAG_LAST_RCVD         0x02
+
+/* IPv4 fragment structure. */
+typedef struct _ipv4_fragment
+{
+    /* Networking buffer list for the buffers belong in this fragment. */
+    struct _ipv4_fragment_buffer_list
+    {
+        FS_BUFFER       *head;
+        FS_BUFFER       *tail;
+    } buffer_list;
+
+    /* Source address from this fragment is being received. */
+    uint32_t    sa;
+
+    /* The system tick at which this fragment will timeout. */
+    uint32_t    timeout;
+
+    /* Packet ID for this fragment list. */
+    uint16_t    id;
+
+    /* Fragment flags. */
+    uint8_t     flags;
+    uint8_t     pad[1];
+
+} IPV4_FRAGMENT;
 
 /* Function prototypes. */
 int32_t ipv4_get_device_address(FD, uint32_t *);

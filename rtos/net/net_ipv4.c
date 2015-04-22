@@ -23,6 +23,15 @@
 #include <net_icmp.h>
 #endif
 #include <net_csum.h>
+#include <sll.h>
+#include <string.h>
+
+/* Internal function prototypes. */
+#ifdef IPV4_ENABLE_FRAG
+static uint8_t ipv4_frag_sort(void *, void *);
+static int32_t ipv4_frag_add(FS_BUFFER **, uint16_t);
+static int32_t ipv4_frag_merge(IPV4_FRAGMENT *, FS_BUFFER **);
+#endif
 
 /*
  * ipv4_get_device_address
@@ -184,13 +193,18 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
     {
         /* Verify that this is not a fragmented packet, as we don't support
          * it. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* If this packet will be fragmented. */
         if ((flag_offset & IPV4_HDR_FALG_MF) || ((flag_offset & IPV4_HDR_FRAG_MASK) != 0))
         {
+#ifdef IPV4_ENABLE_FRAG
+            /* Try to process this fragment. */
+            status = ipv4_frag_add(&buffer, flag_offset);
+#else
             /* We don't support fragmentation. */
             status = NET_NOT_SUPPORTED;
+#endif /* IPV4_ENABLE_FRAG */
         }
     }
 
@@ -333,6 +347,215 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
     return (status);
 
 } /* ipv4_header_add */
+
+#ifdef IPV4_ENABLE_FRAG
+
+/*
+ * ipv4_frag_sort
+ * @node: An existing node in the fragment list.
+ * @new_node: New node we need to add in the list.
+ * @return: Return true if this fragment is needed to be added before this
+ *  fragment otherwise false will be returned.
+ * This function will see if new fragment is needed to be added before the given
+ * fragment.
+ */
+static uint8_t ipv4_frag_sort(void *node, void *new_node)
+{
+    FS_BUFFER *this_buffer = (FS_BUFFER *)node, *buffer = (FS_BUFFER *)new_node;
+    uint16_t this_flag_offset, flag_offset;
+    uint8_t insert = FALSE;
+
+    /* Pull the flag and offset field for these buffers. */
+    OS_ASSERT(fs_buffer_pull_offset(this_buffer, &this_flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+    OS_ASSERT(fs_buffer_pull_offset(buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+    /* If existing node's offset is greater then the one we have received. */
+    if ((this_flag_offset & IPV4_HDR_FRAG_MASK) >= (flag_offset & IPV4_HDR_FRAG_MASK))
+    {
+        /* Insert this fragment here. */
+        insert = TRUE;
+    }
+
+    /* Return if we need to insert this fragment here. */
+    return (insert);
+
+} /* ipv4_frag_sort */
+
+/*
+ * ipv4_frag_add
+ * @buffer: IPv4 fragment received, if a fragment is completed a pointer to
+ *  complete packet will be returned here, otherwise will remain unchanged.
+ * @flag_offset: Flag and fragment offset as parsed from the buffer.
+ * @return: A success status will be returned if all the fragments for this
+ *  packet are now received and we can now process this packet.
+ *  NET_BUFFER_CONSUMED will be returned if we don't have a complete fragment
+ *  and we will need for more data to process this packet.
+ * This function will add a new fragment for the file descriptor.
+ */
+static int32_t ipv4_frag_add(FS_BUFFER **buffer, uint16_t flag_offset)
+{
+    NET_DEV *net_device = net_device_get_fd((*buffer)->fd);
+    uint32_t sa;
+    int32_t status = NET_BUFFER_CONSUMED, n, index = -1;
+    uint16_t id;
+
+    /* Should never happen. */
+    OS_ASSERT(net_device == NULL);
+
+    /* Pull the ID of this fragment. */
+    OS_ASSERT(fs_buffer_pull_offset(*buffer, &id, 2, IPV4_HDR_ID_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+    /* Pull the source address to which we will be sending the reply. */
+    OS_ASSERT(fs_buffer_pull_offset(*buffer, &sa, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+    /* Search all the fragments for a free one. */
+    for (n = 0; n < IPV4_NUM_FRAGS; n++)
+    {
+        /* If this fragment list is free. */
+        if ((net_device->ipv4_fragments[n].flags & IPV4_FRAG_IN_USE) == 0)
+        {
+            /* Save the index of the free fragment list. */
+            index = n;
+        }
+
+        /* If we already have a fragment list for this fragment */
+        else if ((net_device->ipv4_fragments[n].sa == sa) && (net_device->ipv4_fragments[n].id == id))
+        {
+            /* Use this fragment list to reassemble the packet. */
+            index = n;
+
+            /* Break out of this loop. */
+            break;
+        }
+    }
+
+    /* If do have a fragment list to process this fragment. */
+    if (index >= 0)
+    {
+        /* If this is a new fragment. */
+        if ((net_device->ipv4_fragments[index].flags & IPV4_FRAG_IN_USE) == 0)
+        {
+            /* Initialize this fragment. */
+            net_device->ipv4_fragments[index].flags |= IPV4_FRAG_IN_USE;
+            net_device->ipv4_fragments[index].id = id;
+            net_device->ipv4_fragments[index].sa = sa;
+        }
+
+        /* Push this fragment on the fragment list. */
+        sll_insert(&net_device->ipv4_fragments[index].buffer_list, *buffer, &ipv4_frag_sort, OFFSETOF(FS_BUFFER, next));
+
+        /* If we have received the last fragment. */
+        if (((flag_offset & IPV4_HDR_FALG_MF) == 0) || (net_device->ipv4_fragments[index].flags & IPV4_FRAG_LAST_RCVD))
+        {
+            /* Set the last fragment received flag anyway. */
+            net_device->ipv4_fragments[index].flags |= IPV4_FRAG_LAST_RCVD;
+        }
+
+        /* Merge the received fragments on the go. */
+        status = ipv4_frag_merge(&net_device->ipv4_fragments[index], buffer);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* ipv4_frag_add */
+
+/*
+ * ipv4_frag_merge
+ * @fragment: Fragment needed to be merged.
+ * @buffer: If fragment is complete a new buffer pointer will be returned here
+ *  which can be used to process incoming data.
+ * @return: A success status will be returned if a packet was successfully
+ *  constructed out of fragments and can now be processed.
+ *  NET_BUFFER_CONSUMED will be returned if more fragments are required to
+ *  construct the complete IPv4 packet.
+ * This function will merge all the fragments in to one buffer that can be
+ * further processed.
+ */
+static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER **buffer)
+{
+    FS_BUFFER *last_buffer, *next_buffer, *tmp_buffer;
+    int32_t status = SUCCESS;
+    uint16_t flag_offset, next_offset = 0;
+    uint8_t ver_ihl;
+
+    /* Pick the first and next buffer. */
+    last_buffer = fragment->buffer_list.head;
+    next_buffer = last_buffer->next;
+
+    /* Pull the version and IHL fields for the first buffer. */
+    OS_ASSERT(fs_buffer_pull_offset(last_buffer, &ver_ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+
+    /* Pull the flag and offset field for this buffer. */
+    OS_ASSERT(fs_buffer_pull_offset(last_buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+    /* Calculate the anticipated offset for next fragment. */
+    next_offset = (uint16_t)((((int32_t)last_buffer->total_length - ((ver_ihl & IPV4_HDR_IHL_MASK) << 2)) + ((flag_offset & IPV4_HDR_FRAG_MASK) << 3)) >> 3);
+
+    /* While we have a buffer in the fragment list. */
+    while (next_buffer)
+    {
+        /* Pull the version and IHL fields for this buffer. */
+        OS_ASSERT(fs_buffer_pull_offset(next_buffer, &ver_ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+
+        /* Pull the flag and offset field for this buffer. */
+        OS_ASSERT(fs_buffer_pull_offset(next_buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+        /* If there is no hole between last fragment and this fragment. */
+        if ((flag_offset & IPV4_HDR_FRAG_MASK) == next_offset)
+        {
+            /* Pull the IPv4 header from this buffer. */
+            OS_ASSERT(fs_buffer_pull(next_buffer, NULL, (uint32_t)((ver_ihl & IPV4_HDR_IHL_MASK) << 2), 0) != SUCCESS);
+
+            /* Merge this buffer in the return buffer. */
+            last_buffer->list.tail->next = next_buffer->list.head;
+            last_buffer->list.tail = next_buffer->list.tail;
+            last_buffer->total_length += next_buffer->total_length;
+
+            /* Clear the list for this buffer. */
+            next_buffer->list.head = next_buffer->list.tail = NULL;
+            tmp_buffer = next_buffer;
+
+            /* Pick the next buffer from the list. */
+            next_buffer = next_buffer->next;
+
+            /* Add this buffer back to the buffer list. */
+            fs_buffer_add(tmp_buffer->fd, tmp_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        }
+
+        else
+        {
+            /* There is a hole in the fragment list. */
+            status = NET_BUFFER_CONSUMED;
+
+            /* Calculate the anticipated offset for next fragment. */
+            next_offset = (uint16_t)((((int32_t)last_buffer->total_length - ((ver_ihl & IPV4_HDR_IHL_MASK) << 2)) + ((flag_offset & IPV4_HDR_FRAG_MASK) << 3)) >> 3);
+
+            /* We will use this buffer to merge any next fragments. */
+            last_buffer = next_buffer;
+
+            /* Pick the next buffer from the list. */
+            next_buffer = next_buffer->next;
+        }
+    }
+
+    /* If no holes were found in the fragment list and last fragment has been
+     * received. */
+    if ((status == SUCCESS) && (fragment->flags & IPV4_FRAG_LAST_RCVD))
+    {
+        /* Return the buffer we have constructed. */
+        *buffer = last_buffer;
+
+        /* Clear the fragment structure. */
+        memset(fragment, 0, sizeof(IPV4_FRAGMENT));
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* ipv4_frag_merge */
+
+#endif /* IPV4_ENABLE_FRAG */
 
 #endif /* NET_IPV4 */
 #endif /* CONFIG_NET */
