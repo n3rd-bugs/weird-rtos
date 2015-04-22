@@ -170,7 +170,7 @@ static void *console_open(char *name, uint32_t flags)
     param.priv = (void *)fd;
 
     /* First find a file system to which this call can be forwarded. */
-    sll_search(&console_data.list, NULL, fs_sreach_node, &param, OFFSETOF(CONSOLE, fs.next));
+    sll_search(&console_data.list, NULL, &fs_sreach_node, &param, OFFSETOF(CONSOLE, fs.next));
 
     /* If a node was found. */
     if (param.priv)

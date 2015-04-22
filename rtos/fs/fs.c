@@ -636,7 +636,7 @@ FD fs_open(char *name, uint32_t flags)
     param.priv = (void *)fs;
 
     /* First find a file system to which this call can be forwarded. */
-    sll_search(&file_data.list, NULL, fs_sreach_directory, &param, OFFSETOF(FS, next));
+    sll_search(&file_data.list, NULL, &fs_sreach_directory, &param, OFFSETOF(FS, next));
 
     /* If a node was found. */
     if (param.priv)

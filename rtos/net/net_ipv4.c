@@ -210,7 +210,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
 
         /* Protocol was not resolved. */
         else
-#endif
+#endif /* NET_ICMP */
 
         {
 #ifdef NET_ICMP
@@ -269,7 +269,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
                 /* We have transmitted the same buffer. */
                 status = NET_BUFFER_CONSUMED;
             }
-#endif
+#endif /* NET_ICMP */
         }
     }
 

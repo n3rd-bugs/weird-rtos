@@ -83,7 +83,7 @@ void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
     param.priv = (void *)NULL;
 
     /* First check if these is no other pipe with same name. */
-    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(PIPE, fs.next));
+    sll_search(&pipe_data.list, NULL, &fs_sreach_node, &param, OFFSETOF(PIPE, fs.next));
 
     if (param.priv == NULL)
     {
@@ -230,7 +230,7 @@ static void *pipe_open(char *name, uint32_t flags)
     param.priv = (void *)fd;
 
     /* First find a file system to which this call can be forwarded. */
-    sll_search(&pipe_data.list, NULL, fs_sreach_node, &param, OFFSETOF(PIPE, fs.next));
+    sll_search(&pipe_data.list, NULL, &fs_sreach_node, &param, OFFSETOF(PIPE, fs.next));
 
     /* If a node was found. */
     if (param.priv)

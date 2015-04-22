@@ -49,7 +49,7 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl)
     {
         /* Process ICMP echo request. */
 
-        /* Pull the IPv4 source and destination address. */
+        /* Pull the IPv4 destination address. */
         OS_ASSERT(fs_buffer_pull_offset(buffer, &da, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Pull the IPv4 address assigned to this device. */

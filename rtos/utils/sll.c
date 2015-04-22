@@ -168,7 +168,7 @@ void *sll_search(void *list, void **prev_node, uint8_t (*match)(void *, void *),
 
     if (list_node != NULL)
     {
-        /* Check if we need to remove the first node. */
+        /* Check if we need to return the first node. */
         if (match(list_node, param) == TRUE)
         {
             if (prev_node != NULL)
@@ -190,7 +190,7 @@ void *sll_search(void *list, void **prev_node, uint8_t (*match)(void *, void *),
                 list_node = ((SLL_NODE *)((uint8_t *)list_node + offset))->next;
             }
 
-            /* Check if we have found a node to be removed. */
+            /* Check if we have found required node. */
             if (((SLL_NODE *)((uint8_t *)list_node + offset))->next != NULL)
             {
                 if (prev_node != NULL)
@@ -205,7 +205,7 @@ void *sll_search(void *list, void **prev_node, uint8_t (*match)(void *, void *),
         }
     }
 
-    /* Return the removed node. */
+    /* Return the required node. */
     return (node);
 
 } /* sll_search */

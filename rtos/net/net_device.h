@@ -19,8 +19,11 @@
 #include <semaphore.h>
 #include <net.h>
 #include <net_condition.h>
+#ifdef NET_IPV4
+#include <net_ipv4.h>
+#endif
 
-/* Net transmit function definition. */
+/* Networking device transmit/receive functions. */
 typedef int32_t NET_TX (FS_BUFFER *);
 typedef NET_CONDITION_PROCESS NET_RX;
 

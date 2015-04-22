@@ -29,7 +29,7 @@ typedef struct _net_buffer_fs
     /* Contains the file system hooks for networking buffers. */
     FS      fs;
 
-    /* Net buffer list, this will contain the buffers we still need to
+    /* Networking buffer list, this will contain the buffers we still need to
      * process. */
     struct _net_buffer_fs_buffer_list
     {

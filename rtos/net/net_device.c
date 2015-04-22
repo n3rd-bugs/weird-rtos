@@ -242,7 +242,7 @@ void net_device_connected(void *fd, void *net_device)
 /*
  * net_device_disconnected
  * @fd: File descriptor for which connection was terminated.
- * @net_device: Net device instance data.
+ * @net_device: Networking device instance data.
  * This function will be called whenever a connection is disconnected for a
  * registered file descriptor.
  */
