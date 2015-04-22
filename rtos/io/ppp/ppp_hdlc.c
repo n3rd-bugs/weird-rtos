@@ -271,7 +271,7 @@ void ppp_hdlc_unescape_one(FS_BUFFER_ONE *buffer, uint8_t *last_escaped)
  */
 int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp)
 {
-    FS_BUFFER *destination = fs_buffer_get((*buffer)->fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    FS_BUFFER *destination = fs_buffer_get((*buffer)->fd, FS_BUFFER_LIST, 0);
     int32_t status = SUCCESS;
     uint16_t fcs;
 

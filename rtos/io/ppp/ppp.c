@@ -263,7 +263,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
 {
     PPP_CONF_PKT rx_packet, tx_packet;
     PPP_CONF_OPT option;
-    FS_BUFFER *tx_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    FS_BUFFER *tx_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
     int32_t status;
 
     /* Should never happen. */
@@ -474,7 +474,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
         if (ppp->rx_buffer == NULL)
         {
             /* Get a buffer list. */
-            ppp->rx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            ppp->rx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
 
             /* Should never happen. */
             OS_ASSERT(ppp->rx_buffer == NULL);
