@@ -896,6 +896,101 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
 } /* fs_buffer_push_offset */
 
 /*
+ * fs_buffer_divide
+ * @buffer: Buffer needed to be divided.
+ * @data_len: Number of bytes valid in the original buffer.
+ * @return: A success status will be returned if buffer was successfully divided,
+ *  FS_BUFFER_NO_SPACE will be returned if there is no buffer to store remaining
+ *  data of this buffer.
+ * This function will divide the given buffer into two buffers. An empty buffer
+ * will allocated to hold the remaining portion of buffer.
+ */
+int32_t fs_buffer_divide(FS_BUFFER *buffer, uint32_t data_len)
+{
+    FS_BUFFER_ONE *one, *new_one;
+    FS_BUFFER *new_buffer;
+    int32_t status = SUCCESS;
+    uint32_t this_len = data_len;
+
+    /* Should never happen. */
+    OS_ASSERT(buffer->total_length <= data_len);
+
+    /* Find the one buffer we need to divide. */
+    one = buffer->list.head;
+
+    while (one)
+    {
+        /* If remaining data length is less than the data in this buffer. */
+        if (this_len < one->length)
+        {
+            /* Break out of this loop. */
+            break;
+        }
+
+        /* Remove data length for this one buffer. */
+        this_len -= one->length;
+
+        /* If we need zero bytes from next one buffer. */
+        if (this_len == 0)
+        {
+            /* The new one buffer will be the next one buffer. */
+            new_one = one->next;
+
+            /* Break out of this loop. */
+            break;
+        }
+
+        /* Pick the next one buffer. */
+        one = one->next;
+    }
+
+    /* Should never happen. */
+    OS_ASSERT(one == NULL);
+
+    /* Get a new buffer to store the remaining data for this buffer. */
+    new_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+
+    /* If we do have a buffer to store remaining data of this buffer. */
+    if (new_buffer != NULL)
+    {
+        /* If we really do need to divide this one buffer. */
+        if (this_len != 0)
+        {
+            /* Remove the extra data from this one buffer to a new buffer. */
+            OS_ASSERT(fs_buffer_one_divide(buffer->fd, one, &new_one, this_len) != SUCCESS);
+
+            /* Initialize the new one buffers. */
+            new_one->next = one->next;
+        }
+
+        /* This will be last one buffer in the original buffer. */
+        one->next = NULL;
+
+        /* Initialize the new buffer. */
+        new_buffer->list.head = new_one;
+        new_buffer->list.tail = buffer->list.tail;
+        new_buffer->total_length = (buffer->total_length - data_len);
+
+        /* Divide the original buffer. */
+        buffer->list.tail = one;
+        buffer->total_length = data_len;
+
+        /* Put new buffer in the buffer chain. */
+        buffer->next = new_buffer;
+        new_buffer->next = NULL;
+    }
+    else
+    {
+        /* Return error to the caller. */
+        status = FS_BUFFER_NO_SPACE;
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* fs_buffer_divide */
+
+/*
  * fs_buffer_one_add_head
  * @buffer: File one buffer needed to be updated.
  * @size: Size of head room needed to be left in the buffer.
@@ -1145,39 +1240,51 @@ int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, void *data, uint32_t size,
  * @fd: File descriptor from which given buffer allocated.
  * @buffer: Buffer for which data is needed to be divided.
  * @new_buffer: Buffer that will have the remaining data of this buffer.
- * @data_ptr: Pointer in the original buffer at which this buffer is needed to
- *  be divided.
- * @data_len: Number of bytes valid in the second buffer.
+ * @data_len: Number of bytes valid in the original buffer.
+ * @return: A success status will be returned if buffer was successfully divided,
+ *  FS_BUFFER_NO_SPACE will be returned if there is no buffer to store remaining
+ *  data of this buffer.
  * This function will divide the given buffer into two buffers. An empty buffer
  * will allocated to hold the remaining portion of buffer.
  */
-void fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one, void *data_ptr, uint32_t data_len)
+int32_t fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one, uint32_t data_len)
 {
     FS_BUFFER_ONE *ret_one = NULL;
+    int32_t status = SUCCESS;
 
-    /* Divide the original buffer. */
-    one->length -= data_len;
+    /* Should never happen. */
+    OS_ASSERT(data_len <= one->length);
+    OS_ASSERT(new_one == NULL);
 
-    /* Check if we really do need return the remaining buffer. */
-    if (new_one != NULL)
+    /* Allocate a free buffer. */
+    ret_one = fs_buffer_one_get(fd, FS_BUFFER_FREE, 0);
+
+    /* If a free buffer was allocated. */
+    if (ret_one != NULL)
     {
-        /* Allocate a free buffer. */
-        ret_one = fs_buffer_one_get(fd, FS_BUFFER_FREE, 0);
+        /* Check if the new buffer has enough space to copy the data. */
+        OS_ASSERT(ret_one->max_length < data_len);
 
-        /* If a free buffer was allocated. */
-        if (ret_one != NULL)
-        {
-            /* Check if the new buffer has enough space to copy the data. */
-            OS_ASSERT(ret_one->max_length < data_len);
+        /* Set the number of bytes valid in this buffer. */
+        ret_one->length = (one->length - data_len);
 
-            /* Copy data from old buffer to the new buffer. */
-            memcpy(ret_one->buffer, data_ptr, data_len);
-            ret_one->length = data_len;
-        }
+        /* Update the number of bytes valid in the new buffer. */
+        one->length = data_len;
+
+        /* Copy data from old buffer to the new buffer. */
+        memcpy(ret_one->buffer, &one->buffer[data_len], ret_one->length);
 
         /* Return the new buffer. */
         *new_one = ret_one;
     }
+    else
+    {
+        /* Return error to the caller. */
+        status = FS_BUFFER_NO_SPACE;
+    }
+
+    /* Return status to the caller. */
+    return (status);
 
 } /* fs_buffer_one_divide */
 

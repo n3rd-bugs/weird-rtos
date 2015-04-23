@@ -17,7 +17,7 @@
 #ifdef CONFIG_FS
 
 /* Buffer configuration. */
-#define FS_BUFFER_TRACE
+#define FS_BUFFER_DEBUG
 
 /* Buffer type definition. */
 #define FS_BUFFER_FREE      1
@@ -89,7 +89,7 @@ typedef struct _fs_buffer_data
     {
         FS_BUFFER_ONE   *head;
         FS_BUFFER_ONE   *tail;
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         int32_t     buffers;
 #endif
     } free_buffer_list;
@@ -99,7 +99,7 @@ typedef struct _fs_buffer_data
     {
         FS_BUFFER_ONE   *head;
         FS_BUFFER_ONE   *tail;
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         int32_t     buffers;
 #endif
     } tx_buffer_list;
@@ -109,7 +109,7 @@ typedef struct _fs_buffer_data
     {
         FS_BUFFER_ONE   *head;
         FS_BUFFER_ONE   *tail;
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         int32_t     buffers;
 #endif
     } rx_buffer_list;
@@ -119,12 +119,12 @@ typedef struct _fs_buffer_data
     {
         FS_BUFFER       *head;
         FS_BUFFER       *tail;
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
         int32_t     buffers;
 #endif
     } buffers_list;
 
-#ifdef FS_BUFFER_TRACE
+#ifdef FS_BUFFER_DEBUG
     /* Number buffers in the system. */
     int32_t        buffers;
 #endif
@@ -156,6 +156,7 @@ void *fs_buffer_get_by_id(FD, uint32_t, uint32_t, uint32_t);
 int32_t fs_buffer_pull_offset(FS_BUFFER *, void *, uint32_t, uint32_t, uint8_t);
 #define fs_buffer_push(b, d, l, f)      fs_buffer_push_offset((b), (d), (l), 0, (f))
 int32_t fs_buffer_push_offset(FS_BUFFER *, void *, uint32_t, uint8_t, uint8_t);
+int32_t fs_buffer_divide(FS_BUFFER *, uint32_t);
 
 /* File system one buffer manipulation APIs. */
 int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *, uint32_t);
@@ -163,7 +164,7 @@ int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *, uint32_t);
 int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *, void *, uint32_t, uint32_t, uint8_t);
 #define fs_buffer_one_push(o, d, l, f)  fs_buffer_one_push_offset((o), (d), (l), 0, (f))
 int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *, void *, uint32_t, uint32_t, uint8_t);
-void fs_buffer_one_divide(FD, FS_BUFFER_ONE *, FS_BUFFER_ONE **, void *, uint32_t);
+int32_t fs_buffer_one_divide(FD, FS_BUFFER_ONE *, FS_BUFFER_ONE **, uint32_t);
 
 /* Helper routines. */
 int32_t fs_buffer_hdr_pull(void *, uint8_t *, uint32_t);
