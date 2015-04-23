@@ -90,6 +90,7 @@ NET_DEV *net_device_get_fd(FD);
 int32_t net_device_get_lock(void *);
 void net_device_release_lock(NET_DEV *);
 void net_device_set_mtu(FD, uint32_t);
+uint32_t net_device_get_mtu(FD);
 void net_device_buffer_receive(FS_BUFFER *, uint8_t);
 int32_t net_device_buffer_transmit(FS_BUFFER *, uint8_t);
 void net_device_connected(void *, void *);

@@ -200,6 +200,31 @@ void net_device_set_mtu(FD fd, uint32_t mtu)
 } /* net_device_set_mtu */
 
 /*
+ * net_device_get_mtu
+ * @fd: File descriptor associated with a networking device.
+ * This function will return a MTU for a networking device associated with
+ * given file descriptor.
+ */
+uint32_t net_device_get_mtu(FD fd)
+{
+    NET_DEV *net_device = net_device_get_fd(fd);
+    uint32_t ret_mtu;
+
+    /* Obtain the lock for this networking device. */
+    OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
+
+    /* Save the MTU for this networking device. */
+    ret_mtu = net_device->mtu;
+
+    /* Release the lock for this networking device. */
+    net_device_release_lock(net_device);
+
+    /* Return the MTU for this networking device. */
+    return(ret_mtu);
+
+} /* net_device_get_mtu */
+
+/*
  * net_device_buffer_receive
  * @buffer: A net buffer needed to be added in the receive list.
  * @protocol: Packet protocol as parsed on the lower layer required by upper
@@ -231,6 +256,7 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
 {
     int32_t status = SUCCESS;
     NET_DEV *net_device = net_device_get_fd(buffer->fd);
+    FS_BUFFER *next_buffer;
 
     /* If networking device was successfully resolved. */
     if (net_device != NULL)
@@ -238,11 +264,21 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
         /* Obtain the lock for this networking device. */
         OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
 
-        /* Push the protocol on the buffer. */
-        OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD) != SUCCESS);
+        /* While we have a buffer to transmit. */
+        while ((buffer != NULL) & (status == SUCCESS))
+        {
+            /* Save the next buffer we need to send. */
+            next_buffer = buffer->next;
 
-        /* Transmit this buffer on the networking device. */
-        status = net_device->tx(buffer);
+            /* Push the protocol on this buffer. */
+            OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD) != SUCCESS);
+
+            /* Transmit this buffer on the networking device. */
+            status = net_device->tx(buffer);
+
+            /* Pick the next buffer. */
+            buffer = next_buffer;
+        }
 
         /* Release the lock for this networking device. */
         net_device_release_lock(net_device);
