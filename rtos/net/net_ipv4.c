@@ -275,22 +275,30 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
 /*
  * ipv4_header_add
  * @buffer: File system buffer on which IPv4 header is needed to be added.
- * This function will add an IPv4 header on the given buffer.
+ * @proto: Protocol filed value for IPv4 header.
+ * @src_addr: Source address for this IPv4 packet.
+ * @dst_addr: Destination address for this IPv4 packet.
+ * @return: A success status will be returned if IPv4 header was successfully
+ *  added.
+ * This function will add an IPv4 header on the given buffer. If required buffer
+ * will also be fragmented according to the MTU of the device on which this packet
+ * will be sent.
  */
 int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uint32_t dst_addr)
 {
     int32_t status = SUCCESS;
     HDR_GEN_MACHINE hdr_machine;
-    uint8_t ver_ihl, ihl = ALLIGN_CEIL_N((IPV4_HDR_SIZE), 4) / 4, dscp = 0, ttl = 128;
-    uint16_t id = 0, flag_offset = 0, csum = 0;
-    uint16_t total_length = (uint16_t)(buffer->total_length + (uint32_t)(ihl * 4));
+    uint8_t ver_ihl, ihl, dscp = 0, ttl = 128;
+    uint16_t flag_offset, csum, this_length, offset = 0;
+    uint32_t max_payload_len, total_length;
+    static uint16_t id = 0;
     HEADER headers[] =
     {
         {&ver_ihl,      1,  0 },                    /* Version and IHL. */
         {&dscp,         1,  0 },                    /* DSCP. */
-        {&total_length, 2,  FS_BUFFER_PACKED },     /* Total length. */
-        {&id,           2,  0 },                    /* Fragment ID. */
-        {&flag_offset,  2,  0 },                    /* Flags and fragment offset. */
+        {&this_length,  2,  FS_BUFFER_PACKED },     /* Total length. */
+        {&id,           2,  FS_BUFFER_PACKED },     /* Fragment ID. */
+        {&flag_offset,  2,  FS_BUFFER_PACKED },     /* Flags and fragment offset. */
         {&ttl,          1,  0 },                    /* Time to live. */
         {&proto,        1,  0 },                    /* Protocol. */
         {&csum,         2,  0 },                    /* Checksum. */
@@ -298,29 +306,76 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
         {&dst_addr,     4,  FS_BUFFER_PACKED },     /* Destination address. */
     };
 
-    /* A packet size must not exceed this. */
-    OS_ASSERT(buffer->total_length > (65535 - IPV4_HDR_SIZE));
+    /* Increment the ID for each packet we send. */
+    id++;
 
-    /* Create the version and header length headers. */
-    ver_ihl = (ihl | IPV4_HDR_VER);
+    /* Calculate the IPv4 header length. */
+    ihl = (ALLIGN_CEIL_N((IPV4_HDR_SIZE), 4) >> 2);
 
-    /* If we need to add IPv4 header options. */
-    if (ihl > (IPV4_HDR_SIZE / 4))
+    /* Calculate the maximum number of bytes that can be sent in a single
+     * IPv4 packet. */
+    /* The fragment offset is measured in units of 8 octets (64 bits). */
+    max_payload_len = ALLIGN_FLOOR_N((net_device_get_mtu(buffer->fd) - (uint32_t)(ihl << 2)), 8);
+
+    /* Save the total number of bytes of payload we need to send. */
+    total_length = buffer->total_length;
+
+    /* Clear the next buffer pointer. */
+    buffer->next = NULL;
+
+    /* While we have some payload to send. */
+    while (total_length > 0)
     {
-        /* [TODO] Add IPv4 header options. */
-    }
+        /* Initialize header values. */
+        csum = 0;
+        flag_offset = 0;
 
-    /* Initialize header generator machine. */
-    header_gen_machine_init(&hdr_machine, &fs_buffer_hdr_push);
+        /* Check if we need to fragment this buffer. */
+        if (total_length > max_payload_len)
+        {
+            /* Divide the given buffer into two buffers. */
+            OS_ASSERT(fs_buffer_divide(buffer, max_payload_len) != SUCCESS);
 
-    /* Push the IPv4 header on the buffer. */
-    status = header_generate(&hdr_machine, headers, sizeof(headers)/sizeof(HEADER), buffer);
+            /* We will be sending more fragments after this. */
+            flag_offset |= IPV4_HDR_FALG_MF;
+        }
 
-    if (status == SUCCESS)
-    {
-        /* Compute and update the value of checksum field. */
-        csum = net_csum_calculate(buffer, (ihl << 2));
-        status = fs_buffer_push_offset(buffer, &csum, 2, IPV4_HDR_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+        /* Initialize the total length field for this buffer. */
+        this_length = (uint16_t)(buffer->total_length + (uint32_t)(ihl << 2));
+
+        /* Decrement the number of bytes in payload we need to process. */
+        total_length -= buffer->total_length;
+
+        /* Offset should always be divisible by 8. */
+        OS_ASSERT((offset > 0) && (offset % 8));
+
+        /* Set the offset for this fragment. */
+        flag_offset |= (offset >> 3);
+
+        /* Save the offset for next fragment. */
+        offset = (uint16_t)(offset + buffer->total_length);
+
+        /* Create the version and header length headers. */
+        ver_ihl = (ihl | IPV4_HDR_VER);
+
+        /* Initialize header generator machine. */
+        header_gen_machine_init(&hdr_machine, &fs_buffer_hdr_push);
+
+        /* Push the IPv4 header on the buffer. */
+        status = header_generate(&hdr_machine, headers, sizeof(headers)/sizeof(HEADER), buffer);
+
+        if (status == SUCCESS)
+        {
+            /* Compute and update the value of checksum field. */
+            csum = net_csum_calculate(buffer, (ihl << 2));
+            status = fs_buffer_push_offset(buffer, &csum, 2, IPV4_HDR_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+        }
+
+        if (status == SUCCESS)
+        {
+            /* Pick the remaining data of this buffer. */
+            buffer = buffer->next;
+        }
     }
 
     /* Return status to the caller. */
@@ -525,15 +580,23 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER **buffer)
         }
     }
 
-    /* If no holes were found in the fragment list and last fragment has been
-     * received. */
-    if ((status == SUCCESS) && (fragment->flags & IPV4_FRAG_LAST_RCVD))
+    /* If no holes were found in the fragment list. */
+    if (status == SUCCESS)
     {
-        /* Return the buffer we have constructed. */
-        *buffer = last_buffer;
+        /* If last fragment has been received. */
+        if (fragment->flags & IPV4_FRAG_LAST_RCVD)
+        {
+            /* Return the buffer we have constructed. */
+            *buffer = last_buffer;
 
-        /* Clear the fragment structure. */
-        memset(fragment, 0, sizeof(IPV4_FRAGMENT));
+            /* Clear the fragment structure. */
+            memset(fragment, 0, sizeof(IPV4_FRAGMENT));
+        }
+        else
+        {
+            /* We need more data to process this packet. */
+            status = NET_BUFFER_CONSUMED;
+        }
     }
 
     /* Return status to the caller. */
