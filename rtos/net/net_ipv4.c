@@ -290,7 +290,10 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
     HDR_GEN_MACHINE hdr_machine;
     uint8_t ver_ihl, ihl, dscp = 0, ttl = 128;
     uint16_t flag_offset, csum, this_length, offset = 0;
-    uint32_t max_payload_len, total_length;
+    uint32_t total_length;
+#ifdef IPV4_ENABLE_FRAG
+    uint32_t max_payload_len;
+#endif
     static uint16_t id = 0;
     HEADER headers[] =
     {
@@ -312,10 +315,16 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
     /* Calculate the IPv4 header length. */
     ihl = (ALLIGN_CEIL_N((IPV4_HDR_SIZE), 4) >> 2);
 
+#ifdef IPV4_ENABLE_FRAG
     /* Calculate the maximum number of bytes that can be sent in a single
      * IPv4 packet. */
     /* The fragment offset is measured in units of 8 octets (64 bits). */
     max_payload_len = ALLIGN_FLOOR_N((net_device_get_mtu(buffer->fd) - (uint32_t)(ihl << 2)), 8);
+#else
+    /* Payload should never be greater than the number of bytes we can sent in
+     * one datagram. */
+    OS_ASSERT((net_device_get_mtu(buffer->fd) - (uint32_t)(ihl << 2)) < buffer->total_length);
+#endif
 
     /* Save the total number of bytes of payload we need to send. */
     total_length = buffer->total_length;
@@ -330,6 +339,7 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
         csum = 0;
         flag_offset = 0;
 
+#ifdef IPV4_ENABLE_FRAG
         /* Check if we need to fragment this buffer. */
         if (total_length > max_payload_len)
         {
@@ -339,6 +349,7 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
             /* We will be sending more fragments after this. */
             flag_offset |= IPV4_HDR_FALG_MF;
         }
+#endif
 
         /* Initialize the total length field for this buffer. */
         this_length = (uint16_t)(buffer->total_length + (uint32_t)(ihl << 2));
@@ -384,7 +395,6 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
 } /* ipv4_header_add */
 
 #ifdef IPV4_ENABLE_FRAG
-
 /*
  * ipv4_frag_sort
  * @node: An existing node in the fragment list.
