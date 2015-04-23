@@ -461,6 +461,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
     FS_BUFFER_ONE *buffer, *new_buffer;
     PPP_PROTO *proto;
     int32_t status = SUCCESS;
+    uint32_t this_length;
     uint16_t protocol;
     uint8_t num_flags, this_flag = 0;
     uint8_t *flag_ptr[2];
@@ -526,15 +527,18 @@ void ppp_process_frame(void *fd, PPP *ppp)
             /* Check if there is still some data after the last flag. */
             if (flag_ptr[this_flag] != &buffer->buffer[buffer->length - 1])
             {
-                /* Divide this buffer into two buffers. */
-                fs_buffer_one_divide(fd, buffer, &new_buffer, flag_ptr[this_flag] + 1, (uint32_t)((buffer->buffer + buffer->length) - (flag_ptr[this_flag] + 1)));
+                /* Still need to test. */
+                OS_ASSERT(TRUE);
 
-                if (new_buffer != NULL)
-                {
-                    /* Silently add new buffer on the receive list of the
-                     * file descriptor we have received the data. */
-                    fs_buffer_add(fd, new_buffer, FS_BUFFER_RX, 0);
-                }
+                /* Calculate the number of bytes still valid in this buffer. */
+                this_length = (uint32_t)((flag_ptr[this_flag] + 1) - buffer->buffer);
+
+                /* Divide this buffer into two buffers. */
+                OS_ASSERT(fs_buffer_one_divide(fd, buffer, &new_buffer, this_length) != SUCCESS);
+
+                /* Silently add new buffer on the receive list of the
+                 * file descriptor we have received the data. */
+                fs_buffer_add(fd, new_buffer, FS_BUFFER_RX, 0);
             }
 
             /* Add this complete or partial received buffer on the receive buffer. */
