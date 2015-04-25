@@ -36,26 +36,31 @@ typedef struct _resume
 } RESUME;
 
 /* Suspend data. */
-typedef struct _suspend
+typedef struct _suspend SUSPEND;
+struct _suspend
 {
+    /* Suspend link list member. */
+    SUSPEND     *next;
+
     /* Function that will be called to see if we need to suspend. */
     CONDITION_DO_SUSPEND *do_suspend;
 
+    TASK        *task;      /* Task suspended on this. */
     void        *param;     /* User defined criteria for the tasks. */
     uint32_t    flags;      /* Suspend flags. */
     uint32_t    timeout;    /* Number of ticks we need to suspend on this
                              * condition. */
-} SUSPEND;
+};
 
 /* Condition data. */
 typedef struct _condition
 {
-    struct _condition_task_list
+    struct _condition_suspend_list
     {
-        /* Link-list for the tasks waiting on this. */
-        TASK        *head;
-        TASK        *tail;
-    } task_list;
+        /* Link-list of the suspend on this condition. */
+        SUSPEND     *head;
+        SUSPEND     *tail;
+    } suspend_list;
 
     /* Function that will be called to get lock for condition. */
     CONDITION_LOCK      *lock;
@@ -63,8 +68,7 @@ typedef struct _condition
     /* Function that will be called to release lock for this condition. */
     CONDITION_UNLOCK    *unlock;
 
-    /* Private data that will be passed to the pre-suspend and post-resume
-     * APIs.  */
+    /* Private data that will be passed to the lock and unlock APIs.  */
     void    *data;
 
 } CONDITION;

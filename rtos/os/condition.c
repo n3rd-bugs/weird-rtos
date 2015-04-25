@@ -20,17 +20,18 @@
 #endif
 
 /* Internal function prototypes. */
-static uint8_t suspend_sreach_task(void *, void *);
+static uint8_t suspend_sreach(void *, void *);
+static uint8_t suspend_priority_sort(void *, void *);
 static void suspend_lock_condition(CONDITION **, uint32_t, TASK *);
 static void suspend_unlock_condition(CONDITION **, uint32_t, TASK *);
 static void suspend_condition_add_task(CONDITION **, SUSPEND **, uint32_t, TASK *);
-static void suspend_condition_remove_all(CONDITION **, uint32_t, TASK *);
-static void suspend_condition_remove(CONDITION **, uint32_t, TASK *, uint32_t *);
+static void suspend_condition_remove_all(CONDITION **, SUSPEND **, uint32_t);
+static void suspend_condition_remove(CONDITION **, SUSPEND **, uint32_t, TASK *, uint32_t *);
 static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint32_t, uint32_t *);
 static uint32_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
 
 /*
- * suspend_sreach_task
+ * suspend_sreach
  * @node: An task waiting on this condition.
  * @param: Resumption criteria.
  * @return: TRUE if we need to resume this task, FALSE if we cannot resume
@@ -38,18 +39,45 @@ static uint32_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
  * This is a search function to search a task that satisfy the suspension
  * criteria.
  */
-static uint8_t suspend_sreach_task(void *node, void *param)
+static uint8_t suspend_sreach(void *node, void *param)
 {
+    SUSPEND *suspend = (SUSPEND *)node;
     RESUME *resume = (RESUME *)param;
     uint8_t match = TRUE;
 
     /* Check if we can resume this task. */
-    match = resume->do_resume(resume->param, ((SUSPEND *)((TASK *)node)->suspend_data)->param);
+    match = resume->do_resume(resume->param, suspend->param);
 
     /* Return if we need to stop the search or need to process more. */
     return (match);
 
-} /* suspend_sreach_task */
+} /* suspend_sreach */
+
+/*
+ * suspend_priority_sort
+ * @node: Existing suspend in a list.
+ * @task: New suspend being added in a list.
+ * @return: TRUE if the new suspend is needed be handled before the existing
+ *  suspend in the list.
+ * This is sorting function called by SLL routines to sort the suspend list on
+ * the priority.
+ */
+static uint8_t suspend_priority_sort(void *node, void *new)
+{
+    uint8_t schedule = FALSE;
+    SUSPEND *suspend_node = (SUSPEND *)node, *suspned_new = (SUSPEND *)new;
+
+    /* Check if this node has lower priority than the new suspend. */
+    if (suspend_node->task->priority > suspned_new->task->priority)
+    {
+        /* Handle the new suspend before this one. */
+        schedule = TRUE;
+    }
+
+    /* Return if we need to handle this suspend before the given suspend. */
+    return (schedule);
+
+} /* suspend_priority_sort. */
 
 /*
  * suspend_unlock_condition
@@ -123,17 +151,20 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
     /* For all conditions add this task. */
     while (num)
     {
+        /* Add this task on the suspend data. */
+        (*suspend)->task = tcb;
+
         /* If we need to sort the list on priority. */
         if ((*suspend)->flags & CONDITION_PRIORITY)
         {
-            /* Add this task on the task list. */
-            sll_insert(&(*condition)->task_list, tcb, &task_priority_sort, OFFSETOF(TASK, next));
+            /* Add suspend to the suspend list on priority. */
+            sll_insert(&(*condition)->suspend_list, *suspend, &suspend_priority_sort, OFFSETOF(SUSPEND, next));
         }
 
         else
         {
-            /* Add this task at the end of task list. */
-            sll_append(&(*condition)->task_list, tcb, OFFSETOF(TASK, next));
+            /* Add suspend at the end of suspend list. */
+            sll_append(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next));
         }
 
         /* Pick next condition. */
@@ -148,22 +179,22 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
 
 /*
  * suspend_condition_remove_all
- * @condition: Condition list from which this task is needed to be removed.
+ * @condition: Condition list from which this suspend is needed to be removed.
+ * @suspend: Suspend list.
  * @num: Number of conditions.
- * @tcb: Current task pointer.
- * This routine will remove the given task from all the conditions we were
- * waiting for.
+ * This routine will remove all the suspend from the respective conditions.
  */
-static void suspend_condition_remove_all(CONDITION **condition, uint32_t num, TASK *tcb)
+static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspend, uint32_t num)
 {
-    /* For all conditions remove this task. */
+    /* For all conditions remove respective conditions. */
     while (num > 0)
     {
-        /* Remove this task from the task list. */
-        OS_ASSERT(sll_remove(&(*condition)->task_list, tcb, OFFSETOF(TASK, next)) != tcb);
+        /* Remove this suspend from the suspend list. */
+        OS_ASSERT(sll_remove(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next)) != *suspend);
 
-        /* Pick next condition. */
+        /* Pick next suspend. */
         condition++;
+        suspend++;
 
         /* This is now processed. */
         num--;
@@ -173,15 +204,16 @@ static void suspend_condition_remove_all(CONDITION **condition, uint32_t num, TA
 
 /*
  * suspend_condition_remove
- * @condition: Condition list from which this task is needed to be removed.
- * @num: Number of conditions.
+ * @condition: Condition list from which this suspend is needed to be removed.
+ * @suspend: Suspend list.
  * @tcb: Current task pointer.
+ * @num: Number of conditions.
  * @return_num: If not null the condition index for which we were resumed will
  *  be returned here.
- * This routine will remove the given task from all the conditions we were
- * waiting for except the one we resumed from.
+ * This routine will remove all the suspend from the respective conditions,
+ * except the one we were resumed from at it was already removed.
  */
-static void suspend_condition_remove(CONDITION **condition, uint32_t num, TASK *tcb, uint32_t *return_num)
+static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, uint32_t num, TASK *tcb, uint32_t *return_num)
 {
     uint32_t n;
 
@@ -198,7 +230,7 @@ static void suspend_condition_remove(CONDITION **condition, uint32_t num, TASK *
         {
             /* We are no longer waiting on this condition remove this task from
              * the condition. */
-            OS_ASSERT(sll_remove(&(*condition)->task_list, tcb, OFFSETOF(TASK, next)) != tcb);
+            OS_ASSERT(sll_remove(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next)) != *suspend);
         }
 
         /* Pick next condition. */
@@ -229,7 +261,7 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
     for (n = 0; n < num; n++)
     {
         /* Check if we don't need to suspend for this condition. */
-        if ((*suspend)->do_suspend((*condition)->data, (*suspend)->param) == FALSE)
+        if (((*suspend)->do_suspend) && ((*suspend)->do_suspend((*condition)->data, (*suspend)->param) == FALSE))
         {
             /* We don't need to suspend for this condition. */
             do_suspend = FALSE;
@@ -307,7 +339,7 @@ static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
  *  locked state. If FALSE the caller is not locked and we will return in non
  *  locked state.
  * @return: SUCCESS if criteria was successfully achieved,
- *  SUSPEND_PRIORITY will be returned if a timeout was occurred while waiting
+ *  CONDITION_TIMEOUT will be returned if a timeout was occurred while waiting
  *  for the condition.
  * This function will suspend the caller task to wait for a criteria.
  */
@@ -422,7 +454,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         if (task_status == TASK_RESUME_SLEEP)
         {
             /* Remove this task from all the conditions. */
-            suspend_condition_remove_all(condition, num_conditions, tcb);
+            suspend_condition_remove_all(condition, suspend, num_conditions);
 
             /* Return an error we failed to achieve the condition. */
             status = CONDITION_TIMEOUT;
@@ -438,7 +470,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         {
             /* Remove the task from all the conditions except the one from
              * which we resumed. */
-            suspend_condition_remove(condition, num_conditions, tcb, num);
+            suspend_condition_remove(condition, suspend, num_conditions, tcb, num);
 
             /* If we did not resume normally. */
             if (task_status != TASK_RESUME)
@@ -484,7 +516,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
  */
 void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 {
-    TASK *tcb;
+    SUSPEND *suspend;
 
     /* If caller is not in locked state. */
     if ((locked == FALSE) && (condition->lock))
@@ -503,42 +535,37 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
             OS_ASSERT(resume->do_resume == NULL);
 
             /* Search for a task that can be resumed. */
-            tcb = (TASK *)sll_search_pop(&condition->task_list, &suspend_sreach_task, resume, OFFSETOF(TASK, next));
+            suspend = (SUSPEND *)sll_search_pop(&condition->suspend_list, &suspend_sreach, resume, OFFSETOF(SUSPEND, next));
         }
 
         else
         {
             /* Get the first task that can be executed. */
-            tcb = (TASK *)sll_pop(&condition->task_list, OFFSETOF(TASK, next));
+            suspend = (SUSPEND *)sll_pop(&condition->suspend_list, OFFSETOF(SUSPEND, next));
         }
 
-        /* If we have a task to resume. */
-        if (tcb)
+        /* If we have a task, and we need to resume it. */
+        if ((suspend) && (suspend->task->status == TASK_SUSPENDED))
         {
             /* Set the task status as required by resume. */
-            tcb->status = resume->status;
+            suspend->task->status = resume->status;
 
             /* Save the condition for which this task is resuming. */
-            tcb->suspend_data = condition;
+            suspend->task->suspend_data = condition;
 
 #ifdef CONFIG_SLEEP
             /* Remove this task from sleeping tasks. */
-            sleep_remove_from_list(tcb);
+            sleep_remove_from_list(suspend->task);
 #endif /* CONFIG_SLEEP */
 
             /* Try to reschedule this task. */
-            ((SCHEDULER *)(tcb->scheduler))->yield(tcb, YIELD_SYSTEM);
+            ((SCHEDULER *)(suspend->task->scheduler))->yield(suspend->task, YIELD_SYSTEM);
 
             /* Try to yield the current task. */
             task_yield();
         }
-        else
-        {
-            /* No more tasks left break out of this loop. */
-            break;
-        }
 
-    } while (tcb != NULL);
+    } while (suspend != NULL);
 
     /* If caller was not in locked state. */
     if ((locked == FALSE) && (condition->unlock))
