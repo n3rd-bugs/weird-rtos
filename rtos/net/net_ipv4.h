@@ -22,6 +22,7 @@
 
 /* IPv4 fragmentation configuration. */
 #define IPV4_NUM_FRAGS              2
+#define IPV4_FRAG_TIMEOUT           (OS_TICKS_PER_SEC * 2)  /* Needs to be 60 seconds according to the RFC. */
 
 /* Protocol definitions. */
 #define IP_PROTO_ICMP               (1)
@@ -50,11 +51,18 @@
 
 /* IPv4 fragment flag definitions. */
 #define IPV4_FRAG_IN_USE            0x01
-#define IPV4_FRAG_LAST_RCVD         0x02
+#define IPV4_FRAG_HAVE_FIRST        0x02
+#define IPV4_FRAG_LAST_RCVD         0x04
+
+#ifdef IPV4_ENABLE_FRAG
 
 /* IPv4 fragment structure. */
 typedef struct _ipv4_fragment
 {
+    /* Condition data for this fragment. */
+    CONDITION   condition;
+    SUSPEND     suspend;
+
     /* Networking buffer list for the buffers belong in this fragment. */
     struct _ipv4_fragment_buffer_list
     {
@@ -76,8 +84,10 @@ typedef struct _ipv4_fragment
     uint8_t     pad[1];
 
 } IPV4_FRAGMENT;
+#endif /* IPV4_ENABLE_FRAG */
 
 /* Function prototypes. */
+void ipv4_device_initialize(NET_DEV *);
 int32_t ipv4_get_device_address(FD, uint32_t *);
 int32_t ipv4_set_device_address(FD, uint32_t);
 int32_t net_process_ipv4(FS_BUFFER *);
