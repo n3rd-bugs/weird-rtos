@@ -19,6 +19,10 @@
 #include <semaphore.h>
 #include <net.h>
 #include <net_condition.h>
+
+/* Network device file descriptor loose definition. */
+typedef struct _net_dev NET_DEV;
+
 #ifdef NET_IPV4
 #include <net_ipv4.h>
 #endif
@@ -28,7 +32,6 @@ typedef int32_t NET_TX (FS_BUFFER *);
 typedef NET_CONDITION_PROCESS NET_RX;
 
 /* Network device file descriptor. */
-typedef struct _net_dev NET_DEV;
 struct _net_dev
 {
     /* Networking device list member. */
@@ -60,10 +63,11 @@ struct _net_dev
     /* IP address assigned to this interface. */
     uint32_t    ipv4_address;
 
+#ifdef IPV4_ENABLE_FRAG
     /* IPv4 fragments for this device. */
     IPV4_FRAGMENT   ipv4_fragments[IPV4_NUM_FRAGS];
 #endif
-
+#endif
 };
 
 /* Network device global data. */
