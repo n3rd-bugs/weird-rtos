@@ -65,6 +65,7 @@ void net_condition_init()
 void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PROCESS *process, void *data)
 {
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+    TASK *tcb = get_current_task();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
@@ -83,6 +84,13 @@ void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PRO
 
     /* Restore old interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);
+
+    /* If this is not the networking task. */
+    if ((tcb) && (tcb != &net_condition_tcb))
+    {
+        /* For now this is not supported. */
+        OS_ASSERT(TRUE);
+    }
 
 } /* net_condition_add */
 
@@ -125,9 +133,17 @@ void net_condition_remove(CONDITION *condition)
 {
     int32_t index;
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+    TASK *tcb = get_current_task();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
+
+    /* If this is not the networking task. */
+    if ((tcb) && (tcb != &net_condition_tcb))
+    {
+        /* For now this is not supported. */
+        OS_ASSERT(TRUE);
+    }
 
     /* Validate that we do have a condition on which we are listening. */
     OS_ASSERT(net_condition_data.num <= 0);
@@ -192,7 +208,7 @@ static void net_condition_task_entry(void *argv)
         status = suspend_condition(net_cond->condition, net_cond->suspend, &num_condition, FALSE);
 
         /* If a condition was successful became valid. */
-        if ((status == SUCCESS) && (num_condition < net_cond->num))
+        if (((status == SUCCESS) || (status == CONDITION_TIMEOUT)) && (num_condition < net_cond->num))
         {
             /* Pick the condition data. */
             process = net_cond->process[num_condition];
