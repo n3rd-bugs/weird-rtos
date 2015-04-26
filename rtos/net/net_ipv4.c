@@ -463,6 +463,8 @@ static void ipv4_fragment_expired(void *data)
     /* Pick the head buffer. */
     buffer = fragment->buffer_list.head;
 
+    OS_ASSERT(buffer == NULL);
+
     /* Save the file descriptor on which data was received. */
     buffer_fd = buffer->fd;
 
@@ -721,7 +723,7 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER **buffer)
         }
         else
         {
-            /* We need more data to process this packet. */
+            /* We still need more data to process this packet. */
             status = NET_BUFFER_CONSUMED;
         }
     }
