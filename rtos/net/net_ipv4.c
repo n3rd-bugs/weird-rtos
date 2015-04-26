@@ -63,6 +63,54 @@ void ipv4_device_initialize(NET_DEV *net_dev)
 } /* ipv4_device_initialize */
 
 /*
+ * ipv4_compare_address
+ * @address1:  Address needed to be matched.
+ * @address2: Given address.
+ * @match: Current match status.
+ * @return: A true will be returned if addresses match exactly, partial will be
+ *  returned if they match partially and false will be returned if address don't
+ *  match at all.
+ * This function will match two IPv4 addresses.
+ */
+uint8_t ipv4_compare_address(uint32_t address1, uint32_t address2, uint8_t match)
+{
+    /* If match is not already failed. */
+    if (match != FALSE)
+    {
+        /* Compare the two IPv4 addresses. */
+
+        /* If we don't have an unspecified address. */
+        if (address1 != IPV4_ADDR_UNSPEC)
+        {
+            /* If the address exactly match. */
+            if (address1 == address2)
+            {
+                /* A partial match cannot be updated to exact match. */
+                if (match != PARTIAL)
+                {
+                    /* Exact match. */
+                    match = TRUE;
+                }
+            }
+            else
+            {
+                /* Did not match at all. */
+                match = FALSE;
+            }
+        }
+        else
+        {
+            /* Got a partial match. */
+            match = PARTIAL;
+        }
+    }
+
+    /* Return match status to the caller. */
+    return (match);
+
+} /* ipv4_compare_address */
+
+/*
  * ipv4_get_device_address
  * @fd: File descriptor associated with the networking device.
  * @address: IPv4 address associated with this device will be returned here.
@@ -269,15 +317,15 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
             else
             {
                 /* Destination address is unreachable. */
-                status = NET_DEST_UNREACHABLE;
+                status = NET_DST_UNREACHABLE;
             }
 
             break;
         }
 
 #ifdef NET_ICMP
-        /* If we need to send an ICMP destination unreachable message. */
-        if ((status == NET_UNKNOWN_PROTO) || (status == NET_DEST_UNREACHABLE))
+        /* If packet was not parsed correctly. */
+        if ((status != SUCCESS) && (status != NET_BUFFER_CONSUMED))
         {
             /* Resolve an ICMP message needed be sent. */
             switch (status)
@@ -289,55 +337,66 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
 
                 break;
 
-            case NET_DEST_UNREACHABLE:
+            case NET_DST_UNREACHABLE:
 
                 /* Cannot forward this packet, destination unreachable. */
                 icmp_rep = ICMP_DST_HOST;
 
                 break;
 
+            case NET_DST_PRT_UNREACHABLE:
+
+                /* Destination port is unreachable. */
+                icmp_rep = ICMP_DST_PORT;
+
+                break;
+
             default:
 
-                /* Should never happen. */
-                OS_ASSERT(TRUE);
+                /* No need to send an ICMP reply. */
+                icmp_rep = ICMP_DST_NONE;
 
                 break;
             }
 
-            /* The internet header plus the first 64 bits of the original
-             * datagram's data.  This data is used by the host to match the
-             * message to the appropriate process.  If a higher level protocol
-             * uses port numbers, they are assumed to be in the first 64 data
-             * bits of the original datagram's data. */
-            keep = (uint8_t)(ver_ihl + 8);
-
-            /* Check if we don't have 64 bits ahead. */
-            if (keep < buffer->total_length)
+            /* If we need to send an ICMP packet. */
+            if (icmp_rep != ICMP_DST_NONE)
             {
-                /* Pull the data that is not needed to be sent. */
-                OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - keep), FS_BUFFER_TAIL) != SUCCESS);
-            }
+                /* The internet header plus the first 64 bits of the original
+                 * datagram's data.  This data is used by the host to match the
+                 * message to the appropriate process.  If a higher level protocol
+                 * uses port numbers, they are assumed to be in the first 64 data
+                 * bits of the original datagram's data. */
+                keep = (uint8_t)(ver_ihl + 8);
 
-            /* Generate an ICMP protocol unreachable message. */
-            status = icmp_header_add(buffer, ICMP_DST_UNREACHABLE, icmp_rep, 0);
+                /* Check if we don't have 64 bits ahead. */
+                if (keep < buffer->total_length)
+                {
+                    /* Pull the data that is not needed to be sent. */
+                    OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - keep), FS_BUFFER_TAIL) != SUCCESS);
+                }
 
-            if (status == SUCCESS)
-            {
-                /* Add IPv4 packet on the packet. */
-                /* We will be sending a packet from our interface to the host it came from. */
-                status = ipv4_header_add(buffer, IP_PROTO_ICMP, ip_iface, ip_src);
-            }
+                /* Generate an ICMP protocol unreachable message. */
+                status = icmp_header_add(buffer, ICMP_DST_UNREACHABLE, icmp_rep, 0);
 
-            if (status == SUCCESS)
-            {
-                /* Transmit an IPv4 packet. */
-                status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4);
-            }
+                if (status == SUCCESS)
+                {
+                    /* Add IPv4 packet on the packet. */
+                    /* We will be sending a packet from our interface to the host it came from. */
+                    status = ipv4_header_add(buffer, IP_PROTO_ICMP, ip_iface, ip_src);
+                }
 
-            if (status == SUCCESS)
-            {
-                /* We have transmitted the same buffer. */
-                status = NET_BUFFER_CONSUMED;
+                if (status == SUCCESS)
+                {
+                    /* Transmit an IPv4 packet. */
+                    status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4);
+                }
+
+                if (status == SUCCESS)
+                {
+                    /* We have transmitted the same buffer. */
+                    status = NET_BUFFER_CONSUMED;
+                }
             }
 #endif /* NET_ICMP */
         }

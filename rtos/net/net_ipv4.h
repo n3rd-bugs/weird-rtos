@@ -55,6 +55,9 @@
 #define IPV4_FRAG_HAVE_FIRST        0x02
 #define IPV4_FRAG_LAST_RCVD         0x04
 
+/* IPv4 address definitions. */
+#define IPV4_ADDR_UNSPEC            (0)
+
 #ifdef IPV4_ENABLE_FRAG
 
 /* IPv4 fragment structure. */
@@ -89,6 +92,7 @@ typedef struct _ipv4_fragment
 
 /* Function prototypes. */
 void ipv4_device_initialize(NET_DEV *);
+uint8_t ipv4_compare_address(uint32_t, uint32_t, uint8_t);
 int32_t ipv4_get_device_address(FD, uint32_t *);
 int32_t ipv4_set_device_address(FD, uint32_t);
 int32_t net_process_ipv4(FS_BUFFER **);
