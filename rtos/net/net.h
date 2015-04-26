@@ -19,6 +19,7 @@
 /* Networking configuration. */
 #define NET_IPV4
 #define NET_ICMP
+#define NET_UDP
 
 #include <net_buffer.h>
 #include <net_device.h>
@@ -27,8 +28,10 @@
 /* Status code definitions. */
 #define NET_BUFFER_CONSUMED     -1000
 #define NET_NOT_SUPPORTED       -1001
-#define NET_INVALID_HDR         -1002
-#define NET_INVALID_FD          -1003
+#define NET_UNKNOWN_PROTO       -1002
+#define NET_DEST_UNREACHABLE    -1003
+#define NET_INVALID_HDR         -1004
+#define NET_INVALID_FD          -1005
 
 /* Function prototypes. */
 void net_init();

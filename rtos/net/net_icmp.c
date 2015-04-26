@@ -32,12 +32,15 @@
  * net_process_icmp
  * @buffer: File system buffer needed to be processed.
  * @ihl: IPv4 header length.
+ * @iface_addr: Interface IP address on which this packet was received.
+ * @src_addr: Source address from the IP header.
+ * @dst_addr: Destination address from the IP header.
  * This function will process an incoming ICMP packet.
  */
-int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl)
+int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, uint32_t src_addr, uint32_t dst_addr)
 {
     int32_t status = SUCCESS;
-    uint32_t sa, da, id_seq;
+    uint32_t id_seq;
     uint8_t type;
 
     /* Peek the type of the ICMP packet. */
@@ -49,18 +52,9 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl)
     {
         /* Process ICMP echo request. */
 
-        /* Pull the IPv4 destination address. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &da, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-
-        /* Pull the IPv4 address assigned to this device. */
-        OS_ASSERT(ipv4_get_device_address(buffer->fd, &sa) != SUCCESS);
-
         /* If we are intended destination. */
-        if (da == sa)
+        if (iface_addr == dst_addr)
         {
-            /* Pull the source address to which we will be sending the reply. */
-            OS_ASSERT(fs_buffer_pull_offset(buffer, &da, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-
             /* Pull the ID and sequence number. */
             OS_ASSERT(fs_buffer_pull_offset(buffer, &id_seq, 4, (ihl + ICMP_HDR_TRAIL_OFFSET), FS_BUFFER_INPLACE) != SUCCESS)
 
@@ -73,7 +67,7 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl)
             if (status == SUCCESS)
             {
                 /* Add IPv4 packet on the packet. */
-                status = ipv4_header_add(buffer, IP_PROTO_ICMP, sa, da);
+                status = ipv4_header_add(buffer, IP_PROTO_ICMP, iface_addr, src_addr);
             }
 
             if (status == SUCCESS)

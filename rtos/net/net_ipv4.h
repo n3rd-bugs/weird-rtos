@@ -25,7 +25,8 @@
 #define IPV4_FRAG_TIMEOUT           (OS_TICKS_PER_SEC * 2)  /* Needs to be 60 seconds according to the RFC. */
 
 /* Protocol definitions. */
-#define IP_PROTO_ICMP               (1)
+#define IP_PROTO_ICMP               (0x01)
+#define IP_PROTO_UDP                (0x11)
 
 /* IPv4 header definitions. */
 #define IPV4_HDR_SIZE               (20)

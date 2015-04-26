@@ -22,6 +22,9 @@
 #ifdef NET_ICMP
 #include <net_icmp.h>
 #endif
+#ifdef NET_UDP
+#include <net_udp.h>
+#endif
 #include <net_csum.h>
 #include <sll.h>
 #include <string.h>
@@ -147,7 +150,7 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
 int32_t net_process_ipv4(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
-    uint32_t sa = 0, da;
+    uint32_t ip_iface = 0, ip_dst, ip_src;
     uint8_t proto, keep, ver_ihl, icmp_rep;
     uint16_t flag_offset;
 
@@ -219,41 +222,85 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         /* Peek the IPv4 protocol and see if we do support it. */
         OS_ASSERT(fs_buffer_pull_offset(buffer, &proto, 1, IPV4_HDR_PROTO_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
 
-#ifdef NET_ICMP
+        /* Pick the IPv4 address from which this packet came. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &ip_src, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+        /* Pick the IPv4 address to which this packet was addressed to. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &ip_dst, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+        /* Get IPv4 address assigned to this device. */
+        OS_ASSERT(ipv4_get_device_address(buffer->fd, &ip_iface) != SUCCESS);
+
         /* Try to resolve the protocol to which this packet is needed to be
          * forwarded. */
-        if (proto == IP_PROTO_ICMP)
-        {
-            /* Process ICMP packet. */
-            status = net_process_icmp(buffer, ver_ihl);
-        }
-
-        /* Protocol was not resolved. */
-        else
-#endif /* NET_ICMP */
-
+        switch(proto)
         {
 #ifdef NET_ICMP
-            /* Pick the address to which this packet was addressed to. */
-            OS_ASSERT(fs_buffer_pull_offset(buffer, &da, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        /* If an ICMP packet is received. */
+        case IP_PROTO_ICMP:
 
-            /* Get IPv4 address assigned to this device. */
-            OS_ASSERT(ipv4_get_device_address(buffer->fd, &sa) != SUCCESS);
+            /* Process ICMP packet. */
+            status = net_process_icmp(buffer, ver_ihl, ip_iface, ip_src, ip_dst);
+
+            break;
+#endif /* NET_ICMP */
+
+#ifdef NET_UDP
+        /* If a UDP packet is received. */
+        case IP_PROTO_UDP:
+
+            /* Process a UDP packet. */
+            status = net_process_udp(buffer, ver_ihl, ip_iface, ip_src, ip_dst);
+
+            break;
+#endif /* NET_ICMP */
+
+        /* A valid protocol was not resolved. */
+        default:
 
             /* If this packet for intended for us. */
-            if (sa == da)
+            if (ip_dst == ip_iface)
             {
-                /* Protocol not resolved. */
-                icmp_rep = ICMP_DST_PROTO;
+                /* Unknown protocol was received. */
+                status = NET_UNKNOWN_PROTO;
             }
             else
             {
-                /* Cannot forward this packet, destination unreachable. */
-                icmp_rep = ICMP_DST_HOST;
+                /* Destination address is unreachable. */
+                status = NET_DEST_UNREACHABLE;
             }
 
-            /* Pick the address to which we will be sending unreachable message. */
-            OS_ASSERT(fs_buffer_pull_offset(buffer, &da, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+            break;
+        }
+
+#ifdef NET_ICMP
+        /* If we need to send an ICMP destination unreachable message. */
+        if ((status == NET_UNKNOWN_PROTO) || (status == NET_DEST_UNREACHABLE))
+        {
+            /* Resolve an ICMP message needed be sent. */
+            switch (status)
+            {
+            case NET_UNKNOWN_PROTO:
+
+                /* Protocol not resolved. */
+                icmp_rep = ICMP_DST_PROTO;
+
+                break;
+
+            case NET_DEST_UNREACHABLE:
+
+                /* Cannot forward this packet, destination unreachable. */
+                icmp_rep = ICMP_DST_HOST;
+
+                break;
+
+            default:
+
+                /* Should never happen. */
+                OS_ASSERT(TRUE);
+
+                break;
+            }
 
             /* The internet header plus the first 64 bits of the original
              * datagram's data.  This data is used by the host to match the
@@ -275,7 +322,8 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
             if (status == SUCCESS)
             {
                 /* Add IPv4 packet on the packet. */
-                status = ipv4_header_add(buffer, IP_PROTO_ICMP, sa, da);
+                /* We will be sending a packet from our interface to the host it came from. */
+                status = ipv4_header_add(buffer, IP_PROTO_ICMP, ip_iface, ip_src);
             }
 
             if (status == SUCCESS)
