@@ -10,8 +10,8 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#ifndef NET_ICMP_H
-#define NET_ICMP_H
+#ifndef _NET_ICMP_H_
+#define _NET_ICMP_H_
 #include <os.h>
 
 #ifdef CONFIG_NET
@@ -50,4 +50,4 @@ int32_t icmp_header_add(FS_BUFFER *, uint8_t, uint8_t, uint32_t);
 
 #endif /* NET_ICMP */
 #endif /* CONFIG_NET */
-#endif /* NET_ICMP_H */
+#endif /* _NET_ICMP_H_ */
