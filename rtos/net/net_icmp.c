@@ -35,6 +35,11 @@
  * @iface_addr: Interface IP address on which this packet was received.
  * @src_addr: Source address from the IP header.
  * @dst_addr: Destination address from the IP header.
+ * @return: A success status will be returned if packet was successfully
+ *  processed.
+ *  NET_BUFFER_CONSUMED will be returned if buffer was successfully consumed
+ *  and called don't need to free it.
+ *  NET_INVALID_CSUM will be returned if an inlaid checksum was parsed.
  * This function will process an incoming ICMP packet.
  */
 int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, uint32_t src_addr, uint32_t dst_addr)
@@ -104,6 +109,8 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
  * @type: ICMP type.
  * @code: ICMP type code.
  * @unused: Unused bytes.
+ * @return: A success status will be returned if ICMP header was successfully
+ *  added.
  * This function will add an ICMP header on the given buffer.
  */
 int32_t icmp_header_add(FS_BUFFER *buffer, uint8_t type, uint8_t code, uint32_t unused)
