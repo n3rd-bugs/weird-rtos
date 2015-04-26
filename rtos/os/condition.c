@@ -235,6 +235,7 @@ static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, u
 
         /* Pick next condition. */
         condition++;
+        suspend++;
     }
 
 } /* suspend_condition_remove */
@@ -415,7 +416,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
 
             /* Add the current task to the sleep list, if not available in
              * the allowed time the task will be resumed. */
-            sleep_add_to_list(tcb, timeout - current_system_tick());
+            sleep_add_to_list(tcb, timeout);
         }
 #endif /* CONFIG_SLEEP */
 
