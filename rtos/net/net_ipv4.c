@@ -430,6 +430,9 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
 static void ipv4_fragment_initailize(IPV4_FRAGMENT *fragment)
 {
     /* Fragment data is already cleared. */
+
+    /* Initialize fragment condition as a timer condition. */
+    fragment->suspend.flags = CONDITION_TIMER;
     fragment->suspend.timeout = IPV4_FRAG_TIMEOUT;
 
 } /* ipv4_fragment_initailize */
