@@ -358,12 +358,12 @@ void fs_disconnect(FD fd)
  */
 uint8_t fs_sreach_directory(void *node, void *param)
 {
-    /* Save the required path. */
+    FS *node_fs = (FS *)node;
     char *path = ((DIR_PARAM *)param)->name;
     uint8_t match = FALSE;
 
     /* Match the file system path. */
-    if (util_path_match(((FS *)node)->name, &path) == TRUE)
+    if ((node_fs->name) && (util_path_match(node_fs->name, &path) == TRUE))
     {
         /* If given path was is a directory. */
         if (*path == '\\')
@@ -401,12 +401,12 @@ uint8_t fs_sreach_directory(void *node, void *param)
  */
 uint8_t fs_sreach_node(void *node, void *param)
 {
-    /* Save the required path. */
+    FS *node_fs = (FS *)node;
     char *path = ((NODE_PARAM *)param)->name;
     uint8_t match = FALSE;
 
     /* Match the file system path and this is a exact match. */
-    if ( (util_path_match(((FS *)node)->name, &path) == TRUE) && (*path == '\0') )
+    if ((node_fs->name) && (util_path_match(node_fs->name, &path) == TRUE) && (*path == '\0'))
     {
         /* Return this node. */
         ((NODE_PARAM *)param)->priv = node;
