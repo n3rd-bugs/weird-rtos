@@ -29,7 +29,9 @@ static void suspend_condition_remove_all(CONDITION **, SUSPEND **, uint32_t);
 static void suspend_condition_remove(CONDITION **, SUSPEND **, uint32_t, TASK *, uint32_t *);
 static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint32_t, uint32_t *);
 static uint32_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
+#ifdef CONFIG_SLEEP
 static void suspend_condition_adjust_timers(SUSPEND **, uint32_t, uint32_t);
+#endif
 
 /*
  * suspend_sreach
@@ -330,6 +332,7 @@ static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
 
 } /* suspend_timeout_get_min */
 
+#ifdef CONFIG_SLEEP
 /*
  * suspend_condition_adjust_timers
  * @suspend: Suspend list for which timers are needed to be updated.
@@ -357,6 +360,7 @@ static void suspend_condition_adjust_timers(SUSPEND **suspend, uint32_t num, uin
     }
 
 } /* suspend_condition_adjust_timers */
+#endif /* CONFIG_SLEEP */
 
 /*
  * suspend_condition

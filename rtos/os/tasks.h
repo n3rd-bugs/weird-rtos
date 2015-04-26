@@ -100,8 +100,13 @@ struct _task
     /* Task flags as configured by scheduler. */
     uint8_t     flags;
 
-    /* Padding variable (need to be 64-bit aligned). */
-    uint8_t     pad[6];
+    /* Padding variable. */
+    uint8_t     pad1[2];
+#ifdef CONFIG_SLEEP
+
+    /* Padding variable (needs to be 64-bit aligned). */
+    uint8_t     pad2[4];
+#endif
 };
 
 /* This defines a task list. */
