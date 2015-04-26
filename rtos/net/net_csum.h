@@ -16,6 +16,19 @@
 
 #ifdef CONFIG_NET
 
+/* Checksum helper macros. */
+#define NET_CSUM_ADD(a, b)  {                                           \
+                                /* Add complement of two sums. */       \
+                                a = (~(a) & 0xFFFF) + (~(b) & 0xFFFF);  \
+                                                                        \
+                                /* Add carry of sum. */                 \
+                                a = (a & 0xFFFF) + (a >> 16);           \
+                                a = (a & 0xFFFF) + (a >> 16);           \
+                                                                        \
+                                /* Return complement of result. */      \
+                                a = (~(a) & 0xFFFF);                    \
+                            }
+
 /* Function prototypes. */
 uint16_t net_csum_calculate(FS_BUFFER *, int32_t, uint32_t);
 
