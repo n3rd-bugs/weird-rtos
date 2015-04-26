@@ -87,6 +87,8 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                 }
             }
 
+            /* Free the pseudo header buffer. */
+            fs_buffer_add(buffer->fd, csum_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
         }
         else
         {
