@@ -24,6 +24,7 @@
 #define SUCCESS             0
 #define FALSE               0
 #define TRUE                1
+#define PARTIAL             2
 #define MAX_WAIT            (uint32_t)(-1)
 
 #ifdef NULL
