@@ -138,7 +138,8 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
 
 /*
  * net_process_ipv4
- * @buffer: File system buffer needed to be processed.
+ * @net_buffer: Pointer to file system buffer needed to be processed, this will
+ *  be updated if interchanged during processing.
  * @return: A success status will be returned if IPv4 packet was successfully
  *  processed.
  *  NET_BUFFER_CONSUMED will be returned if buffer was consumed and
@@ -147,8 +148,9 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
  *  NET_NOT_SUPPORTED will be returned if an unsupported IPv4 header was parsed.
  * This function will process an incoming IPv4 packet.
  */
-int32_t net_process_ipv4(FS_BUFFER *buffer)
+int32_t net_process_ipv4(FS_BUFFER **net_buffer)
 {
+    FS_BUFFER *buffer = (*net_buffer);
     int32_t status = SUCCESS;
     uint32_t ip_iface = 0, ip_dst, ip_src;
     uint8_t proto, keep, ver_ihl, icmp_rep;
@@ -191,7 +193,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
     if (status == SUCCESS)
     {
         /* With a valid checksum the recalculation of checksum should return 0. */
-        if (net_csum_calculate(buffer, ver_ihl) != 0)
+        if (net_csum_calculate(buffer, ver_ihl, 0) != 0)
         {
             /* Return an error. */
             status = NET_INVALID_HDR;
@@ -341,6 +343,9 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         }
     }
 
+    /* Update the buffer pointer. */
+    *net_buffer = buffer;
+
     /* Return status to the caller. */
     return (status);
 
@@ -452,7 +457,7 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
         if (status == SUCCESS)
         {
             /* Compute and update the value of checksum field. */
-            csum = net_csum_calculate(buffer, (ihl << 2));
+            csum = net_csum_calculate(buffer, (ihl << 2), 0);
             status = fs_buffer_push_offset(buffer, &csum, 2, IPV4_HDR_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
         }
 

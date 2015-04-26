@@ -43,27 +43,27 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
     uint32_t id_seq;
     uint8_t type;
 
-    /* Peek the type of the ICMP packet. */
-    OS_ASSERT(fs_buffer_pull_offset(buffer, &type, 1, (ihl + ICMP_HDR_TYPE_OFFSET), FS_BUFFER_INPLACE) != SUCCESS);
-
-#ifdef ICMP_ENABLE_PING
-    /* If this is an Echo request. */
-    if (type == ICMP_ECHO_REQUEST)
+    /* Calculate and verify the checksum for the ICMP packet. */
+    if (net_csum_calculate(buffer, -1, ihl) == 0)
     {
-        /* Process ICMP echo request. */
+        /* Peek the type of the ICMP packet. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &type, 1, ihl + ICMP_HDR_TYPE_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
 
-        /* If we are intended destination. */
-        if (iface_addr == dst_addr)
+    #ifdef ICMP_ENABLE_PING
+        /* If this is an Echo request. */
+        if (type == ICMP_ECHO_REQUEST)
         {
-            /* Pull the ID and sequence number. */
-            OS_ASSERT(fs_buffer_pull_offset(buffer, &id_seq, 4, (ihl + ICMP_HDR_TRAIL_OFFSET), FS_BUFFER_INPLACE) != SUCCESS)
+            /* Process ICMP echo request. */
 
-            /* Pull the IPv4 header and the ICMP packet header. */
-            OS_ASSERT(fs_buffer_pull_offset(buffer, NULL, ihl + ICMP_HDR_PAYLOAD_OFFSET, 0, 0) != SUCCESS);
-
-            /* Calculate and verify the checksum for the ICMP packet. */
-            if (net_csum_calculate(buffer, -1) != 0)
+            /* If we are intended destination. */
+            if (iface_addr == dst_addr)
             {
+                /* Pull the ID and sequence number. */
+                OS_ASSERT(fs_buffer_pull_offset(buffer, &id_seq, 4, ihl + ICMP_HDR_TRAIL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+
+                /* Pull the IP and ICMP packet header header. */
+                OS_ASSERT(fs_buffer_pull_offset(buffer, NULL, ihl + ICMP_HDR_PAYLOAD_OFFSET, 0, 0) != SUCCESS);
+
                 /* Initialize an ICMP Echo reply. */
                 status = icmp_header_add(buffer, ICMP_ECHO_REPLY, 0, id_seq);
 
@@ -83,13 +83,14 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
                     }
                 }
             }
-            else
-            {
-                /* Invalid checksum was received. */
-                status = NET_INVALID_CSUM;
-            }
         }
     }
+    else
+    {
+        /* Invalid checksum was received. */
+        status = NET_INVALID_CSUM;
+    }
+
 #endif /* ICMP_ENABLE_PING */
 
     /* Return status to the caller. */
@@ -131,7 +132,7 @@ int32_t icmp_header_add(FS_BUFFER *buffer, uint8_t type, uint8_t code, uint32_t 
     if (status == SUCCESS)
     {
         /* Compute and update the value of checksum field. */
-        csum = net_csum_calculate(buffer, -1);
+        csum = net_csum_calculate(buffer, -1, 0);
         status = fs_buffer_push_offset(buffer, &csum, 2, ICMP_HDR_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
     }
 

@@ -20,28 +20,66 @@
  * net_csum_calculate
  * @buffer: File system buffer for which checksum is needed to be calculated.
  * @num_bytes: Number of bytes for which the checksum is needed to be calculated.
+ * @offset: Number of bytes we need to skip.
  * This function will calculate and return the check of all the data in the
  * given buffer.
  */
-uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes)
+uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offset)
 {
     FS_BUFFER_ONE *one = buffer->list.head;
-    uint32_t csum = 0, left;
+    uint32_t csum = 0, left = 0;
     uint16_t *bytes;
     uint8_t last_left = FALSE;
 
     /* If we have negative number of bytes. */
     if (num_bytes < 0)
     {
+        /* Should never happen. */
+        OS_ASSERT(offset > buffer->total_length);
+
         /* Return the checksum for all the data in the buffer. */
-        num_bytes = (int32_t)buffer->total_length;
+        num_bytes = (int32_t)(buffer->total_length - offset);
+    }
+    else
+    {
+        /* Should never happen. */
+        OS_ASSERT((offset + (uint32_t)num_bytes) > buffer->total_length);
+    }
+
+    /* Moveover the offset. */
+    while ((one) && (offset > 0))
+    {
+        /* If this buffer has more data to process. */
+        if (one->length > offset)
+        {
+            /* Pick the number of bytes we have in this buffer. */
+            left = (one->length - offset);
+
+            /* Pick the pointer to the data for which checksum is needed. */
+            bytes = (uint16_t *)&one->buffer[offset];
+
+            /* Break out of this loop. */
+            break;
+        }
+        else
+        {
+            /* Update the remaining offset. */
+            offset -= one->length;
+        }
+
+        /* Pick the next buffer. */
+        one = one->next;
     }
 
     while ((one) && (num_bytes > 0))
     {
-        /* Pick the number of bytes we have in this buffer. */
-        left = one->length;
-        bytes = (uint16_t *)one->buffer;
+        /* If we need to get this buffer information. */
+        if (left == 0)
+        {
+            /* Pick the number of bytes we have in this buffer. */
+            left = one->length;
+            bytes = (uint16_t *)one->buffer;
+        }
 
         /* If this buffer has more data than required. */
         if ((int32_t)left > num_bytes)
@@ -102,6 +140,9 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes)
                 /* We need to add first byte from the next buffer as it is. */
                 last_left = TRUE;
             }
+
+            /* Remove the last byte. */
+            left -= 1;
         }
 
         /* Pick the next buffer. */

@@ -91,7 +91,7 @@ typedef struct _ipv4_fragment
 void ipv4_device_initialize(NET_DEV *);
 int32_t ipv4_get_device_address(FD, uint32_t *);
 int32_t ipv4_set_device_address(FD, uint32_t);
-int32_t net_process_ipv4(FS_BUFFER *);
+int32_t net_process_ipv4(FS_BUFFER **);
 int32_t ipv4_header_add(FS_BUFFER *, uint8_t, uint32_t, uint32_t);
 
 #endif /* NET_IPV4 */
