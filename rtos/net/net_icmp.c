@@ -61,23 +61,32 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
             /* Pull the IPv4 header and the ICMP packet header. */
             OS_ASSERT(fs_buffer_pull_offset(buffer, NULL, ihl + ICMP_HDR_PAYLOAD_OFFSET, 0, 0) != SUCCESS);
 
-            /* Initialize an ICMP Echo reply. */
-            status = icmp_header_add(buffer, ICMP_ECHO_REPLY, 0, id_seq);
-
-            if (status == SUCCESS)
+            /* Calculate and verify the checksum for the ICMP packet. */
+            if (net_csum_calculate(buffer, -1) != 0)
             {
-                /* Add IPv4 packet on the packet. */
-                status = ipv4_header_add(buffer, IP_PROTO_ICMP, iface_addr, src_addr);
-            }
+                /* Initialize an ICMP Echo reply. */
+                status = icmp_header_add(buffer, ICMP_ECHO_REPLY, 0, id_seq);
 
-            if (status == SUCCESS)
-            {
-                /* Transmit an IPv4 packet. */
-                if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4) == SUCCESS)
+                if (status == SUCCESS)
                 {
-                    /* We have transmitted the same buffer. */
-                    status = NET_BUFFER_CONSUMED;
+                    /* Add IPv4 packet on the packet. */
+                    status = ipv4_header_add(buffer, IP_PROTO_ICMP, iface_addr, src_addr);
                 }
+
+                if (status == SUCCESS)
+                {
+                    /* Transmit an IPv4 packet. */
+                    if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4) == SUCCESS)
+                    {
+                        /* We have transmitted the same buffer. */
+                        status = NET_BUFFER_CONSUMED;
+                    }
+                }
+            }
+            else
+            {
+                /* Invalid checksum was received. */
+                status = NET_INVALID_CSUM;
             }
         }
     }

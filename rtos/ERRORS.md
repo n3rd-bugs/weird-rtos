@@ -25,5 +25,6 @@ This list is needed to be updated whenever a new error code is added.
     NET_NOT_SUPPORTED       -1001
     NET_UNKNOWN_PROTO       -1002
     NET_DEST_UNREACHABLE    -1003
-    NET_INVALID_HDR         -1004
-    NET_INVALID_FD          -1005
+    NET_INVALID_CSUM        -1004
+    NET_INVALID_HDR         -1005
+    NET_INVALID_FD          -1006
