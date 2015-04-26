@@ -30,12 +30,13 @@
 #define ICMP_ECHO_REQUEST       8
 
 /* ICMP destination unreachable codes. */
-#define ICMP_DST_NET            0
-#define ICMP_DST_HOST           1
-#define ICMP_DST_PROTO          2
-#define ICMP_DST_PORT           3
-#define ICMP_DST_DF_SET         4
-#define ICMP_DST_ROUTE          5
+#define ICMP_DST_NET            0x00
+#define ICMP_DST_HOST           0x01
+#define ICMP_DST_PROTO          0x02
+#define ICMP_DST_PORT           0x03
+#define ICMP_DST_DF_SET         0x04
+#define ICMP_DST_ROUTE          0x05
+#define ICMP_DST_NONE           0xFF
 
 /* ICMP header manipulation definitions. */
 #define ICMP_HDR_TYPE_OFFSET    0
