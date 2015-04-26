@@ -30,9 +30,10 @@
 #define NET_NOT_SUPPORTED       -1001
 #define NET_UNKNOWN_PROTO       -1002
 #define NET_DEST_UNREACHABLE    -1003
-#define NET_INVALID_CSUM        -1004
-#define NET_INVALID_HDR         -1005
-#define NET_INVALID_FD          -1006
+#define NET_NO_BUFFERS          -1004
+#define NET_INVALID_CSUM        -1005
+#define NET_INVALID_HDR         -1006
+#define NET_INVALID_FD          -1007
 
 /* Function prototypes. */
 void net_init();

@@ -18,12 +18,14 @@
 #include <net.h>
 
 #ifdef NET_UDP
+#define UDP_CSUM
 
 /* UDP header parser definitions. */
+#define UDP_HRD_LENGTH              (8)
 #define UDP_HRD_SRC_PORT_OFFSET     0
 #define UDP_HRD_DST_PORT_OFFSET     2
-#define UDP_HRD_DST_LEN_OFFSET      4
-#define UDP_HRD_DST_CSUM_OFFSET     6
+#define UDP_HRD_LEN_OFFSET          4
+#define UDP_HRD_CSUM_OFFSET         6
 
 /* Function prototypes. */
 int32_t net_process_udp(FS_BUFFER *, uint32_t, uint32_t, uint32_t, uint32_t);
