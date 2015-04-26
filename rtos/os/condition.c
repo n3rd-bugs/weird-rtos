@@ -29,6 +29,7 @@ static void suspend_condition_remove_all(CONDITION **, SUSPEND **, uint32_t);
 static void suspend_condition_remove(CONDITION **, SUSPEND **, uint32_t, TASK *, uint32_t *);
 static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint32_t, uint32_t *);
 static uint32_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
+static void suspend_condition_adjust_timers(SUSPEND **, uint32_t, uint32_t);
 
 /*
  * suspend_sreach
@@ -192,7 +193,7 @@ static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspen
         /* Remove this suspend from the suspend list. */
         OS_ASSERT(sll_remove(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next)) != *suspend);
 
-        /* Pick next suspend. */
+        /* Pick next condition. */
         condition++;
         suspend++;
 
@@ -330,6 +331,34 @@ static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
 } /* suspend_timeout_get_min */
 
 /*
+ * suspend_condition_adjust_timers
+ * @suspend: Suspend list for which timers are needed to be updated.
+ * @num: Number of conditions.
+ * @ticks: Number of ticks passed since we waited for this condition.
+ * This routine will adjust timeouts for all the timers in the condition list.
+ */
+static void suspend_condition_adjust_timers(SUSPEND **suspend, uint32_t num, uint32_t ticks)
+{
+    /* For all conditions find the timer conditions. */
+    while (num > 0)
+    {
+        /* If this was a timer suspend and we did not want to suspend indefinitely. */
+        if (((*suspend)->flags & CONDITION_TIMER) && ((*suspend)->timeout != MAX_WAIT))
+        {
+            /* Adjust the timeout for this suspend. */
+            (*suspend)->timeout = (*suspend)->timeout - (((*suspend)->timeout > ticks) ? ticks : (*suspend)->timeout);
+        }
+
+        /* Pick next condition. */
+        suspend++;
+
+        /* This is now processed. */
+        num--;
+    }
+
+} /* suspend_condition_adjust_timers */
+
+/*
  * suspend_condition
  * @condition: Condition for which we need to suspend this task.
  * @suspend: Suspend data.
@@ -408,8 +437,21 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         /* Check if we need to wait for a finite time. */
         if (timeout != (uint32_t)(MAX_WAIT))
         {
-            /* If called again compensate for the time we have already waited. */
-            timeout -= (uint32_t)(current_system_tick() - last_tick);
+            /* Use the last tick to save the number of ticks we want to skim
+             * from the timeout. */
+            last_tick -= current_system_tick();
+
+            /* If we do need to update the timeouts. */
+            if (last_tick > 0)
+            {
+                /* Update the timer conditions reflect the number of ticks remaining on
+                 * their timeouts. */
+                suspend_condition_adjust_timers(suspend, num_conditions, (uint32_t)last_tick);
+
+                /* Remove these from the actual number of ticks we will be
+                 * waiting on this condition. */
+                timeout -= (uint32_t)last_tick;
+            }
 
             /* Save when we suspended last time. */
             last_tick = current_system_tick();
