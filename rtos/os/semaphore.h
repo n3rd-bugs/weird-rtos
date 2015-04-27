@@ -45,6 +45,9 @@ typedef struct _semaphore
      * semaphore was acquired. */
     uint32_t    irq_status;
 
+    /* Scheduler status. */
+    uint8_t     scheduler_locked;
+
     /* Current semaphore count. */
     uint8_t     count;
 
@@ -53,9 +56,6 @@ typedef struct _semaphore
 
     /* Type of this semaphore. */
     uint8_t     type;
-
-    /* Padding variable. */
-    uint8_t     pad[1];
 
 } SEMAPHORE;
 
