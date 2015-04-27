@@ -92,8 +92,6 @@ struct _fs
     /* Driver operations. */
     int32_t     (*get_lock) (void *);
     void        (*release_lock) (void *);
-    void        (*rx_consumed) (void *, void *);
-    void        (*tx_available) (void *);
 
     /* Condition data for a file system. */
     CONDITION   condition;
