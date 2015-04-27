@@ -27,6 +27,8 @@ UDP_DATA udp_data;
 
 /* Internal function prototypes. */
 static uint8_t net_port_seach(void *, void *);
+static int32_t udp_read(void *, char *, int32_t);
+static int32_t udp_write(void *, char *, int32_t);
 
 /*
  * udp_initialize
@@ -48,13 +50,13 @@ void udp_initialize()
  * udp_register
  * @port: UDP port needed to be registered.
  * @name: If not null will hold a name for this UDP port.
- * @socket: Socket structure for this UDP port.
+ * @socket_address: Socket address for this UDP port.
  * This function will register a UDP port with UDP stack.
  */
-void udp_register(UDP_PORT *port, char *name, SOCKET *socket)
+void udp_register(UDP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
 {
     /* Clear the UDP port data. */
-    memset(&port, 0, sizeof(UDP_PORT));
+    memset(port, 0, sizeof(UDP_PORT));
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data semaphore. */
@@ -64,14 +66,17 @@ void udp_register(UDP_PORT *port, char *name, SOCKET *socket)
     scheduler_lock();
 #endif
 
-    /* Copy the socket structure. */
-    memcpy(&port->socket, socket, sizeof(SOCKET));
+    /* Copy the socket address. */
+    memcpy(&port->socket_address, socket_address, sizeof(SOCKET_ADDRESS));
 
     /* Add this port in the global port list. */
     sll_append(&udp_data.port_list, port, OFFSETOF(UDP_PORT, next));
 
     /* Register this UDP port as a console. */
     port->console.fs.name = name;
+    port->console.fs.read = &udp_read;
+    port->console.fs.write = &udp_write;
+    port->console.fs.flags |= (FS_BLOCK | FS_SPACE_AVAILABLE);
     console_register(&port->console);
 
 #ifndef CONFIG_SEMAPHORE
@@ -132,8 +137,8 @@ static uint8_t net_port_seach(void *node, void *param)
     UDP_PORT *port = (UDP_PORT *)node;
     uint8_t match = FALSE;
 
-    /* Match two UDP sockets. */
-    match = net_socket_match(&port->socket, &udp_param->socket);
+    /* Match two UDP socket addresses. */
+    match = net_socket_address_match(&port->socket_address, &udp_param->socket_address);
 
     /* If we did not fail completely. */
     if (match != FALSE)
@@ -259,10 +264,10 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
             scheduler_lock();
 #endif
             /* Initialize search parameter for this UDP datagram. */
-            port_param.socket.local_ip = dst_ip;
-            port_param.socket.foreign_port = src_port;
-            port_param.socket.foreign_ip = src_ip;
-            port_param.socket.foreign_port = src_port;
+            port_param.socket_address.local_ip = dst_ip;
+            port_param.socket_address.local_port = dst_port;
+            port_param.socket_address.foreign_ip = src_ip;
+            port_param.socket_address.foreign_port = src_port;
             port_param.port = NULL;
 
             /* Search for a UDP port that can be used to receive this packet. */
@@ -291,7 +296,23 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
             /* If we have a valid UDP port for this datagram. */
             if (udp_port != NULL)
             {
+                /* Pull the IP and UDP headers from the packet. */
+                OS_ASSERT(fs_buffer_pull_offset(buffer, NULL, ihl + UDP_HRD_LENGTH, 0, 0) != SUCCESS);
 
+                /* Obtain lock for this UDP port. */
+                OS_ASSERT(fd_get_lock((FD)udp_port));
+
+                /* Add this buffer in the buffer list for UDP port. */
+                sll_append(&udp_port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+
+                /* Set an event to tell that new data is now available. */
+                fd_data_available((FD)udp_port);
+
+                /* Release lock for this UDP port. */
+                fd_release_lock((FD)udp_port);
+
+                /* This buffer is now consumed by the UDP port. */
+                status = NET_BUFFER_CONSUMED;
             }
 
             /* If this datagram was intended for us. */
@@ -307,6 +328,82 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     return (status);
 
 } /* net_process_udp */
+
+/*
+ * udp_read
+ * @fd: File descriptor.
+ * @buffer: Buffer in which data will be read.
+ * @size: Size of buffer.
+ * @return: Number of bytes read.
+ * This function will read data from a UDP port.
+ */
+static int32_t udp_read(void *fd, char *buffer, int32_t size)
+{
+    UDP_PORT *port = (UDP_PORT *)fd;
+    FS_BUFFER *fs_buffer;
+    int32_t ret_size = 0;
+
+    /* Get a buffer from the UDP port. */
+    fs_buffer = sll_pop(&port->buffer_list, OFFSETOF(FS_BUFFER, next));
+
+    /* If we do have a buffer. */
+    if (fs_buffer != NULL)
+    {
+        /* If we need to copy more data. */
+        if (size > (int32_t)fs_buffer->total_length)
+        {
+            /* For now copy only required data. */
+            ret_size = (int32_t)fs_buffer->total_length;
+        }
+        else
+        {
+            /* Copy only the number of bytes that can be copied. */
+            ret_size = size;
+        }
+
+        /* Get lock for the buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(fs_buffer->fd));
+
+        /* Pull data from the buffer into the provided buffer. */
+        fs_buffer_pull(fs_buffer, buffer, (uint32_t)ret_size, 0);
+
+        /* Return this buffer to it's owner. */
+        fs_buffer_add(fs_buffer->fd, fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+
+        /* Release lock for the buffer file descriptor. */
+        fd_release_lock(fs_buffer->fd);
+    }
+
+    /* If there is no more data to read. */
+    if (port->buffer_list.head == NULL)
+    {
+        /* Tell file system that there is no more data to read from us. */
+        fd_data_flushed(fd);
+    }
+
+    /* Return number of bytes. */
+    return (ret_size);
+
+} /* udp_read */
+
+/*
+ * udp_write
+ * @fd: File descriptor.
+ * @buffer: Buffer from which data is needed to be copied.
+ * @size: Number of bytes to copy from the buffer.
+ * @return: Number of bytes sent.
+ * This function will write data on given UDP port.
+ */
+static int32_t udp_write(void *fd, char *buffer, int32_t size)
+{
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+    UNUSED_PARAM(buffer);
+
+    /* Return number of bytes. */
+    return (size);
+
+} /* udp_write */
 
 #endif /* NET_UDP */
 #endif /* CONFIG_NET */

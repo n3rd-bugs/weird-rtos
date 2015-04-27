@@ -27,10 +27,10 @@ typedef struct _udp_port UDP_PORT;
 struct _udp_port
 {
     /* Console structure for this UDP port. */
-    CONSOLE     console;
+    CONSOLE         console;
 
     /* UDP port list member. */
-    UDP_PORT    *next;
+    UDP_PORT        *next;
 
     /* UDP buffer lists. */
     struct _udp_port_buffer_list
@@ -40,7 +40,7 @@ struct _udp_port
     } buffer_list;
 
     /* UDP socket data. */
-    SOCKET      socket;
+    SOCKET_ADDRESS  socket_address;
 };
 
 /* UDP global data. */
@@ -64,10 +64,10 @@ typedef struct _udp_data
 typedef struct _udp_port_param
 {
     /* Resolved UDP port. */
-    UDP_PORT    *port;
+    UDP_PORT        *port;
 
     /* Socket search data. */
-    SOCKET      socket;
+    SOCKET_ADDRESS  socket_address;
 } UDP_PORT_PARAM;
 
 /* UDP header parser definitions. */
@@ -79,7 +79,7 @@ typedef struct _udp_port_param
 
 /* Function prototypes. */
 void udp_initialize();
-void udp_register(UDP_PORT *, char *, SOCKET *);
+void udp_register(UDP_PORT *, char *, SOCKET_ADDRESS *);
 void udp_unregister(UDP_PORT *);
 int32_t net_process_udp(FS_BUFFER *, uint32_t, uint32_t, uint32_t, uint32_t);
 
