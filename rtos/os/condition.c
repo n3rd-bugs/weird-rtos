@@ -22,11 +22,11 @@
 /* Internal function prototypes. */
 static uint8_t suspend_sreach(void *, void *);
 static uint8_t suspend_priority_sort(void *, void *);
-static void suspend_lock_condition(CONDITION **, uint32_t, TASK *);
-static void suspend_unlock_condition(CONDITION **, uint32_t, TASK *);
+static void suspend_lock_condition(CONDITION **, uint32_t, CONDITION *);
+static void suspend_unlock_condition(CONDITION **, uint32_t, CONDITION *);
 static void suspend_condition_add_task(CONDITION **, SUSPEND **, uint32_t, TASK *);
 static void suspend_condition_remove_all(CONDITION **, SUSPEND **, uint32_t);
-static void suspend_condition_remove(CONDITION **, SUSPEND **, uint32_t, TASK *, uint32_t *);
+static void suspend_condition_remove(CONDITION **, SUSPEND **, uint32_t, CONDITION *, uint32_t *);
 static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint32_t, uint32_t *);
 static uint32_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
 #ifdef CONFIG_SLEEP
@@ -86,20 +86,19 @@ static uint8_t suspend_priority_sort(void *node, void *new)
  * suspend_unlock_condition
  * @condition: Condition list that we need to unlock.
  * @num: Number of conditions.
- * @tcb: Current task pointer, If not null it will be used to skip the condition
- *  which was returned on resume.
+ * @resume_condition: Condition for which we don't need to acquire lock.
  * This routine will unlock all the conditions in the condition list, except
  * the one that was returned on the resume.
  */
-static void suspend_unlock_condition(CONDITION **condition, uint32_t num, TASK *tcb)
+static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
 {
     /* Unlock all conditions. */
     while (num)
     {
         /* If we can unlock this condition. */
-        if (((!tcb) || (tcb->suspend_data != (*condition))) && ((*condition)->unlock))
+        if (((!resume_condition) || (resume_condition != (*condition))) && ((*condition)->unlock))
         {
-            /* Call unlock for this condition. */
+            /* Unlock this condition. */
             (*condition)->unlock((*condition)->data);
         }
 
@@ -116,19 +115,18 @@ static void suspend_unlock_condition(CONDITION **condition, uint32_t num, TASK *
  * suspend_lock_condition
  * @condition: Condition list for which we need to get lock.
  * @num: Number of conditions.
- * @tcb: Current task pointer, If not null it will be used to skip the condition
- *  which was returned on resume.
+ * @tcb: Condition for which we don't need to acquire lock.
  * This routine will lock the conditions.
  */
-static void suspend_lock_condition(CONDITION **condition, uint32_t num, TASK *tcb)
+static void suspend_lock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
 {
     /* For all conditions do post. */
     while (num)
     {
         /* If we can lock this condition. */
-        if (((!tcb) || (tcb->suspend_data != (*condition))) && ((*condition)->lock))
+        if (((!resume_condition) || (resume_condition != (*condition))) && ((*condition)->lock))
         {
-            /* Call lock for this condition. */
+            /* Get lock for this condition. */
             (*condition)->lock((*condition)->data);
         }
 
@@ -209,14 +207,14 @@ static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspen
  * suspend_condition_remove
  * @condition: Condition list from which this suspend is needed to be removed.
  * @suspend: Suspend list.
- * @tcb: Current task pointer.
+ * @resume_condition: Condition because of which we were resumed.
  * @num: Number of conditions.
  * @return_num: If not null the condition index for which we were resumed will
  *  be returned here.
  * This routine will remove all the suspend from the respective conditions,
  * except the one we were resumed from at it was already removed.
  */
-static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, uint32_t num, TASK *tcb, uint32_t *return_num)
+static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, uint32_t num, CONDITION *resume_condition, uint32_t *return_num)
 {
     uint32_t n;
 
@@ -224,7 +222,7 @@ static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, u
     for (n = 0; n < num; n++)
     {
         /* If this is the condition from which we got resumed. */
-        if (tcb->suspend_data == (*condition))
+        if (resume_condition == (*condition))
         {
             /* Return the condition index that was matched. */
             *return_num = n;
@@ -386,6 +384,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     int32_t status = SUCCESS, task_status = TASK_RESUME;
     uint32_t num_conditions = *num, timeout, timeout_index;
     uint8_t sch_locked = scheduler_is_locked();
+    CONDITION *resume_condition;
 
 #ifndef CONFIG_SLEEP
     /* Remove some compiler warning. */
@@ -396,7 +395,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     OS_ASSERT(tcb == NULL);
 
     /* If scheduler was not locked by the caller. */
-    if (!sch_locked)
+    if (sch_locked == FALSE)
     {
         /* We need to do this as when we are unlocking the conditions we might
          * need to run a higher priority task and that may cause indefinite
@@ -404,13 +403,6 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
 
         /* Disable preemption. */
         scheduler_lock();
-    }
-
-    /* If caller is not in locked state. */
-    if (locked == FALSE)
-    {
-        /* Lock all conditions before using them. */
-        suspend_lock_condition(condition, num_conditions, NULL);
     }
 
     /* If more than one condition was given. */
@@ -423,6 +415,13 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     {
         /* We have only one condition to process. */
         num_conditions = 1;
+    }
+
+    /* If caller is not in locked state. */
+    if (locked == FALSE)
+    {
+        /* Lock all conditions before using them. */
+        suspend_lock_condition(condition, num_conditions, NULL);
     }
 
     /* Calculate the minimum timeout we need to wait for the conditions. */
@@ -481,8 +480,9 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         /* Wait for either being resumed by some data or timeout. */
         task_waiting();
 
-        /* Save task status. */
+        /* Save task status and the condition from which we are resumed. */
         task_status = tcb->status;
+        resume_condition = tcb->suspend_data;
 
         /* If we resumed normally or got timed out. */
         if ((task_status == TASK_RESUME_SLEEP) || (task_status == TASK_RESUME))
@@ -494,7 +494,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         {
             /* Lock all the conditions except the one from which we are
              * resuming. */
-            suspend_lock_condition(condition, num_conditions, tcb);
+            suspend_lock_condition(condition, num_conditions, resume_condition);
         }
 
         /* Check if we are resumed due to a timeout. */
@@ -517,7 +517,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         {
             /* Remove the task from all the conditions except the one from
              * which we resumed. */
-            suspend_condition_remove(condition, suspend, num_conditions, tcb, num);
+            suspend_condition_remove(condition, suspend, num_conditions, resume_condition, num);
 
             /* If we did not resume normally. */
             if (task_status != TASK_RESUME)
@@ -536,7 +536,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     {
         /* Unlock all conditions, if we did not resume normally or timeout
          * don't unlock the one for which we resumed as we did not lock it.  */
-        suspend_unlock_condition(condition, num_conditions, ((task_status != TASK_RESUME) && (task_status != TASK_RESUME_SLEEP)) ? tcb : NULL);
+        suspend_unlock_condition(condition, num_conditions, ((task_status != TASK_RESUME) && (task_status != TASK_RESUME_SLEEP)) ? resume_condition : NULL);
     }
 
     /* If caller did not lock the scheduler. */
