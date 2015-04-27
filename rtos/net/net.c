@@ -89,7 +89,7 @@ uint8_t net_port_match(uint16_t port1, uint16_t port2, uint8_t match)
 } /* net_port_match */
 
 /*
- * net_socket_match
+ * net_socket_address_match
  * @socket1: Socket needed to be matched.
  * @socket2: Given socket address.
  * @return: A true will be returned if sockets match exactly, partial will be
@@ -97,7 +97,7 @@ uint8_t net_port_match(uint16_t port1, uint16_t port2, uint8_t match)
  *  match at all.
  * This function will match two given networking sockets.
  */
-uint8_t net_socket_match(SOCKET *socket1, SOCKET *socket2)
+uint8_t net_socket_address_match(SOCKET_ADDRESS *socket1, SOCKET_ADDRESS *socket2)
 {
     uint8_t match;
 
@@ -114,6 +114,6 @@ uint8_t net_socket_match(SOCKET *socket1, SOCKET *socket2)
     /* Return the match status to the caller. */
     return (match);
 
-} /* net_socket_match */
+} /* net_socket_address_match */
 
 #endif /* CONFIG_NET */

@@ -40,7 +40,7 @@
 #define NET_PORT_UNSPEC         0
 
 /* Socket structure. */
-typedef struct _socket
+typedef struct _socket_address
 {
 #ifdef NET_IPV4
     /* IPv4 data for this socket. */
@@ -51,12 +51,12 @@ typedef struct _socket
     /* Port data for this socket. */
     uint16_t    local_port;
     uint16_t    foreign_port;
-} SOCKET;
+} SOCKET_ADDRESS;
 
 /* Function prototypes. */
 void net_init();
 uint8_t net_port_match(uint16_t, uint16_t, uint8_t);
-uint8_t net_socket_match(SOCKET *, SOCKET *);
+uint8_t net_socket_address_match(SOCKET_ADDRESS *, SOCKET_ADDRESS *);
 
 #endif /* CONFIG_NET */
 #endif /* _NET_H_ */
