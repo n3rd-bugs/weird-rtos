@@ -39,9 +39,8 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
     cdc_cons->usb_device = usb_device;
 
     /* Register this console with the file system. */
-    cdc_cons->console.fs.read = usb_cdc_fun_console_read;
-    cdc_cons->console.fs.write = usb_cdc_fun_console_write;
-    cdc_cons->console.fs.rx_consumed = usb_cdc_fun_console_rx_consumed;
+    cdc_cons->console.fs.read = &usb_cdc_fun_console_read;
+    cdc_cons->console.fs.write = &usb_cdc_fun_console_write;
     console_register(&cdc_cons->console);
 
     /* This is IRQ accessible console. */
