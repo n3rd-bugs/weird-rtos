@@ -24,6 +24,9 @@
 #define CONFIG_SLEEP_PIORITY        254
 #define CONFIG_APERIODIC_PIORITY    255
 
+/* Scheduler lock configuration. */
+#define SCHEDULER_MAX_LOCK          5
+
 /* These defines different scheduler classes. */
 #define TASK_APERIODIC              0x01
 #define TASK_PERIODIC               0x02

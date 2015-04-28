@@ -272,7 +272,7 @@ void scheduler_lock()
     if (tcb != NULL)
     {
         /* Should never happen. */
-        OS_ASSERT(tcb->lock_count == 255);
+        OS_ASSERT(tcb->lock_count == SCHEDULER_MAX_LOCK);
 
         /* Increment the lock count for this task. */
         tcb->lock_count ++;
