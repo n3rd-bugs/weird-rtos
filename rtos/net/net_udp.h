@@ -39,8 +39,11 @@ struct _udp_port
         FS_BUFFER       *tail;
     } buffer_list;
 
-    /* UDP socket data. */
+    /* UDP socket address. */
     SOCKET_ADDRESS  socket_address;
+
+    /* Last datagram address. */
+    SOCKET_ADDRESS  last_datagram_address;
 };
 
 /* UDP global data. */

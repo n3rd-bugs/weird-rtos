@@ -179,7 +179,7 @@ static uint8_t net_port_seach(void *node, void *param)
 int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, uint32_t src_ip, uint32_t dst_ip)
 {
     int32_t status = SUCCESS;
-    uint16_t src_port, dst_port, length;
+    uint16_t length;
     UDP_PORT *udp_port;
     UDP_PORT_PARAM port_param;
 #ifdef UDP_CSUM
@@ -249,9 +249,9 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
     if (status == SUCCESS)
     {
-        /* Peek the UDP ports and length fields of UDP header. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &src_port, 2, (ihl + UDP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &dst_port, 2, (ihl + UDP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        /* Peek the UDP ports fields.. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.foreign_port, 2, (ihl + UDP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.local_port, 2, (ihl + UDP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* If UDP header length value is correct. */
         if (buffer->total_length == (ihl + length))
@@ -265,9 +265,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 #endif
             /* Initialize search parameter for this UDP datagram. */
             port_param.socket_address.local_ip = dst_ip;
-            port_param.socket_address.local_port = dst_port;
             port_param.socket_address.foreign_ip = src_ip;
-            port_param.socket_address.foreign_port = src_port;
             port_param.port = NULL;
 
             /* Search for a UDP port that can be used to receive this packet. */
@@ -296,9 +294,6 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
             /* If we have a valid UDP port for this datagram. */
             if (udp_port != NULL)
             {
-                /* Pull the IP and UDP headers from the packet. */
-                OS_ASSERT(fs_buffer_pull_offset(buffer, NULL, ihl + UDP_HRD_LENGTH, 0, 0) != SUCCESS);
-
                 /* Obtain lock for this UDP port. */
                 OS_ASSERT(fd_get_lock((FD)udp_port));
 
@@ -342,6 +337,7 @@ static int32_t udp_read(void *fd, char *buffer, int32_t size)
     UDP_PORT *port = (UDP_PORT *)fd;
     FS_BUFFER *fs_buffer;
     int32_t ret_size = 0;
+    uint8_t ihl;
 
     /* Get a buffer from the UDP port. */
     fs_buffer = sll_pop(&port->buffer_list, OFFSETOF(FS_BUFFER, next));
@@ -349,6 +345,24 @@ static int32_t udp_read(void *fd, char *buffer, int32_t size)
     /* If we do have a buffer. */
     if (fs_buffer != NULL)
     {
+        /* Get lock for the buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(fs_buffer->fd));
+
+        /* Peek the version and IHL. */
+        OS_ASSERT(fs_buffer_pull_offset(fs_buffer, &ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+        ihl = (uint8_t)((ihl & IPV4_HDR_IHL_MASK) << 2);
+
+        /* Save the IP addresses for this UDP datagram. */
+        OS_ASSERT(fs_buffer_pull_offset(fs_buffer, &port->last_datagram_address.foreign_ip, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull_offset(fs_buffer, &port->last_datagram_address.local_ip, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+        /* Save the port addresses for this UDP datagram. */
+        OS_ASSERT(fs_buffer_pull_offset(fs_buffer, &port->last_datagram_address.foreign_port, 2, (uint32_t)(ihl + UDP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull_offset(fs_buffer, &port->last_datagram_address.local_port, 2, (uint32_t)(ihl + UDP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+        /* Pull the IP and UDP headers from the packet. */
+        OS_ASSERT(fs_buffer_pull_offset(fs_buffer, NULL, (uint32_t)(ihl + UDP_HRD_LENGTH), 0, 0) != SUCCESS);
+
         /* If we need to copy more data. */
         if (size > (int32_t)fs_buffer->total_length)
         {
@@ -361,11 +375,8 @@ static int32_t udp_read(void *fd, char *buffer, int32_t size)
             ret_size = size;
         }
 
-        /* Get lock for the buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(fs_buffer->fd));
-
         /* Pull data from the buffer into the provided buffer. */
-        fs_buffer_pull(fs_buffer, buffer, (uint32_t)ret_size, 0);
+        OS_ASSERT(fs_buffer_pull(fs_buffer, buffer, (uint32_t)ret_size, 0) != SUCCESS);
 
         /* Return this buffer to it's owner. */
         fs_buffer_add(fs_buffer->fd, fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
