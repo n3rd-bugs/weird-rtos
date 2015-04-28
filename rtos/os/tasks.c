@@ -127,23 +127,14 @@ static void task_entry_return(void *argv)
         /* The task will be resumed by the application using scheduler_task_add,
          * that may also change the class of this task. */
 
-        /* Save the preemption control. */
-        dont_preempt = (tcb->flags & TASK_DONT_PREEMPT);
-
-        if (!(dont_preempt))
-        {
-            /* Lock the scheduler. */
-            scheduler_lock();
-        }
+        /* Lock the scheduler. */
+        scheduler_lock();
 
         /* Update the task status that it is now finished. */
         tcb->status = TASK_FINISHED;
 
-        if (!(dont_preempt))
-        {
-            /* Unlock the scheduler. */
-            scheduler_unlock();
-        }
+        /* Unlock the scheduler. */
+        scheduler_unlock();
 
         /* Task is now the property of the initializer. */
         task_waiting();

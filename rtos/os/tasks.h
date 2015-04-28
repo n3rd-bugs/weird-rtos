@@ -21,8 +21,7 @@
 #define CONFIG_STACK_PATTERN    'A'
 
 /* These defines different task flags. */
-#define TASK_DONT_PREEMPT   0x01        /* Don't preempt this task. */
-#define TASK_NO_RETURN      0x02        /* This task will never return. */
+#define TASK_NO_RETURN      0x01        /* This task will never return. */
 
 /* This is task entry function. */
 typedef void TASK_ENTRY (void *argv);
@@ -100,8 +99,11 @@ struct _task
     /* Task flags as configured by scheduler. */
     uint8_t     flags;
 
+    /* Lock count, how much nested scheduler locks have we acquired. */
+    uint8_t     lock_count;
+
     /* Padding variable. */
-    uint8_t     pad1[2];
+    uint8_t     pad[1];
 #ifdef CONFIG_SLEEP
 
     /* Padding variable (needs to be 64-bit aligned). */

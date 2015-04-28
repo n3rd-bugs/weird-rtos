@@ -156,7 +156,7 @@ ISR_FUN isr_sysclock_handle(void)
         last_task = current_task;
 
         /* Check if we can actually preempt the current task. */
-        if (!(current_task->flags & TASK_DONT_PREEMPT))
+        if (current_task->lock_count == 0)
         {
             /* If current task has a scheduler defined. */
             if (current_task->scheduler != NULL)

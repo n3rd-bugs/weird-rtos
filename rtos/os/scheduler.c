@@ -271,32 +271,14 @@ void scheduler_lock()
     /* Check if we have a current task. */
     if (tcb != NULL)
     {
-        /* Set the flag on the current task to disable scheduling. */
-        tcb->flags |= TASK_DONT_PREEMPT;
+        /* Should never happen. */
+        OS_ASSERT(tcb->lock_count == 255);
+
+        /* Increment the lock count for this task. */
+        tcb->lock_count ++;
     }
 
 } /* scheduler_lock */
-
-/*
- * scheduler_is_locked
- * This function will return if scheduler is locked or not.
- */
-uint8_t scheduler_is_locked()
-{
-    TASK *tcb = get_current_task();
-    uint8_t locked = FALSE;
-
-    /* Check if we are not in a task or current task cannot be preempted. */
-    if ((tcb == NULL) || (tcb->flags & TASK_DONT_PREEMPT))
-    {
-        /* Scheduler is locked. */
-        locked = TRUE;
-    }
-
-    /* Return if scheduler is locked or not. */
-    return (locked);
-
-} /* scheduler_is_locked */
 
 /*
  * scheduler_unlock
@@ -310,8 +292,11 @@ void scheduler_unlock()
     /* Check if we have a current task. */
     if (tcb != NULL)
     {
-        /* Clear the flag on the current task to enable scheduling. */
-        tcb->flags &= ((uint8_t)~(TASK_DONT_PREEMPT));
+        /* Should never happen. */
+        OS_ASSERT(tcb->lock_count == 0);
+
+        /* Decrement the lock count for this task. */
+        tcb->lock_count --;
     }
 
 } /* scheduler_unlock */

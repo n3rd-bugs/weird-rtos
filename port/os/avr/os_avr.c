@@ -32,7 +32,7 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
     os_process_system_tick();
 
     /* Check if we can actually preempt the current task. */
-    if (!(current_task->flags & TASK_DONT_PREEMPT))
+    if (current_task->lock_count == 0)
     {
         /* If current task has a scheduler defined. */
         if (current_task->scheduler != NULL)

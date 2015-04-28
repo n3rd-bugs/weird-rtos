@@ -39,6 +39,9 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
     /* Clear semaphore memory. */
     memset(semaphore, 0,  sizeof(SEMAPHORE));
 
+    /* If this is IRQ accessible than count should be zero. */
+    OS_ASSERT((type == SEMAPHORE_IRQ) && (count != 0));
+
     /* Initialize semaphore count. */
     semaphore->count = count;
     semaphore->max_count = max_count;
@@ -203,7 +206,6 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     CONDITION *condition;
     TASK *tcb;
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
-    uint8_t sch_locked = scheduler_is_locked();
 
     /* Save the current task pointer. */
     tcb = get_current_task();
@@ -215,12 +217,8 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         DISABLE_INTERRUPTS();
     }
 
-    /* If scheduler was not locked. */
-    if (sch_locked == FALSE)
-    {
-        /* Lock the scheduler. */
-        scheduler_lock();
-    }
+    /* Lock the scheduler. */
+    scheduler_lock();
 
     /* Check if this semaphore is not available. */
     if (semaphore->count == 0)
@@ -266,7 +264,6 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         {
             /* Save the IRQ interrupt level and scheduler state. */
             semaphore->irq_status = interrupt_level;
-            semaphore->scheduler_locked = sch_locked;
         }
         else
         {
@@ -275,7 +272,7 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         }
     }
 
-    else if (sch_locked == FALSE)
+    else
     {
         /* Enable scheduling. */
         scheduler_unlock();
@@ -295,14 +292,9 @@ void semaphore_release(SEMAPHORE *semaphore)
 {
     SEMAPHORE_PARAM param;
     RESUME resume;
-    uint8_t sch_locked = scheduler_is_locked();
 
-    /* If this is IRQ accessible and we have scheduling enabled. */
-    OS_ASSERT((semaphore->type & SEMAPHORE_IRQ) && (sch_locked == FALSE));
-
-    /* If this is not a IRQ accessible semaphore, otherwise we have already
-     * locked the scheduler. */
-    if (((semaphore->type & SEMAPHORE_IRQ) == 0) && (sch_locked == FALSE))
+    /* If this is not IRQ accessible semaphore. */
+    if (!(semaphore->type & SEMAPHORE_IRQ))
     {
         /* Lock the scheduler. */
         scheduler_lock();
@@ -335,13 +327,8 @@ void semaphore_release(SEMAPHORE *semaphore)
         SET_INTERRUPT_LEVEL(semaphore->irq_status);
     }
 
-    /* If scheduler was not locked or we need to enable scheduling for as we
-     * have released an IRQ accessible semaphore. */
-    if ((sch_locked == FALSE) || ((semaphore->type & SEMAPHORE_IRQ) && (semaphore->scheduler_locked == FALSE)))
-    {
-        /* Enable scheduling. */
-        scheduler_unlock();
-    }
+    /* Enable scheduling. */
+    scheduler_unlock();
 
 } /* semaphore_release */
 

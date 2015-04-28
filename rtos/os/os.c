@@ -59,7 +59,7 @@ void task_yield()
     }
 
     /* Check if we can actually yield the current task. */
-    if (!(current_task->flags & TASK_DONT_PREEMPT))
+    if (current_task->lock_count == 0)
     {
         /* Disable interrupts. */
         interrupt_level = GET_INTERRUPT_LEVEL();

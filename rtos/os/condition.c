@@ -383,7 +383,6 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     TASK *tcb = get_current_task();
     int32_t status = SUCCESS, task_status = TASK_RESUME;
     uint32_t num_conditions = *num, timeout, timeout_index;
-    uint8_t sch_locked = scheduler_is_locked();
     CONDITION *resume_condition;
 
 #ifndef CONFIG_SLEEP
@@ -394,16 +393,8 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     /* Current task should not be null. */
     OS_ASSERT(tcb == NULL);
 
-    /* If scheduler was not locked by the caller. */
-    if (sch_locked == FALSE)
-    {
-        /* We need to do this as when we are unlocking the conditions we might
-         * need to run a higher priority task and that may cause indefinite
-         * suspend. */
-
-        /* Disable preemption. */
-        scheduler_lock();
-    }
+    /* Disable preemption. */
+    scheduler_lock();
 
     /* If more than one condition was given. */
     if (num != NULL)
@@ -539,12 +530,8 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         suspend_unlock_condition(condition, num_conditions, ((task_status != TASK_RESUME) && (task_status != TASK_RESUME_SLEEP)) ? resume_condition : NULL);
     }
 
-    /* If caller did not lock the scheduler. */
-    if (!sch_locked)
-    {
-        /* Enable preemption. */
-        scheduler_unlock();
-    }
+    /* Enable preemption. */
+    scheduler_unlock();
 
     /* Return status to the caller. */
     return (status);
