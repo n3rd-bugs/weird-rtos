@@ -294,6 +294,9 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
             /* If we have a valid UDP port for this datagram. */
             if (udp_port != NULL)
             {
+                /* Release lock for buffer file descriptor. */
+                fd_release_lock(buffer->fd);
+
                 /* Obtain lock for this UDP port. */
                 OS_ASSERT(fd_get_lock((FD)udp_port));
 
@@ -305,6 +308,9 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
                 /* Release lock for this UDP port. */
                 fd_release_lock((FD)udp_port);
+
+                /* Obtain lock for buffer file descriptor. */
+                OS_ASSERT(fd_get_lock(buffer->fd));
 
                 /* This buffer is now consumed by the UDP port. */
                 status = NET_BUFFER_CONSUMED;
