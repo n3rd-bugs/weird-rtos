@@ -116,7 +116,6 @@ uint8_t task_priority_sort(void *node, void *task)
 static void task_entry_return(void *argv)
 {
     TASK *tcb = get_current_task();
-    uint8_t dont_preempt;
 
     /* We will run the task until we are actually killed. */
     while (TRUE)

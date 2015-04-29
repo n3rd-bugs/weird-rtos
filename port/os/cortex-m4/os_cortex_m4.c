@@ -135,7 +135,7 @@ void control_to_system()
         ENABLE_INTERRUPTS();
     }
 
-} /* run_first_task */
+} /* control_to_system */
 
 /*
  * isr_sysclock_handle
