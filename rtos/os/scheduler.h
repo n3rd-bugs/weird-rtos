@@ -34,12 +34,13 @@
 
 /* Some task resume status. */
 #define TASK_SUSPENDED              0
-#define TASK_RESUME                 1
-#define TASK_FINISHED               2
-#define TASK_SUSP_SLEEP             3
-#define TASK_SUSP_SEMAPHORE         4
-#define TASK_SUSP_FILE              5
-#define TASK_RESUME_SLEEP           6
+#define TASK_WILL_SUSPENDED         1
+#define TASK_RESUME                 2
+#define TASK_FINISHED               3
+#define TASK_SUSP_SLEEP             4
+#define TASK_SUSP_SEMAPHORE         5
+#define TASK_SUSP_FILE              6
+#define TASK_RESUME_SLEEP           7
 
 /* Scheduler class definition. */
 typedef struct _scheduler SCHEDULER;

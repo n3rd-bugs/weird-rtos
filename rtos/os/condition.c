@@ -459,14 +459,21 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         /* Add this task on all the conditions. */
         suspend_condition_add_task(condition, suspend, num_conditions, tcb);
 
-        /* Task is being suspended. */
-        tcb->status = TASK_SUSPENDED;
-
         /* Assign the suspension data to the task. */
         tcb->suspend_data = (void *)suspend;
 
+        /* Task is going to suspended. This will release the lock without
+         * enabling interrupts. */
+        tcb->status = TASK_WILL_SUSPENDED;
+
+        /* Disable global interrupts. */
+        DISABLE_INTERRUPTS();
+
         /* Unlock all the conditions so they can be resumed. */
         suspend_unlock_condition(condition, num_conditions, NULL);
+
+        /* Task is being suspended. */
+        tcb->status = TASK_SUSPENDED;
 
         /* Wait for either being resumed by some data or timeout. */
         task_waiting();
@@ -581,12 +588,6 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
         /* If we have a task, and we need to resume it. */
         if ((suspend) && (suspend->task->status == TASK_SUSPENDED))
         {
-            /* Set the task status as required by resume. */
-            suspend->task->status = resume->status;
-
-            /* Save the condition for which this task is resuming. */
-            suspend->task->suspend_data = condition;
-
 #ifdef CONFIG_SLEEP
             /* Remove this task from sleeping tasks. */
             sleep_remove_from_list(suspend->task);
@@ -594,6 +595,12 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 
             /* Try to reschedule this task. */
             ((SCHEDULER *)(suspend->task->scheduler))->yield(suspend->task, YIELD_SYSTEM);
+
+            /* Set the task status as required by resume. */
+            suspend->task->status = resume->status;
+
+            /* Save the condition for which this task is resuming. */
+            suspend->task->suspend_data = condition;
 
             /* Try to yield the current task. */
             task_yield();

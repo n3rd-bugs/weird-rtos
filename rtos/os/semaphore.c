@@ -292,6 +292,7 @@ void semaphore_release(SEMAPHORE *semaphore)
 {
     SEMAPHORE_PARAM param;
     RESUME resume;
+    TASK *tcb = get_current_task();
 
     /* If this is not IRQ accessible semaphore. */
     if (!(semaphore->type & SEMAPHORE_IRQ))
@@ -320,8 +321,8 @@ void semaphore_release(SEMAPHORE *semaphore)
     /* Resume tasks waiting on this semaphore. */
     resume_condition(&semaphore->condition, &resume, TRUE);
 
-    /* If this is IRQ accessible semaphore. */
-    if (semaphore->type & SEMAPHORE_IRQ)
+    /* If this is IRQ accessible semaphore, and we are not suspending. */
+    if ((semaphore->type & SEMAPHORE_IRQ) && ((tcb == NULL) || (tcb->status != TASK_WILL_SUSPENDED)))
     {
         /* Restore the IRQ interrupt level. */
         SET_INTERRUPT_LEVEL(semaphore->irq_status);
