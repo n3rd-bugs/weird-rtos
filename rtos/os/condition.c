@@ -120,21 +120,28 @@ static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDIT
  */
 static void suspend_lock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
 {
-    /* For all conditions do post. */
-    while (num)
+    uint32_t n;
+
+    /* For all conditions acquire lock for which we can suspend. */
+    for (n = 0; n < num; n++)
     {
         /* If we can lock this condition. */
-        if (((!resume_condition) || (resume_condition != (*condition))) && ((*condition)->lock))
+        if (((!resume_condition) || (resume_condition != condition[n])) && (((condition[n]->flags & CONDITION_LOCK_NO_SUSPEND) == 0) && (condition[n]->lock)))
         {
             /* Get lock for this condition. */
-            (*condition)->lock((*condition)->data);
+            (condition[n])->lock(condition[n]->data);
         }
+    }
 
-        /* Pick next condition. */
-        condition++;
-
-        /* This is now processed. */
-        num--;
+    /* For all conditions acquire lock for which we can not suspend. */
+    for (n = 0; n < num; n++)
+    {
+        /* If we can lock this condition. */
+        if (((!resume_condition) || (resume_condition != condition[n])) && ((condition[n]->flags & CONDITION_LOCK_NO_SUSPEND) && (condition[n]->lock)))
+        {
+            /* Get lock for this condition. */
+            (condition[n])->lock(condition[n]->data);
+        }
     }
 
 } /* suspend_lock_condition */
@@ -471,6 +478,9 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
 
         /* Unlock all the conditions so they can be resumed. */
         suspend_unlock_condition(condition, num_conditions, NULL);
+
+        /* Should never happen. */
+        OS_ASSERT(tcb->irq_lock_count > 0);
 
         /* Task is being suspended. */
         tcb->status = TASK_SUSPENDED;

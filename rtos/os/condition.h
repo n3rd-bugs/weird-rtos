@@ -14,11 +14,14 @@
 #define _CONDITION_H_
 
 /* Error codes. */
-#define CONDITION_TIMEOUT       -600
+#define CONDITION_TIMEOUT               -600
 
 /* Suspend flags. */
-#define CONDITION_PRIORITY      0x01
-#define CONDITION_TIMER         0x02
+#define CONDITION_PRIORITY              0x01
+#define CONDITION_TIMER                 0x02
+
+/* Condition flags. */
+#define CONDITION_LOCK_NO_SUSPEND       0x01
 
 /* User call back to check if this task satisfy the criteria. */
 typedef uint8_t CONDITION_DO_RESUME (void *, void *);
@@ -70,7 +73,10 @@ typedef struct _condition
     CONDITION_UNLOCK    *unlock;
 
     /* Private data that will be passed to the lock and unlock APIs.  */
-    void    *data;
+    void        *data;
+
+    /* Condition flags. */
+    uint32_t    flags;
 
 } CONDITION;
 
