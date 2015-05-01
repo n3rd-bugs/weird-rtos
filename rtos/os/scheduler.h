@@ -26,6 +26,7 @@
 
 /* Scheduler lock configuration. */
 #define SCHEDULER_MAX_LOCK          5
+#define SCHEDULER_MAX_IRQ_LOCK      5
 
 /* These defines different scheduler classes. */
 #define TASK_APERIODIC              0x01

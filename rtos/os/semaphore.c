@@ -220,6 +220,9 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     /* Lock the scheduler. */
     scheduler_lock();
 
+    /* Should never happen. */
+    OS_ASSERT((tcb) && ((tcb->irq_lock_count > 0) && ((semaphore->type & SEMAPHORE_IRQ) == 0)));
+
     /* Check if this semaphore is not available. */
     if (semaphore->count == 0)
     {
@@ -262,6 +265,16 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         /* If semaphore was successfully obtained. */
         if (status == SUCCESS)
         {
+            /* If we are in a task. */
+            if (tcb != NULL)
+            {
+                /* Should never happen. */
+                OS_ASSERT(tcb->irq_lock_count == SCHEDULER_MAX_IRQ_LOCK);
+
+                /* Increment the IRQ lock count. */
+                tcb->irq_lock_count++;
+            }
+
             /* Save the IRQ interrupt level and scheduler state. */
             semaphore->irq_status = interrupt_level;
         }
@@ -321,11 +334,25 @@ void semaphore_release(SEMAPHORE *semaphore)
     /* Resume tasks waiting on this semaphore. */
     resume_condition(&semaphore->condition, &resume, TRUE);
 
-    /* If this is IRQ accessible semaphore, and we are not suspending. */
-    if ((semaphore->type & SEMAPHORE_IRQ) && ((tcb == NULL) || (tcb->status != TASK_WILL_SUSPENDED)))
+    /* If this is IRQ accessible semaphore. */
+    if (semaphore->type & SEMAPHORE_IRQ)
     {
-        /* Restore the IRQ interrupt level. */
-        SET_INTERRUPT_LEVEL(semaphore->irq_status);
+        /* If we have a task. */
+        if (tcb != NULL)
+        {
+            /* Should never happen. */
+            OS_ASSERT(tcb->irq_lock_count == 0);
+
+            /* Decrement the IRQ lock count. */
+            tcb->irq_lock_count--;
+        }
+
+        /* If we are not suspending. */
+        if ((tcb == NULL) || ((tcb->status != TASK_WILL_SUSPENDED) && (tcb->irq_lock_count == 0)))
+        {
+            /* Restore the IRQ interrupt level. */
+            SET_INTERRUPT_LEVEL(semaphore->irq_status);
+        }
     }
 
     /* Enable scheduling. */

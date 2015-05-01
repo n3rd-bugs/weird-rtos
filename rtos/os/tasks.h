@@ -102,8 +102,8 @@ struct _task
     /* Lock count, how much nested scheduler locks have we acquired. */
     uint8_t     lock_count;
 
-    /* Padding variable. */
-    uint8_t     pad[1];
+    /* Lock count, how much nested IRQ locks have we acquired. */
+    uint8_t     irq_lock_count;
 #ifdef CONFIG_SLEEP
 
     /* Padding variable (needs to be 64-bit aligned). */
