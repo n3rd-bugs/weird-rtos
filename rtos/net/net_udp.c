@@ -521,14 +521,8 @@ static int32_t udp_write(void *fd, char *buffer, int32_t size)
     /* If a valid device was resolved. */
     if (net_device != NULL)
     {
-        /* Get lock for the device on which we will be sending data. */
-        OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
-
         /* Save the file descriptor associated with the networking device. */
         buffer_fd = net_device->fd;
-
-        /* Unlock the networking device. */
-        net_device_release_lock(net_device);
 
         /* Get lock for the file descriptor associated with this networking
          * device. */

@@ -127,14 +127,8 @@ int32_t ipv4_get_device_address(FD fd, uint32_t *address)
 
     if (net_device != NULL)
     {
-        /* Obtain the lock for this networking device. */
-        OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
-
         /* Return the IPv4 address assigned to this device. */
         *address = net_device->ipv4_address;
-
-        /* Release the lock for this networking device. */
-        net_device_release_lock(net_device);
     }
     else
     {
@@ -164,14 +158,8 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
 
     if (net_device != NULL)
     {
-        /* Obtain the lock for this networking device. */
-        OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
-
         /* Update the IPv4 address assigned to this device. */
         net_device->ipv4_address = address;
-
-        /* Release the lock for this networking device. */
-        net_device_release_lock(net_device);
     }
     else
     {
@@ -221,25 +209,16 @@ uint8_t ipv4_sreach_device(void *node, void *param)
 NET_DEV *ipv4_get_source_device(uint32_t address)
 {
     NET_DEV *ret_device;
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
-#ifdef CONFIG_SEMAPHORE
-    /* Obtain the global data semaphore. */
-    OS_ASSERT(semaphore_obtain(&net_dev_data.lock, MAX_WAIT) != SUCCESS);
-#else
-    /* Lock the scheduler. */
-    scheduler_lock();
-#endif
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Search for the required device. */
     ret_device = sll_search(&net_dev_data.devices, NULL, &ipv4_sreach_device, (void *)address, OFFSETOF(NET_DEV, next));
 
-#ifndef CONFIG_SEMAPHORE
-    /* Enable scheduling. */
-    scheduler_unlock();
-#else
-    /* Release the global semaphore. */
-    semaphore_release(&net_dev_data.lock);
-#endif
+    /* Restore the IRQ interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Return the resolved device for the given IP address. */
     return (ret_device);
@@ -733,9 +712,6 @@ static int32_t ipv4_frag_add(FS_BUFFER **buffer, uint16_t flag_offset)
     /* Should never happen. */
     OS_ASSERT(net_device == NULL);
 
-    /* Get lock for this networking device. */
-    OS_ASSERT(net_device_get_lock(net_device));
-
     /* Pull the ID of this fragment. */
     OS_ASSERT(fs_buffer_pull_offset(*buffer, &id, 2, IPV4_HDR_ID_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
@@ -799,9 +775,6 @@ static int32_t ipv4_frag_add(FS_BUFFER **buffer, uint16_t flag_offset)
         /* Merge the received fragments on the go. */
         status = ipv4_frag_merge(fragment, buffer);
     }
-
-    /* Release the lock for this networking device. */
-    net_device_release_lock(net_device);
 
     /* Return status to the caller. */
     return (status);

@@ -28,11 +28,6 @@ void net_devices_init()
     /* Clear the global data. */
     memset(&net_dev_data, 0, sizeof(NET_DEV_DATA));
 
-#ifdef CONFIG_SEMAPHORE
-    /* Create the networking device instance semaphore. */
-    semaphore_create(&net_dev_data.lock, 1, 1, SEMAPHORE_PRIORITY);
-#endif
-
 } /* net_devices_init */
 
 /*
@@ -46,6 +41,7 @@ void net_devices_init()
 void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
 {
     CONDITION *condition;
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Will only work with buffered file descriptors. */
     OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
@@ -67,16 +63,8 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     /* Register connection watcher. */
     fs_connection_watcher_set(fd, &net_device->connection_watcher);
 
-#ifdef CONFIG_SEMAPHORE
-    /* Create the semaphore for this networking device. */
-    semaphore_create(&net_device->lock, 1, 1, SEMAPHORE_PRIORITY);
-
-    /* Obtain the global data semaphore. */
-    OS_ASSERT(semaphore_obtain(&net_dev_data.lock, MAX_WAIT) != SUCCESS);
-#else
-    /* Lock the scheduler. */
-    scheduler_lock();
-#endif
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Add this device on the global device list. */
     sll_append(&net_dev_data.devices, net_device, OFFSETOF(NET_DEV, next));
@@ -86,13 +74,8 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     ipv4_device_initialize(net_device);
 #endif
 
-#ifndef CONFIG_SEMAPHORE
-    /* Enable scheduling. */
-    scheduler_unlock();
-#else
-    /* Release the global semaphore. */
-    semaphore_release(&net_dev_data.lock);
-#endif
+    /* Restore the IRQ interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Get the condition data for this file descriptor. */
     fs_condition_get(fd, &condition, &net_device->suspend, &net_device->fs_param, FS_BLOCK_READ);
@@ -113,13 +96,10 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
 NET_DEV *net_device_get_fd(FD fd)
 {
     NET_DEV *ret_device;
-#ifdef CONFIG_SEMAPHORE
-    /* Obtain the global data semaphore. */
-    OS_ASSERT(semaphore_obtain(&net_dev_data.lock, MAX_WAIT) != SUCCESS);
-#else
-    /* Lock the scheduler. */
-    scheduler_lock();
-#endif
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Pick the device list head. */
     ret_device = net_dev_data.devices.head;
@@ -131,56 +111,13 @@ NET_DEV *net_device_get_fd(FD fd)
         ret_device = ret_device->next;
     }
 
-#ifndef CONFIG_SEMAPHORE
-    /* Enable scheduling. */
-    scheduler_unlock();
-#else
-    /* Release the global semaphore. */
-    semaphore_release(&net_dev_data.lock);
-#endif
+    /* Restore the IRQ interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Return the required device. */
     return (ret_device);
 
 } /* net_device_get_fd */
-
-/*
- * net_device_get_lock
- * @net_device: Networking device for which lock is needed to be acquired.
- * @return: A success status will be returned if lock for the device was
- *  successfully obtained.
- * This function will acquire lock or a networking device.
- */
-int32_t net_device_get_lock(void *net_device)
-{
-#ifdef CONFIG_SEMAPHORE
-    /* Obtain the lock for this networking device. */
-    return (semaphore_obtain(&((NET_DEV *)net_device)->lock, MAX_WAIT) != SUCCESS);
-#else
-    /* Lock the scheduler. */
-    scheduler_lock();
-
-    /* Always return success. */
-    return (SUCESS);
-#endif
-} /* net_device_get_lock */
-
-/*
- * net_device_release_lock
- * @net_device: Networking device for which lock is needed to be released.
- * This function will acquire lock or a networking device.
- */
-void net_device_release_lock(NET_DEV *net_device)
-{
-#ifdef CONFIG_SEMAPHORE
-    /* Release the lock for this networking device. */
-    semaphore_release(&net_device->lock);
-#else
-    /* Enable scheduling. */
-    scheduler_unlock();
-#endif
-
-} /* net_device_release_lock */
 
 /*
  * net_device_set_mtu
@@ -193,14 +130,8 @@ void net_device_set_mtu(FD fd, uint32_t mtu)
 {
     NET_DEV *net_device = net_device_get_fd(fd);
 
-    /* Obtain the lock for this networking device. */
-    OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
-
     /* Set the MTU for this networking device. */
     net_device->mtu = mtu;
-
-    /* Release the lock for this networking device. */
-    net_device_release_lock(net_device);
 
 } /* net_device_set_mtu */
 
@@ -215,14 +146,8 @@ uint32_t net_device_get_mtu(FD fd)
     NET_DEV *net_device = net_device_get_fd(fd);
     uint32_t ret_mtu;
 
-    /* Obtain the lock for this networking device. */
-    OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
-
     /* Save the MTU for this networking device. */
     ret_mtu = net_device->mtu;
-
-    /* Release the lock for this networking device. */
-    net_device_release_lock(net_device);
 
     /* Return the MTU for this networking device. */
     return(ret_mtu);
@@ -243,8 +168,14 @@ void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
     /* Push the protocol on the buffer. */
     OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD) != SUCCESS);
 
+    /* Release lock for buffer file descriptor. */
+    fd_release_lock(buffer->fd);
+
     /* Write this buffer to the networking buffer file descriptor. */
     OS_ASSERT(fs_write(net_buff_fd, (char *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
+
+    /* Again obtain lock for buffer file descriptor. */
+    OS_ASSERT(fd_get_lock(buffer->fd));
 
 } /* net_device_buffer_receive */
 
@@ -263,21 +194,12 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
     NET_DEV *net_device;
     FS_BUFFER *next_buffer;
 
-    /* Release lock for the file descriptor. */
-    fd_release_lock(buffer->fd);
-
     /* Resolve the required networking device. */
     net_device = net_device_get_fd(buffer->fd);
 
     /* If networking device was successfully resolved. */
     if (net_device != NULL)
     {
-        /* Obtain the lock for this networking device. */
-        OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
-
-        /* Obtain lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
-
         /* While we have a buffer to transmit. */
         while ((buffer != NULL) & (status == SUCCESS))
         {
@@ -293,18 +215,12 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
             /* Pick the next buffer. */
             buffer = next_buffer;
         }
-
-        /* Release the lock for this networking device. */
-        net_device_release_lock(net_device);
     }
 
     else
     {
         /* We did not find a valid networking device for given buffer. */
         status = NET_INVALID_FD;
-
-        /* Obtain lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
     }
 
     /* Return status to the caller. */
@@ -321,14 +237,9 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
  */
 void net_device_connected(void *fd, void *net_device)
 {
-    /* Obtain the lock for this networking device. */
-    OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
-
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
-
-    /* Release the lock for this networking device. */
-    net_device_release_lock(net_device);
+    UNUSED_PARAM(net_device);
 
 } /* net_device_connected */
 
@@ -341,14 +252,9 @@ void net_device_connected(void *fd, void *net_device)
  */
 void net_device_disconnected(void *fd, void *net_device)
 {
-    /* Obtain the lock for this networking device. */
-    OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
-
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
-
-    /* Release the lock for this networking device. */
-    net_device_release_lock(net_device);
+    UNUSED_PARAM(net_device);
 
 } /* net_device_disconnected */
 

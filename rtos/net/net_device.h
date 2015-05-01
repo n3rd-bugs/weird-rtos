@@ -48,11 +48,6 @@ struct _net_dev
     FS_PARAM    fs_param;
     SUSPEND     suspend;
 
-#ifdef CONFIG_SEMAPHORE
-    /* Protection for this networking device. */
-    SEMAPHORE   lock;
-#endif
-
     /* Transmit function that will be called to send a packet. */
     NET_TX      *tx;
 
@@ -79,11 +74,6 @@ typedef struct _net_dev_data
         NET_DEV     *head;
         NET_DEV     *tail;
     } devices;
-
-#ifdef CONFIG_SEMAPHORE
-    /* Protection for global data. */
-    SEMAPHORE   lock;
-#endif
 
 } NET_DEV_DATA;
 
