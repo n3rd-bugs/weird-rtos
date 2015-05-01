@@ -82,10 +82,8 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     sll_append(&net_dev_data.devices, net_device, OFFSETOF(NET_DEV, next));
 
 #ifdef NET_IPV4
-
     /* Initialize IPv4 data for this networking device. */
     ipv4_device_initialize(net_device);
-
 #endif
 
 #ifndef CONFIG_SEMAPHORE

@@ -395,7 +395,8 @@ uint8_t fs_sreach_directory(void *node, void *param)
  * fs_sreach_node
  * @node: An existing file system in the list.
  * @param: Search parameter that will be updated.
- * @return: FALSE.
+ * @return: True will be returned if this is the required node, otherwise false
+ *  will be returned.
  * This is a search function to search a file system that should be used
  * to process a given node.
  */
