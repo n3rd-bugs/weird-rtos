@@ -185,6 +185,68 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
 } /* ipv4_set_device_address */
 
 /*
+ * ipv4_sreach_device
+ * @node: An existing device.
+ * @param: IPv4 source address for which source device is required.
+ * @return: True will be returned if this is the required device, otherwise
+ *  false will be returned.
+ * This is a search function to find a source device for a given IPv4 source
+ * address.
+ */
+uint8_t ipv4_sreach_device(void *node, void *param)
+{
+    NET_DEV *net_device = (NET_DEV *)node;
+    uint32_t address = (uint32_t)param;
+    uint8_t match = FALSE;
+
+    /* If this is the required device. */
+    if (net_device->ipv4_address == address)
+    {
+        /* Got an match. */
+        match = TRUE;
+    }
+
+    /* Return if this is the required device. */
+    return (match);
+
+} /* ipv4_sreach_device */
+
+/*
+ * ipv4_get_source_device
+ * @address: IPv4 address for which device is required.
+ * @return: If not null a device entry associated with given address will be
+ *  returned.
+ * This function will return a device associated with the address.
+ */
+NET_DEV *ipv4_get_source_device(uint32_t address)
+{
+    NET_DEV *ret_device;
+
+#ifdef CONFIG_SEMAPHORE
+    /* Obtain the global data semaphore. */
+    OS_ASSERT(semaphore_obtain(&net_dev_data.lock, MAX_WAIT) != SUCCESS);
+#else
+    /* Lock the scheduler. */
+    scheduler_lock();
+#endif
+
+    /* Search for the required device. */
+    ret_device = sll_search(&net_dev_data.devices, NULL, &ipv4_sreach_device, &address, OFFSETOF(NET_DEV, next));
+
+#ifndef CONFIG_SEMAPHORE
+    /* Enable scheduling. */
+    scheduler_unlock();
+#else
+    /* Release the global semaphore. */
+    semaphore_release(&net_dev_data.lock);
+#endif
+
+    /* Return the resolved device for the given IP address. */
+    return (ret_device);
+
+} /* ipv4_get_source_device */
+
+/*
  * net_process_ipv4
  * @net_buffer: Pointer to file system buffer needed to be processed, this will
  *  be updated if interchanged during processing.
@@ -386,13 +448,8 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
                     status = ipv4_header_add(buffer, IP_PROTO_ICMP, ip_iface, ip_src);
                 }
 
-                if (status == SUCCESS)
-                {
-                    /* Transmit an IPv4 packet. */
-                    status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4);
-                }
-
-                if (status == SUCCESS)
+                /* Transmit an IPv4 packet. */
+                if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4) == SUCCESS)
                 {
                     /* We have transmitted the same buffer. */
                     status = NET_BUFFER_CONSUMED;

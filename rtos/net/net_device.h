@@ -87,6 +87,9 @@ typedef struct _net_dev_data
 
 } NET_DEV_DATA;
 
+/* Exported variables. */
+extern NET_DEV_DATA net_dev_data;
+
 /* Function prototypes. */
 void net_devices_init();
 void net_register_fd(NET_DEV *, FD, NET_TX *, NET_RX *);

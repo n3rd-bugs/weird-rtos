@@ -95,6 +95,8 @@ void ipv4_device_initialize(NET_DEV *);
 uint8_t ipv4_compare_address(uint32_t, uint32_t, uint8_t);
 int32_t ipv4_get_device_address(FD, uint32_t *);
 int32_t ipv4_set_device_address(FD, uint32_t);
+NET_DEV *ipv4_get_source_device(uint32_t);
+uint8_t ipv4_sreach_device(void *, void *);
 int32_t net_process_ipv4(FS_BUFFER **);
 int32_t ipv4_header_add(FS_BUFFER *, uint8_t, uint32_t, uint32_t);
 
