@@ -231,7 +231,7 @@ NET_DEV *ipv4_get_source_device(uint32_t address)
 #endif
 
     /* Search for the required device. */
-    ret_device = sll_search(&net_dev_data.devices, NULL, &ipv4_sreach_device, &address, OFFSETOF(NET_DEV, next));
+    ret_device = sll_search(&net_dev_data.devices, NULL, &ipv4_sreach_device, (void *)address, OFFSETOF(NET_DEV, next));
 
 #ifndef CONFIG_SEMAPHORE
     /* Enable scheduling. */
