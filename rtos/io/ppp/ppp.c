@@ -605,8 +605,17 @@ void ppp_process_frame(void *fd, PPP *ppp)
 
                 case (PPP_PROTO_IPV4):
 
+#ifdef CONFIG_SEMAPHORE
+                    /* Release the PPP data lock. */
+                    semaphore_release(&ppp->lock);
+#endif
                     /* Send this buffer to the networking stack. */
                     net_device_buffer_receive(ppp->rx_buffer, NET_PROTO_IPV4);
+
+#ifdef CONFIG_SEMAPHORE
+                    /* Again obtain the PPP data lock. */
+                    OS_ASSERT(semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) != SUCCESS);
+#endif
                     ppp->rx_buffer = NULL;
 
                     /* This buffer will now be handled by networking stack. */
@@ -655,9 +664,15 @@ void ppp_process_frame(void *fd, PPP *ppp)
 int32_t net_ppp_transmit(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
-    PPP *ppp = ppp_get_instance_fd(buffer->fd);
+    PPP *ppp;
     uint16_t protocol = 0;
     uint8_t net_proto;
+
+    /* Release semaphore for the buffer file descriptor. */
+    fd_release_lock(buffer->fd);
+
+    /* Resolve required PPP buffer instance. */
+    ppp = ppp_get_instance_fd(buffer->fd);
 
     if (ppp != NULL)
     {
@@ -668,6 +683,9 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer)
         /* Acquire data lock for PPP. */
         OS_ASSERT(semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) != SUCCESS)
 #endif
+        /* Obtain lock for buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
+
         /* Skim the protocol from the buffer. */
         OS_ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
 
@@ -707,6 +725,9 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer)
     {
         /* Return an error to the caller. */
         status = PPP_INVALID_FD;
+
+        /* Obtain lock for buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
     }
 
     /* Return status to the caller. */
