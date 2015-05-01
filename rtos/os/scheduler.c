@@ -182,13 +182,15 @@ TASK *scheduler_get_next_task()
  */
 void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t param)
 {
-    /* Get the first scheduler from the scheduler list. */
-    SCHEDULER *scheduler = scheduler_list.head;
+    SCHEDULER *scheduler;
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* This function call be called from a task without any locks so disable
      * interrupts. */
     DISABLE_INTERRUPTS();
+
+    /* Get the first scheduler from the scheduler list. */
+    scheduler = scheduler_list.head;
 
     /* Try to find the scheduler for which this task is being added. */
     while (scheduler != NULL)
@@ -232,13 +234,15 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
  */
 void scheduler_task_remove(TASK *tcb)
 {
-    /* Get the scheduler from the task control block. */
-    SCHEDULER *scheduler = tcb->scheduler;
+    SCHEDULER *scheduler;
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* This function call be called from a task without any locks so disable
      * interrupts. */
     DISABLE_INTERRUPTS();
+
+    /* Get the scheduler from the task control block. */
+    scheduler = tcb->scheduler;
 
     /* A scheduler must have been assigned to this task. */
     OS_ASSERT(scheduler == NULL);
