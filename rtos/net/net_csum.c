@@ -110,6 +110,9 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offse
 
                 /* Reset the last left flag. */
                 last_left = FALSE;
+
+                /* Remove the last byte. */
+                left -= 1;
             }
         }
 
