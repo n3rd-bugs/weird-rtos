@@ -183,18 +183,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     UDP_PORT *udp_port;
     UDP_PORT_PARAM port_param;
 #ifdef UDP_CSUM
-    uint16_t csum_hdr;
-    uint32_t csum;
-    FS_BUFFER *csum_buffer;
-    HDR_GEN_MACHINE hdr_machine;
-    HEADER pseudo_hdr[] =
-    {
-        {(uint8_t *)&src_ip,            4, FS_BUFFER_PACKED},   /* Source address. */
-        {(uint8_t *)&dst_ip,            4, FS_BUFFER_PACKED},   /* Destination address. */
-        {(uint8_t []){0},               1, 0},                  /* Zero. */
-        {(uint8_t []){IP_PROTO_UDP},    1, 0},                  /* Protocol. */
-        {(uint8_t *)&length,            2, FS_BUFFER_PACKED},   /* UDP length. */
-    };
+    uint16_t csum_hdr, csum;
 #endif
 
     /* Pull the length of UDP datagram. */
@@ -207,42 +196,15 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     /* If we can verify the checksum for UDP header. */
     if (csum_hdr != 0)
     {
-        /* Allocate a buffer and initialize a pseudo header. */
-        csum_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+        /* Calculate checksum for the pseudo header. */
+        status = udp_csum_get(buffer, src_ip, dst_ip, length, ihl, &csum);
 
-        /* If we have to buffer to compute checksum. */
-        if (csum_buffer != NULL)
+        /* If checksum was successfully calculated and we don't have the
+         * anticipated checksum. */
+        if ((status == SUCCESS) && (csum != 0))
         {
-            /* Initialize header generator machine. */
-            header_gen_machine_init(&hdr_machine, &fs_buffer_hdr_push);
-
-            /* Push the ICMP header on the buffer. */
-            status = header_generate(&hdr_machine, pseudo_hdr, sizeof(pseudo_hdr)/sizeof(HEADER), csum_buffer);
-
-            /* If pseudo header was successfully generated. */
-            if (status == SUCCESS)
-            {
-                /* Calculate checksum for the pseudo header. */
-                csum = net_csum_calculate(csum_buffer, -1, 0);
-
-                /* Calculate and add the checksum for UDP datagram. */
-                NET_CSUM_ADD(csum, net_csum_calculate(buffer, -1, ihl));
-
-                /* If we don't have anticipated checksum. */
-                if (csum != 0)
-                {
-                    /* Return an error to the caller. */
-                    status = NET_INVALID_CSUM;
-                }
-            }
-
-            /* Free the pseudo header buffer. */
-            fs_buffer_add(buffer->fd, csum_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-        }
-        else
-        {
-            /* There are no buffers. */
-            status = NET_NO_BUFFERS;
+            /* Return an error to the caller. */
+            status = NET_INVALID_CSUM;
         }
     }
 #endif
@@ -294,11 +256,15 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
             /* If we have a valid UDP port for this datagram. */
             if (udp_port != NULL)
             {
-                /* Release lock for buffer file descriptor. */
+                /* Release lock for buffer file descriptor as we might need to
+                 * suspend to wait for UDP port lock. */
                 fd_release_lock(buffer->fd);
 
                 /* Obtain lock for this UDP port. */
                 OS_ASSERT(fd_get_lock((FD)udp_port));
+
+                /* Again obtain lock for buffer file descriptor. */
+                OS_ASSERT(fd_get_lock(buffer->fd));
 
                 /* Add this buffer in the buffer list for UDP port. */
                 sll_append(&udp_port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
@@ -308,9 +274,6 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
                 /* Release lock for this UDP port. */
                 fd_release_lock((FD)udp_port);
-
-                /* Obtain lock for buffer file descriptor. */
-                OS_ASSERT(fd_get_lock(buffer->fd));
 
                 /* This buffer is now consumed by the UDP port. */
                 status = NET_BUFFER_CONSUMED;
@@ -329,6 +292,130 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     return (status);
 
 } /* net_process_udp */
+
+#ifdef UDP_CSUM
+/*
+ * udp_csum_get
+ * @buffer: File buffer for which checksum is required.
+ * @src_ip: Source IP address.
+ * @dst_ip: Destination IP address.
+ * @length: Length of UDP datagram.
+ * @offset: Offset in the buffer at which the actual UDP header lies.
+ * @csum: Pointer where checksum will be returned.
+ * @return: A success status will be returned if UDP checksum was successfully
+ *  calculated. NET_NO_BUFFERS will be returned if we don't have any buffers to
+ *  calculate the checksum.
+ * This function will calculate UDP checksum for the given UDP packet.
+ */
+int32_t udp_csum_get(FS_BUFFER *buffer, uint32_t src_ip, uint32_t dst_ip, uint16_t length, uint32_t offset, uint16_t *csum)
+{
+    int32_t status;
+    uint32_t ret_csum;
+    FS_BUFFER *csum_buffer;
+    HDR_GEN_MACHINE hdr_machine;
+    HEADER pseudo_hdr[] =
+    {
+        {(uint8_t *)&src_ip,            4, FS_BUFFER_PACKED},   /* Source address. */
+        {(uint8_t *)&dst_ip,            4, FS_BUFFER_PACKED},   /* Destination address. */
+        {(uint8_t []){0},               1, 0},                  /* Zero. */
+        {(uint8_t []){IP_PROTO_UDP},    1, 0},                  /* Protocol. */
+        {(uint8_t *)&length,            2, FS_BUFFER_PACKED},   /* UDP length. */
+    };
+
+    /* Allocate a buffer and initialize a pseudo header. */
+    csum_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+
+    /* If we have to buffer to compute checksum. */
+    if (csum_buffer != NULL)
+    {
+        /* Initialize header generator machine. */
+        header_gen_machine_init(&hdr_machine, &fs_buffer_hdr_push);
+
+        /* Push the pseudo header on the buffer. */
+        status = header_generate(&hdr_machine, pseudo_hdr, sizeof(pseudo_hdr)/sizeof(HEADER), csum_buffer);
+
+        /* If pseudo header was successfully generated. */
+        if (status == SUCCESS)
+        {
+            /* Calculate and return the checksum for the pseudo header. */
+            ret_csum = net_csum_calculate(csum_buffer, -1, 0);
+
+            /* Calculate and add the checksum for UDP datagram. */
+            NET_CSUM_ADD(ret_csum, net_csum_calculate(buffer, -1, offset));
+        }
+
+        /* Free the pseudo header buffer. */
+        fs_buffer_add(buffer->fd, csum_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    }
+    else
+    {
+        /* There are no buffers. */
+        status = NET_NO_BUFFERS;
+    }
+
+    /* If checksum was successfully calculated. */
+    if (status == SUCCESS)
+    {
+        /* Return the calculated checksum. */
+        *csum = (uint16_t)ret_csum;
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* udp_csum_get */
+#endif /* UDP_CSUM */
+
+/*
+ * udp_header_add
+ * @buffer: File buffer on which UDP header is needed to be added.
+ * @socket_address: Socket address for which UDP header is needed to be added.
+ * @return: A success status will be returned if UDP header was successfully
+ *  added.
+ * This function will add UDP header on the given file system buffer.
+ */
+int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address)
+{
+    int32_t status;
+    HDR_GEN_MACHINE hdr_machine;
+    uint16_t csum = 0, length;
+    HEADER udp_hdr[] =
+    {
+        {(uint8_t *)&socket_address->local_port,    2, FS_BUFFER_PACKED},   /* Source port. */
+        {(uint8_t *)&socket_address->foreign_port,  2, FS_BUFFER_PACKED},   /* Destination port. */
+        {(uint8_t *)&length,                        2, FS_BUFFER_PACKED},   /* UDP datagram length. */
+        {(uint8_t *)&csum,                          2, 0},                  /* UDP checksum. */
+    };
+
+    /* Calculate the UDP datagram. */
+    length = (uint16_t)(buffer->total_length + UDP_HRD_LENGTH);
+
+    /* Initialize header generator machine. */
+    header_gen_machine_init(&hdr_machine, &fs_buffer_hdr_push);
+
+    /* Push the UDP header on the buffer. */
+    status = header_generate(&hdr_machine, udp_hdr, sizeof(udp_hdr)/sizeof(HEADER), buffer);
+
+#ifdef UDP_CSUM
+    /* If UDP header was successfully generated. */
+    if (status == SUCCESS)
+    {
+        /* Calculate the UDP checksum. */
+        status = udp_csum_get(buffer, socket_address->local_ip, socket_address->foreign_ip, length, 0, &csum);
+
+        /* If checksum was successfully calculated. */
+        if (status == SUCCESS)
+        {
+            /* Push the UDP checksum on the buffer. */
+            status = fs_buffer_push_offset(buffer, &csum, 2, UDP_HRD_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+        }
+    }
+#endif
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* udp_header_add */
 
 /*
  * udp_read
@@ -408,17 +495,110 @@ static int32_t udp_read(void *fd, char *buffer, int32_t size)
  * @fd: File descriptor.
  * @buffer: Buffer from which data is needed to be copied.
  * @size: Number of bytes to copy from the buffer.
- * @return: Number of bytes sent.
+ * @return: If >= 0 number of bytes sent, NET_UNKNOWN_SRC will be returned if
+ *  a valid device was not resolved or the given source address,
+ *  FS_BUFFER_NO_SPACE will be returned if there are not enough buffer to send
+ *  the reply.
  * This function will write data on given UDP port.
  */
 static int32_t udp_write(void *fd, char *buffer, int32_t size)
 {
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(fd);
-    UNUSED_PARAM(buffer);
+    UDP_PORT *port = (UDP_PORT *)fd;
+    NET_DEV *net_device;
+    int32_t ret_size = size, status;
+    FS_BUFFER *fs_buffer;
+    FD buffer_fd;
+
+    /* Resolve the device from which we need to send a UDP datagram. */
+    net_device = ipv4_get_source_device(port->socket_address.local_ip);
+
+    /* If a valid device was resolved. */
+    if (net_device != NULL)
+    {
+        /* Get lock for the device on which we will be sending data. */
+        OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
+
+        /* Save the file descriptor associated with the networking device. */
+        buffer_fd = net_device->fd;
+
+        /* Unlock the networking device. */
+        net_device_release_lock(net_device);
+
+        /* Get lock for the file descriptor associated with this networking
+         * device. */
+        OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+
+        /* Allocate a buffer from the required descriptor. */
+        fs_buffer = fs_buffer_get(buffer_fd, FS_BUFFER_LIST, 0);
+
+        /* If we do have a buffer. */
+        if (fs_buffer != NULL)
+        {
+            /* Push UDP payload on the buffer. */
+            status = fs_buffer_push(fs_buffer, buffer, (uint32_t)size, 0);
+
+            if (status == SUCCESS)
+            {
+                /* Add UDP header on the buffer. */
+                status = udp_header_add(fs_buffer, &port->socket_address);
+
+                /* If UDP header was successfully added. */
+                if (status == SUCCESS)
+                {
+                    /* Add IP header on this buffer. */
+                    status = ipv4_header_add(fs_buffer, IP_PROTO_UDP, port->socket_address.local_ip, port->socket_address.foreign_ip);
+                }
+
+                /* If IP header was successfully added. */
+                if (status == SUCCESS)
+                {
+                    /* Transmit an UDP datagram. */
+                    if (net_device_buffer_transmit(fs_buffer, NET_PROTO_IPV4) == SUCCESS)
+                    {
+                        /* We have transmitted the same buffer. */
+                        status = NET_BUFFER_CONSUMED;
+                    }
+                }
+            }
+            else
+            {
+                /* Return the status to the caller. */
+                ret_size = status;
+            }
+
+            /* If UDP datagram was successfully sent. */
+            if (status == NET_BUFFER_CONSUMED)
+            {
+                /* Return success status. */
+                status = SUCCESS;
+            }
+            else
+            {
+                /* Return status to the caller. */
+                ret_size = status;
+
+                /* Add the allocated buffer back to the descriptor. */
+                fs_buffer_add(fs_buffer->fd, fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            }
+        }
+        else
+        {
+            /* No buffers are available to send this buffer. */
+            ret_size = NET_NO_BUFFERS;
+        }
+
+        /* Release lock for the file descriptor associated with this networking
+         * device. */
+        fd_release_lock(buffer_fd);
+    }
+    else
+    {
+        /* Return an error to the caller. */
+        ret_size = NET_UNKNOWN_SRC;
+    }
 
     /* Return number of bytes. */
-    return (size);
+    return (ret_size);
 
 } /* udp_write */
 

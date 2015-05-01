@@ -22,6 +22,13 @@
 /* UDP stack configuration. */
 #define UDP_CSUM
 
+/* UDP header definitions. */
+#define UDP_HRD_LENGTH              (8)
+#define UDP_HRD_SRC_PORT_OFFSET     (0)
+#define UDP_HRD_DST_PORT_OFFSET     (2)
+#define UDP_HRD_LEN_OFFSET          (4)
+#define UDP_HRD_CSUM_OFFSET         (6)
+
 /* UDP port structure. */
 typedef struct _udp_port UDP_PORT;
 struct _udp_port
@@ -73,18 +80,15 @@ typedef struct _udp_port_param
     SOCKET_ADDRESS  socket_address;
 } UDP_PORT_PARAM;
 
-/* UDP header parser definitions. */
-#define UDP_HRD_LENGTH              (8)
-#define UDP_HRD_SRC_PORT_OFFSET     0
-#define UDP_HRD_DST_PORT_OFFSET     2
-#define UDP_HRD_LEN_OFFSET          4
-#define UDP_HRD_CSUM_OFFSET         6
-
 /* Function prototypes. */
 void udp_initialize();
 void udp_register(UDP_PORT *, char *, SOCKET_ADDRESS *);
 void udp_unregister(UDP_PORT *);
 int32_t net_process_udp(FS_BUFFER *, uint32_t, uint32_t, uint32_t, uint32_t);
+#ifdef UDP_CSUM
+int32_t udp_csum_get(FS_BUFFER *, uint32_t, uint32_t, uint16_t, uint32_t, uint16_t *);
+#endif
+int32_t udp_header_add(FS_BUFFER *, SOCKET_ADDRESS *);
 
 #endif /* NET_UDP */
 #endif /* CONFIG_NET */
