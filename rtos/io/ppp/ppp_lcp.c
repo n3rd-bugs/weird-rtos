@@ -369,18 +369,8 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
         /* Clear the assigned IP addresses. */
         ppp->local_ip_address = ppp->remote_ip_address = 0;
 
-#ifdef CONFIG_SEMAPHORE
-        /* Release the PPP data lock. */
-        semaphore_release(&ppp->lock);
-#endif
-
         /* Set the MTU for this networking device. */
         net_device_set_mtu(fd, ppp->mru);
-
-#ifdef CONFIG_SEMAPHORE
-        /* Again obtain the PPP data lock. */
-        OS_ASSERT(semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) != SUCCESS);
-#endif
     }
 
     /* Check if connection was terminated. */

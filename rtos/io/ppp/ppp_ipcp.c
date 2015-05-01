@@ -215,17 +215,8 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
         /* We are now in network phase. */
         ppp->state = PPP_STATE_NETWORK;
 
-#ifdef CONFIG_SEMAPHORE
-        /* Release the PPP data lock. */
-        semaphore_release(&ppp->lock);
-#endif
         /* Set the IPv4 address for this device. */
         OS_ASSERT(ipv4_set_device_address(fd, ppp->local_ip_address) != SUCCESS);
-
-#ifdef CONFIG_SEMAPHORE
-        /* Again obtain the PPP data lock. */
-        OS_ASSERT(semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) != SUCCESS);
-#endif
     }
 
     /* Free the buffer list allocated before and any buffers still left on it. */

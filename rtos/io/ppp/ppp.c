@@ -32,11 +32,6 @@ void ppp_init()
     /* Clear the global data. */
     memset(&ppp_data, 0, sizeof(PPP_DATA));
 
-#ifdef CONFIG_SEMAPHORE
-    /* Create the PPP global data semaphore. */
-    semaphore_create(&ppp_data.lock, 1, 1, SEMAPHORE_PRIORITY);
-#endif
-
 } /* ppp_init */
 
 /*
@@ -49,6 +44,8 @@ void ppp_init()
  */
 void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
 {
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+
     /* Will only work with buffered file descriptors. */
     OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
 
@@ -76,27 +73,14 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
         ppp->flags |= PPP_DEDICATED_FD;
     }
 
-#ifdef CONFIG_SEMAPHORE
-    /* Create the PPP instance semaphore. */
-    semaphore_create(&ppp->lock, 1, 1, (SEMAPHORE_PRIORITY | SEMAPHORE_IRQ));
-
-    /* Obtain the global data semaphore. */
-    OS_ASSERT(semaphore_obtain(&ppp_data.lock, MAX_WAIT) != SUCCESS);
-#else
-    /* Lock the scheduler. */
-    scheduler_lock();
-#endif
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Add this device on the global instance list. */
     sll_append(&ppp_data.ppp, ppp, OFFSETOF(PPP, next));
 
-#ifndef CONFIG_SEMAPHORE
-    /* Enable scheduling. */
-    scheduler_unlock();
-#else
-    /* Release the global semaphore. */
-    semaphore_release(&ppp_data.lock);
-#endif
+    /* Restore the IRQ interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Register networking device for this PPP instance. */
     net_register_fd(&ppp->net_device, fd, &net_ppp_transmit, &net_ppp_receive);
@@ -114,13 +98,10 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
 PPP *ppp_get_instance_fd(FD fd)
 {
     PPP *ret_instance;
-#ifdef CONFIG_SEMAPHORE
-    /* Obtain the global data semaphore. */
-    OS_ASSERT(semaphore_obtain(&ppp_data.lock, MAX_WAIT) != SUCCESS);
-#else
-    /* Lock the scheduler. */
-    scheduler_lock();
-#endif
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Pick the instance list head. */
     ret_instance = ppp_data.ppp.head;
@@ -132,13 +113,8 @@ PPP *ppp_get_instance_fd(FD fd)
         ret_instance = ret_instance->next;
     }
 
-#ifndef CONFIG_SEMAPHORE
-    /* Enable scheduling. */
-    scheduler_unlock();
-#else
-    /* Release the global semaphore. */
-    semaphore_release(&ppp_data.lock);
-#endif
+    /* Restore the IRQ interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Return the required device. */
     return (ret_instance);
@@ -154,27 +130,11 @@ PPP *ppp_get_instance_fd(FD fd)
  */
 void ppp_connection_established(void *fd, void *ppp)
 {
-#ifndef CONFIG_SEMAPHORE
-    /* Lock the scheduler. */
-    scheduler_lock();
-#else
-    /* Acquire global data lock for PPP. */
-    OS_ASSERT(semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) != SUCCESS)
-#endif
-
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
 
     /* Link layer is now connected. */
     ((PPP *)ppp)->state = PPP_STATE_CONNECTED;
-
-#ifndef CONFIG_SEMAPHORE
-    /* Enable scheduling. */
-    scheduler_unlock();
-#else
-    /* Release the global data lock. */
-    semaphore_release(&((PPP *)ppp)->lock);
-#endif
 
 } /* ppp_connection_established */
 
@@ -187,27 +147,11 @@ void ppp_connection_established(void *fd, void *ppp)
  */
 void ppp_connection_terminated(void *fd, void *ppp)
 {
-#ifndef CONFIG_SEMAPHORE
-    /* Lock the scheduler. */
-    scheduler_lock();
-#else
-    /* Acquire global data lock for PPP. */
-    OS_ASSERT(semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) != SUCCESS)
-#endif
-
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
 
     /* Link layer is now disconnected. */
     ((PPP *)ppp)->state = PPP_STATE_DISCONNECTED;
-
-#ifndef CONFIG_SEMAPHORE
-    /* Enable scheduling. */
-    scheduler_unlock();
-#else
-    /* Release the global data lock. */
-    semaphore_release(&((PPP *)ppp)->lock);
-#endif
 
 } /* ppp_connection_terminated */
 
@@ -605,17 +549,8 @@ void ppp_process_frame(void *fd, PPP *ppp)
 
                 case (PPP_PROTO_IPV4):
 
-#ifdef CONFIG_SEMAPHORE
-                    /* Release the PPP data lock. */
-                    semaphore_release(&ppp->lock);
-#endif
                     /* Send this buffer to the networking stack. */
                     net_device_buffer_receive(ppp->rx_buffer, NET_PROTO_IPV4);
-
-#ifdef CONFIG_SEMAPHORE
-                    /* Again obtain the PPP data lock. */
-                    OS_ASSERT(semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) != SUCCESS);
-#endif
                     ppp->rx_buffer = NULL;
 
                     /* This buffer will now be handled by networking stack. */
@@ -668,24 +603,11 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer)
     uint16_t protocol = 0;
     uint8_t net_proto;
 
-    /* Release semaphore for the buffer file descriptor. */
-    fd_release_lock(buffer->fd);
-
     /* Resolve required PPP buffer instance. */
     ppp = ppp_get_instance_fd(buffer->fd);
 
     if (ppp != NULL)
     {
-#ifndef CONFIG_SEMAPHORE
-        /* Lock the scheduler. */
-        scheduler_lock();
-#else
-        /* Acquire data lock for PPP. */
-        OS_ASSERT(semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) != SUCCESS)
-#endif
-        /* Obtain lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
-
         /* Skim the protocol from the buffer. */
         OS_ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
 
@@ -712,22 +634,11 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer)
             /* As we might have switched the buffer so we do need to free it. */
             fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
         }
-
-#ifndef CONFIG_SEMAPHORE
-        /* Enable scheduling. */
-        scheduler_unlock();
-#else
-        /* Release the PPP instance lock. */
-        semaphore_release(&((PPP *)ppp)->lock);
-#endif
     }
     else
     {
         /* Return an error to the caller. */
         status = PPP_INVALID_FD;
-
-        /* Obtain lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
     }
 
     /* Return status to the caller. */
@@ -744,56 +655,45 @@ void net_ppp_receive(void *data)
 {
     PPP *ppp = ppp_get_instance_fd((FD)data);
 
-#ifndef CONFIG_SEMAPHORE
-    /* Lock the scheduler. */
-    scheduler_lock();
-#else
-    /* Acquire global data lock for PPP. */
-    if (semaphore_obtain(&((PPP *)ppp)->lock, MAX_WAIT) == SUCCESS)
-#endif
+    /* Get lock for the PPP. */
+    OS_ASSERT(fd_get_lock(ppp->fd) != SUCCESS);
+
+    /* Process the received buffer according to the PPP state. */
+    switch (ppp->state)
     {
-        /* Process the received buffer according to the PPP state. */
-        switch (ppp->state)
-        {
-        /* If physical medium is connected. */
-        case PPP_STATE_CONNECTED:
+    /* If physical medium is connected. */
+    case PPP_STATE_CONNECTED:
 
-            /* Link layer is connected, and we are expecting some modem
-             * initialization before formally start handling PPP packets. */
-            ppp_process_modem_chat(ppp->fd, ppp);
+        /* Link layer is connected, and we are expecting some modem
+         * initialization before formally start handling PPP packets. */
+        ppp_process_modem_chat(ppp->fd, ppp);
 
-            /* Break out of this switch. */
-            break;
+        /* Break out of this switch. */
+        break;
 
-        /* If we are processing LCP, IPCP frames or we have our connection
-         * established. */
-        case PPP_STATE_LCP:
-        case PPP_STATE_IPCP:
-        case PPP_STATE_NETWORK:
+    /* If we are processing LCP, IPCP frames or we have our connection
+     * established. */
+    case PPP_STATE_LCP:
+    case PPP_STATE_IPCP:
+    case PPP_STATE_NETWORK:
 
-            /* Try to parse the packet and see if PPP needs to process it. */
-            ppp_process_frame(ppp->fd, ppp);
+        /* Try to parse the packet and see if PPP needs to process it. */
+        ppp_process_frame(ppp->fd, ppp);
 
-            /* Break out of this switch. */
-            break;
+        /* Break out of this switch. */
+        break;
 
-        /* If physical medium not connected. */
-        case PPP_STATE_DISCONNECTED:
-        default:
-            /* Nothing to do here. */
+    /* If physical medium not connected. */
+    case PPP_STATE_DISCONNECTED:
+    default:
+        /* Nothing to do here. */
 
-            /* Just break out of this switch. */
-            break;
-        }
-
-#ifdef CONFIG_SEMAPHORE
-        /* Release the global data lock. */
-        semaphore_release(&((PPP *)ppp)->lock);
-#else
-        /* Enable scheduling. */
-        scheduler_unlock();
-#endif
+        /* Just break out of this switch. */
+        break;
     }
+
+    /* Release lock for PPP. */
+    fd_release_lock(ppp->fd);
 
 } /* net_ppp_receive */
 

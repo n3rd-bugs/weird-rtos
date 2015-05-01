@@ -88,10 +88,6 @@ struct _ppp
     /* PPP instance list member. */
     PPP         *next;
 
-#ifdef CONFIG_SEMAPHORE
-    SEMAPHORE   lock;
-#endif
-
     /* Networking device structure. */
     NET_DEV     net_device;
 
@@ -143,10 +139,6 @@ typedef struct _ppp_data
         PPP     *head;
         PPP     *tail;
     } ppp;
-
-#ifdef CONFIG_SEMAPHORE
-    SEMAPHORE   lock;
-#endif
 } PPP_DATA;
 
 /* PPP protocol definition. */
