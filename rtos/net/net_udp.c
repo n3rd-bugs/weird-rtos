@@ -218,6 +218,9 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         /* If UDP header length value is correct. */
         if (buffer->total_length == (ihl + length))
         {
+            /* Release semaphore for the buffer file descriptor. */
+            fd_release_lock(buffer->fd);
+
 #ifdef CONFIG_SEMAPHORE
             /* Obtain the global data semaphore. */
             OS_ASSERT(semaphore_obtain(&udp_data.lock, MAX_WAIT) != SUCCESS);
@@ -243,6 +246,9 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
             /* Release the global semaphore. */
             semaphore_release(&udp_data.lock);
 #endif
+
+            /* Obtain lock for buffer file descriptor. */
+            OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
         }
 
         else

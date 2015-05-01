@@ -260,14 +260,23 @@ void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
 int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
 {
     int32_t status = SUCCESS;
-    NET_DEV *net_device = net_device_get_fd(buffer->fd);
+    NET_DEV *net_device;
     FS_BUFFER *next_buffer;
+
+    /* Release lock for the file descriptor. */
+    fd_release_lock(buffer->fd);
+
+    /* Resolve the required networking device. */
+    net_device = net_device_get_fd(buffer->fd);
 
     /* If networking device was successfully resolved. */
     if (net_device != NULL)
     {
         /* Obtain the lock for this networking device. */
         OS_ASSERT(net_device_get_lock(net_device) != SUCCESS);
+
+        /* Obtain lock for buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
 
         /* While we have a buffer to transmit. */
         while ((buffer != NULL) & (status == SUCCESS))
@@ -293,6 +302,9 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
     {
         /* We did not find a valid networking device for given buffer. */
         status = NET_INVALID_FD;
+
+        /* Obtain lock for buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
     }
 
     /* Return status to the caller. */
