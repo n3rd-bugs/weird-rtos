@@ -48,6 +48,11 @@ extern uint32_t sys_interrupt_level;
                                             asm("   ISB    ");                      \
                                             CORTEX_M4_PEND_SV_REG |= CORTEX_M4_PEND_SV_MAST;     \
                                             CORTEX_M4_SYS_TICK_REG &= ~(CORTEX_M4_SYS_TICK_MASK);\
+                                            asm volatile                            \
+                                            (                                       \
+                                            "   MOVS        r0, #1          \r\n"   \
+                                            "   MSR         BASEPRI, r0     \r\n"   \
+                                            );                                      \
                                         }
 
 #define CONTROL_TO_SYSTEM()             control_to_system()

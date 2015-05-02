@@ -237,6 +237,13 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
     [sp] "r" (current_task->tos)
     );
 
+    /* Clear the priority mask to enable other interrupts. */
+    asm volatile
+    (
+    "   MOVS        r0, #0                  \r\n"
+    "   MSR         BASEPRI, r0             \r\n"
+    );
+
     /* Just enable system tick interrupt. */
     CORTEX_M4_SYS_TICK_REG |= (CORTEX_M4_SYS_TICK_MASK);
 
