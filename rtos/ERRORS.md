@@ -8,6 +8,7 @@ This list is needed to be updated whenever a new error code is added.
     SEMAPHORE_DELETED       -701
     FS_NODE_DELETED         -800
     FS_BUFFER_NO_SPACE      -801
+    FS_INVALID_BUFFER_TYPE  -802
     PPP_INVALID_HEADER      -900
     PPP_NOT_SUPPORTED       -901
     PPP_VALUE_NOT_VALID     -902
