@@ -291,8 +291,7 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
 
     if (status == SUCCESS)
     {
-        /* Verify that this is not a fragmented packet, as we don't support
-         * it. */
+        /* Pull the flag and offset data from the buffer. */
         OS_ASSERT(fs_buffer_pull_offset(buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* If this packet will be fragmented. */
@@ -319,14 +318,8 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
         /* Pick the IPv4 address to which this packet was addressed to. */
         OS_ASSERT(fs_buffer_pull_offset(buffer, &ip_dst, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
-        /* Release semaphore for the buffer file descriptor. */
-        fd_release_lock(buffer->fd);
-
         /* Get IPv4 address assigned to this device. */
         OS_ASSERT(ipv4_get_device_address(buffer->fd, &ip_iface) != SUCCESS);
-
-        /* Obtain lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
 
         /* Try to resolve the protocol to which this packet is needed to be
          * forwarded. */
@@ -355,7 +348,7 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
         /* A valid protocol was not resolved. */
         default:
 
-            /* If this packet for intended for us. */
+            /* If this packet intended for us. */
             if (ip_dst == ip_iface)
             {
                 /* Unknown protocol was received. */
@@ -495,9 +488,6 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
     /* Calculate the IPv4 header length. */
     ihl = (ALLIGN_CEIL_N((IPV4_HDR_SIZE), 4) >> 2);
 
-    /* Release semaphore for the buffer file descriptor. */
-    fd_release_lock(buffer->fd);
-
 #ifdef IPV4_ENABLE_FRAG
     /* Calculate the maximum number of bytes that can be sent in a single
      * IPv4 packet. */
@@ -508,9 +498,6 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
      * one datagram. */
     OS_ASSERT((net_device_get_mtu(buffer->fd) - (uint32_t)(ihl << 2)) < buffer->total_length);
 #endif
-
-    /* Obtain lock for buffer file descriptor. */
-    OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
 
     /* Save the total number of bytes of payload we need to send. */
     total_length = buffer->total_length;
@@ -530,7 +517,7 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
         if (total_length > max_payload_len)
         {
             /* Divide the given buffer into two buffers. */
-            OS_ASSERT(fs_buffer_divide(buffer, max_payload_len) != SUCCESS);
+            OS_ASSERT(fs_buffer_divide(buffer, 0, max_payload_len) != SUCCESS);
 
             /* We will be sending more fragments after this. */
             flag_offset |= IPV4_HDR_FALG_MF;
