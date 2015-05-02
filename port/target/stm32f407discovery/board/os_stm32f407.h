@@ -29,7 +29,7 @@
 #define CORTEX_M4_SYS_TICK_REG          (SysTick->CTRL)
 #define CORTEX_M4_SYS_TICK_MASK         (SysTick_CTRL_TICKINT_Msk)
 #define CORTEX_M4_INT_SYS_TICK_PRI_REG  (SCB->SHP[11])
-#define CORTEX_M4_INT_SYS_PRI           (0xFF)
+#define CORTEX_M4_INT_SYS_PRI           (0x1)
 
 #define CORTEX_M4_FPU                   (TRUE)
 
