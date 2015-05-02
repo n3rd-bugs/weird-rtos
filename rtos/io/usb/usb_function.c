@@ -86,15 +86,15 @@ static uint32_t usb_fun_setup_stage(USB_STM32F407_HANDLE *usb_device)
     /* Process this request. */
     switch (req.bmRequest & 0x1F)
     {
-    case (USB_REQ_RECIPIENT_DEVICE):
+    case USB_REQ_RECIPIENT_DEVICE:
         usb_fun_std_dev_request(usb_device, &req);
         break;
 
-    case (USB_REQ_RECIPIENT_INTERFACE):
+    case USB_REQ_RECIPIENT_INTERFACE:
         usb_fun_std_interface_request(usb_device, &req);
         break;
 
-    case (USB_REQ_RECIPIENT_ENDPOINT):
+    case USB_REQ_RECIPIENT_ENDPOINT:
         usb_fun_std_endpoint_request(usb_device, &req);
         break;
 

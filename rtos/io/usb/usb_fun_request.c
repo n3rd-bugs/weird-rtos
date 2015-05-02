@@ -143,13 +143,13 @@ uint32_t usb_fun_std_endpoint_request(USB_STM32F407_HANDLE *usb_device, USB_SETU
     {
 
     /* Set feature request. */
-    case (USB_REQ_SET_FEATURE):
+    case USB_REQ_SET_FEATURE:
 
         /* Handle this request according to device status. */
         switch (usb_device->device.status)
         {
         /* Device is being addressed. */
-        case (USB_FUN_STATE_ADDRESSED):
+        case USB_FUN_STATE_ADDRESSED:
 
             /* If this not IN or OUT control endpoint. */
             if ((ep_addr != 0x00) && (ep_addr != 0x80))
@@ -161,7 +161,7 @@ uint32_t usb_fun_std_endpoint_request(USB_STM32F407_HANDLE *usb_device, USB_SETU
             break;
 
         /* Device is configured. */
-        case (USB_FUN_STATE_CONFIGURED):
+        case USB_FUN_STATE_CONFIGURED:
 
             /* If we need to halt the feature. */
             if (req->wValue == USB_FEATURE_EP_HALT)
@@ -190,13 +190,13 @@ uint32_t usb_fun_std_endpoint_request(USB_STM32F407_HANDLE *usb_device, USB_SETU
         }
         break;
 
-    case (USB_REQ_CLEAR_FEATURE):
+    case USB_REQ_CLEAR_FEATURE:
 
         /* Handle this request according to device status. */
         switch (usb_device->device.status)
         {
         /* If device is being addressed. */
-        case (USB_FUN_STATE_ADDRESSED):
+        case USB_FUN_STATE_ADDRESSED:
 
             /* If this not IN or OUT control endpoint. */
             if ((ep_addr != 0x00) && (ep_addr != 0x80))
@@ -208,7 +208,7 @@ uint32_t usb_fun_std_endpoint_request(USB_STM32F407_HANDLE *usb_device, USB_SETU
             break;
 
         /* Device is configured. */
-        case (USB_FUN_STATE_CONFIGURED):
+        case USB_FUN_STATE_CONFIGURED:
 
             /* If we need to halt the feature. */
             if (req->wValue == USB_FEATURE_EP_HALT)
@@ -238,13 +238,13 @@ uint32_t usb_fun_std_endpoint_request(USB_STM32F407_HANDLE *usb_device, USB_SETU
         break;
 
     /* If status is requested. */
-    case (USB_REQ_GET_STATUS):
+    case USB_REQ_GET_STATUS:
 
         /* Handle this request according to device status. */
         switch (usb_device->device.status)
         {
         /* If device is being addressed. */
-        case (USB_FUN_STATE_ADDRESSED):
+        case USB_FUN_STATE_ADDRESSED:
 
             /* If this not IN or OUT control endpoint. */
             if ((ep_addr != 0x00) && (ep_addr != 0x80))
@@ -256,7 +256,7 @@ uint32_t usb_fun_std_endpoint_request(USB_STM32F407_HANDLE *usb_device, USB_SETU
             break;
 
         /* Device is configured. */
-        case (USB_FUN_STATE_CONFIGURED):
+        case USB_FUN_STATE_CONFIGURED:
 
             /* If this is IN endpoint. */
             if (ep_addr & 0x80)
@@ -325,7 +325,7 @@ static void usb_fun_get_descriptor(USB_STM32F407_HANDLE *usb_device, USB_SETUP_R
     switch (req->wValue >> 8)
     {
     /* If we need device descriptor. */
-    case (USB_DESC_TYPE_DEVICE):
+    case USB_DESC_TYPE_DEVICE:
 
         /* Populate the device descriptor. */
         pbuf = usb_device->device.class_cb->desc_cb->get_device_desc(usb_device->cfg.speed, &len);
@@ -338,7 +338,7 @@ static void usb_fun_get_descriptor(USB_STM32F407_HANDLE *usb_device, USB_SETUP_R
         break;
 
     /* If we need configuration descriptor. */
-    case (USB_DESC_TYPE_CONFIG):
+    case USB_DESC_TYPE_CONFIG:
 
         /* Populate the configuration descriptor. */
         pbuf = (uint8_t *)usb_device->device.class_cb->get_config_descriptor(usb_device->cfg.speed, &len);
@@ -358,7 +358,7 @@ static void usb_fun_get_descriptor(USB_STM32F407_HANDLE *usb_device, USB_SETUP_R
         break;
 
     /* If we need a string descriptor. */
-    case (USB_DESC_TYPE_STRING):
+    case USB_DESC_TYPE_STRING:
 
         /* Save the number of bytes that can be used to convert the string. */
         len = USB_STRING_DESC_SIZE;
@@ -366,27 +366,27 @@ static void usb_fun_get_descriptor(USB_STM32F407_HANDLE *usb_device, USB_SETUP_R
         /* Return required descriptor. */
         switch ((uint8_t)(req->wValue))
         {
-        case (USB_DEV_IDX_LANGID_STR):
+        case USB_DEV_IDX_LANGID_STR:
             pbuf = usb_device->device.class_cb->desc_cb->get_lang_id_desc(usb_device->cfg.speed, &len);
             break;
 
-        case (USB_DEV_IDX_MFC_STR):
+        case USB_DEV_IDX_MFC_STR:
             pbuf = usb_device->device.class_cb->desc_cb->get_mfg_str_desc(usb_device->cfg.speed, usb_device->device.str_desc_buffer, &len);
             break;
 
-        case (USB_DEV_IDX_PRODUCT_STR):
+        case USB_DEV_IDX_PRODUCT_STR:
             pbuf = usb_device->device.class_cb->desc_cb->get_product_str_desc(usb_device->cfg.speed, usb_device->device.str_desc_buffer, &len);
             break;
 
-        case (USB_DEV_IDX_SERIAL_STR):
+        case USB_DEV_IDX_SERIAL_STR:
             pbuf = usb_device->device.class_cb->desc_cb->get_serial_number_str_desc(usb_device->cfg.speed, usb_device->device.str_desc_buffer, &len);
             break;
 
-        case (USB_DEV_IDX_CONFIG_STR):
+        case USB_DEV_IDX_CONFIG_STR:
             pbuf = usb_device->device.class_cb->desc_cb->get_cfg_str_desc(usb_device->cfg.speed, usb_device->device.str_desc_buffer, &len);
             break;
 
-        case (USB_DEV_IDX_INTERFACE_STR):
+        case USB_DEV_IDX_INTERFACE_STR:
             pbuf = usb_device->device.class_cb->desc_cb->get_iface_str_desc(usb_device->cfg.speed, usb_device->device.str_desc_buffer, &len);
             break;
 
@@ -409,7 +409,7 @@ static void usb_fun_get_descriptor(USB_STM32F407_HANDLE *usb_device, USB_SETUP_R
 
         break;
 
-    case (USB_DESC_TYPE_DEVICE_QUALIFIER):
+    case USB_DESC_TYPE_DEVICE_QUALIFIER:
         /* If we are using HS. */
         if (usb_device->cfg.speed == USB_STM32F407_SPEED_HIGH)
         {
@@ -424,7 +424,7 @@ static void usb_fun_get_descriptor(USB_STM32F407_HANDLE *usb_device, USB_SETUP_R
 
         break;
 
-    case (USB_DESC_TYPE_SPEED_CONFIG):
+    case USB_DESC_TYPE_SPEED_CONFIG:
         /* If we are using HS. */
         if (usb_device->cfg.speed == USB_STM32F407_SPEED_HIGH)
         {
@@ -535,7 +535,7 @@ static void usb_fun_set_config(USB_STM32F407_HANDLE *usb_device, USB_SETUP_REQ *
         switch (usb_device->device.status)
         {
         /* If we are being addressed. */
-        case (USB_FUN_STATE_ADDRESSED):
+        case USB_FUN_STATE_ADDRESSED:
 
             /* If we have a configuration index. */
             if (cfgidx)
@@ -554,7 +554,7 @@ static void usb_fun_set_config(USB_STM32F407_HANDLE *usb_device, USB_SETUP_REQ *
             break;
 
         /* We are configured. */
-        case (USB_FUN_STATE_CONFIGURED):
+        case USB_FUN_STATE_CONFIGURED:
 
             /* If this is default index. */
             if (cfgidx == 0)
@@ -616,7 +616,7 @@ static void usb_fun_get_config(USB_STM32F407_HANDLE *usb_device, USB_SETUP_REQ *
         switch (usb_device->device.status)
         {
         /* if we are being addressed. */
-        case (USB_FUN_STATE_ADDRESSED):
+        case USB_FUN_STATE_ADDRESSED:
 
             /* Send default configuration. */
             usb_fun_control_tx (usb_device, (uint8_t *)&default_cfg, 1);
@@ -624,7 +624,7 @@ static void usb_fun_get_config(USB_STM32F407_HANDLE *usb_device, USB_SETUP_REQ *
             break;
 
         /* If we are configured. */
-        case (USB_FUN_STATE_CONFIGURED):
+        case USB_FUN_STATE_CONFIGURED:
 
             /* Send device configuration. */
             usb_fun_control_tx (usb_device, &usb_device->device.config, 1);
@@ -656,8 +656,8 @@ static void usb_fun_get_status(USB_STM32F407_HANDLE *usb_device, USB_SETUP_REQ *
     {
 
     /* If we are addressed or configured. */
-    case (USB_FUN_STATE_ADDRESSED):
-    case (USB_FUN_STATE_CONFIGURED):
+    case USB_FUN_STATE_ADDRESSED:
+    case USB_FUN_STATE_CONFIGURED:
 
         /* If we support remote wake up. */
         if (usb_device->device.remote_wakeup)
@@ -716,27 +716,27 @@ static void usb_fun_set_feature(USB_STM32F407_HANDLE *usb_device, USB_SETUP_REQ 
         switch (test_mode)
         {
         /* Test J. */
-        case (1):
+        case 1:
             dctl.b.tstctl = 1;
             break;
 
         /* Test K. */
-        case (2):
+        case 2:
             dctl.b.tstctl = 2;
             break;
 
         /* Test SE0_NAK. */
-        case (3):
+        case 3:
             dctl.b.tstctl = 3;
             break;
 
         /* Test packet. */
-        case (4):
+        case 4:
             dctl.b.tstctl = 4;
             break;
 
         /* Test force enable. */
-        case (5):
+        case 5:
             dctl.b.tstctl = 5;
             break;
         }
@@ -762,8 +762,8 @@ static void usb_fun_clear_feature(USB_STM32F407_HANDLE *usb_device, USB_SETUP_RE
     switch (usb_device->device.status)
     {
     /* If we are addressed or configured. */
-    case (USB_FUN_STATE_ADDRESSED):
-    case (USB_FUN_STATE_CONFIGURED):
+    case USB_FUN_STATE_ADDRESSED:
+    case USB_FUN_STATE_CONFIGURED:
 
         /* If we need to handle remote wake up. */
         if (req->wValue == USB_FEATURE_REMOTE_WAKEUP)
