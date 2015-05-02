@@ -18,6 +18,11 @@
 #include <fs.h>
 #include <header.h>
 
+/* Internal function prototypes. */
+static uint8_t fs_buffer_do_suspend(void *, void *);
+static uint8_t fs_buffer_do_resume(void *, void *);
+static int32_t fs_buffer_suspend(FD, uint32_t, uint32_t);
+
 /*
  * fs_buffer_dataset
  * @fd: File descriptor for which buffer data-set is needed to be set.
@@ -29,6 +34,8 @@
  */
 void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
 {
+    FS *fs = (FS *)fd;
+
     /* Should never happen. */
     OS_ASSERT(data == NULL);
 
@@ -36,10 +43,10 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
     OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* This is a buffer file system. */
-    ((FS *)fd)->flags |= FS_BUFFERED;
+    fs->flags |= FS_BUFFERED;
 
     /* Set the buffer data structure provided by caller. */
-    ((FS *)fd)->buffer = data;
+    fs->buffer = data;
 
     /* Clear the structure. */
     memset(data, 0, sizeof(FS_BUFFER_DATA));
@@ -47,6 +54,9 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
 #ifdef FS_BUFFER_DEBUG
     data->buffers = num_buffers;
 #endif
+
+    /* Initialize buffer condition data. */
+    fs_buffer_condition_init(fs);
 
     /* Release lock for this file descriptor. */
     fd_release_lock(fd);
@@ -105,6 +115,217 @@ void fs_buffer_one_update(FS_BUFFER_ONE *one, void *data, uint32_t size)
 } /* fs_buffer_one_update */
 
 /*
+ * fs_buffer_num_remaining
+ * @fd: File descriptor on which number of buffers in a list is required.
+ * @type: Type of buffer needed to be checked.
+ *  FS_BUFFER_ONE_FREE: If this is a free buffer.
+ *  FS_BUFFER_LIST: If this is a free buffer list.
+ * @return: If >= zero the number of buffers remaining in the list will be
+ *  returned, FS_INVALID_BUFFER_TYPE will be returned if an invalid buffer type
+ *  was given.
+ * This function will return the number of buffers remaining in a given type of
+ * buffer list.
+ */
+int32_t fs_buffer_num_remaining(FD fd, uint32_t type)
+{
+    FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
+    int32_t ret_num;
+
+    /* Should never happen. */
+    OS_ASSERT(data == NULL);
+
+    /* Type of buffer we need to check. */
+    switch (type)
+    {
+    /* A free buffer. */
+    case FS_BUFFER_ONE_FREE:
+
+        /* Return number of buffers remaining in the free one buffer list. */
+        ret_num = data->free_buffer_list.buffers;
+
+        break;
+
+    /* A free buffer list. */
+    case FS_BUFFER_LIST:
+
+        /* Return number of buffers remaining in the free buffer list. */
+        ret_num = data->buffers_list.buffers;
+
+        break;
+
+    /* Unknown buffer type. */
+    default:
+
+        /* Unknown buffer type. */
+        ret_num = FS_INVALID_BUFFER_TYPE;
+
+        break;
+    }
+
+    /* Return number of buffers are remaining for the given type. */
+    return (ret_num);
+
+} /* fs_buffer_num_remaining */
+
+/*
+ * fs_buffer_condition_init
+ * @fd: File descriptor for which condition is needed to be initialized.
+ * This function will initialize condition structure for a file descriptor.
+ */
+void fs_buffer_condition_init(FD fd)
+{
+    FS *fs = (FS *)fd;
+
+   /* Clear the condition structure. */
+    memset(&fs->buffer->condition, 0, sizeof(CONDITION));
+
+    /* Initialize condition for this file descriptor buffer. */
+    fs->buffer->condition.data = fd;
+    fs->buffer->condition.lock = &fs_condition_lock;
+    fs->buffer->condition.unlock = &fs_condition_unlock;
+
+} /* fs_buffer_condition_init */
+
+/*
+ * fs_buffer_do_suspend
+ * @data: Condition data that will be passed to check for a file system buffer.
+ * @suspend_data: Suspend data that will hold why we were suspended.
+ * This function will called to see if we do need to suspend on the condition.
+ */
+static uint8_t fs_buffer_do_suspend(void *data, void *suspend_data)
+{
+    FS *fs = (FS *)data;
+    FS_BUFFER_PARAM *param = (FS_BUFFER_PARAM *)suspend_data;
+    uint8_t do_suspend = TRUE;
+
+    /* Check if the condition for which we were waiting is now met. */
+    switch (param->type)
+    {
+
+    /* If we are suspending on free one buffers. */
+    case FS_BUFFER_ONE_FREE:
+
+        /* Check if we have required number of buffers. */
+        if (fs->buffer->free_buffer_list.buffers > param->num_buffers)
+        {
+            /* Don't need to suspend. */
+            do_suspend = FALSE;
+        }
+
+        break;
+
+    /* If we are suspending on free buffer lists. */
+    case FS_BUFFER_LIST:
+
+        /* Check if we have required number of buffers. */
+        if (fs->buffer->buffers_list.buffers > param->num_buffers)
+        {
+            /* Don't need to suspend. */
+            do_suspend = FALSE;
+        }
+
+        break;
+    }
+
+    /* Return if we need to suspend or not. */
+    return (do_suspend);
+
+} /* fs_buffer_do_suspend */
+
+/*
+ * fs_buffer_do_resume
+ * @param_resume: Parameter for which we need to resume a task.
+ * @param_suspend: Parameter for which a task was suspended.
+ * @return: TRUE if we need to resume this task, FALSE if we cannot resume
+ *  this task.
+ * This is callback to see if we can resume a task suspended on a file
+ * system buffer for a given condition.
+ */
+static uint8_t fs_buffer_do_resume(void *param_resume, void *param_suspend)
+{
+    FS_BUFFER_PARAM *fs_resume = (FS_BUFFER_PARAM *)param_resume;
+    FS_BUFFER_PARAM *fs_suspend = (FS_BUFFER_PARAM *)param_suspend;
+    uint8_t resume = FALSE;
+
+    /* Check if we have the number of buffers we were waiting for. */
+    if (fs_resume->num_buffers > fs_suspend->num_buffers)
+    {
+        /* Resume this task. */
+        resume = TRUE;
+    }
+
+    /* Return if we can resume this task. */
+    return (resume);
+
+} /* fs_buffer_do_resume */
+
+/*
+ * fs_buffer_condition_get
+ * @fd: File descriptor for which buffer condition is needed.
+ * @condition: Pointer where condition for this file descriptor will be
+ *  returned.
+ * @suspend: Suspend structure that will be populated for the required
+ *  condition.
+ * @param: File system buffer parameter that will used to suspend on this
+ *  buffer.
+ * @num_buffers: Number of buffers we will wait.
+ * @type: Type of buffer we will wait.
+ * This function will return condition for this file system, and also will also
+ * populate the suspend.
+ */
+void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_BUFFER_PARAM *param, int32_t num_buffers, uint32_t type)
+{
+    FS *fs = (FS *)fd;
+    FS_BUFFER_DATA *data = fs->buffer;
+
+    /* Should never happen. */
+    OS_ASSERT(data == NULL);
+
+    /* Initialize buffer suspend parameter. */
+    param->num_buffers = num_buffers;
+    param->type = type;
+
+    /* Initialize file system parameter. */
+    suspend->param = param;
+    suspend->flags = (fs->flags & FS_PRIORITY_SORT ? CONDITION_PRIORITY : 0);
+    suspend->do_suspend = &fs_buffer_do_suspend;
+    suspend->timeout = MAX_WAIT;
+
+    /* Return the condition for this file system buffer. */
+    *condition = &(data->condition);
+
+} /* fs_buffer_condition_get */
+
+/*
+ * fs_buffer_suspend
+ * @fd: File descriptor on which we need to suspend for a buffer.
+ * @type: Type of buffer needed to be added.
+ *  FS_BUFFER_ONE_FREE: If a free buffer is needed.
+ *  FS_BUFFER_LIST: If a list buffer is needed.
+ * @flags: Operation flags.
+ *  FS_BUFFER_TH: We are allocating from the threshold.
+ * This function will return suspend on a buffer condition.
+ */
+static int32_t fs_buffer_suspend(FD fd, uint32_t type, uint32_t flags)
+{
+    FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
+    SUSPEND buffer_suspend, *suspend_ptr = &buffer_suspend;
+    CONDITION *condition;
+    FS_BUFFER_PARAM param;
+    int32_t status;
+
+    /* Get buffer condition. */
+    fs_buffer_condition_get(fd, &condition, suspend_ptr, &param, ((flags & FS_BUFFER_TH) ? 0 : data->threshold_buffers), type);
+
+    /* We are already in the locked state. */
+    status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* fs_buffer_suspend */
+
+/*
  * fs_buffer_add_one
  * @buffer: Buffer to which a new buffer is needed to be added.
  * @one: One buffer needed to be added.
@@ -136,7 +357,7 @@ void fs_buffer_add_one(FS_BUFFER *buffer, FS_BUFFER_ONE *one, uint8_t flag)
  * fs_buffer_add_list
  * @buffer: Buffer needed to be added.
  * @type: Type of buffer needed to be added.
- *  FS_BUFFER_FREE: If this is a free buffer list.
+ *  FS_BUFFER_ONE_FREE: If this is a free buffer list.
  *  FS_BUFFER_RX: If this is a receive buffer list.
  *  FS_BUFFER_TX: If this is a transmit buffer list.
  * @flags: Operation flags.
@@ -171,7 +392,7 @@ void fs_buffer_add_list(FS_BUFFER *buffer, uint32_t type, uint32_t flags)
  * @fd: File descriptor on which a free buffer is needed to be added.
  * @buffer: Buffer needed to be added.
  * @type: Type of buffer needed to be added.
- *  FS_BUFFER_FREE: If this is a free buffer.
+ *  FS_BUFFER_ONE_FREE: If this is a free buffer.
  *  FS_BUFFER_RX: If this is a receive buffer.
  *  FS_BUFFER_TX: If this is a transmit buffer.
  *  FS_BUFFER_LIST: If this is a free buffer list.
@@ -183,6 +404,8 @@ void fs_buffer_add_list(FS_BUFFER *buffer, uint32_t type, uint32_t flags)
 void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
 {
     FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
+    FS_BUFFER_PARAM param;
+    RESUME resume;
 
     /* Should never happen. */
     OS_ASSERT(data == NULL);
@@ -200,7 +423,8 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
     {
 
     /* A free buffer. */
-    case (FS_BUFFER_FREE):
+    case FS_BUFFER_ONE_FREE:
+
         /* A buffer should not get here. */
         OS_ASSERT(((FS_BUFFER *)buffer)->id == FS_BUFFER_ID_BUFFER);
 
@@ -210,10 +434,8 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         /* Just add this buffer in the free buffer list. */
         sll_append(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-#ifdef FS_BUFFER_DEBUG
         /* Increment the number of buffers on free list. */
         data->free_buffer_list.buffers ++;
-#endif
 
 #ifdef FS_BUFFER_DEBUG
         /* Should not happen. */
@@ -238,7 +460,7 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         break;
 
     /* A receive buffer. */
-    case (FS_BUFFER_RX):
+    case FS_BUFFER_RX:
 
         /* Just add this buffer in the receive buffer list. */
         sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
@@ -271,7 +493,7 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         break;
 
     /* A transmit buffer. */
-    case (FS_BUFFER_TX):
+    case FS_BUFFER_TX:
 
         /* Just add this buffer in the transmit buffer list. */
         sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
@@ -292,13 +514,13 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         break;
 
     /* A buffer list buffer. */
-    case (FS_BUFFER_LIST):
+    case FS_BUFFER_LIST:
 
         /* A one buffer should not get here. */
         OS_ASSERT(((FS_BUFFER *)buffer)->id == FS_BUFFER_ID_ONE);
 
         /* First free any buffer still on this list. */
-        fs_buffer_add_list((FS_BUFFER *)buffer, FS_BUFFER_FREE, flags);
+        fs_buffer_add_list((FS_BUFFER *)buffer, FS_BUFFER_ONE_FREE, flags);
 
         /* Reinitialize this buffer. */
         fs_buffer_init(((FS_BUFFER *)buffer), ((FS_BUFFER *)buffer)->fd);
@@ -306,10 +528,31 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         /* Just add this buffer in the buffer list. */
         sll_append(&data->buffers_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-#ifdef FS_BUFFER_DEBUG
         /* Increment the number of buffers on buffer list. */
         data->buffers_list.buffers ++;
-#endif
+
+        break;
+    }
+
+    /* Type of buffer we are added. */
+    switch (type)
+    {
+        /* A free buffer or a buffer list. */
+        case FS_BUFFER_ONE_FREE:
+        case FS_BUFFER_LIST:
+
+        /* Initialize resume criteria. */
+        param.num_buffers = ((type == FS_BUFFER_ONE_FREE) ? data->free_buffer_list.buffers : data->buffers_list.buffers);
+        param.type = type;
+
+        /* Initialize resume criteria. */
+        resume.do_resume = &fs_buffer_do_resume;
+        resume.param = &param;
+        resume.status = TASK_RESUME;
+
+        /* Resume any tasks waiting on this buffer. */
+        resume_condition(&data->condition, &resume, TRUE);
+
         break;
     }
 
@@ -327,13 +570,15 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
  * fs_buffer_get_by_id
  * @fd: File descriptor from which a free buffer is needed.
  * @type: Type of buffer needed to be added.
- *  FS_BUFFER_FREE: If a free buffer is needed.
+ *  FS_BUFFER_ONE_FREE: If a free buffer is needed.
  *  FS_BUFFER_RX: If a receive buffer is needed.
  *  FS_BUFFER_TX: If a transmit buffer is needed.
  *  FS_BUFFER_LIST: If a list buffer is needed.
  * @flags: Operation flags.
  *  FS_BUFFER_INPLACE: Will not remove the buffer from the list just return a
  *      pointer to it.
+ *  FS_BUFFER_NO_SUSPEND: If needed don't suspend to wait for a buffer.
+ *  FS_BUFFER_TH: If we are allocating from the threshold.
  * @id: Buffer ID we need to get.
  * This function return a buffer from a required buffer list for this file
  * descriptor.
@@ -342,6 +587,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
 {
     FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
     void *buffer = NULL;
+    int32_t status = SUCCESS;
 
     /* Should never happen. */
     OS_ASSERT(data == NULL);
@@ -351,23 +597,40 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
     {
 
     /* A free buffer. */
-    case (FS_BUFFER_FREE):
+    case FS_BUFFER_ONE_FREE:
 
         /* Validate the input arguments. */
         OS_ASSERT(flags & FS_BUFFER_INPLACE);
         OS_ASSERT(id != FS_BUFFER_ID_ONE);
 
-        /* Pop a buffer from this file descriptor's free buffer list. */
-        buffer = sll_search_pop(&data->free_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
+        /* Check if we need to suspend. */
+        if ((flags & FS_BUFFER_NO_SUSPEND) == 0)
+        {
+            /* Suspend if required on this buffer. */
+            /* Check if we have required number of buffers. */
+            if (data->free_buffer_list.buffers <= ((flags & FS_BUFFER_TH) ? 0 : data->threshold_buffers))
+            {
+                /* Debug flag, we should never try to suspend when we are
+                 * allocating from threshold. */
+                OS_ASSERT(flags & FS_BUFFER_TH);
 
-#ifdef FS_BUFFER_DEBUG
+                /* Suspend to wait for buffers. */
+                status = fs_buffer_suspend(fd, type, flags);
+            }
+        }
+
+        if (status == SUCCESS)
+        {
+            /* Pop a buffer from this file descriptor's free buffer list. */
+            buffer = sll_search_pop(&data->free_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
+        }
+
         /* If we are returning a buffer. */
         if (buffer)
         {
             /* Decrement the number of buffers on free list. */
             data->free_buffer_list.buffers --;
         }
-#endif
 
         /* If we don't have any more free space on this file descriptor. */
         if (data->free_buffer_list.head == NULL)
@@ -380,7 +643,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         break;
 
     /* A receive buffer. */
-    case (FS_BUFFER_RX):
+    case FS_BUFFER_RX:
 
         /* If we need to return the buffer in-place. */
         if (flags & FS_BUFFER_INPLACE)
@@ -413,7 +676,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         break;
 
     /* A transmit buffer. */
-    case (FS_BUFFER_TX):
+    case FS_BUFFER_TX:
 
         /* If we need to return the buffer in-place. */
         if (flags & FS_BUFFER_INPLACE)
@@ -439,23 +702,35 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         break;
 
     /* A buffer list buffer. */
-    case (FS_BUFFER_LIST):
+    case FS_BUFFER_LIST:
 
         /* Validate the input arguments. */
         OS_ASSERT(flags & FS_BUFFER_INPLACE);
         OS_ASSERT(id != FS_BUFFER_ID_BUFFER);
 
-        /* Pop a buffer from this file descriptor's buffer list. */
-        buffer = sll_search_pop(&data->buffers_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
+        /* Check if we need to suspend. */
+        if ((flags & FS_BUFFER_NO_SUSPEND) == 0)
+        {
+            /* Check if we have required number of buffers. */
+            if (data->buffers_list.buffers <= ((flags & FS_BUFFER_TH) ? 0 : data->threshold_buffers))
+            {
+                /* Suspend to wait for buffers. */
+                status = fs_buffer_suspend(fd, type, flags);
+            }
+        }
 
-#ifdef FS_BUFFER_DEBUG
+        if (status == SUCCESS)
+        {
+            /* Pop a buffer from this file descriptor's buffer list. */
+            buffer = sll_search_pop(&data->buffers_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
+        }
+
         /* If we are returning a buffer. */
         if (buffer)
         {
             /* Decrement the number of buffers on transmit list. */
             data->buffers_list.buffers --;
         }
-#endif
 
         break;
     }
@@ -626,7 +901,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
                 OS_ASSERT(sll_remove(&buffer->list, one, OFFSETOF(FS_BUFFER_ONE, next)) != one);
 
                 /* Actively free this buffer. */
-                fs_buffer_add(buffer->fd, one, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+                fs_buffer_add(buffer->fd, one, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
             }
 
             /* Decrement the number of bytes we still need to copy. */
@@ -678,6 +953,8 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
  *      existing data.
  *  FS_BUFFER_PACKED: If we need to push a packet structure.
  *  FS_BUFFER_HEAD: If data is needed to be pushed on the head.
+ *  FS_BUFFER_NO_SUSPEND: If needed don't suspend to wait for a buffer.
+ *  FS_BUFFER_TH: If we are allocating from the threshold.
  * @return: Success if operation was successfully performed,
  *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
  *  file descriptor for new buffers.
@@ -754,7 +1031,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
                 if ((one == NULL) || (FS_BUFFER_SPACE(one) == 0))
                 {
                     /* Need to allocate a new buffer to be pushed on the head. */
-                    one = fs_buffer_one_get(buffer->fd, FS_BUFFER_FREE, 0);
+                    one = fs_buffer_one_get(buffer->fd, FS_BUFFER_ONE_FREE, flags);
 
                     /* If a buffer was allocated. */
                     if (one)
@@ -811,7 +1088,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
             if ((one == NULL) || (FS_BUFFER_TAIL_ROOM(one) == 0))
             {
                 /* Need to allocate a new buffer to be appended on the tail. */
-                one = fs_buffer_one_get(buffer->fd, FS_BUFFER_FREE, 0);
+                one = fs_buffer_one_get(buffer->fd, FS_BUFFER_ONE_FREE, flags);
 
                 /* If a buffer was allocated. */
                 if (one)
@@ -898,6 +1175,9 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
 /*
  * fs_buffer_divide
  * @buffer: Buffer needed to be divided.
+ * @flags: Operation flags.
+ *  FS_BUFFER_NO_SUSPEND: If needed don't suspend to wait for a buffer.
+ *  FS_BUFFER_TH: If we are allocating from the threshold.
  * @data_len: Number of bytes valid in the original buffer.
  * @return: A success status will be returned if buffer was successfully divided,
  *  FS_BUFFER_NO_SPACE will be returned if there is no buffer to store remaining
@@ -905,7 +1185,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
  * This function will divide the given buffer into two buffers. An empty buffer
  * will allocated to hold the remaining portion of buffer.
  */
-int32_t fs_buffer_divide(FS_BUFFER *buffer, uint32_t data_len)
+int32_t fs_buffer_divide(FS_BUFFER *buffer, uint32_t flags, uint32_t data_len)
 {
     FS_BUFFER_ONE *one, *new_one;
     FS_BUFFER *new_buffer;
@@ -948,7 +1228,7 @@ int32_t fs_buffer_divide(FS_BUFFER *buffer, uint32_t data_len)
     OS_ASSERT(one == NULL);
 
     /* Get a new buffer to store the remaining data for this buffer. */
-    new_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+    new_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, flags);
 
     /* If we do have a buffer to store remaining data of this buffer. */
     if (new_buffer != NULL)
@@ -957,7 +1237,7 @@ int32_t fs_buffer_divide(FS_BUFFER *buffer, uint32_t data_len)
         if (this_len != 0)
         {
             /* Remove the extra data from this one buffer to a new buffer. */
-            OS_ASSERT(fs_buffer_one_divide(buffer->fd, one, &new_one, this_len) != SUCCESS);
+            OS_ASSERT(fs_buffer_one_divide(buffer->fd, one, &new_one, flags, this_len) != SUCCESS);
 
             /* Initialize the new one buffers. */
             new_one->next = one->next;
@@ -1240,6 +1520,9 @@ int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, void *data, uint32_t size,
  * @fd: File descriptor from which given buffer allocated.
  * @buffer: Buffer for which data is needed to be divided.
  * @new_buffer: Buffer that will have the remaining data of this buffer.
+ * @flags: Operation flags.
+ *  FS_BUFFER_NO_SUSPEND: If needed don't suspend to wait for a buffer.
+ *  FS_BUFFER_TH: If we are allocating from the threshold.
  * @data_len: Number of bytes valid in the original buffer.
  * @return: A success status will be returned if buffer was successfully divided,
  *  FS_BUFFER_NO_SPACE will be returned if there is no buffer to store remaining
@@ -1247,7 +1530,7 @@ int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, void *data, uint32_t size,
  * This function will divide the given buffer into two buffers. An empty buffer
  * will allocated to hold the remaining portion of buffer.
  */
-int32_t fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one, uint32_t data_len)
+int32_t fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one, uint32_t flags, uint32_t data_len)
 {
     FS_BUFFER_ONE *ret_one = NULL;
     int32_t status = SUCCESS;
@@ -1257,7 +1540,7 @@ int32_t fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one,
     OS_ASSERT(new_one == NULL);
 
     /* Allocate a free buffer. */
-    ret_one = fs_buffer_one_get(fd, FS_BUFFER_FREE, 0);
+    ret_one = fs_buffer_one_get(fd, FS_BUFFER_ONE_FREE, flags);
 
     /* If a free buffer was allocated. */
     if (ret_one != NULL)
