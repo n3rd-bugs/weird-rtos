@@ -117,6 +117,11 @@ void sll_insert(void *list, void *node, uint8_t (*sort)(void *, void *), int off
     /* A null member should never be added. */
     OS_ASSERT(node == NULL);
 
+#ifdef SLL_DEBUG
+    /* The node should not already exist in the list. */
+    OS_ASSERT(sll_in_list(list, node, offset));
+#endif
+
     /* If this is an empty list. */
     if ( (list_node == NULL) ||
 

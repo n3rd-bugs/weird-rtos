@@ -15,6 +15,9 @@
 
 #include <stdint.h>
 
+/* SLL configuration. */
+#define SLL_DEBUG
+
 /* Single SLL node definition. */
 typedef struct _sll_node
 {
