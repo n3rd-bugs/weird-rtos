@@ -26,8 +26,6 @@
 static FS_DATA file_data;
 
 /* Internal function prototypes. */
-void fs_condition_lock(void *);
-void fs_condition_unlock(void *);
 static uint8_t fs_do_suspend(void *, void *);
 static uint8_t fd_do_resume(void *, void *);
 

@@ -24,8 +24,9 @@
 #define FS_CONSOLE
 
 /* Error definitions. */
-#define FS_NODE_DELETED     -800
-#define FS_BUFFER_NO_SPACE  -801
+#define FS_NODE_DELETED         -800
+#define FS_BUFFER_NO_SPACE      -801
+#define FS_INVALID_BUFFER_TYPE  -802
 
 /* File descriptor definitions. */
 typedef void *FD;
@@ -139,7 +140,7 @@ struct _fs
     uint32_t    timeout;
 };
 
-/* This holds the resumption criteria for a task waiting on an FS. */
+/* This holds the resumption criteria for a task waiting on a FS. */
 typedef struct _fs_param
 {
     uint32_t    flag;
@@ -208,6 +209,8 @@ void fs_disconnect(FD);
 
 void fs_condition_init(FD);
 void fs_condition_get(FD, CONDITION **, SUSPEND *, FS_PARAM *, uint32_t);
+void fs_condition_lock(void *);
+void fs_condition_unlock(void *);
 void fd_handle_criteria(void *, FS_PARAM *, int32_t);
 
 /* File system functions. */
