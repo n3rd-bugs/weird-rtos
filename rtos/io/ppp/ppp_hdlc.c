@@ -271,7 +271,7 @@ void ppp_hdlc_unescape_one(FS_BUFFER_ONE *buffer, uint8_t *last_escaped)
  */
 int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp)
 {
-    FS_BUFFER *destination = fs_buffer_get((*buffer)->fd, FS_BUFFER_LIST, 0);
+    FS_BUFFER *destination = fs_buffer_get((*buffer)->fd, FS_BUFFER_LIST, FS_BUFFER_TH);
     int32_t status = SUCCESS;
     uint16_t fcs;
 
@@ -284,12 +284,12 @@ int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, ui
     if ((lcp == TRUE) || (acfc == FALSE))
     {
         /* Add control field. */
-        status = fs_buffer_push(*buffer, (uint8_t []){ (uint8_t)PPP_CONTROL }, 1, FS_BUFFER_HEAD);
+        status = fs_buffer_push(*buffer, (uint8_t []){ (uint8_t)PPP_CONTROL }, 1, (FS_BUFFER_HEAD | FS_BUFFER_TH));
 
         if (status == SUCCESS)
         {
             /* Add address field. */
-            status = fs_buffer_push(*buffer, (uint8_t []){ (uint8_t)PPP_ADDRESS }, 1, FS_BUFFER_HEAD);
+            status = fs_buffer_push(*buffer, (uint8_t []){ (uint8_t)PPP_ADDRESS }, 1, (FS_BUFFER_HEAD | FS_BUFFER_TH));
         }
     }
 
@@ -301,7 +301,7 @@ int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, ui
         fcs ^= 0xffff;
 
         /* Push the FCS at the end of buffer. */
-        status = fs_buffer_push(*buffer, &fcs, 2, 0);
+        status = fs_buffer_push(*buffer, &fcs, 2, FS_BUFFER_TH);
     }
 
     /* If FCS was successfully appended. */
@@ -315,13 +315,13 @@ int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, ui
     if (status == SUCCESS)
     {
         /* Add start flag. */
-        status = fs_buffer_push(destination, (uint8_t []){ PPP_FLAG }, 1, FS_BUFFER_HEAD);
+        status = fs_buffer_push(destination, (uint8_t []){ PPP_FLAG }, 1, (FS_BUFFER_HEAD | FS_BUFFER_TH));
 
         /* If start flag was successfully added. */
         if (status == SUCCESS)
         {
             /* Add end flag. */
-            status = fs_buffer_push(destination, (uint8_t []){ PPP_FLAG }, 1, 0);
+            status = fs_buffer_push(destination, (uint8_t []){ PPP_FLAG }, 1, FS_BUFFER_TH);
         }
     }
 
@@ -363,12 +363,12 @@ int32_t ppp_hdlc_escape(FS_BUFFER *src, FS_BUFFER *dst, uint32_t *accm, uint8_t 
             buf[0] = PPP_ESCAPE;
 
             /* Push converted byte on the destination. */
-            status = fs_buffer_push(dst, buf, 2, 0);
+            status = fs_buffer_push(dst, buf, 2, FS_BUFFER_TH);
         }
         else
         {
             /* Push the byte as it is. */
-            status = fs_buffer_push(dst, buf, 1, 0);
+            status = fs_buffer_push(dst, buf, 1, FS_BUFFER_TH);
         }
     }
 

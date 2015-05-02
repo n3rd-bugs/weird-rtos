@@ -129,7 +129,7 @@ int32_t ppp_packet_protocol_add(FS_BUFFER *buffer, uint16_t protocol, uint8_t pf
     }
 
     /* Push protocol for this packet. */
-    status = fs_buffer_push(buffer, &(protocol), proto_len, (FS_BUFFER_PACKED | FS_BUFFER_HEAD));
+    status = fs_buffer_push(buffer, &(protocol), proto_len, (FS_BUFFER_PACKED | FS_BUFFER_HEAD | FS_BUFFER_TH));
 
     /* Return status to the caller. */
     return (status);
@@ -251,20 +251,20 @@ int32_t ppp_packet_configuration_header_add(FS_BUFFER *buffer, PPP_CONF_PKT *pac
     packet->length = (uint16_t)(buffer->total_length + 4);
 
     /* Push length for this packet. */
-    status = fs_buffer_push(buffer, &packet->length, 2, (FS_BUFFER_PACKED | FS_BUFFER_HEAD));
+    status = fs_buffer_push(buffer, &packet->length, 2, (FS_BUFFER_PACKED | FS_BUFFER_HEAD | FS_BUFFER_TH));
 
     /* If length was successfully added. */
     if (status == SUCCESS)
     {
         /* Push configuration packet ID. */
-        status = fs_buffer_push(buffer, &packet->id, 1, FS_BUFFER_HEAD);
+        status = fs_buffer_push(buffer, &packet->id, 1, (FS_BUFFER_HEAD | FS_BUFFER_TH));
     }
 
     /* If packet ID was successfully added. */
     if (status == SUCCESS)
     {
         /* Push configuration packet code. */
-        status = fs_buffer_push(buffer, &packet->code, 1, FS_BUFFER_HEAD);
+        status = fs_buffer_push(buffer, &packet->code, 1, (FS_BUFFER_HEAD | FS_BUFFER_TH));
     }
 
     /* Return status to the caller. */
@@ -286,20 +286,20 @@ int32_t ppp_packet_configuration_option_add(FS_BUFFER *buffer, PPP_CONF_OPT *opt
     int32_t status = SUCCESS;
 
     /* Add type of this option. */
-    status = fs_buffer_push(buffer, &option->type, 1, 0);
+    status = fs_buffer_push(buffer, &option->type, 1, FS_BUFFER_TH);
 
     /* If type was successfully added. */
     if (status == SUCCESS)
     {
         /* Add length for this option. */
-        status = fs_buffer_push(buffer, &option->length, 1, 0);
+        status = fs_buffer_push(buffer, &option->length, 1, FS_BUFFER_TH);
     }
 
     /* Check if we need to add value data in the option. */
     if (option->length > 2)
     {
         /* Add the option value. */
-        status = fs_buffer_push(buffer, option->data, (uint32_t)(option->length - 2), 0);
+        status = fs_buffer_push(buffer, option->data, (uint32_t)(option->length - 2), FS_BUFFER_TH);
     }
 
     /* Return status to the caller. */

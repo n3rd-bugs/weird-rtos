@@ -45,15 +45,19 @@ void ppp_init()
 void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
 {
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+    FS *fs = (FS *)fd;
 
     /* Will only work with buffered file descriptors. */
-    OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
+    OS_ASSERT((fs->flags & FS_BUFFERED) == 0);
 
     /* Clear the PPP instance. */
     memset(ppp, 0, sizeof(PPP));
 
     /* Assign the file descriptor with which this PPP instance is registered. */
     ppp->fd = fd;
+
+    /* For a given MTU we should have MTU * 2 bytes in the threshold. */
+    fs->buffer->threshold_buffers += ((1500 * 2) / 64) + 2;
 
     /* Initialize connection watcher. */
     ppp->connection_watcher.data = ppp;
@@ -182,7 +186,7 @@ void ppp_process_modem_chat(void *fd, PPP *ppp)
         {
             /* Remove the buffer from the receive list and free it. */
             OS_ASSERT(fs_buffer_one_get(fd, FS_BUFFER_RX, 0) != buffer);
-            fs_buffer_add(fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add(fd, buffer, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* If modem initialization was completed successfully. */
@@ -207,7 +211,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
 {
     PPP_CONF_PKT rx_packet, tx_packet;
     PPP_CONF_OPT option;
-    FS_BUFFER *tx_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+    FS_BUFFER *tx_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, FS_BUFFER_TH);
     int32_t status;
 
     /* Should never happen. */
@@ -419,7 +423,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
         if (ppp->rx_buffer == NULL)
         {
             /* Get a buffer list. */
-            ppp->rx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
+            ppp->rx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_TH);
 
             /* Should never happen. */
             OS_ASSERT(ppp->rx_buffer == NULL);
@@ -478,7 +482,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                 this_length = (uint32_t)((flag_ptr[this_flag] + 1) - buffer->buffer);
 
                 /* Divide this buffer into two buffers. */
-                OS_ASSERT(fs_buffer_one_divide(fd, buffer, &new_buffer, this_length) != SUCCESS);
+                OS_ASSERT(fs_buffer_one_divide(fd, buffer, &new_buffer, FS_BUFFER_TH, this_length) != SUCCESS);
 
                 /* Silently add new buffer on the receive list of the
                  * file descriptor we have received the data. */
@@ -497,7 +501,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
             if ((num_flags == 2) && (this_flag == 0))
             {
                 /* There is only junk in the buffer, so free it. */
-                fs_buffer_add(fd, buffer, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+                fs_buffer_add(fd, buffer, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
             }
             else
             {
@@ -532,7 +536,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                 switch (protocol)
                 {
                 /* PPP LCP packets. */
-                case (PPP_PROTO_LCP):
+                case PPP_PROTO_LCP:
 
                     /* Process LCP configuration. */
                     proto = &ppp_proto_lcp;
@@ -540,14 +544,14 @@ void ppp_process_frame(void *fd, PPP *ppp)
                     break;
 
                 /* PPP IPCP packets. */
-                case (PPP_PROTO_IPCP):
+                case PPP_PROTO_IPCP:
 
                     /* Process IPCP configuration. */
                     proto = &ppp_proto_ipcp;
 
                     break;
 
-                case (PPP_PROTO_IPV4):
+                case PPP_PROTO_IPV4:
 
                     /* Send this buffer to the networking stack. */
                     net_device_buffer_receive(ppp->rx_buffer, NET_PROTO_IPV4);

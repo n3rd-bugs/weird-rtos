@@ -38,7 +38,7 @@ int32_t modem_chat_process(FD fd, FS_BUFFER_ONE *rx_buffer)
         (memcmp((rx_buffer)->buffer, "CLIENT", sizeof("CLIENT") - 1) == 0))
     {
         /* Get a free buffer so that it can be populate with response. */
-        tx_buffer = fs_buffer_one_get(fd, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
+        tx_buffer = fs_buffer_one_get(fd, FS_BUFFER_ONE_FREE, (FS_BUFFER_ACTIVE | FS_BUFFER_TH));
 
         if (tx_buffer)
         {

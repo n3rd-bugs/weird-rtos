@@ -187,7 +187,7 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
     switch (option->type)
     {
     /* Maximum receive unit. */
-    case (PPP_LCP_OPT_MRU):
+    case PPP_LCP_OPT_MRU:
 
         /* If we have received an ACK for this configuration. */
         if (rx_packet->code == PPP_CONFIG_ACK)
@@ -204,7 +204,7 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         break;
 
     /* Asynchronous control character map. */
-    case (PPP_LCP_OPT_ACCM):
+    case PPP_LCP_OPT_ACCM:
 
         /* If we are accepting the configuration. */
         if (rx_packet->code == PPP_CONFIG_REQ)
@@ -231,14 +231,14 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         break;
 
     /* Magic number. */
-    case (PPP_LCP_OPT_MAGIC):
+    case PPP_LCP_OPT_MAGIC:
 
         /* Keep the magic number as it is. */
         /* TODO: If this not configuration request validate this. */
         break;
 
     /* Protocol field compression. */
-    case (PPP_LCP_OPT_PFC):
+    case PPP_LCP_OPT_PFC:
 
         /* If we have received an ACK for this configuration. */
         if (rx_packet->code == PPP_CONFIG_ACK)
@@ -251,7 +251,7 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         break;
 
     /* Address and control field compression. */
-    case (PPP_LCP_OPT_ACFC):
+    case PPP_LCP_OPT_ACFC:
 
         /* If we have received an ACK for this configuration. */
         if (rx_packet->code == PPP_CONFIG_ACK)
@@ -322,7 +322,7 @@ uint8_t ppp_lcp_option_length_valid(PPP *ppp, PPP_CONF_OPT *option)
 int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT *tx_packet)
 {
     int32_t status = SUCCESS;
-    FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
+    FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_TH);
 
     /* Should never happen. */
     OS_ASSERT(tx_buffer == NULL);
