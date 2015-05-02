@@ -26,7 +26,7 @@
 
 /* Scheduler lock configuration. */
 #define SCHEDULER_MAX_LOCK          5
-#define SCHEDULER_MAX_IRQ_LOCK      5
+#define SCHEDULER_MAX_IRQ_LOCK      1
 
 /* These defines different scheduler classes. */
 #define TASK_APERIODIC              0x01
@@ -38,10 +38,7 @@
 #define TASK_WILL_SUSPENDED         1
 #define TASK_RESUME                 2
 #define TASK_FINISHED               3
-#define TASK_SUSP_SLEEP             4
-#define TASK_SUSP_SEMAPHORE         5
-#define TASK_SUSP_FILE              6
-#define TASK_RESUME_SLEEP           7
+#define TASK_RESUME_SLEEP           4
 
 /* Scheduler class definition. */
 typedef struct _scheduler SCHEDULER;
