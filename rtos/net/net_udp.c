@@ -100,9 +100,6 @@ void udp_unregister(UDP_PORT *port)
     /* Obtain the global data semaphore. */
     OS_ASSERT(semaphore_obtain(&udp_data.lock, MAX_WAIT) != SUCCESS);
 
-    /* Obtain semaphore for this UDP port. */
-    OS_ASSERT(fd_get_lock((FD)port));
-
     /* Unregister this UDP port from console. */
     console_unregister(&port->console);
 #else
@@ -112,6 +109,12 @@ void udp_unregister(UDP_PORT *port)
 
     /* Remove this port from the global port list. */
     OS_ASSERT(sll_remove(&udp_data.port_list, port, OFFSETOF(UDP_PORT, next)) != port);
+
+    /* Free all the buffers in the UDP buffer list. */
+    fs_buffer_add_buffer_list(port->buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+
+    /* Clear the UDP port structure. */
+    memset(port, 0, sizeof(UDP_PORT));
 
 #ifndef CONFIG_SEMAPHORE
     /* Enable scheduling. */
@@ -267,22 +270,26 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                 fd_release_lock(buffer->fd);
 
                 /* Obtain lock for this UDP port. */
-                OS_ASSERT(fd_get_lock((FD)udp_port));
+                status = fd_get_lock((FD)udp_port);
 
-                /* Again obtain lock for buffer file descriptor. */
-                OS_ASSERT(fd_get_lock(buffer->fd));
+                /* If lock for UDP port was successfully obtained. */
+                if (status == SUCCESS)
+                {
+                    /* Again obtain lock for buffer file descriptor. */
+                    OS_ASSERT(fd_get_lock(buffer->fd));
 
-                /* Add this buffer in the buffer list for UDP port. */
-                sll_append(&udp_port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+                    /* Add this buffer in the buffer list for UDP port. */
+                    sll_append(&udp_port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-                /* Set an event to tell that new data is now available. */
-                fd_data_available((FD)udp_port);
+                    /* Set an event to tell that new data is now available. */
+                    fd_data_available((FD)udp_port);
 
-                /* Release lock for this UDP port. */
-                fd_release_lock((FD)udp_port);
+                    /* Release lock for this UDP port. */
+                    fd_release_lock((FD)udp_port);
 
-                /* This buffer is now consumed by the UDP port. */
-                status = NET_BUFFER_CONSUMED;
+                    /* This buffer is now consumed by the UDP port. */
+                    status = NET_BUFFER_CONSUMED;
+                }
             }
 
             /* If this datagram was intended for us. */
@@ -585,7 +592,7 @@ static int32_t udp_write(void *fd, char *buffer, int32_t size)
                 ret_size = status;
 
                 /* Add the allocated buffer back to the descriptor. */
-                fs_buffer_add(fs_buffer->fd, fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add_buffer_list(fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
             }
         }
         else
