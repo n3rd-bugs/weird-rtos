@@ -120,7 +120,7 @@ void semaphore_destroy(SEMAPHORE *semaphore)
 void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEND *suspend, uint32_t timeout)
 {
     /* Initialize suspend criteria. */
-    suspend->param = NULL;
+    suspend->param = (void *)semaphore;
     suspend->flags = (semaphore->type & SEMAPHORE_PRIORITY ? CONDITION_PRIORITY : 0);
     suspend->do_suspend = &semaphore_do_suspend;
     suspend->timeout = timeout;
@@ -142,7 +142,7 @@ static uint8_t semaphore_do_suspend(void *data, void *suspend_data)
     uint8_t do_suspend = TRUE;
 
     /* For now unused. */
-    UNUSED_PARAM(suspend_data);
+    UNUSED_PARAM(suspend_data != data);
 
     /* Check if semaphore is available. */
     if (semaphore->count > 0)
