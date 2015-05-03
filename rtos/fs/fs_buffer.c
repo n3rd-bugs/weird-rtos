@@ -53,6 +53,8 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
 
 #ifdef FS_BUFFER_DEBUG
     data->buffers = num_buffers;
+#else
+    UNUSED_PARAM(num_buffers);
 #endif
 
     /* Initialize buffer condition data. */
@@ -303,7 +305,7 @@ void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_
  *  FS_BUFFER_ONE_FREE: If a free buffer is needed.
  *  FS_BUFFER_LIST: If a list buffer is needed.
  * @flags: Operation flags.
- *  FS_BUFFER_TH: We are allocating from the threshold.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * This function will return suspend on a buffer condition.
  */
 static int32_t fs_buffer_suspend(FD fd, uint32_t type, uint32_t flags)
@@ -315,7 +317,7 @@ static int32_t fs_buffer_suspend(FD fd, uint32_t type, uint32_t flags)
     int32_t status;
 
     /* Get buffer condition. */
-    fs_buffer_condition_get(fd, &condition, suspend_ptr, &param, ((flags & FS_BUFFER_TH) ? 0 : data->threshold_buffers), type);
+    fs_buffer_condition_get(fd, &condition, suspend_ptr, &param, ((flags & FS_BUFFER_TH) ? ((type == FS_BUFFER_ONE_FREE) ? data->threshold_buffers : data->threshold_lists) : 0), type);
 
     /* We are already in the locked state. */
     status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
@@ -578,7 +580,7 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
  *  FS_BUFFER_INPLACE: Will not remove the buffer from the list just return a
  *      pointer to it.
  *  FS_BUFFER_NO_SUSPEND: If needed don't suspend to wait for a buffer.
- *  FS_BUFFER_TH: If we are allocating from the threshold.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @id: Buffer ID we need to get.
  * This function return a buffer from a required buffer list for this file
  * descriptor.
@@ -608,12 +610,8 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         {
             /* Suspend if required on this buffer. */
             /* Check if we have required number of buffers. */
-            if (data->free_buffer_list.buffers <= ((flags & FS_BUFFER_TH) ? 0 : data->threshold_buffers))
+            if (data->free_buffer_list.buffers <= ((flags & FS_BUFFER_TH) ? data->threshold_buffers : 0))
             {
-                /* Debug flag, we should never try to suspend when we are
-                 * allocating from threshold. */
-                OS_ASSERT(flags & FS_BUFFER_TH);
-
                 /* Suspend to wait for buffers. */
                 status = fs_buffer_suspend(fd, type, flags);
             }
@@ -712,7 +710,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         if ((flags & FS_BUFFER_NO_SUSPEND) == 0)
         {
             /* Check if we have required number of buffers. */
-            if (data->buffers_list.buffers <= ((flags & FS_BUFFER_TH) ? 0 : data->threshold_buffers))
+            if (data->buffers_list.buffers <= ((flags & FS_BUFFER_TH) ? data->threshold_lists : 0))
             {
                 /* Suspend to wait for buffers. */
                 status = fs_buffer_suspend(fd, type, flags);
@@ -954,7 +952,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
  *  FS_BUFFER_PACKED: If we need to push a packet structure.
  *  FS_BUFFER_HEAD: If data is needed to be pushed on the head.
  *  FS_BUFFER_NO_SUSPEND: If needed don't suspend to wait for a buffer.
- *  FS_BUFFER_TH: If we are allocating from the threshold.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @return: Success if operation was successfully performed,
  *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
  *  file descriptor for new buffers.
@@ -1177,7 +1175,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
  * @buffer: Buffer needed to be divided.
  * @flags: Operation flags.
  *  FS_BUFFER_NO_SUSPEND: If needed don't suspend to wait for a buffer.
- *  FS_BUFFER_TH: If we are allocating from the threshold.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @data_len: Number of bytes valid in the original buffer.
  * @return: A success status will be returned if buffer was successfully divided,
  *  FS_BUFFER_NO_SPACE will be returned if there is no buffer to store remaining
@@ -1522,7 +1520,7 @@ int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, void *data, uint32_t size,
  * @new_buffer: Buffer that will have the remaining data of this buffer.
  * @flags: Operation flags.
  *  FS_BUFFER_NO_SUSPEND: If needed don't suspend to wait for a buffer.
- *  FS_BUFFER_TH: If we are allocating from the threshold.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @data_len: Number of bytes valid in the original buffer.
  * @return: A success status will be returned if buffer was successfully divided,
  *  FS_BUFFER_NO_SPACE will be returned if there is no buffer to store remaining

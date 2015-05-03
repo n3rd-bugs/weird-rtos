@@ -17,7 +17,7 @@
 #ifdef CONFIG_FS
 
 /* Buffer configuration. */
-#define FS_BUFFER_DEBUG
+//#define FS_BUFFER_DEBUG
 
 /* Buffer type definition. */
 #define FS_BUFFER_ONE_FREE  1
@@ -124,6 +124,7 @@ typedef struct _fs_buffer_data
 
     /* Number of threshold buffer we need to maintain. */
     int32_t         threshold_buffers;
+    int32_t         threshold_lists;
 
     /* Condition structure for this buffer data. */
     CONDITION       condition;
