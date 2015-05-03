@@ -152,11 +152,11 @@ void ppp_connection_established(void *fd, void *ppp)
  */
 void ppp_connection_terminated(void *fd, void *ppp)
 {
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(fd);
-
     /* Link layer is now disconnected. */
     ((PPP *)ppp)->state = PPP_STATE_DISCONNECTED;
+
+    /* Set link-down for the associated networking device. */
+    net_device_link_down(fd);
 
 } /* ppp_connection_terminated */
 

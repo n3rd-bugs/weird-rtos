@@ -376,6 +376,9 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
     /* Check if connection was terminated. */
     else if (rx_packet->code == PPP_TREM_REQ)
     {
+        /* Set link-down for the associated networking device. */
+        net_device_link_down(fd);
+
         /* This puts us back to LCP configuration stage. */
         ppp->state = PPP_STATE_LCP;
         ppp_lcp_state_initialize(ppp);

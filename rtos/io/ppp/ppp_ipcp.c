@@ -217,6 +217,9 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
 
         /* Set the IPv4 address for this device. */
         OS_ASSERT(ipv4_set_device_address(fd, ppp->local_ip_address) != SUCCESS);
+
+        /* Set link-up for the associated networking device. */
+        net_device_link_up(fd);
     }
 
     /* Free the buffer list allocated before and any buffers still left on it. */
