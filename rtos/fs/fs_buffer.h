@@ -167,6 +167,7 @@ void fs_buffer_condition_init(FD);
 void fs_buffer_condition_get(FD, CONDITION **, SUSPEND *, FS_BUFFER_PARAM *, int32_t, uint32_t);
 void fs_buffer_add_one(FS_BUFFER *, FS_BUFFER_ONE *, uint8_t);
 void fs_buffer_add_list(FS_BUFFER *, uint32_t, uint32_t);
+void fs_buffer_add_buffer_list(FS_BUFFER *, uint32_t, uint32_t);
 void fs_buffer_add(FD, void *, uint32_t, uint32_t);
 void *fs_buffer_get_by_id(FD, uint32_t, uint32_t, uint32_t);
 

@@ -390,6 +390,36 @@ void fs_buffer_add_list(FS_BUFFER *buffer, uint32_t type, uint32_t flags)
 } /* fs_buffer_add_list */
 
 /*
+ * fs_buffer_add_buffer_list
+ * @buffer: Buffer needed to be added.
+ * @type: Type of buffer needed to be added.
+ *  FS_BUFFER_RX: If this is a receive buffer list.
+ *  FS_BUFFER_TX: If this is a transmit buffer list.
+ *  FS_BUFFER_LIST: If this is a buffer list.
+ * @flags: Operation flags.
+ *  FS_BUFFER_ACTIVE: Actively add the buffer and invoke the any callbacks.
+ * This function will add all the buffers in a buffer list to the desired list.
+ */
+void fs_buffer_add_buffer_list(FS_BUFFER *buffer, uint32_t type, uint32_t flags)
+{
+    FS_BUFFER *next_buffer;
+
+    /* Wile we have a buffer to add. */
+    while (buffer != NULL)
+    {
+        /* Save the next buffer we need to process. */
+        next_buffer = buffer->next;
+
+        /* Add this buffer to the desired buffer list. */
+        fs_buffer_add(buffer->fd, buffer, type, flags);
+
+        /* Pick the next buffer we need to process. */
+        buffer = next_buffer;
+    }
+
+} /* fs_buffer_add_buffer_list */
+
+/*
  * fs_buffer_add
  * @fd: File descriptor on which a free buffer is needed to be added.
  * @buffer: Buffer needed to be added.
