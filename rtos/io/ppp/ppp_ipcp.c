@@ -167,7 +167,7 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
 {
     int32_t status = SUCCESS;
     PPP_CONF_OPT option;
-    FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_TH);
+    FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
 
     /* Should never happen. */
     OS_ASSERT(tx_buffer == NULL);
@@ -203,7 +203,7 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
                 if (status == SUCCESS)
                 {
                     /* Send this buffer. */
-                    status = ppp_transmit_buffer_instance(ppp, &tx_buffer, PPP_PROTO_IPCP);
+                    status = ppp_transmit_buffer_instance(ppp, &tx_buffer, PPP_PROTO_IPCP, 0);
                 }
             }
         }

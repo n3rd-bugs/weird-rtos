@@ -56,8 +56,9 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
     /* Assign the file descriptor with which this PPP instance is registered. */
     ppp->fd = fd;
 
-    /* For a given MTU we should have MTU * 2 bytes in the threshold. */
-    fs->buffer->threshold_buffers += ((1500 * 2) / 64) + 2;
+    /* For now we need at least (1500 / 64 * 2 + 2) buffers as a threshold. */
+    fs->buffer->threshold_buffers = 50;
+    fs->buffer->threshold_lists = 16;
 
     /* Initialize connection watcher. */
     ppp->connection_watcher.data = ppp;
@@ -211,7 +212,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
 {
     PPP_CONF_PKT rx_packet, tx_packet;
     PPP_CONF_OPT option;
-    FS_BUFFER *tx_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, FS_BUFFER_TH);
+    FS_BUFFER *tx_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
     int32_t status;
 
     /* Should never happen. */
@@ -374,7 +375,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                 if (status == SUCCESS)
                 {
                     /* Send a PPP configuration packet in reply. */
-                    status = ppp_transmit_buffer_instance(ppp, &tx_buffer, proto->protocol);
+                    status = ppp_transmit_buffer_instance(ppp, &tx_buffer, proto->protocol, 0);
                 }
             }
         }
@@ -423,7 +424,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
         if (ppp->rx_buffer == NULL)
         {
             /* Get a buffer list. */
-            ppp->rx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_TH);
+            ppp->rx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
 
             /* Should never happen. */
             OS_ASSERT(ppp->rx_buffer == NULL);
@@ -482,7 +483,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                 this_length = (uint32_t)((flag_ptr[this_flag] + 1) - buffer->buffer);
 
                 /* Divide this buffer into two buffers. */
-                OS_ASSERT(fs_buffer_one_divide(fd, buffer, &new_buffer, FS_BUFFER_TH, this_length) != SUCCESS);
+                OS_ASSERT(fs_buffer_one_divide(fd, buffer, &new_buffer, 0, this_length) != SUCCESS);
 
                 /* Silently add new buffer on the receive list of the
                  * file descriptor we have received the data. */
@@ -595,12 +596,14 @@ void ppp_process_frame(void *fd, PPP *ppp)
 /*
  * net_ppp_transmit
  * @buffer: File system buffer needed to be transmitted.
+ * @flags: Operation flags.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @return: If buffer was successfully transmitted, otherwise PPP_INVALID_FD
  *  will be returned if the PPP instance was not resolved. PPP_INVALID_PROTO
  *  will be returned if a valid protocol was not resolved.
  * This function will transmit a PPP networking buffer.
  */
-int32_t net_ppp_transmit(FS_BUFFER *buffer)
+int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
 {
     int32_t status = SUCCESS;
     PPP *ppp;
@@ -633,7 +636,7 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer)
         if (status == SUCCESS)
         {
             /* Transmit this PPP buffer. */
-            (void)ppp_transmit_buffer_instance(ppp, &buffer, protocol);
+            (void)ppp_transmit_buffer_instance(ppp, &buffer, protocol, flags);
 
             /* As we might have switched the buffer so we do need to free it. */
             fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
@@ -706,22 +709,24 @@ void net_ppp_receive(void *data)
  * @ppp: PPP private data.
  * @buffer: Buffer needed to be sent.
  * @proto: PPP protocol needed to be added in the header.
+ * @flags: Operation flags.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * This function will add required fields on a given buffer and send it on the
  * file descriptor attached to the given buffer. Caller is responsible for
  * freeing the given buffer if this function returns an error.
  */
-int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER **buffer, uint16_t proto)
+int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER **buffer, uint16_t proto, uint8_t flags)
 {
     int32_t status;
 
     /* Add PPP protocol. */
-    status = ppp_packet_protocol_add(*buffer, proto, PPP_IS_PFC_VALID(ppp));
+    status = ppp_packet_protocol_add(*buffer, proto, PPP_IS_PFC_VALID(ppp), flags);
 
     /* If PPP protocol was successfully added. */
     if (status == SUCCESS)
     {
         /* Add the HDLC header. */
-        status = ppp_hdlc_header_add(buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), (proto == PPP_PROTO_LCP));
+        status = ppp_hdlc_header_add(buffer, ppp->tx_accm, PPP_IS_ACFC_VALID(ppp), (proto == PPP_PROTO_LCP), flags);
     }
 
     /* If HDLC header was successfully added. */

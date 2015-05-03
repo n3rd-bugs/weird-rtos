@@ -42,7 +42,7 @@ typedef struct _ppp_conf_pkt
 
 /* Function prototypes. */
 int32_t ppp_packet_protocol_parse(FS_BUFFER *, uint16_t *, uint8_t);
-int32_t ppp_packet_protocol_add(FS_BUFFER *, uint16_t, uint8_t);
+int32_t ppp_packet_protocol_add(FS_BUFFER *, uint16_t, uint8_t, uint8_t);
 int32_t ppp_packet_configuration_header_parse(FS_BUFFER *, PPP_CONF_PKT *);
 int32_t ppp_packet_configuration_option_parse(FS_BUFFER *, PPP_CONF_OPT *);
 int32_t ppp_packet_configuration_header_add(FS_BUFFER *, PPP_CONF_PKT *);

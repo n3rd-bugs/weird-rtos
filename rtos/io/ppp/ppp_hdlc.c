@@ -263,15 +263,17 @@ void ppp_hdlc_unescape_one(FS_BUFFER_ONE *buffer, uint8_t *last_escaped)
  * @accm: Array of 4 bytes of transmit ACCM to be used to escape the data.
  * @acfc: If address and control fields may be compressed.
  * @lcp: If we are sending a LCP request.
+ * @flags: Operation flags.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @return: A success status will be returned if header was successfully added,
  *  PPP_NO_SPACE will be returned if there was not enough space on the buffer
  *  to add this header.
  * This function will add an HDLC header on the given buffer, also this function
  * is responsible for escaping the data after computing and appending the FCS.
  */
-int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp)
+int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp, uint8_t flags)
 {
-    FS_BUFFER *destination = fs_buffer_get((*buffer)->fd, FS_BUFFER_LIST, FS_BUFFER_TH);
+    FS_BUFFER *destination = fs_buffer_get((*buffer)->fd, FS_BUFFER_LIST, 0);
     int32_t status = SUCCESS;
     uint16_t fcs;
 
@@ -284,12 +286,12 @@ int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, ui
     if ((lcp == TRUE) || (acfc == FALSE))
     {
         /* Add control field. */
-        status = fs_buffer_push(*buffer, (uint8_t []){ (uint8_t)PPP_CONTROL }, 1, (FS_BUFFER_HEAD | FS_BUFFER_TH));
+        status = fs_buffer_push(*buffer, (uint8_t []){ (uint8_t)PPP_CONTROL }, 1, (FS_BUFFER_HEAD | flags));
 
         if (status == SUCCESS)
         {
             /* Add address field. */
-            status = fs_buffer_push(*buffer, (uint8_t []){ (uint8_t)PPP_ADDRESS }, 1, (FS_BUFFER_HEAD | FS_BUFFER_TH));
+            status = fs_buffer_push(*buffer, (uint8_t []){ (uint8_t)PPP_ADDRESS }, 1, (FS_BUFFER_HEAD | flags));
         }
     }
 
@@ -301,27 +303,27 @@ int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, ui
         fcs ^= 0xffff;
 
         /* Push the FCS at the end of buffer. */
-        status = fs_buffer_push(*buffer, &fcs, 2, FS_BUFFER_TH);
+        status = fs_buffer_push(*buffer, &fcs, 2, flags);
     }
 
     /* If FCS was successfully appended. */
     if (status == SUCCESS)
     {
         /* Escape the given buffer and initialize an other buffer with the result. */
-        status = ppp_hdlc_escape(*buffer, destination, accm, lcp);
+        status = ppp_hdlc_escape(*buffer, destination, accm, lcp, flags);
     }
 
     /* If data was successfully escaped. */
     if (status == SUCCESS)
     {
         /* Add start flag. */
-        status = fs_buffer_push(destination, (uint8_t []){ PPP_FLAG }, 1, (FS_BUFFER_HEAD | FS_BUFFER_TH));
+        status = fs_buffer_push(destination, (uint8_t []){ PPP_FLAG }, 1, (FS_BUFFER_HEAD | flags));
 
         /* If start flag was successfully added. */
         if (status == SUCCESS)
         {
             /* Add end flag. */
-            status = fs_buffer_push(destination, (uint8_t []){ PPP_FLAG }, 1, FS_BUFFER_TH);
+            status = fs_buffer_push(destination, (uint8_t []){ PPP_FLAG }, 1, flags);
         }
     }
 
@@ -340,10 +342,12 @@ int32_t ppp_hdlc_header_add(FS_BUFFER **buffer, uint32_t *accm, uint8_t acfc, ui
  * @dst: Buffer in which escaped packet will be pushed.
  * @accm: Array of 4 bytes of the negotiated transmit ACCM.
  * @lcp: True if we are sending a LCP request.
+ * @flags: Operation flags.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * This function will escape a HDLC buffer. The result will be larger than the
  * provided buffer so we cannot push the data in the same buffer.
  */
-int32_t ppp_hdlc_escape(FS_BUFFER *src, FS_BUFFER *dst, uint32_t *accm, uint8_t lcp)
+int32_t ppp_hdlc_escape(FS_BUFFER *src, FS_BUFFER *dst, uint32_t *accm, uint8_t lcp, uint8_t flags)
 {
     int32_t status = SUCCESS;
     uint8_t buf[2];
@@ -363,12 +367,12 @@ int32_t ppp_hdlc_escape(FS_BUFFER *src, FS_BUFFER *dst, uint32_t *accm, uint8_t 
             buf[0] = PPP_ESCAPE;
 
             /* Push converted byte on the destination. */
-            status = fs_buffer_push(dst, buf, 2, FS_BUFFER_TH);
+            status = fs_buffer_push(dst, buf, 2, flags);
         }
         else
         {
             /* Push the byte as it is. */
-            status = fs_buffer_push(dst, buf, 1, FS_BUFFER_TH);
+            status = fs_buffer_push(dst, buf, 1, flags);
         }
     }
 
