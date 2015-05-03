@@ -612,7 +612,7 @@ static void ipv4_fragment_reset(IPV4_FRAGMENT *fragment)
 static void ipv4_fragment_expired(void *data)
 {
     IPV4_FRAGMENT *fragment = (IPV4_FRAGMENT *)data;
-    FS_BUFFER *buffer, *tmp_buffer;
+    FS_BUFFER *buffer;
     FD buffer_fd;
 
     /* Pick the head buffer. */
@@ -627,18 +627,8 @@ static void ipv4_fragment_expired(void *data)
      * received. */
     OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
-    /* Free all the buffers in this fragment. */
-    while (buffer != NULL)
-    {
-        /* Save the next buffer. */
-        tmp_buffer = buffer->next;
-
-        /* Free this buffer. */
-        fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-
-        /* Pick the next buffer. */
-        buffer = tmp_buffer;
-    }
+    /* Free this buffer. */
+    fs_buffer_add_buffer_list(buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
     /* Release semaphore for the buffer. */
     fd_release_lock(buffer_fd);
