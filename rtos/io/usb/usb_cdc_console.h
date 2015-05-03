@@ -41,6 +41,12 @@ typedef struct _cdc_console
     FS_BUFFER_ONE   fs_buffer[CDC_NUM_BUFFERS];
     FS_BUFFER       fs_buffer_list[CDC_NUM_BUFFER_LISTS];
 
+    /* Command buffer. */
+    char        cmd_buffer[CDC_CMD_PACKET_SIZE];
+
+    /* Buffer data lengths. */
+    uint32_t    cmd_len;
+
     /* These should only be accessed/modified in ISR context. */
 
     /* Current buffers being used. */
@@ -49,12 +55,6 @@ typedef struct _cdc_console
 
     /* Number of bytes valid in the receive buffer. */
     uint32_t    rx_valid;
-
-    /* Command buffer. */
-    char        cmd_buffer[CDC_CMD_PACKET_SIZE];
-
-    /* Buffer data lengths. */
-    uint32_t    cmd_len;
 
 } CDC_CONSOLE;
 
