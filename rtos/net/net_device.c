@@ -55,14 +55,6 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     /* Save the transmit function. */
     net_device->tx = tx;
 
-    /* Initialize connection watcher. */
-    net_device->connection_watcher.data = net_device;
-    net_device->connection_watcher.connected = &net_device_connected;
-    net_device->connection_watcher.disconnected = &net_device_disconnected;
-
-    /* Register connection watcher. */
-    fs_connection_watcher_set(fd, &net_device->connection_watcher);
-
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
 
@@ -186,7 +178,9 @@ void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
  * @flags: Operation flags.
  *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @return: A success status will be returned if given buffer was successfully
- *  transmitted.
+ *  transmitted, NET_INVALID_FD will be returned if a valid device was not
+ *  resolved for given file descriptor, NET_LINK_DOWN will be returned if
+ *  device is in link-down state,
  * This function will be called by networking protocols when a packet is needed
  * to be transmitted.
  */
@@ -199,30 +193,39 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
     /* Resolve the required networking device. */
     net_device = net_device_get_fd(buffer->fd);
 
-    /* If networking device was successfully resolved. */
-    if (net_device != NULL)
+    /* If we are actually in link-up state. */
+    if (net_device->flags & NET_DEVICE_UP)
     {
-        /* While we have a buffer to transmit. */
-        while ((buffer != NULL) & (status == SUCCESS))
+        /* If networking device was successfully resolved. */
+        if (net_device != NULL)
         {
-            /* Save the next buffer we need to send. */
-            next_buffer = buffer->next;
+            /* While we have a buffer to transmit. */
+            while ((buffer != NULL) & (status == SUCCESS))
+            {
+                /* Save the next buffer we need to send. */
+                next_buffer = buffer->next;
 
-            /* Push the protocol on this buffer. */
-            OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), (FS_BUFFER_HEAD | flags)) != SUCCESS);
+                /* Push the protocol on this buffer. */
+                OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), (FS_BUFFER_HEAD | flags)) != SUCCESS);
 
-            /* Transmit this buffer on the networking device. */
-            status = net_device->tx(buffer, flags);
+                /* Transmit this buffer on the networking device. */
+                status = net_device->tx(buffer, flags);
 
-            /* Pick the next buffer. */
-            buffer = next_buffer;
+                /* Pick the next buffer. */
+                buffer = next_buffer;
+            }
+        }
+
+        else
+        {
+            /* We did not find a valid networking device for given buffer. */
+            status = NET_INVALID_FD;
         }
     }
-
     else
     {
-        /* We did not find a valid networking device for given buffer. */
-        status = NET_INVALID_FD;
+        /* Networking device on which we need to send data is linked down. */
+        status = NET_LINK_DOWN;
     }
 
     /* Return status to the caller. */
@@ -231,33 +234,33 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
 } /* net_device_buffer_transmit */
 
 /*
- * net_device_connected
- * @fd: File descriptor for which connection is established.
- * @net_device: Networking device that is now connected.
- * This function will be called whenever a connection is established for a
- * registered file descriptor.
+ * net_device_link_up
+ * @fd: File descriptor associated with a networking device.
+ * This function will be called whenever link is up for this networking
+ * device.
  */
-void net_device_connected(void *fd, void *net_device)
+void net_device_link_up(FD fd)
 {
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(fd);
-    UNUSED_PARAM(net_device);
+    NET_DEV *net_device = net_device_get_fd(fd);
 
-} /* net_device_connected */
+    /* Set this device UP. */
+    net_device->flags |= NET_DEVICE_UP;
+
+} /* net_device_link_up */
 
 /*
- * net_device_disconnected
- * @fd: File descriptor for which connection was terminated.
- * @net_device: Networking device instance data.
- * This function will be called whenever a connection is disconnected for a
- * registered file descriptor.
+ * net_device_link_down
+ * @fd: File descriptor associated with a networking device.
+ * This function will be called whenever link is down for this networking
+ * device.
  */
-void net_device_disconnected(void *fd, void *net_device)
+void net_device_link_down(FD fd)
 {
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(fd);
-    UNUSED_PARAM(net_device);
+    NET_DEV *net_device = net_device_get_fd(fd);
 
-} /* net_device_disconnected */
+    /* Clear the UP flag for this device. */
+    net_device->flags &= (uint32_t)(~(NET_DEVICE_UP));
+
+} /* net_device_link_down */
 
 #endif /* CONFIG_NET */

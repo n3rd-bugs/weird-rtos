@@ -557,7 +557,10 @@ static int32_t udp_write(void *fd, char *buffer, int32_t size)
                 if (status == SUCCESS)
                 {
                     /* Transmit an UDP datagram. */
-                    if (net_device_buffer_transmit(fs_buffer, NET_PROTO_IPV4, FS_BUFFER_TH) == SUCCESS)
+                    status = net_device_buffer_transmit(fs_buffer, NET_PROTO_IPV4, FS_BUFFER_TH);
+
+                    /* If buffer was successfully sent. */
+                    if (status == SUCCESS)
                     {
                         /* We have transmitted the same buffer. */
                         status = NET_BUFFER_CONSUMED;

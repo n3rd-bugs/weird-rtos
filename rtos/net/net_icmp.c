@@ -80,8 +80,11 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
 
                 if (status == SUCCESS)
                 {
-                    /* Transmit an IPv4 packet. */
-                    if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0) == SUCCESS)
+                    /* Transmit an ICMP packet. */
+                    status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, FS_BUFFER_TH);
+
+                    /* If buffer was successfully sent. */
+                    if (status == SUCCESS)
                     {
                         /* We have transmitted the same buffer. */
                         status = NET_BUFFER_CONSUMED;

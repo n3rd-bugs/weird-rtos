@@ -27,6 +27,9 @@ typedef struct _net_dev NET_DEV;
 #include <net_ipv4.h>
 #endif
 
+/* Networking device flags. */
+#define NET_DEVICE_UP       0x01
+
 /* Networking device transmit/receive functions. */
 typedef int32_t NET_TX (FS_BUFFER *, uint8_t);
 typedef NET_CONDITION_PROCESS NET_RX;
@@ -39,9 +42,6 @@ struct _net_dev
 
     /* File descriptor linked with this networking device. */
     FD          fd;
-
-    /* File system watchers. */
-    FS_CONNECTION_WATCHER   connection_watcher;
 
     /* Networking condition data that will be used to process events on this
      * device. */
@@ -88,8 +88,8 @@ void net_device_set_mtu(FD, uint32_t);
 uint32_t net_device_get_mtu(FD);
 void net_device_buffer_receive(FS_BUFFER *, uint8_t);
 int32_t net_device_buffer_transmit(FS_BUFFER *, uint8_t, uint8_t);
-void net_device_connected(void *, void *);
-void net_device_disconnected(void *, void *);
+void net_device_link_up(FD);
+void net_device_link_down(FD);
 
 #endif /* CONFIG_NET */
 #endif /* _NET_DEVICE_H_ */

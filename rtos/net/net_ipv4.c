@@ -49,14 +49,14 @@ void ipv4_device_initialize(NET_DEV *net_dev)
     uint32_t n;
 
     /* Clear the IPv4 address assigned to this device. */
-    net_dev->ipv4_address = 0;
+    net_dev->ipv4.address = 0;
 
 #ifdef IPV4_ENABLE_FRAG
     /* Initialize all IPv4 fragments. */
     for (n = 0; n < IPV4_NUM_FRAGS; n++)
     {
         /* Initialize IPv4 fragment data. */
-        ipv4_fragment_initailize(&net_dev->ipv4_fragments[n]);
+        ipv4_fragment_initailize(&net_dev->ipv4.fragments[n]);
     }
 #endif /* IPV4_ENABLE_FRAG */
 
@@ -128,7 +128,7 @@ int32_t ipv4_get_device_address(FD fd, uint32_t *address)
     if (net_device != NULL)
     {
         /* Return the IPv4 address assigned to this device. */
-        *address = net_device->ipv4_address;
+        *address = net_device->ipv4.address;
     }
     else
     {
@@ -159,7 +159,7 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
     if (net_device != NULL)
     {
         /* Update the IPv4 address assigned to this device. */
-        net_device->ipv4_address = address;
+        net_device->ipv4.address = address;
     }
     else
     {
@@ -188,7 +188,7 @@ uint8_t ipv4_sreach_device(void *node, void *param)
     uint8_t match = FALSE;
 
     /* If this is the required device. */
-    if (net_device->ipv4_address == address)
+    if (net_device->ipv4.address == address)
     {
         /* Got an match. */
         match = TRUE;
@@ -427,7 +427,10 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
                 }
 
                 /* Transmit an IPv4 packet. */
-                if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0) == SUCCESS)
+                status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, FS_BUFFER_TH);
+
+                /* If buffer was successfully sent. */
+                if (status == SUCCESS)
                 {
                     /* We have transmitted the same buffer. */
                     status = NET_BUFFER_CONSUMED;
@@ -712,17 +715,17 @@ static int32_t ipv4_frag_add(FS_BUFFER **buffer, uint16_t flag_offset)
     {
         /* If this fragment list is free. */
         if ((fragment == NULL) &&
-            ((net_device->ipv4_fragments[n].flags & IPV4_FRAG_IN_USE) == 0))
+            ((net_device->ipv4.fragments[n].flags & IPV4_FRAG_IN_USE) == 0))
         {
             /* Save the fragment as it is free. */
-            fragment = &net_device->ipv4_fragments[n];
+            fragment = &net_device->ipv4.fragments[n];
         }
 
         /* If we already have a fragment list for this fragment */
-        else if ((net_device->ipv4_fragments[n].sa == sa) && (net_device->ipv4_fragments[n].id == id))
+        else if ((net_device->ipv4.fragments[n].sa == sa) && (net_device->ipv4.fragments[n].id == id))
         {
             /* Use this fragment to reassemble the packet. */
-            fragment = &net_device->ipv4_fragments[n];
+            fragment = &net_device->ipv4.fragments[n];
 
             /* Break out of this loop. */
             break;
