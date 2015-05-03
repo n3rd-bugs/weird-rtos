@@ -28,7 +28,7 @@ typedef struct _net_dev NET_DEV;
 #endif
 
 /* Networking device transmit/receive functions. */
-typedef int32_t NET_TX (FS_BUFFER *);
+typedef int32_t NET_TX (FS_BUFFER *, uint8_t);
 typedef NET_CONDITION_PROCESS NET_RX;
 
 /* Network device file descriptor. */
@@ -89,7 +89,7 @@ void net_device_release_lock(NET_DEV *);
 void net_device_set_mtu(FD, uint32_t);
 uint32_t net_device_get_mtu(FD);
 void net_device_buffer_receive(FS_BUFFER *, uint8_t);
-int32_t net_device_buffer_transmit(FS_BUFFER *, uint8_t);
+int32_t net_device_buffer_transmit(FS_BUFFER *, uint8_t, uint8_t);
 void net_device_connected(void *, void *);
 void net_device_disconnected(void *, void *);
 

@@ -19,7 +19,7 @@
 
 /* Networking condition definitions. */
 #define NET_COND_NUM_DEVICES    1
-#define NET_COND_NUM_INTERNAL   1
+#define NET_COND_NUM_INTERNAL   3
 #define NET_COND_NUM_TOTAL      (NET_COND_NUM_DEVICES + NET_COND_NUM_INTERNAL)
 
 /* Networking condition task data. */

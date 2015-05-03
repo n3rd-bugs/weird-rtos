@@ -423,11 +423,11 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
                 {
                     /* Add IPv4 packet on the packet. */
                     /* We will be sending a packet from our interface to the host it came from. */
-                    status = ipv4_header_add(buffer, IP_PROTO_ICMP, ip_iface, ip_src);
+                    status = ipv4_header_add(buffer, IP_PROTO_ICMP, ip_iface, ip_src, 0);
                 }
 
                 /* Transmit an IPv4 packet. */
-                if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4) == SUCCESS)
+                if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0) == SUCCESS)
                 {
                     /* We have transmitted the same buffer. */
                     status = NET_BUFFER_CONSUMED;
@@ -451,13 +451,15 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
  * @proto: Protocol filed value for IPv4 header.
  * @src_addr: Source address for this IPv4 packet.
  * @dst_addr: Destination address for this IPv4 packet.
+ * @flags: Operation flags.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @return: A success status will be returned if IPv4 header was successfully
  *  added.
  * This function will add an IPv4 header on the given buffer. If required buffer
  * will also be fragmented according to the MTU of the device on which this packet
  * will be sent.
  */
-int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uint32_t dst_addr)
+int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uint32_t dst_addr, uint8_t flags)
 {
     int32_t status = SUCCESS;
     HDR_GEN_MACHINE hdr_machine;
@@ -470,16 +472,16 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
     static uint16_t id = 0;
     HEADER headers[] =
     {
-        {&ver_ihl,      1,  0 },                    /* Version and IHL. */
-        {&dscp,         1,  0 },                    /* DSCP. */
-        {&this_length,  2,  FS_BUFFER_PACKED },     /* Total length. */
-        {&id,           2,  FS_BUFFER_PACKED },     /* Fragment ID. */
-        {&flag_offset,  2,  FS_BUFFER_PACKED },     /* Flags and fragment offset. */
-        {&ttl,          1,  0 },                    /* Time to live. */
-        {&proto,        1,  0 },                    /* Protocol. */
-        {&csum,         2,  0 },                    /* Checksum. */
-        {&src_addr,     4,  FS_BUFFER_PACKED },     /* Source address. */
-        {&dst_addr,     4,  FS_BUFFER_PACKED },     /* Destination address. */
+        {&ver_ihl,      1,  flags },                        /* Version and IHL. */
+        {&dscp,         1,  flags },                        /* DSCP. */
+        {&this_length,  2,  (FS_BUFFER_PACKED | flags) },   /* Total length. */
+        {&id,           2,  (FS_BUFFER_PACKED | flags) },   /* Fragment ID. */
+        {&flag_offset,  2,  (FS_BUFFER_PACKED | flags) },   /* Flags and fragment offset. */
+        {&ttl,          1,  flags },                        /* Time to live. */
+        {&proto,        1,  flags },                        /* Protocol. */
+        {&csum,         2,  flags },                        /* Checksum. */
+        {&src_addr,     4,  (FS_BUFFER_PACKED | flags) },   /* Source address. */
+        {&dst_addr,     4,  (FS_BUFFER_PACKED | flags) },   /* Destination address. */
     };
 
     /* Increment the ID for each packet we send. */

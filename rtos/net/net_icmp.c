@@ -75,13 +75,13 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
                 if (status == SUCCESS)
                 {
                     /* Add IPv4 packet on the packet. */
-                    status = ipv4_header_add(buffer, IP_PROTO_ICMP, iface_addr, src_addr);
+                    status = ipv4_header_add(buffer, IP_PROTO_ICMP, iface_addr, src_addr, 0);
                 }
 
                 if (status == SUCCESS)
                 {
                     /* Transmit an IPv4 packet. */
-                    if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4) == SUCCESS)
+                    if (net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0) == SUCCESS)
                     {
                         /* We have transmitted the same buffer. */
                         status = NET_BUFFER_CONSUMED;

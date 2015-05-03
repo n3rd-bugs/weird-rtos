@@ -197,7 +197,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     if (csum_hdr != 0)
     {
         /* Calculate checksum for the pseudo header. */
-        status = udp_csum_get(buffer, src_ip, dst_ip, length, ihl, &csum);
+        status = udp_csum_get(buffer, src_ip, dst_ip, length, ihl, 0, &csum);
 
         /* If checksum was successfully calculated and we don't have the
          * anticipated checksum. */
@@ -307,13 +307,15 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
  * @dst_ip: Destination IP address.
  * @length: Length of UDP datagram.
  * @offset: Offset in the buffer at which the actual UDP header lies.
+ * @flags: Operation flags.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @csum: Pointer where checksum will be returned.
  * @return: A success status will be returned if UDP checksum was successfully
  *  calculated. NET_NO_BUFFERS will be returned if we don't have any buffers to
  *  calculate the checksum.
  * This function will calculate UDP checksum for the given UDP packet.
  */
-int32_t udp_csum_get(FS_BUFFER *buffer, uint32_t src_ip, uint32_t dst_ip, uint16_t length, uint32_t offset, uint16_t *csum)
+int32_t udp_csum_get(FS_BUFFER *buffer, uint32_t src_ip, uint32_t dst_ip, uint16_t length, uint32_t offset, uint8_t flags, uint16_t *csum)
 {
     int32_t status;
     uint32_t ret_csum;
@@ -321,11 +323,11 @@ int32_t udp_csum_get(FS_BUFFER *buffer, uint32_t src_ip, uint32_t dst_ip, uint16
     HDR_GEN_MACHINE hdr_machine;
     HEADER pseudo_hdr[] =
     {
-        {(uint8_t *)&src_ip,            4, FS_BUFFER_PACKED},   /* Source address. */
-        {(uint8_t *)&dst_ip,            4, FS_BUFFER_PACKED},   /* Destination address. */
-        {(uint8_t []){0},               1, 0},                  /* Zero. */
-        {(uint8_t []){IP_PROTO_UDP},    1, 0},                  /* Protocol. */
-        {(uint8_t *)&length,            2, FS_BUFFER_PACKED},   /* UDP length. */
+        {(uint8_t *)&src_ip,            4, (FS_BUFFER_PACKED | flags) },    /* Source address. */
+        {(uint8_t *)&dst_ip,            4, (FS_BUFFER_PACKED | flags) },    /* Destination address. */
+        {(uint8_t []){0},               1, flags },                         /* Zero. */
+        {(uint8_t []){IP_PROTO_UDP},    1, flags },                         /* Protocol. */
+        {(uint8_t *)&length,            2, (FS_BUFFER_PACKED |flags) },     /* UDP length. */
     };
 
     /* Allocate a buffer and initialize a pseudo header. */
@@ -376,21 +378,23 @@ int32_t udp_csum_get(FS_BUFFER *buffer, uint32_t src_ip, uint32_t dst_ip, uint16
  * udp_header_add
  * @buffer: File buffer on which UDP header is needed to be added.
  * @socket_address: Socket address for which UDP header is needed to be added.
+ * @flags: Operation flags.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @return: A success status will be returned if UDP header was successfully
  *  added.
  * This function will add UDP header on the given file system buffer.
  */
-int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address)
+int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint8_t flags)
 {
     int32_t status;
     HDR_GEN_MACHINE hdr_machine;
     uint16_t csum = 0, length;
     HEADER udp_hdr[] =
     {
-        {(uint8_t *)&socket_address->local_port,    2, FS_BUFFER_PACKED},   /* Source port. */
-        {(uint8_t *)&socket_address->foreign_port,  2, FS_BUFFER_PACKED},   /* Destination port. */
-        {(uint8_t *)&length,                        2, FS_BUFFER_PACKED},   /* UDP datagram length. */
-        {(uint8_t *)&csum,                          2, 0},                  /* UDP checksum. */
+        {(uint8_t *)&socket_address->local_port,    2, (FS_BUFFER_PACKED | flags) },    /* Source port. */
+        {(uint8_t *)&socket_address->foreign_port,  2, (FS_BUFFER_PACKED | flags) },    /* Destination port. */
+        {(uint8_t *)&length,                        2, (FS_BUFFER_PACKED | flags) },    /* UDP datagram length. */
+        {(uint8_t *)&csum,                          2, flags },                         /* UDP checksum. */
     };
 
     /* Calculate the UDP datagram. */
@@ -407,7 +411,7 @@ int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address)
     if (status == SUCCESS)
     {
         /* Calculate the UDP checksum. */
-        status = udp_csum_get(buffer, socket_address->local_ip, socket_address->foreign_ip, length, 0, &csum);
+        status = udp_csum_get(buffer, socket_address->local_ip, socket_address->foreign_ip, length, 0, flags, &csum);
 
         /* If checksum was successfully calculated. */
         if (status == SUCCESS)
@@ -529,31 +533,31 @@ static int32_t udp_write(void *fd, char *buffer, int32_t size)
         OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Allocate a buffer from the required descriptor. */
-        fs_buffer = fs_buffer_get(buffer_fd, FS_BUFFER_LIST, 0);
+        fs_buffer = fs_buffer_get(buffer_fd, FS_BUFFER_LIST, FS_BUFFER_TH);
 
         /* If we do have a buffer. */
         if (fs_buffer != NULL)
         {
             /* Push UDP payload on the buffer. */
-            status = fs_buffer_push(fs_buffer, buffer, (uint32_t)size, 0);
+            status = fs_buffer_push(fs_buffer, buffer, (uint32_t)size, FS_BUFFER_TH);
 
             if (status == SUCCESS)
             {
                 /* Add UDP header on the buffer. */
-                status = udp_header_add(fs_buffer, &port->socket_address);
+                status = udp_header_add(fs_buffer, &port->socket_address, FS_BUFFER_TH);
 
                 /* If UDP header was successfully added. */
                 if (status == SUCCESS)
                 {
                     /* Add IP header on this buffer. */
-                    status = ipv4_header_add(fs_buffer, IP_PROTO_UDP, port->socket_address.local_ip, port->socket_address.foreign_ip);
+                    status = ipv4_header_add(fs_buffer, IP_PROTO_UDP, port->socket_address.local_ip, port->socket_address.foreign_ip, FS_BUFFER_TH);
                 }
 
                 /* If IP header was successfully added. */
                 if (status == SUCCESS)
                 {
                     /* Transmit an UDP datagram. */
-                    if (net_device_buffer_transmit(fs_buffer, NET_PROTO_IPV4) == SUCCESS)
+                    if (net_device_buffer_transmit(fs_buffer, NET_PROTO_IPV4, FS_BUFFER_TH) == SUCCESS)
                     {
                         /* We have transmitted the same buffer. */
                         status = NET_BUFFER_CONSUMED;

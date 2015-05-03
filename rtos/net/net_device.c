@@ -183,12 +183,14 @@ void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
  * net_device_buffer_transmit
  * @buffer: A net buffer needed to be transmitted.
  * @protocol: Packet protocol as parsed by the upper layers.
+ * @flags: Operation flags.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @return: A success status will be returned if given buffer was successfully
  *  transmitted.
  * This function will be called by networking protocols when a packet is needed
  * to be transmitted.
  */
-int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
+int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t flags)
 {
     int32_t status = SUCCESS;
     NET_DEV *net_device;
@@ -207,10 +209,10 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol)
             next_buffer = buffer->next;
 
             /* Push the protocol on this buffer. */
-            OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD) != SUCCESS);
+            OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), (FS_BUFFER_HEAD | flags)) != SUCCESS);
 
             /* Transmit this buffer on the networking device. */
-            status = net_device->tx(buffer);
+            status = net_device->tx(buffer, flags);
 
             /* Pick the next buffer. */
             buffer = next_buffer;
