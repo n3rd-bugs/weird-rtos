@@ -904,11 +904,20 @@ int32_t fs_write(FD fd, char *buffer, int32_t nbytes)
 
     } while (next_fs != NULL);
 
-    /* If we have written on more than one file descriptor. */
-    if (n_fd > 1)
+    /* If we did not encounter any error. */
+    if (status == SUCCESS)
     {
-        /* Calculate average number of bytes written. */
-        written /= n_fd;
+        /* If we have written on more than one file descriptor. */
+        if (n_fd > 1)
+        {
+            /* Calculate average number of bytes written. */
+            written /= n_fd;
+        }
+    }
+    else
+    {
+        /* Return error to the caller. */
+        written = status;
     }
 
     /* Return total number of bytes written. */
