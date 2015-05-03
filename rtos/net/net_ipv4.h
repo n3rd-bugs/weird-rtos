@@ -88,6 +88,19 @@ typedef struct _ipv4_fragment
     uint8_t     pad[1];
 
 } IPV4_FRAGMENT;
+
+/* IPv4 device data. */
+typedef struct _ipv4_device
+{
+    /* IP address assigned to this interface. */
+    uint32_t    address;
+
+#ifdef IPV4_ENABLE_FRAG
+    /* IPv4 fragments for this device. */
+    IPV4_FRAGMENT   fragments[IPV4_NUM_FRAGS];
+#endif
+} IPV4_DEVICE;
+
 #endif /* IPV4_ENABLE_FRAG */
 
 /* Function prototypes. */

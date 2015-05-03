@@ -48,8 +48,8 @@ void net_condition_init()
     /* Add networking buffer condition. */
     net_condition_add(condition, &net_buffer_suspend, process, NULL);
 
-    /* Create a task to process the incoming networking buffers. */
-    task_create(&net_condition_tcb, "NET-RX", net_condition_stack, NET_COND_STACK_SIZE, &net_condition_task_entry, (void *)(&net_condition_data), TASK_NO_RETURN);
+    /* Create a task to process the incoming networking conditions. */
+    task_create(&net_condition_tcb, "NET-CND", net_condition_stack, NET_COND_STACK_SIZE, &net_condition_task_entry, (void *)(&net_condition_data), TASK_NO_RETURN);
     scheduler_task_add(&net_condition_tcb, TASK_APERIODIC, 5, 0);
 
 } /* net_condition_init */

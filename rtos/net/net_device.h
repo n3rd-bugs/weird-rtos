@@ -54,14 +54,12 @@ struct _net_dev
     /* MTU for this networking device. */
     uint32_t    mtu;
 
-#ifdef NET_IPV4
-    /* IP address assigned to this interface. */
-    uint32_t    ipv4_address;
+    /* Flags to be maintained for this device. */
+    uint32_t    flags;
 
-#ifdef IPV4_ENABLE_FRAG
-    /* IPv4 fragments for this device. */
-    IPV4_FRAGMENT   ipv4_fragments[IPV4_NUM_FRAGS];
-#endif
+#ifdef NET_IPV4
+    /* IPv4 device data. */
+    IPV4_DEVICE ipv4;
 #endif
 };
 
