@@ -29,6 +29,7 @@ This list is needed to be updated whenever a new error code is added.
     NET_DST_UNREACHABLE     -1004
     NET_DST_PRT_UNREACHABLE -1005
     NET_NO_BUFFERS          -1006
-    NET_INVALID_CSUM        -1007
-    NET_INVALID_HDR         -1008
-    NET_INVALID_FD          -1009
+    NET_LINK_DOWN           -1007
+    NET_INVALID_CSUM        -1008
+    NET_INVALID_HDR         -1009
+    NET_INVALID_FD          -1010
