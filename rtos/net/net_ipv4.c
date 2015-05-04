@@ -427,7 +427,7 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
                 }
 
                 /* Transmit an IPv4 packet. */
-                status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, FS_BUFFER_TH);
+                status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0);
 
                 /* If buffer was successfully sent. */
                 if (status == SUCCESS)

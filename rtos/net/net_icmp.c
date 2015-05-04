@@ -81,7 +81,7 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
                 if (status == SUCCESS)
                 {
                     /* Transmit an ICMP packet. */
-                    status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, FS_BUFFER_TH);
+                    status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0);
 
                     /* If buffer was successfully sent. */
                     if (status == SUCCESS)
