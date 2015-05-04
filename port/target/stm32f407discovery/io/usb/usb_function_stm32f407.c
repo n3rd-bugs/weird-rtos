@@ -18,7 +18,6 @@
 #include <ppp.h>
 #include <net.h>
 
-#include <usb_stm32f407.h>
 USB_STM32F407_HANDLE stm32f407_usb_device __attribute__ ((aligned (0x10)));;
 
 #ifdef STM32F407_USB_CDC_ACM

@@ -16,7 +16,6 @@
 #include <os.h>
 
 #ifdef USB_FUNCTION
-#include <usb_stm32f407.h>
 
 /* USB function device status. */
 #define USB_FUN_STATE_DEFAULT       1

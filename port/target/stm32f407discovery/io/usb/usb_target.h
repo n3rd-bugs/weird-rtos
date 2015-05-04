@@ -17,6 +17,7 @@
 #include <os.h>
 
 #ifdef CONFIG_USB
+#include <usb_stm32f407.h>
 
 /* Hook-up USB OS stack. */
 #define USB_TGT_INIT    usb_stm32f407_init

@@ -13,7 +13,7 @@
 #include <os.h>
 
 #ifdef CONFIG_USB
-#include <usb_stm32f407.h>
+#include <usb.h>
 
 /*
  * usb_stm32f407_init
