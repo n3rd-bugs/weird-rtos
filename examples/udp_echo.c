@@ -63,7 +63,7 @@ void udp_echo_task(void *argv)
                 udp_port.socket_address = udp_port.last_datagram_address;
 
                 /* Send this data back on the UDP port. */
-                received = fs_write(&udp_port, result, (int32_t)strlen(result));
+                received = fs_write(&udp_port, result, received);
             }
         }
 
