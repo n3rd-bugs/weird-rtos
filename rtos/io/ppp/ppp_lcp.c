@@ -353,7 +353,7 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
             if (status == SUCCESS)
             {
                 /* Send this buffer. */
-                status = ppp_transmit_buffer_instance(ppp, &tx_buffer, PPP_PROTO_LCP, 0);
+                status = ppp_transmit_buffer_instance(ppp, tx_buffer, PPP_PROTO_LCP, 0);
             }
         }
     }

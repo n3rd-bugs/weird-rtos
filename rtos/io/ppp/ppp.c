@@ -375,7 +375,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                 if (status == SUCCESS)
                 {
                     /* Send a PPP configuration packet in reply. */
-                    status = ppp_transmit_buffer_instance(ppp, &tx_buffer, proto->protocol, 0);
+                    status = ppp_transmit_buffer_instance(ppp, tx_buffer, proto->protocol, 0);
                 }
             }
         }
@@ -476,22 +476,40 @@ void ppp_process_frame(void *fd, PPP *ppp)
             /* Check if there is still some data after the last flag. */
             if (flag_ptr[this_flag] != &buffer->buffer[buffer->length - 1])
             {
-                /* Still need to test. */
-                OS_ASSERT(TRUE);
+                /* If data after the flag is another flag. */
+                if ((flag_ptr[this_flag])[1] == PPP_FLAG)
+                {
+                    /* Calculate the number of bytes still valid in this buffer. */
+                    this_length = (uint32_t)((flag_ptr[this_flag] + 1) - buffer->buffer);
 
-                /* Calculate the number of bytes still valid in this buffer. */
-                this_length = (uint32_t)((flag_ptr[this_flag] + 1) - buffer->buffer);
+                    /* Divide this buffer into two buffers. */
+                    OS_ASSERT(fs_buffer_one_divide(fd, buffer, &new_buffer, 0, this_length) != SUCCESS);
 
-                /* Divide this buffer into two buffers. */
-                OS_ASSERT(fs_buffer_one_divide(fd, buffer, &new_buffer, 0, this_length) != SUCCESS);
+                    /* Silently add new buffer on the receive list of the
+                     * file descriptor we have received the data. */
+                    fs_buffer_add(fd, new_buffer, FS_BUFFER_RX, 0);
+                }
+                else
+                {
+                    /* Free any existing buffers on the received buffer. */
+                    fs_buffer_add_list(ppp->rx_buffer, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
 
-                /* Silently add new buffer on the receive list of the
-                 * file descriptor we have received the data. */
-                fs_buffer_add(fd, new_buffer, FS_BUFFER_RX, 0);
+                    /* Silently add the received buffer on the RX list we will
+                     * process it again. */
+                    fs_buffer_add(fd, buffer, FS_BUFFER_RX, 0);
+                    buffer = NULL;
+
+                    /* We don't have a buffer to continue. */
+                    status = PPP_PARTIAL_READ;
+                }
             }
 
-            /* Add this complete or partial received buffer on the receive buffer. */
-            fs_buffer_add_one(ppp->rx_buffer, buffer, 0);
+            /* If we do have a buffer. */
+            if (buffer)
+            {
+                /* Add this complete or partial received buffer on the receive buffer. */
+                fs_buffer_add_one(ppp->rx_buffer, buffer, 0);
+            }
         }
 
         /* We will wait to receive required amount of flags so that we can
@@ -519,9 +537,6 @@ void ppp_process_frame(void *fd, PPP *ppp)
         {
             /* Verify and skim the HDLC headers. */
             status = ppp_hdlc_header_parse(ppp->rx_buffer, PPP_IS_ACFC_VALID(ppp));
-
-            /* TODO: Remove this. */
-            OS_ASSERT(status != SUCCESS);
 
             /* If HDLC verification was successful. */
             if (status == SUCCESS)
@@ -636,10 +651,7 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
         if (status == SUCCESS)
         {
             /* Transmit this PPP buffer. */
-            (void)ppp_transmit_buffer_instance(ppp, &buffer, protocol, flags);
-
-            /* As we might have switched the buffer so we do need to free it. */
-            fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            status = ppp_transmit_buffer_instance(ppp, buffer, protocol, flags);
         }
     }
     else
@@ -715,12 +727,12 @@ void net_ppp_receive(void *data)
  * file descriptor attached to the given buffer. Caller is responsible for
  * freeing the given buffer if this function returns an error.
  */
-int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER **buffer, uint16_t proto, uint8_t flags)
+int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER *buffer, uint16_t proto, uint8_t flags)
 {
     int32_t status;
 
     /* Add PPP protocol. */
-    status = ppp_packet_protocol_add(*buffer, proto, PPP_IS_PFC_VALID(ppp), flags);
+    status = ppp_packet_protocol_add(buffer, proto, PPP_IS_PFC_VALID(ppp), flags);
 
     /* If PPP protocol was successfully added. */
     if (status == SUCCESS)
@@ -733,7 +745,7 @@ int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER **buffer, uint16_t prot
     if (status == SUCCESS)
     {
         /* Add this buffer to the transmit list of the provided file descriptor. */
-        fs_buffer_add_list(*buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+        fs_buffer_add_list(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
     }
 
     /* Return status to the caller. */

@@ -203,7 +203,7 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
                 if (status == SUCCESS)
                 {
                     /* Send this buffer. */
-                    status = ppp_transmit_buffer_instance(ppp, &tx_buffer, PPP_PROTO_IPCP, 0);
+                    status = ppp_transmit_buffer_instance(ppp, tx_buffer, PPP_PROTO_IPCP, 0);
                 }
             }
         }
