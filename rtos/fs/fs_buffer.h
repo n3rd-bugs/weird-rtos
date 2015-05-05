@@ -26,14 +26,14 @@
 #define FS_BUFFER_TX        4
 
 /* Buffer management flags. */
-#define FS_BUFFER_ACTIVE        0x01
-#define FS_BUFFER_INPLACE       0x02
-#define FS_BUFFER_UPDATE        FS_BUFFER_INPLACE
-#define FS_BUFFER_PACKED        0x04
-#define FS_BUFFER_TAIL          0x08
-#define FS_BUFFER_HEAD          0x10
-#define FS_BUFFER_NO_SUSPEND    0x20
-#define FS_BUFFER_TH            0x40
+#define FS_BUFFER_ACTIVE    0x01
+#define FS_BUFFER_INPLACE   0x02
+#define FS_BUFFER_UPDATE    FS_BUFFER_INPLACE
+#define FS_BUFFER_PACKED    0x04
+#define FS_BUFFER_TAIL      0x08
+#define FS_BUFFER_HEAD      0x10
+#define FS_BUFFER_SUSPEND   0x20
+#define FS_BUFFER_TH        0x40
 
 /* Buffer structure IDs. */
 #define FS_BUFFER_ID_BUFFER     0x5630A516
@@ -165,6 +165,7 @@ void fs_buffer_one_update(FS_BUFFER_ONE *, void *, uint32_t);
 int32_t fs_buffer_num_remaining(FD, uint32_t);
 void fs_buffer_condition_init(FD);
 void fs_buffer_condition_get(FD, CONDITION **, SUSPEND *, FS_BUFFER_PARAM *, int32_t, uint32_t);
+uint8_t fs_buffer_threshold_locked(FD);
 void fs_buffer_add_one(FS_BUFFER *, FS_BUFFER_ONE *, uint8_t);
 void fs_buffer_add_list(FS_BUFFER *, uint32_t, uint32_t);
 void fs_buffer_add_buffer_list(FS_BUFFER *, uint32_t, uint32_t);
