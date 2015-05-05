@@ -141,7 +141,7 @@ void usb_cdc_fun_console_handle_sof(CDC_CONSOLE *cdc_cons)
     if (cdc_cons->rx_buffer == NULL)
     {
         /* Try to pick a free buffer to receive incoming data. */
-        cdc_cons->rx_buffer = fs_buffer_one_get(((FD)&cdc_cons->console), FS_BUFFER_ONE_FREE, (FS_BUFFER_ACTIVE | FS_BUFFER_NO_SUSPEND));
+        cdc_cons->rx_buffer = fs_buffer_one_get(((FD)&cdc_cons->console), FS_BUFFER_ONE_FREE, (FS_BUFFER_ACTIVE));
 
         /* If a buffer was found. */
         if (cdc_cons->rx_buffer != NULL)
@@ -184,7 +184,7 @@ void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *cdc_cons, uint32_t nbytes)
     cdc_cons->rx_valid = 0;
 
     /* Try to pick a free buffer to receive incoming data. */
-    cdc_cons->rx_buffer = fs_buffer_one_get(((FD)&cdc_cons->console), FS_BUFFER_ONE_FREE, (FS_BUFFER_ACTIVE | FS_BUFFER_NO_SUSPEND));
+    cdc_cons->rx_buffer = fs_buffer_one_get(((FD)&cdc_cons->console), FS_BUFFER_ONE_FREE, (FS_BUFFER_ACTIVE));
 
     /* If a buffer was found. */
     if (cdc_cons->rx_buffer != NULL)
@@ -343,7 +343,7 @@ static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
 static int32_t usb_cdc_fun_console_write(void *fd, char *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
-    FS_BUFFER_ONE *fs_buffer = fs_buffer_one_get(((FD)&cdc->console), FS_BUFFER_ONE_FREE, (FS_BUFFER_ACTIVE | FS_BUFFER_NO_SUSPEND));
+    FS_BUFFER_ONE *fs_buffer = fs_buffer_one_get(((FD)&cdc->console), FS_BUFFER_ONE_FREE, (FS_BUFFER_ACTIVE));
 
     /* If we do have a free buffer that can be used to transmit this data. */
     if (fs_buffer)
