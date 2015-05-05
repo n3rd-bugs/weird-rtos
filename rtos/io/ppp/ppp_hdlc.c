@@ -274,7 +274,7 @@ void ppp_hdlc_unescape_one(FS_BUFFER_ONE *buffer, uint8_t *last_escaped)
  */
 int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp, uint8_t flags)
 {
-    FS_BUFFER *destination = fs_buffer_get((buffer)->fd, FS_BUFFER_LIST, 0);
+    FS_BUFFER *destination = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
     int32_t status = SUCCESS;
     uint16_t fcs;
 
@@ -320,11 +320,10 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
             /* Save the list member. */
             destination->next = buffer->next;
 
-            /* Copy the contents of destination buffer to the original buffer. */
-            memcpy(buffer, destination, sizeof(FS_BUFFER));
+            /* Move the generated buffer back to the original buffer. */
+            fs_buffer_move(buffer, destination);
 
-            /* Reinitialize the destination buffer and free it. */
-            fs_buffer_init(destination, buffer->fd);
+            /* Free the destination buffer and free it. */
             fs_buffer_add(buffer->fd, destination, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
             /* Add start flag. */
