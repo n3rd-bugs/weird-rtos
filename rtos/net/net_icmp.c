@@ -37,8 +37,6 @@
  * @dst_addr: Destination address from the IP header.
  * @return: A success status will be returned if packet was successfully
  *  processed.
- *  NET_BUFFER_CONSUMED will be returned if buffer was successfully consumed
- *  and called don't need to free it.
  *  NET_INVALID_CSUM will be returned if an inlaid checksum was parsed.
  * This function will process an incoming ICMP packet.
  */
@@ -74,7 +72,7 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
 
                 if (status == SUCCESS)
                 {
-                    /* Add IPv4 packet on the packet. */
+                    /* Add IPv4 header on the packet. */
                     status = ipv4_header_add(buffer, IP_PROTO_ICMP, iface_addr, src_addr, 0);
                 }
 
@@ -82,13 +80,6 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
                 {
                     /* Transmit an ICMP packet. */
                     status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0);
-
-                    /* If buffer was successfully sent. */
-                    if (status == SUCCESS)
-                    {
-                        /* We have transmitted the same buffer. */
-                        status = NET_BUFFER_CONSUMED;
-                    }
                 }
             }
         }

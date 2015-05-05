@@ -227,8 +227,7 @@ NET_DEV *ipv4_get_source_device(uint32_t address)
 
 /*
  * net_process_ipv4
- * @net_buffer: Pointer to file system buffer needed to be processed, this will
- *  be updated if interchanged during processing.
+ * @buffer: Received networking buffer needed to be processed.
  * @return: A success status will be returned if IPv4 packet was successfully
  *  processed.
  *  NET_BUFFER_CONSUMED will be returned if buffer was consumed and
@@ -237,9 +236,8 @@ NET_DEV *ipv4_get_source_device(uint32_t address)
  *  NET_NOT_SUPPORTED will be returned if an unsupported IPv4 header was parsed.
  * This function will process an incoming IPv4 packet.
  */
-int32_t net_process_ipv4(FS_BUFFER **net_buffer)
+int32_t net_process_ipv4(FS_BUFFER *buffer)
 {
-    FS_BUFFER *buffer = (*net_buffer);
     int32_t status = SUCCESS;
     uint32_t ip_iface = 0, ip_dst, ip_src;
     uint8_t proto, keep, ver_ihl, icmp_rep;
@@ -426,22 +424,15 @@ int32_t net_process_ipv4(FS_BUFFER **net_buffer)
                     status = ipv4_header_add(buffer, IP_PROTO_ICMP, ip_iface, ip_src, 0);
                 }
 
-                /* Transmit an IPv4 packet. */
-                status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0);
-
-                /* If buffer was successfully sent. */
                 if (status == SUCCESS)
                 {
-                    /* We have transmitted the same buffer. */
-                    status = NET_BUFFER_CONSUMED;
+                    /* Transmit an IPv4 packet. */
+                    status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0);
                 }
             }
 #endif /* NET_ICMP */
         }
     }
-
-    /* Update the buffer pointer. */
-    *net_buffer = buffer;
 
     /* Return status to the caller. */
     return (status);
@@ -681,6 +672,8 @@ static uint8_t ipv4_frag_sort(void *node, void *new_node)
  *  packet are now received and we can now process this packet.
  *  NET_BUFFER_CONSUMED will be returned if we don't have a complete fragment
  *  and we will need for more data to process this packet.
+ *  NET_NO_BUFFERS will be returned if we don't have a free fragment to process
+ *  this packet.
  * This function will add a new fragment for the file descriptor.
  */
 static int32_t ipv4_frag_add(FS_BUFFER **buffer, uint16_t flag_offset)
@@ -688,7 +681,7 @@ static int32_t ipv4_frag_add(FS_BUFFER **buffer, uint16_t flag_offset)
     NET_DEV *net_device = net_device_get_fd((*buffer)->fd);
     IPV4_FRAGMENT *fragment = NULL;
     uint32_t sa;
-    int32_t status = NET_BUFFER_CONSUMED, n;
+    int32_t status = NET_NO_BUFFERS, n;
     uint16_t id;
 
     /* Should never happen. */

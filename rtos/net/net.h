@@ -33,10 +33,11 @@
 #define NET_DST_UNREACHABLE     -1004
 #define NET_DST_PRT_UNREACHABLE -1005
 #define NET_NO_BUFFERS          -1006
-#define NET_LINK_DOWN           -1007
-#define NET_INVALID_CSUM        -1008
-#define NET_INVALID_HDR         -1009
-#define NET_INVALID_FD          -1010
+#define NET_THRESHOLD           -1007
+#define NET_LINK_DOWN           -1008
+#define NET_INVALID_CSUM        -1009
+#define NET_INVALID_HDR         -1010
+#define NET_INVALID_FD          -1011
 
 /* Networking port definitions. */
 #define NET_PORT_UNSPEC         0

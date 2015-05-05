@@ -180,7 +180,8 @@ void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
  * @return: A success status will be returned if given buffer was successfully
  *  transmitted, NET_INVALID_FD will be returned if a valid device was not
  *  resolved for given file descriptor, NET_LINK_DOWN will be returned if
- *  device is in link-down state,
+ *  device is in link-down state, NET_BUFFER_CONSUMED will be returned if the
+ *  buffer was freed by the function and caller don't need to do it.
  * This function will be called by networking protocols when a packet is needed
  * to be transmitted.
  */
@@ -188,7 +189,7 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
 {
     int32_t status = SUCCESS;
     NET_DEV *net_device;
-    FS_BUFFER *next_buffer;
+    FS_BUFFER *tmp_buffer;
 
     /* Resolve the required networking device. */
     net_device = net_device_get_fd(buffer->fd);
@@ -202,8 +203,8 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
             /* While we have a buffer to transmit. */
             while ((buffer != NULL) & (status == SUCCESS))
             {
-                /* Save the next buffer we need to send. */
-                next_buffer = buffer->next;
+                /* Save the next buffer pointer. */
+                tmp_buffer = buffer->next;
 
                 /* Push the protocol on this buffer. */
                 OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), (FS_BUFFER_HEAD | flags)) != SUCCESS);
@@ -211,9 +212,34 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
                 /* Transmit this buffer on the networking device. */
                 status = net_device->tx(buffer, flags);
 
+                /* If driver consumed the buffer. */
+                if (status == NET_BUFFER_CONSUMED)
+                {
+                    /* Reset the status. */
+                    status = SUCCESS;
+                }
+
+                /* In any other case free this buffer. */
+                else
+                {
+                    /* Free this buffer. */
+                    fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                }
+
                 /* Pick the next buffer. */
-                buffer = next_buffer;
+                buffer = tmp_buffer;
             }
+
+            /* If operation was not successful and there are still some buffers
+             * to be sent. */
+            if ((status != SUCCESS) && (buffer != NULL))
+            {
+                /* Free any buffers remaining on the buffer list. */
+                fs_buffer_add_buffer_list(buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            }
+
+            /* Set the status that buffer was consumed. */
+            status = NET_BUFFER_CONSUMED;
         }
 
         else
