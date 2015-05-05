@@ -117,6 +117,28 @@ void fs_buffer_one_update(FS_BUFFER_ONE *one, void *data, uint32_t size)
 } /* fs_buffer_one_update */
 
 /*
+ * fs_buffer_move
+ * @src_buffer: Buffer needed to be moved.
+ * @dst_buffer: Buffer in which we need to make a copy.
+ * This function will move data of one buffer to another buffer.
+ */
+void fs_buffer_move(FS_BUFFER *dst_buffer, FS_BUFFER *src_buffer)
+{
+    /* Save the destination buffer file descriptor. */
+    FD buffer_fd = dst_buffer->fd;
+
+    /* Copy the buffer data as it is. */
+    mempcpy(dst_buffer, src_buffer, sizeof(FS_BUFFER));
+
+    /* Restore the file descriptor for destination buffer. */
+    dst_buffer->fd = buffer_fd;
+
+    /* Reset the source buffer. */
+    fs_buffer_init(src_buffer, src_buffer->fd);
+
+} /* fs_buffer_move */
+
+/*
  * fs_buffer_num_remaining
  * @fd: File descriptor on which number of buffers in a list is required.
  * @type: Type of buffer needed to be checked.
@@ -306,7 +328,7 @@ void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_
  *  FS_BUFFER_LIST: If a list buffer is needed.
  * @flags: Operation flags.
  *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
- * This function will return suspend on a buffer condition.
+ * This function will suspend on a buffer condition.
  */
 static int32_t fs_buffer_suspend(FD fd, uint32_t type, uint32_t flags)
 {
