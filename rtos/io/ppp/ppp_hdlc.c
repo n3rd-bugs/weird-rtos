@@ -267,7 +267,8 @@ void ppp_hdlc_unescape_one(FS_BUFFER_ONE *buffer, uint8_t *last_escaped)
  *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * @return: A success status will be returned if header was successfully added,
  *  PPP_NO_SPACE will be returned if there was not enough space on the buffer
- *  to add this header.
+ *  to add this header, PPP_NO_BUFFERS will be returned if we don't have a free
+ *  buffer to process this PPP packet.
  * This function will add an HDLC header on the given buffer, also this function
  * is responsible for escaping the data after computing and appending the FCS.
  */
@@ -277,64 +278,70 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
     int32_t status = SUCCESS;
     uint16_t fcs;
 
-    /* Should never happen. */
-    OS_ASSERT(destination == NULL);
-
-    /* When ACFC is negotiated we can optionally drop address and control
-     * fields. We will still need to add these fields if we are sending a LCP
-     * frame. */
-    if ((lcp == TRUE) || (acfc == FALSE))
+    /* If we do have a destination buffer. */
+    if (destination)
     {
-        /* Add control field. */
-        status = fs_buffer_push(buffer, (uint8_t []){ (uint8_t)PPP_CONTROL }, 1, (FS_BUFFER_HEAD | flags));
+        /* When ACFC is negotiated we can optionally drop address and control
+         * fields. We will still need to add these fields if we are sending a LCP
+         * frame. */
+        if ((lcp == TRUE) || (acfc == FALSE))
+        {
+            /* Add control field. */
+            status = fs_buffer_push(buffer, (uint8_t []){ (uint8_t)PPP_CONTROL }, 1, (FS_BUFFER_HEAD | flags));
 
+            if (status == SUCCESS)
+            {
+                /* Add address field. */
+                status = fs_buffer_push(buffer, (uint8_t []){ (uint8_t)PPP_ADDRESS }, 1, (FS_BUFFER_HEAD | flags));
+            }
+        }
+
+        /* If address and control fields were successfully added. */
         if (status == SUCCESS)
         {
-            /* Add address field. */
-            status = fs_buffer_push(buffer, (uint8_t []){ (uint8_t)PPP_ADDRESS }, 1, (FS_BUFFER_HEAD | flags));
+            /* Calculate the FCS of the data. */
+            fcs = ppp_fcs16_buffer_calculate(buffer, PPP_FCS16_INIT);
+            fcs ^= 0xffff;
+
+            /* Push the FCS at the end of buffer. */
+            status = fs_buffer_push(buffer, &fcs, 2, flags);
         }
-    }
 
-    /* If address and control fields were successfully added. */
-    if (status == SUCCESS)
-    {
-        /* Calculate the FCS of the data. */
-        fcs = ppp_fcs16_buffer_calculate(buffer, PPP_FCS16_INIT);
-        fcs ^= 0xffff;
-
-        /* Push the FCS at the end of buffer. */
-        status = fs_buffer_push(buffer, &fcs, 2, flags);
-    }
-
-    /* If FCS was successfully appended. */
-    if (status == SUCCESS)
-    {
-        /* Escape the given buffer and initialize an other buffer with the result. */
-        status = ppp_hdlc_escape(buffer, destination, accm, lcp, flags);
-    }
-
-    /* If data was successfully escaped. */
-    if (status == SUCCESS)
-    {
-        /* Save the list member. */
-        destination->next = buffer->next;
-
-        /* Copy the contents of destination buffer to the original buffer. */
-        memcpy(buffer, destination, sizeof(FS_BUFFER));
-
-        /* Reinitialize the destination buffer and free it. */
-        fs_buffer_init(destination, buffer->fd);
-        fs_buffer_add(buffer->fd, destination, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-
-        /* Add start flag. */
-        status = fs_buffer_push(buffer, (uint8_t []){ PPP_FLAG }, 1, (FS_BUFFER_HEAD | flags));
-
-        /* If start flag was successfully added. */
+        /* If FCS was successfully appended. */
         if (status == SUCCESS)
         {
-            /* Add end flag. */
-            status = fs_buffer_push(buffer, (uint8_t []){ PPP_FLAG }, 1, flags);
+            /* Escape the given buffer and initialize an other buffer with the result. */
+            status = ppp_hdlc_escape(buffer, destination, accm, lcp, flags);
         }
+
+        /* If data was successfully escaped. */
+        if (status == SUCCESS)
+        {
+            /* Save the list member. */
+            destination->next = buffer->next;
+
+            /* Copy the contents of destination buffer to the original buffer. */
+            memcpy(buffer, destination, sizeof(FS_BUFFER));
+
+            /* Reinitialize the destination buffer and free it. */
+            fs_buffer_init(destination, buffer->fd);
+            fs_buffer_add(buffer->fd, destination, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+
+            /* Add start flag. */
+            status = fs_buffer_push(buffer, (uint8_t []){ PPP_FLAG }, 1, (FS_BUFFER_HEAD | flags));
+
+            /* If start flag was successfully added. */
+            if (status == SUCCESS)
+            {
+                /* Add end flag. */
+                status = fs_buffer_push(buffer, (uint8_t []){ PPP_FLAG }, 1, flags);
+            }
+        }
+    }
+    else
+    {
+        /* No more buffers available to process this PPP packet. */
+        status = PPP_NO_BUFFERS;
     }
 
     /* Return status to the caller. */
