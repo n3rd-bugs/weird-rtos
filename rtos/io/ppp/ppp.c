@@ -56,8 +56,8 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
     /* Assign the file descriptor with which this PPP instance is registered. */
     ppp->fd = fd;
 
-    /* For now we need at least (1500 / 64 * 2 + 2) buffers as a threshold. */
-    fs->buffer->threshold_buffers = 50;
+    /* For now we need at least (1500 / 64 * 2) buffers as a threshold. */
+    fs->buffer->threshold_buffers = 48;
     fs->buffer->threshold_lists = 16;
 
     /* Initialize connection watcher. */
