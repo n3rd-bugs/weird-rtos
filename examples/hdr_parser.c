@@ -56,7 +56,7 @@ void parser_demo_task(void *argv)
 
     /* Initialize a file system buffer. */
     fs_buffer_init(&buffer, NULL);
-    fs_buffer_one_init(&one, (char *)dummy_data, sizeof(dummy_data));
+    fs_buffer_one_init(&one, (uint8_t *)dummy_data, sizeof(dummy_data));
     one.length = sizeof(dummy_data);
     fs_buffer_add_one(&buffer, &one, 0);
 
@@ -83,7 +83,7 @@ int main(void)
 
     /* Create a task for CDC demo. */
     task_cb = (TASK *)mem_static_alloc(sizeof(TASK) + 4096);
-    task_create(task_cb, "STATS", (char *)(task_cb + 1), 4096, &parser_demo_task, (void *)(NULL), 0);
+    task_create(task_cb, "STATS", (uint8_t *)(task_cb + 1), 4096, &parser_demo_task, (void *)(NULL), 0);
     scheduler_task_add(task_cb, TASK_APERIODIC, 5, 0);
 
     /* Run scheduler. */

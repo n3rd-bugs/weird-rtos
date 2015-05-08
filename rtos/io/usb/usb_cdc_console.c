@@ -18,8 +18,8 @@
 #include <sll.h>
 
 /* Internal function prototypes. */
-static int32_t usb_cdc_fun_console_read(void *, char *, int32_t);
-static int32_t usb_cdc_fun_console_write(void *, char *, int32_t);
+static int32_t usb_cdc_fun_console_read(void *, uint8_t *, int32_t);
+static int32_t usb_cdc_fun_console_write(void *, uint8_t *, int32_t);
 static void usb_cdc_fun_console_rx_consumed(void *, void *);
 
 /*
@@ -260,7 +260,7 @@ FS_BUFFER_ONE *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *cdc_cons)
  * @nbytes: Number of bytes that can be copied or given.
  * This function will be called whenever a CTRL event occur.
  */
-void usb_cdc_fun_console_handle_ctrl(CDC_CONSOLE *cdc_cons, uint32_t cmd, char *buf, int32_t nbytes)
+void usb_cdc_fun_console_handle_ctrl(CDC_CONSOLE *cdc_cons, uint32_t cmd, uint8_t *buf, int32_t nbytes)
 {
     /* For now does nothing. */
     UNUSED_PARAM(cdc_cons);
@@ -298,7 +298,7 @@ static void usb_cdc_fun_console_rx_consumed(void *fd, void *buffer)
  * @return: Number of bytes read from CDC console.
  * This function will read data from a USB CDC console.
  */
-static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
+static int32_t usb_cdc_fun_console_read(void *fd, uint8_t *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
     FS_BUFFER_ONE *fs_buffer = fs_buffer_one_get(((FD)&cdc->console), FS_BUFFER_RX, FS_BUFFER_ACTIVE);
@@ -340,7 +340,7 @@ static int32_t usb_cdc_fun_console_read(void *fd, char *buffer, int32_t size)
  * @return: Number of bytes sent on the console.
  * This function will write data on given USB CDC console.
  */
-static int32_t usb_cdc_fun_console_write(void *fd, char *buffer, int32_t size)
+static int32_t usb_cdc_fun_console_write(void *fd, uint8_t *buffer, int32_t size)
 {
     CDC_CONSOLE *cdc = (CDC_CONSOLE *)fd;
     FS_BUFFER_ONE *fs_buffer = fs_buffer_one_get(((FD)&cdc->console), FS_BUFFER_ONE_FREE, (FS_BUFFER_ACTIVE));

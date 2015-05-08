@@ -28,7 +28,7 @@ static void net_condition_task_entry(void *);
 
 /* Networking condition task data. */
 static TASK net_condition_tcb;
-static char net_condition_stack[NET_COND_STACK_SIZE];
+static uint8_t net_condition_stack[NET_COND_STACK_SIZE];
 
 /*
  * net_condition_init

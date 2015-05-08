@@ -25,7 +25,7 @@ static SCHEDULER_LIST scheduler_list;
 
 /* Definitions for idle task. */
 static TASK __idle_task;
-static char __idle_task_stack[128];
+static uint8_t __idle_task_stack[128];
 static void __idle_task_entry(void *argv);
 
 /*

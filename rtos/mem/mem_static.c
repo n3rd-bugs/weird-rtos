@@ -24,7 +24,7 @@
  * @end: End of the memory.
  * This function initializes a static memory region.
  */
-void mem_static_init_region(MEM_STATIC *mem_static, char *start, char *end)
+void mem_static_init_region(MEM_STATIC *mem_static, uint8_t *start, uint8_t *end)
 {
 
     /* Clear the memory structure. */
@@ -47,9 +47,9 @@ void mem_static_init_region(MEM_STATIC *mem_static, char *start, char *end)
  * @return: Pointer to the newly allocated memory region.
  * This function allocate a memory for a static memory region.
  */
-char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
+uint8_t *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
 {
-    char *new_mem = NULL;
+    uint8_t *new_mem = NULL;
 
     /* Lock the scheduler. */
     scheduler_lock();
@@ -78,7 +78,7 @@ char *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
  *  otherwise given memory will be returned.
  * This function allocate a memory for a static memory region.
  */
-char *mem_static_dealloc_region(char *mem_ptr)
+uint8_t *mem_static_dealloc_region(uint8_t *mem_ptr)
 {
     /* This should never be called. */
     OS_ASSERT(TRUE);

@@ -49,12 +49,12 @@ void mem_init();
 
 #ifdef MEMGR_STATIC
 #define mem_static_alloc(size)      mem_static_alloc_region(&mem_static_pool, size)
-#define mem_static_dealloc(mem)     mem_static_dealloc_region((char *)mem)
+#define mem_static_dealloc(mem)     mem_static_dealloc_region((uint8_t *)mem)
 #endif
 
 #ifdef MEMGR_DYNAMIC
 #define mem_dynamic_alloc(size)     mem_dynamic_alloc_region(&mem_dynamic_pool, size)
-#define mem_dynamic_dealloc(mem)    mem_dynamic_dealloc_region((char *)mem)
+#define mem_dynamic_dealloc(mem)    mem_dynamic_dealloc_region((uint8_t *)mem)
 #endif
 
 #endif /* CONFIG_MEMGR */

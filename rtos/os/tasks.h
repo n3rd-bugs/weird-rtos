@@ -64,7 +64,7 @@ struct _task
 #endif /* CONFIG_TASK_STATS */
 
     /* This holds current stack pointer of this task. */
-    char        *tos;
+    uint8_t     *tos;
 
      /* Task scheduling information. */
     void        *scheduler;
@@ -74,7 +74,7 @@ struct _task
 
 #ifdef CONFIG_TASK_STATS
     /* This is start of the stack pointer for this task. */
-    char        *stack_start;
+    uint8_t     *stack_start;
 
     /* Name for this task. */
     char        name[8];
@@ -119,7 +119,7 @@ typedef struct _task_list
 } TASK_LIST;
 
 /* Function prototypes. */
-void task_create(TASK *, char *, char *, uint32_t, TASK_ENTRY *, void *, uint8_t);
+void task_create(TASK *, char *, uint8_t *, uint32_t, TASK_ENTRY *, void *, uint8_t);
 uint8_t task_priority_sort(void *, void *);
 
 #endif /* _TASKS_H_ */

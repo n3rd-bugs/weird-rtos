@@ -102,7 +102,7 @@ uint64_t pit_get_clock()
 int32_t stm32f407_printf(char *format, ...)
 {
     int32_t n = 0;
-    char buf[100];
+    uint8_t buf[100];
     va_list vl;
     extern FD debug_usart_fd;
 
@@ -110,7 +110,7 @@ int32_t stm32f407_printf(char *format, ...)
     va_start(vl, format);
 
     /* Process the given string and save the result in a temporary buffer. */
-    n = vsnprintf(buf, 100, format, vl);
+    n = vsnprintf((char *)buf, 100, format, vl);
 
 #ifdef FS_CONSOLE
     /* Assert if debug FD is not yet initialized. */

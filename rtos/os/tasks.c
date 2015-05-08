@@ -29,7 +29,7 @@ static void task_entry_return(void *);
  * This function initializes a task control block with the given parameters, that
  * can be then enqueued in the scheduler to run.
  */
-void task_create(TASK *tcb, char *name, char *stack, uint32_t stack_size, TASK_ENTRY *entry, void *argv, uint8_t flags)
+void task_create(TASK *tcb, char *name, uint8_t *stack, uint32_t stack_size, TASK_ENTRY *entry, void *argv, uint8_t flags)
 {
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 

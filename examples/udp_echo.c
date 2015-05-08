@@ -23,7 +23,7 @@
 void udp_echo_task(void *);
 
 /* Buffer in which we will receive data. */
-char result[1024];
+uint8_t result[1024];
 
 /* UDP port structure. */
 UDP_PORT udp_port;
@@ -96,7 +96,7 @@ int main(void)
 
     /* Create a task for UDP echo demo. */
     udp_echo_task_cb = (TASK *)mem_static_alloc(sizeof(TASK) + 4096);
-    task_create(udp_echo_task_cb, "ECHO", (char *)(udp_echo_task_cb + 1), 4096, &udp_echo_task, (void *)(NULL), 0);
+    task_create(udp_echo_task_cb, "ECHO", (uint8_t *)(udp_echo_task_cb + 1), 4096, &udp_echo_task, (void *)(NULL), 0);
     scheduler_task_add(udp_echo_task_cb, TASK_APERIODIC, 5, 0);
 
     /* Run scheduler. */

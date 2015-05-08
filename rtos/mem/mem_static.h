@@ -20,8 +20,8 @@
 typedef struct _mem_static
 {
     /* Required data to maintain a simple static memory region. */
-    char        *current_ptr;
-    char        *end_ptr;
+    uint8_t     *current_ptr;
+    uint8_t     *end_ptr;
 
 #ifdef MEMGR_STATS
     /* Total memory size.  */
@@ -31,8 +31,8 @@ typedef struct _mem_static
 } MEM_STATIC;
 
 /* Function prototypes. */
-void mem_static_init_region(MEM_STATIC *, char *, char *);
-char *mem_static_alloc_region(MEM_STATIC *, uint32_t);
-char *mem_static_dealloc_region(char *);
+void mem_static_init_region(MEM_STATIC *, uint8_t *, uint8_t *);
+uint8_t *mem_static_alloc_region(MEM_STATIC *, uint32_t);
+uint8_t *mem_static_dealloc_region(uint8_t *);
 
 #endif /* MEM_STATIC_H */

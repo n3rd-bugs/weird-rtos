@@ -79,12 +79,12 @@ int main(void)
     for (i = 0; i < NUM_DEMO_TASK; i++)
     {
         ctx_task_cb[i] = (TASK *)mem_static_alloc(sizeof(TASK) + DEMO_STACK_SIZE);
-        task_create(ctx_task_cb[i], "CTX_TSK", (char *)(ctx_task_cb[i] + 1), DEMO_STACK_SIZE, &ctx_sample_task, (void *)(&ctx_time[i]));
+        task_create(ctx_task_cb[i], "CTX_TSK", (uint8_t *)(ctx_task_cb[i] + 1), DEMO_STACK_SIZE, &ctx_sample_task, (void *)(&ctx_time[i]));
         scheduler_task_add(ctx_task_cb[i], TASK_APERIODIC, 2, 0);
     }
 
     stat_task_cb = (TASK *)mem_static_alloc(sizeof(TASK) + 4096);
-    task_create(stat_task_cb, "TSK_6", (char *)(stat_task_cb + 1), 4096, &stat_task, (void *)(ctx_time));
+    task_create(stat_task_cb, "TSK_6", (uint8_t *)(stat_task_cb + 1), 4096, &stat_task, (void *)(ctx_time));
     scheduler_task_add(stat_task_cb, TASK_PERIODIC, 1, 100);
 
     os_run();

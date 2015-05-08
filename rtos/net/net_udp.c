@@ -27,8 +27,8 @@ UDP_DATA udp_data;
 
 /* Internal function prototypes. */
 static uint8_t net_port_seach(void *, void *);
-static int32_t udp_read(void *, char *, int32_t);
-static int32_t udp_write(void *, char *, int32_t);
+static int32_t udp_read(void *, uint8_t *, int32_t);
+static int32_t udp_write(void *, uint8_t *, int32_t);
 
 /*
  * udp_initialize
@@ -455,7 +455,7 @@ int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint8_
  * @return: Number of bytes read.
  * This function will read data from a UDP port.
  */
-static int32_t udp_read(void *fd, char *buffer, int32_t size)
+static int32_t udp_read(void *fd, uint8_t *buffer, int32_t size)
 {
     UDP_PORT *port = (UDP_PORT *)fd;
     FS_BUFFER *fs_buffer;
@@ -531,7 +531,7 @@ static int32_t udp_read(void *fd, char *buffer, int32_t size)
  *  the reply.
  * This function will write data on given UDP port.
  */
-static int32_t udp_write(void *fd, char *buffer, int32_t size)
+static int32_t udp_write(void *fd, uint8_t *buffer, int32_t size)
 {
     UDP_PORT *port = (UDP_PORT *)fd;
     NET_DEV *net_device;

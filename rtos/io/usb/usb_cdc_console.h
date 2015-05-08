@@ -34,7 +34,7 @@ typedef struct _cdc_console
     void        *usb_device;
 
     /* Buffer used to manage data for this device. */
-    char        buffer[CDC_DATA_MAX_PACKET_SIZE * CDC_NUM_BUFFERS];
+    uint8_t     buffer[CDC_DATA_MAX_PACKET_SIZE * CDC_NUM_BUFFERS];
 
     /* File system buffers. */
     FS_BUFFER_DATA  fs_buffer_data;
@@ -42,7 +42,7 @@ typedef struct _cdc_console
     FS_BUFFER       fs_buffer_list[CDC_NUM_BUFFER_LISTS];
 
     /* Command buffer. */
-    char        cmd_buffer[CDC_CMD_PACKET_SIZE];
+    uint8_t     cmd_buffer[CDC_CMD_PACKET_SIZE];
 
     /* Buffer data lengths. */
     uint32_t    cmd_len;
@@ -70,7 +70,7 @@ void usb_cdc_fun_console_handle_rx(CDC_CONSOLE *, uint32_t);
 void usb_cdc_fun_console_handle_tx_complete(CDC_CONSOLE *);
 void usb_cdc_fun_console_handle_rx_start(CDC_CONSOLE *);
 FS_BUFFER_ONE *usb_cdc_fun_console_handle_tx(CDC_CONSOLE *);
-void usb_cdc_fun_console_handle_ctrl(CDC_CONSOLE *, uint32_t, char *, int32_t);
+void usb_cdc_fun_console_handle_ctrl(CDC_CONSOLE *, uint32_t, uint8_t *, int32_t);
 
 #endif /* USB_CDC_CONSOLE */
 #endif /* _USB_CDC_CONSOLE_H_ */

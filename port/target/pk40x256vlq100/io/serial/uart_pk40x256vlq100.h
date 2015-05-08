@@ -28,7 +28,7 @@
 #define BAUD_RATE       115200
 
 /* Function prototypes. */
-uint32_t uart_pk40x256vlq100_puts(void *priv_data, char *buf, uint32_t nbytes);
+uint32_t uart_pk40x256vlq100_puts(void *priv_data, uint8_t *buf, uint32_t nbytes);
 uint32_t uart_pk40x256vlq100_printf(char *format, ...);
 void uart_pk40x256vlq100_init();
 

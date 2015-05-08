@@ -71,7 +71,7 @@ static MEM_PAGE *mem_dynamic_search_region(MEM_DYNAMIC *mem_dynamic, uint32_t si
  *      small memory region.
  * This function initializes a dynamic memory region.
  */
-void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, char *start, char *end, uint32_t num_pages, MEM_DYN_CFG *mem_cfg, uint32_t flags)
+void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, uint8_t *start, uint8_t *end, uint32_t num_pages, MEM_DYN_CFG *mem_cfg, uint32_t flags)
 {
     uint32_t i, j, page_mem_size, page_size, mem_size = (uint32_t)(end - start);
     MEM_FREE *mem_free;
@@ -338,14 +338,14 @@ static uint8_t mem_dynamic_get_max(void *node, void *param)
  * @size: Size of memory to be allocated.
  * This function will allocate a memory from the giver memory region.
  */
-char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
+uint8_t *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 {
-    char *mem_ptr = NULL;
+    uint8_t *mem_ptr = NULL;
     MEM_PAGE *mem_page;
     MEM_FREE *mem_free;
     uint32_t remaining_size;
 #ifdef MEM_FREE_CHECK
-    char *mem_loc, *mem_end;
+    uint8_t *mem_loc, *mem_end;
 #endif /* CONFIG_SEMAPHORE */
 
     /* We will always allocate aligned memory. */
@@ -398,8 +398,8 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 
 #ifdef MEM_FREE_CHECK
             /* Verify that this memory is intact. */
-            mem_loc = (char *)(mem_free + 1);
-            mem_end = (char *)mem_free + mem_free->descriptor.size;
+            mem_loc = (uint8_t *)(mem_free + 1);
+            mem_end = (uint8_t *)mem_free + mem_free->descriptor.size;
 
             while (mem_loc < mem_end)
             {
@@ -418,7 +418,7 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 #endif
 
             /* Save the memory pointer. */
-            mem_ptr =  ((char *)mem_free);
+            mem_ptr = (uint8_t *)mem_free;
 
             /* Check if remaining memory can be defined a single free memory. */
             if (remaining_size > MEM_DYN_MIN_MEM)
@@ -427,7 +427,7 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
                 mem_free->descriptor.size = size;
 
                 /* Create a new free memory at the end of the allocated memory. */
-                mem_free = (MEM_FREE *)((char *)mem_free + size);
+                mem_free = (MEM_FREE *)((uint8_t *)mem_free + size);
                 mem_free->descriptor.phy_prev = (MEM_DESC *)mem_free;
                 mem_free->descriptor.size = remaining_size;
 #ifdef MEM_ID_CHECK
@@ -436,10 +436,10 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 #endif
 
                 /* Check if there is a node after this memory. */
-                if ( ((char *)mem_free + remaining_size) < mem_page->base_end)
+                if (((uint8_t *)mem_free + remaining_size) < mem_page->base_end)
                 {
                     /* Update physical previous for next memory node. */
-                    ((MEM_DESC *)((char *)mem_free + remaining_size))->phy_prev = (MEM_DESC *)mem_free;
+                    ((MEM_DESC *)(mem_free + remaining_size))->phy_prev = (MEM_DESC *)mem_free;
                 }
 
                 /* Check if we need to maintain a descending list. */
@@ -474,9 +474,9 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 
 #ifdef MEM_BNDRY_CHECK
             /* Put a predefined pattern on memory boundaries. */
-            memset((char *)mem_ptr, 'A', mem_free->descriptor.size - sizeof(MEM_ALOC));
-            memcpy((char *)mem_ptr, MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH);
-            memcpy((char *)mem_ptr + (mem_free->descriptor.size - (MEM_BNDRY_LENGTH + sizeof(MEM_ALOC))), MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH);
+            memset(mem_ptr, 'A', mem_free->descriptor.size - sizeof(MEM_ALOC));
+            memcpy(mem_ptr, MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH);
+            memcpy(mem_ptr + (mem_free->descriptor.size - (MEM_BNDRY_LENGTH + sizeof(MEM_ALOC))), MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH);
 
             /* Adjust the pointer and return the memory after the pattern. */
             mem_ptr += MEM_BNDRY_LENGTH;
@@ -532,7 +532,7 @@ char *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
  *  otherwise given memory will be returned.
  * This function allocate a memory for a dynamic memory region.
  */
-char *mem_dynamic_dealloc_region(char *mem_ptr)
+uint8_t *mem_dynamic_dealloc_region(uint8_t *mem_ptr)
 {
     MEM_PAGE *mem_page;
     MEM_FREE *mem_free, *neighbor;
@@ -573,10 +573,10 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
         OS_ASSERT(memcmp(mem_ptr + (mem_free->descriptor.size - (MEM_BNDRY_LENGTH + sizeof(MEM_ALOC))), MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH));
 #endif
         /* Check if next memory can also be merged in this memory. */
-        neighbor = (MEM_FREE *)((char *)mem_free + mem_free->descriptor.size);
+        neighbor = (MEM_FREE *)((uint8_t *)mem_free + mem_free->descriptor.size);
 
         /* Check if a memory can exist after the given descriptor. */
-        if ( ( (char *)neighbor < mem_page->base_end ) &&
+        if ( ( (uint8_t *)neighbor < mem_page->base_end ) &&
 
              /* If this is not an allocated memory than it's free. */
              ( ((MEM_ALOC *)neighbor)->page !=  mem_page ) )
@@ -593,10 +593,10 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
             mem_free->descriptor.size += neighbor->descriptor.size;
 
             /* If there is another memory after this. */
-            if ( ((char *)mem_free + mem_free->descriptor.size) < mem_page->base_end )
+            if ( ((uint8_t *)mem_free + mem_free->descriptor.size) < mem_page->base_end )
             {
                 /* Update the next memory. */
-                ((MEM_DESC *)((char *)mem_free + mem_free->descriptor.size))->phy_prev = (MEM_DESC *)mem_free;
+                ((MEM_DESC *)((uint8_t *)mem_free + mem_free->descriptor.size))->phy_prev = (MEM_DESC *)mem_free;
             }
 
             /* Check if neighbor is also the biggest free memory. */
@@ -625,10 +625,10 @@ char *mem_dynamic_dealloc_region(char *mem_ptr)
             OS_ASSERT(sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next)) != neighbor);
 
             /* If we need to update the next memory. */
-            if ( ((char *)mem_free + mem_free->descriptor.size) < mem_page->base_end )
+            if ( ((uint8_t *)mem_free + mem_free->descriptor.size) < mem_page->base_end )
             {
                 /* Update the next memory. */
-                ((MEM_DESC *)((char *)mem_free + mem_free->descriptor.size))->phy_prev = (MEM_DESC *)neighbor;
+                ((MEM_DESC *)((uint8_t *)mem_free + mem_free->descriptor.size))->phy_prev = (MEM_DESC *)neighbor;
             }
 
             /* Check if this free memory is also the largest one. */

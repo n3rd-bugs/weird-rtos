@@ -18,6 +18,7 @@
 
 /*
  * spi_stm32f407_init
+ * @device: SPI device needed to be initialized.
  * This function will initialize a STM32F407 device instance.
  */
 void spi_stm32f407_init(SPI_DEVICE *device)

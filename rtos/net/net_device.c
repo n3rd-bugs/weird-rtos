@@ -164,7 +164,7 @@ void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
     fd_release_lock(buffer->fd);
 
     /* Write this buffer to the networking buffer file descriptor. */
-    OS_ASSERT(fs_write(net_buff_fd, (char *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
+    OS_ASSERT(fs_write(net_buff_fd, (uint8_t *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
 
     /* Again obtain lock for buffer file descriptor. */
     OS_ASSERT(fd_get_lock(buffer->fd));

@@ -76,42 +76,42 @@ struct _mem_desc
 {
 #ifdef MEM_ID_CHECK
     /* ID for this memory. */
-    uint32_t        id;
+    uint32_t    id;
 #endif
 
     /* Size of this memory. */
-    uint32_t        size;
+    uint32_t    size;
 
     /* Physically previous node. */
-    MEM_DESC        *phy_prev;
+    MEM_DESC    *phy_prev;
 };
 
 /* Allocated memory descriptor. */
 typedef struct _mem_allocated
 {
     /* Memory descriptor. */
-    MEM_DESC        descriptor;
+    MEM_DESC    descriptor;
 
     /* Memory page to which this memory will be returned. */
-    MEM_PAGE        *page;
+    MEM_PAGE    *page;
 } MEM_ALOC;
 
 /* Free memory descriptor. */
 struct _mem_free
 {
     /* Memory descriptor. */
-    MEM_DESC        descriptor;
+    MEM_DESC    descriptor;
 
     /* Free memory list maintained according to page configuration. */
-    MEM_FREE        *next;
+    MEM_FREE    *next;
 };
 
 /* Page descriptor. */
 struct _mem_page
 {
     /* Base memory definition for this page. */
-    char        *base_start;
-    char        *base_end;
+    uint8_t     *base_start;
+    uint8_t     *base_end;
 
     /* Memory region to which this page belong. */
     MEM_DYNAMIC *mem_region;
@@ -138,24 +138,24 @@ struct _mem_dynamic
 {
 #ifdef CONFIG_SEMAPHORE
     /* Memory protection lock. */
-    SEMAPHORE       lock;
+    SEMAPHORE   lock;
 #endif
 
     /* Number of pages in this memory region. */
-    uint32_t        num_pages;
+    uint32_t    num_pages;
 
     /* Memory region configuration flags. */
-    uint32_t        flags;
+    uint32_t    flags;
 
     /* Pages in this memory table. */
-    MEM_PAGE        *pages;
+    MEM_PAGE    *pages;
 
 };
 
 /* FUnction prototypes. */
-void mem_dynamic_init_region(MEM_DYNAMIC *, char *, char *, uint32_t, MEM_DYN_CFG *, uint32_t);
-char *mem_dynamic_alloc_region(MEM_DYNAMIC *, uint32_t);
-char *mem_dynamic_dealloc_region(char *);
+void mem_dynamic_init_region(MEM_DYNAMIC *, uint8_t *, uint8_t *, uint32_t, MEM_DYN_CFG *, uint32_t);
+uint8_t *mem_dynamic_alloc_region(MEM_DYNAMIC *, uint32_t);
+uint8_t *mem_dynamic_dealloc_region(uint8_t *);
 
 #endif /* MEMGR_DYNAMIC */
 #endif /* MEM_DYNAMIC_H */

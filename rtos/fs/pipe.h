@@ -43,7 +43,7 @@ typedef struct _pipe
 #endif
 
     /* Pipe message space. */
-    char        *data;
+    uint8_t     *data;
 
     /* Message space size. */
     uint32_t    size;
@@ -75,12 +75,12 @@ typedef struct _pipe_data
 
 /* Function prototypes. */
 void pipe_init();
-void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size);
-void pipe_destroy(PIPE *pipe);
+void pipe_create(PIPE *pipe, char *, uint8_t *, uint32_t);
+void pipe_destroy(PIPE *);
 
 /* If user wants to use a pipe as a circular buffer. */
-int32_t pipe_write(void *fd, char *data, int32_t nbytes);
-int32_t pipe_read(void *fd, char *buffer, int32_t size);
+int32_t pipe_write(void *, uint8_t *, int32_t);
+int32_t pipe_read(void *, uint8_t *, int32_t);
 
 #endif /* FS_PIPE */
 #endif /* PIPE_H */

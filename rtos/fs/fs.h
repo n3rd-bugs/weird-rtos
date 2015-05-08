@@ -86,8 +86,8 @@ struct _fs
     /* File operations. */
     void        *(*open) (char *, uint32_t);
     void        (*close) (void **);
-    int32_t     (*write) (void *, char *, int32_t);
-    int32_t     (*read) (void *, char *, int32_t);
+    int32_t     (*write) (void *, uint8_t *, int32_t);
+    int32_t     (*read) (void *, uint8_t *, int32_t);
     int32_t     (*ioctl) (void *, uint32_t, void *);
 
     /* Driver operations. */
@@ -195,8 +195,8 @@ void fs_close(FD *);
 int32_t fd_get_lock(FD);
 void fd_release_lock(FD);
 
-int32_t fs_read(FD, char *, int32_t);
-int32_t fs_write(FD, char *, int32_t);
+int32_t fs_read(FD, uint8_t *, int32_t);
+int32_t fs_write(FD, uint8_t *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
 void fs_data_watcher_set(FD, FS_DATA_WATCHER *);

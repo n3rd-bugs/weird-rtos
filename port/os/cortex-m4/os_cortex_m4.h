@@ -65,10 +65,10 @@ extern uint32_t sys_interrupt_level;
 #define INITIAL_XPSR                    0x01000000
 
 /* Memory definitions. */
-#define STATIC_MEM_START                ((char *)(&static_start))
-#define STATIC_MEM_END                  ((char *)(&static_end))
-#define DYNAMIC_MEM_START               ((char *)(&dynamic_start))
-#define DYNAMIC_MEM_END                 ((char *)(&dynamic_end))
+#define STATIC_MEM_START                ((uint8_t *)(&static_start))
+#define STATIC_MEM_END                  ((uint8_t *)(&static_end))
+#define DYNAMIC_MEM_START               ((uint8_t *)(&dynamic_start))
+#define DYNAMIC_MEM_END                 ((uint8_t *)(&dynamic_end))
 
 typedef struct _hardware_stack_farme
 {

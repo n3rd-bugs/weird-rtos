@@ -40,7 +40,7 @@ static CONSOLE usart_1 =
  * @nbytes: Number of bytes to be printed from the string.
  * This function prints a string on the UART1.
  */
-int32_t usart_stm32f407_puts(void *priv_data, char *buf, int32_t nbytes)
+int32_t usart_stm32f407_puts(void *priv_data, uint8_t *buf, int32_t nbytes)
 {
     int32_t to_print = nbytes;
 

@@ -27,8 +27,8 @@ static NET_BUFFER_FS net_buffers_fs;
 static int32_t net_buffer_lock(void *);
 static void net_buffer_unlock(void *);
 static void net_buffer_condition_callback();
-static int32_t net_buffer_write(void *, char *, int32_t);
-static int32_t net_buffer_read(void *, char *, int32_t);
+static int32_t net_buffer_write(void *, uint8_t *, int32_t);
+static int32_t net_buffer_read(void *, uint8_t *, int32_t);
 
 /*
  * net_buffer_init
@@ -96,7 +96,7 @@ static void net_buffer_condition_callback()
     FD buffer_fd;
 
     /* Read a buffer pointer from the file descriptor. */
-    if (fs_read(net_buff_fd, (char *)&buffer, sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
+    if (fs_read(net_buff_fd, (uint8_t *)&buffer, sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
     {
         /* Save the file descriptor on which data was received. */
         buffer_fd = buffer->fd;
@@ -164,7 +164,7 @@ static void net_buffer_unlock(void *fd)
  * This function will write a networking buffer and queue it for further
  * processing.
  */
-static int32_t net_buffer_write(void *fd, char *data, int32_t nbytes)
+static int32_t net_buffer_write(void *fd, uint8_t *data, int32_t nbytes)
 {
     NET_BUFFER_FS *net_buffer = (NET_BUFFER_FS *)fd;
 
@@ -194,7 +194,7 @@ static int32_t net_buffer_write(void *fd, char *data, int32_t nbytes)
  * This function will dequeue a networking buffer and return it's pointer in
  * the provided buffer.
  */
-static int32_t net_buffer_read(void *fd, char *buffer, int32_t size)
+static int32_t net_buffer_read(void *fd, uint8_t *buffer, int32_t size)
 {
     NET_BUFFER_FS *net_buffer = (NET_BUFFER_FS *)fd;
     FS_BUFFER *fs_buffer;
