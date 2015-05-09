@@ -25,10 +25,9 @@ void spi_stm32f407_init(SPI_DEVICE *device)
 {
     STM32F407_SPI *spi_device = (STM32F407_SPI *)device->data;
     uint32_t baud_scale;
-    uint8_t bit_count;
+    uint8_t bit_count = 0;
 
-    /* Save the base register for this SPI device so we don't have to calculate
-     * it again. */
+    /* Select the required SPI register and initialize GPIO. */
     switch (spi_device->device_num)
     {
     case 1:
@@ -147,5 +146,75 @@ void spi_stm32f407_init(SPI_DEVICE *device)
     spi_device->reg->CR1 |= (1 << STM32F407_SPI_CR1_SPE_SHIFT);
 
 } /* spi_stm32f407_init */
+
+/*
+ * spi_stm32f407_slave_select
+ * This function will enable the slave so it can receive data.
+ */
+void spi_stm32f407_slave_select(SPI_DEVICE *device)
+{
+    STM32F407_SPI *spi_device = (STM32F407_SPI *)device->data;
+    switch (spi_device->device_num)
+    {
+    case 1:
+        /* Reset the CS i.e. GPIOA.4. */
+        GPIOA->BSRR |= (1 << (4 + 16));
+    }
+
+} /* spi_stm32f407_slave_select */
+
+/*
+ * spi_stm32f407_slave_unselect
+ * This function will disable the slave.
+ */
+void spi_stm32f407_slave_unselect(SPI_DEVICE *device)
+{
+    STM32F407_SPI *spi_device = (STM32F407_SPI *)device->data;
+
+    switch (spi_device->device_num)
+    {
+    case 1:
+        /* Set the CS i.e. GPIOA.4. */
+        GPIOA->BSRR |= (1 << 4);
+    }
+
+} /* spi_stm32f407_slave_unselect */
+
+/*
+ * spi_stm32f407_write_read
+ * @device: SPI device from which we need to write and then read data.
+ * @buffer: Buffer from which data will be written, same buffer will be updated
+ *  with the data written.
+ * @length: Size of the provided buffer.
+ * This function will write and then read data from a SPI device.
+ */
+int32_t spi_stm32f407_write_read(SPI_DEVICE *device, uint8_t *buffer, int32_t length)
+{
+    STM32F407_SPI *spi_device = (STM32F407_SPI *)device->data;
+    int32_t ret_bytes = length;
+
+    /* While we have a byte to read. */
+    while (length --)
+    {
+        /* Wait while TX buffer is not empty. */
+        while ((spi_device->reg->SR & STM32F407_SPI_SR_TXE) == 0);
+
+        /* Send a byte. */
+        spi_device->reg->DR = *buffer;
+
+        /* Wait while we don't have any data to read. */
+        while ((spi_device->reg->SR & STM32F407_SPI_SR_RXNE) == 0);
+
+        /* Save the data read from the device. */
+        *buffer = (uint8_t)spi_device->reg->DR;
+
+        /* Get next byte to send and update. */
+        buffer++;
+    }
+
+    /* Return number of bytes written to and read from the SPI. */
+    return (ret_bytes);
+
+} /* spi_stm32f407_write_read */
 
 #endif /* CONFIG_SPI */

@@ -44,6 +44,17 @@
 /* STM32F407 SPI I2SCFG register definitions. */
 #define STM32F407_SPI_I2SCFG_MOD_SHIFT  (11)
 
+/* STM32F407 status register definitions. */
+#define STM32F407_SPI_SR_RXNE           (0x0001)
+#define STM32F407_SPI_SR_TXE            (0x0002)
+#define STM32F407_SPI_SR_CHSIDE         (0x0004)
+#define STM32F407_SPI_SR_UDR            (0x0008)
+#define STM32F407_SPI_SR_CRCERR         (0x0010)
+#define STM32F407_SPI_SR_MODF           (0x0020)
+#define STM32F407_SPI_SR_OVR            (0x0040)
+#define STM32F407_SPI_SR_BSY            (0x0080)
+#define STM32F407_SPI_SR_FRE            (0x0100)
+
 /* SPI device structure. */
 typedef struct _stm32f407_spi
 {
@@ -57,6 +68,9 @@ typedef struct _stm32f407_spi
 
 /* Function prototypes. */
 void spi_stm32f407_init();
+void spi_stm32f407_slave_select(SPI_DEVICE *);
+void spi_stm32f407_slave_unselect(SPI_DEVICE *);
+int32_t spi_stm32f407_write_read(SPI_DEVICE *, uint8_t *, int32_t);
 
 #endif /* CONFIG_SPI */
 #endif /* _SPI_STM32F407_H_ */
