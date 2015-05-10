@@ -27,25 +27,29 @@
 #define SPI_CFG_CLK_FIRST_DATA  0x0080
 #define SPI_CFG_ENABLE_HARD_SS  0x0100
 
-/* Function prototypes. */
-void spi_init();
+/* Week link SPI device structure. */
+typedef struct _spi_device SPI_DEVICE;
+
+/* Include SPI target configurations. */
+#include <spi_target.h>
 
 /* SPI device structure. */
 typedef struct _spi_device
 {
     /* Target specific data. */
-    void        *data;
+    SPI_TGT_STRUCT  data;
 
     /* SPI configuration flags. */
-    uint32_t    cfg_flags;
+    uint32_t        cfg_flags;
 
     /* SPI baudrate configuration. */
-    uint32_t    baudrate;
+    uint32_t        baudrate;
 
 } SPI_DEVICE;
 
-/* Include SPI target configurations. */
-#include <spi_target.h>
+/* Function prototypes. */
+void spi_init(SPI_DEVICE *);
+int32_t spi_write_read(SPI_DEVICE *, uint8_t *, int32_t);
 
 #endif /* CONFIG_SPI */
 

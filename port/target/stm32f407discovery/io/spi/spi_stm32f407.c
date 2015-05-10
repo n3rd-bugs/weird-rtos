@@ -23,16 +23,15 @@
  */
 void spi_stm32f407_init(SPI_DEVICE *device)
 {
-    STM32F407_SPI *spi_device = (STM32F407_SPI *)device->data;
     uint32_t baud_scale;
     uint8_t bit_count = 0;
 
     /* Select the required SPI register and initialize GPIO. */
-    switch (spi_device->device_num)
+    switch (device->data.device_num)
     {
     case 1:
         /* SPI1 device. */
-        spi_device->reg = SPI1;
+        device->data.reg = SPI1;
 
         /* Enable AHB clock for SPI1. */
         RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
@@ -74,7 +73,7 @@ void spi_stm32f407_init(SPI_DEVICE *device)
 
     case 2:
         /* SPI2 device. */
-        spi_device->reg = SPI2;
+        device->data.reg = SPI2;
 
         /* Enable AHB clock for SPI2. */
         RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
@@ -83,7 +82,7 @@ void spi_stm32f407_init(SPI_DEVICE *device)
 
     case 3:
         /* SPI3 device. */
-        spi_device->reg = SPI3;
+        device->data.reg = SPI3;
 
         /* Enable AHB clock for SPI3. */
         RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
@@ -123,7 +122,7 @@ void spi_stm32f407_init(SPI_DEVICE *device)
     }
 
     /* Put the CR1 register value. */
-    spi_device->reg->CR1 = ((uint32_t)((device->cfg_flags & SPI_CFG_1_WIRE) != 0) << STM32F407_SPI_CR1_BIDI_SHIFT) |
+    device->data.reg->CR1 = ((uint32_t)((device->cfg_flags & SPI_CFG_1_WIRE) != 0) << STM32F407_SPI_CR1_BIDI_SHIFT) |
                            ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) != 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F407_SPI_CR1_BIDIOE_SHIFT) |
                            ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_CRC) != 0) << STM32F407_SPI_CR1_CRCEN_SHIFT) |
                            ((uint32_t)((device->cfg_flags & SPI_CFG_MODE_16BIT) != 0) << STM32F407_SPI_CR1_DFF_SHIFT) |
@@ -137,13 +136,13 @@ void spi_stm32f407_init(SPI_DEVICE *device)
                            ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_FIRST_DATA) == 0) << STM32F407_SPI_CR1_CPHA_SHIFT);
 
     /* Put the CR2 register value. */
-    spi_device->reg->CR2 = (((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) != 0) << STM32F407_SPI_CR1_SSOE_SHIFT);
+    device->data.reg->CR2 = (((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) != 0) << STM32F407_SPI_CR1_SSOE_SHIFT);
 
     /* Disable the I2S mode. */
-    spi_device->reg->I2SCFGR &= (uint32_t)(~(1 << STM32F407_SPI_I2SCFG_MOD_SHIFT));
+    device->data.reg->I2SCFGR &= (uint32_t)(~(1 << STM32F407_SPI_I2SCFG_MOD_SHIFT));
 
     /* Enable SPI device. */
-    spi_device->reg->CR1 |= (1 << STM32F407_SPI_CR1_SPE_SHIFT);
+    device->data.reg->CR1 |= (1 << STM32F407_SPI_CR1_SPE_SHIFT);
 
 } /* spi_stm32f407_init */
 
@@ -153,8 +152,7 @@ void spi_stm32f407_init(SPI_DEVICE *device)
  */
 void spi_stm32f407_slave_select(SPI_DEVICE *device)
 {
-    STM32F407_SPI *spi_device = (STM32F407_SPI *)device->data;
-    switch (spi_device->device_num)
+    switch (device->data.device_num)
     {
     case 1:
         /* Reset the CS i.e. GPIOA.4. */
@@ -169,9 +167,7 @@ void spi_stm32f407_slave_select(SPI_DEVICE *device)
  */
 void spi_stm32f407_slave_unselect(SPI_DEVICE *device)
 {
-    STM32F407_SPI *spi_device = (STM32F407_SPI *)device->data;
-
-    switch (spi_device->device_num)
+    switch (device->data.device_num)
     {
     case 1:
         /* Set the CS i.e. GPIOA.4. */
@@ -182,7 +178,7 @@ void spi_stm32f407_slave_unselect(SPI_DEVICE *device)
 
 /*
  * spi_stm32f407_write_read
- * @device: SPI device from which we need to write and then read data.
+ * @device: SPI device on which we need to write and then read data.
  * @buffer: Buffer from which data will be written, same buffer will be updated
  *  with the data written.
  * @length: Size of the provided buffer.
@@ -190,23 +186,22 @@ void spi_stm32f407_slave_unselect(SPI_DEVICE *device)
  */
 int32_t spi_stm32f407_write_read(SPI_DEVICE *device, uint8_t *buffer, int32_t length)
 {
-    STM32F407_SPI *spi_device = (STM32F407_SPI *)device->data;
     int32_t ret_bytes = length;
 
-    /* While we have a byte to read. */
+    /* While we have a byte to write and read. */
     while (length --)
     {
         /* Wait while TX buffer is not empty. */
-        while ((spi_device->reg->SR & STM32F407_SPI_SR_TXE) == 0);
+        while ((device->data.reg->SR & STM32F407_SPI_SR_TXE) == 0);
 
         /* Send a byte. */
-        spi_device->reg->DR = *buffer;
+        device->data.reg->DR = *buffer;
 
         /* Wait while we don't have any data to read. */
-        while ((spi_device->reg->SR & STM32F407_SPI_SR_RXNE) == 0);
+        while ((device->data.reg->SR & STM32F407_SPI_SR_RXNE) == 0);
 
         /* Save the data read from the device. */
-        *buffer = (uint8_t)spi_device->reg->DR;
+        *buffer = (uint8_t)device->data.reg->DR;
 
         /* Get next byte to send and update. */
         buffer++;
