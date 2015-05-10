@@ -18,6 +18,9 @@
 #ifdef NET_UDP
 #include <net_udp.h>
 #endif
+#ifdef CONFIG_ETHERNET
+#include <ethernet.h>
+#endif
 
 /*
  * net_init
@@ -37,6 +40,11 @@ void net_init()
 #ifdef NET_UDP
     /* Initialize UDP stack. */
     udp_initialize();
+#endif
+
+#ifdef CONFIG_ETHERNET
+    /* Initialize ethernet devices. */
+    ethernet_init();
 #endif
 
 } /* net_buffer_init */

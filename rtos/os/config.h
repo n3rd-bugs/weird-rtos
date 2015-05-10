@@ -30,5 +30,7 @@
 //#define CONFIG_USB
 //#define CONFIG_SPI
 //#define CONFIG_PPP
+//#define CONFIG_ETHERNET
+//#define CONFIG_ENC28J60
 
 #endif /* _CONFIG_H_ */
