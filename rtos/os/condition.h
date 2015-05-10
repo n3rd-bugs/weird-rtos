@@ -72,7 +72,8 @@ typedef struct _condition
     /* Function that will be called to release lock for this condition. */
     CONDITION_UNLOCK    *unlock;
 
-    /* Private data that will be passed to the lock and unlock APIs.  */
+    /* Private data that will be passed to the lock, unlock and suspend check
+     * APIs.  */
     void        *data;
 
     /* Condition flags. */
