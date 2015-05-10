@@ -26,7 +26,7 @@ static NET_BUFFER_FS net_buffers_fs;
 /* Internal function prototypes. */
 static int32_t net_buffer_lock(void *);
 static void net_buffer_unlock(void *);
-static void net_buffer_condition_callback();
+static void net_buffer_condition_callback(void *);
 static int32_t net_buffer_write(void *, uint8_t *, int32_t);
 static int32_t net_buffer_read(void *, uint8_t *, int32_t);
 
@@ -88,12 +88,16 @@ void net_buffer_get_condition(CONDITION **condition, SUSPEND *suspend, NET_CONDI
 
 /*
  * net_buffer_condition_callback
+ * @data: Unused parameter.
  * Function that will be called when networking condition is valid.
  */
-static void net_buffer_condition_callback()
+static void net_buffer_condition_callback(void *data)
 {
     FS_BUFFER *buffer;
     FD buffer_fd;
+
+    /* Remove a compiler warning. */
+    UNUSED_PARAM(data);
 
     /* Read a buffer pointer from the file descriptor. */
     if (fs_read(net_buff_fd, (uint8_t *)&buffer, sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
