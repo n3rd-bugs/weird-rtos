@@ -24,8 +24,11 @@
 #include <spi.h>
 #include <condition.h>
 
+/* Error code definitions. */
+#define ENC28J60_SPI_ERROR      -1100
+
 /* ENC28J60 device flags. */
-#define ENC28J60_FLAG_INIT  0x01
+#define ENC28J60_FLAG_INIT      0x01
 
 /* ENC28j60 device structure. */
 typedef struct _enc28j60_device

@@ -35,3 +35,4 @@ This list is needed to be updated whenever a new error code is added.
     NET_INVALID_CSUM        -1010
     NET_INVALID_HDR         -1011
     NET_INVALID_FD          -1012
+    ENC28J60_SPI_ERROR      -1100
