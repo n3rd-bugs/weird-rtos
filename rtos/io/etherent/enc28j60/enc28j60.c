@@ -29,7 +29,7 @@ static void enc28j60_process(void *);
 void enc28j60_init(ENC28J60 *device)
 {
     /* Initialize SPI parameters. */
-    device->spi.baudrate = 100;    /* TODO */
+    device->spi.baudrate = 20000000;
     device->spi.cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA);
 
     /* Do SPI initialization. */

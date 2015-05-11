@@ -24,10 +24,10 @@
  * @address: Address at which data is needed to be written.
  * @value: Value needed to be written.
  * @ret_value: If not null data read from SPI will be returned here.
- * @return: A success status will be returned if control register was
- *  successfully written, ENC28J60_SPI_ERROR will be returned if an error
- *  occurred while writing on SPI device.
- * This function will perform a write and read operation on the ENC28j60 device.
+ * @return: A success status will be returned if a register was successfully
+ *  written, ENC28J60_SPI_ERROR will be returned if an error occurred while
+ *  writing on SPI device.
+ * This function will perform a write and read operation on the ENC28J60 device.
  */
 int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address, uint8_t value, uint8_t *ret_value)
 {
