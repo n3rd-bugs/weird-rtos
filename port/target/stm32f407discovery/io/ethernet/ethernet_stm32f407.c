@@ -15,8 +15,7 @@
 #ifdef CONFIG_ETHERNET
 #include <ethernet_stm32f407.h>
 #ifdef CONFIG_ENC28J60
-#include <enc28j60.h>
-ENC28J60 enc28j60;
+#include <enc28j60_stm32f407.h>
 #endif
 #include <string.h>
 
@@ -27,14 +26,8 @@ ENC28J60 enc28j60;
 void ethernet_stm32f407_init()
 {
 #ifdef CONFIG_ENC28J60
-    /* Clear the enc28j60 device structure. */
-    memset(&enc28j60, 0, sizeof(ENC28J60));
-
-    /* Initialize SPI device data. */
-    enc28j60.spi.data.device_num = 1;
-
-    /* Do enc28j60 initialization. */
-    enc28j60_init(&enc28j60);
+    /* Initialize ENC28j60 ethernet controller. */
+    enc28j60_stm32f407_init();
 #endif
 
 } /* ethernet_stm32f407_init */
