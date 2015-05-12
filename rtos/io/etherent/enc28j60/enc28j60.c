@@ -20,6 +20,8 @@
 /* Internal function prototypes. */
 static uint8_t enc28j60_do_suspend(void *, void *);
 static void enc28j60_process(void *);
+static int32_t enc28j60_tx_fifo_init(ENC28J60 *);
+static int32_t enc28j60_rx_fifo_init(ENC28J60 *);
 
 /*
  * enc28j60_init
@@ -111,8 +113,17 @@ static void enc28j60_process(void *data)
             /* Enable address auto increment. */
             OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON2, ENC28J60_ECON2_AUTOINC, NULL) != SUCCESS);
 
+            /* Initialize RX FIFO. */
+            OS_ASSERT(enc28j60_rx_fifo_init(device) != SUCCESS);
+
+            /* Initialize TX FIFO. */
+            OS_ASSERT(enc28j60_tx_fifo_init(device) != SUCCESS);
+
             /* Enable unicast, broadcast and enable CRC validation. */
             OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ERXFCON, (ENC28J60_ERXFCON_UCEN | ENC28J60_ERXFCON_BCEN | ENC28J60_ERXFCON_CRCEN), NULL) != SUCCESS);
+
+            /* Enable MAC receive and flow control for RX and TX. */
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MACON1, (ENC28J60_MACON1_MARXEN | ENC28J60_MACON1_RXPAUS | ENC28J60_MACON1_TXPAUS), NULL) != SUCCESS);
 
             /* All short frames will be padded with 60-bytes and CRC will be
              * appended, enable frame length checking and enable full-duplex
@@ -126,14 +137,23 @@ static void enc28j60_process(void *data)
             OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MABBIPG, 0x15, NULL) != SUCCESS);
 
             /* Set MAMXFLL/MAMXFLH to configured MTU. */
-            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAMXFLL, (device->mtu & 0xFF), NULL) != SUCCESS);
-            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAMXFLH, (uint8_t)(device->mtu >> 8), NULL) != SUCCESS);
+            OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, (device->mtu & 0xFFFF)) != SUCCESS);
 
             /* Enable full-duplex mode on PHY. */
             OS_ASSERT(enc28j60_write_phy(device, ENC28J60_ADDR_PHCON1, ENC28J60_PHCON1_PDPXMD) != SUCCESS);
 
             /* Clear the PHCON2 register. */
             OS_ASSERT(enc28j60_write_phy(device, ENC28J60_ADDR_PHCON2, 0) != SUCCESS);
+
+            /* Enable PHY interrupts with, link status change interrupt. */
+            OS_ASSERT(enc28j60_write_phy(device, ENC28J60_ADDR_PHIE, (ENC28J60_PHIE_PGEIE | ENC28J60_PHIE_PLNKIE)) != SUCCESS);
+
+            /* Clear all interrupt requests. */
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, (ENC28J60_EIR_DMAIF | ENC28J60_EIR_LINKIF | ENC28J60_EIR_TXIF | ENC28J60_EIR_TXERIF | ENC28J60_EIR_RXERIF | ENC28J60_EIR_PKTIF), NULL) != SUCCESS);
+
+            /* Enable global interrupts, with receive packet pending,
+             * link status change, transmit enable and RX/TX error interrupts. */
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_EIE, (ENC28J60_EIE_INTIE | ENC28J60_EIE_PKTIE | ENC28J60_EIE_LINKIE | ENC28J60_EIE_TXIE | ENC28J60_EIE_TXERIE | ENC28J60_EIE_RXERIE), NULL) != SUCCESS);
 
             /* We have initialized this device. */
             device->flags |= ENC28J60_FLAG_INIT;
@@ -148,5 +168,63 @@ static void enc28j60_process(void *data)
     }
 
 } /* enc28j60_process */
+
+/*
+ * enc28j60_tx_fifo_init
+ * @device: ENC28J60 device instance for which TX FIFO is needed to be
+ *  initialized.
+ * @return: A success status will be returned TX FIFO was successfully
+ *  initialized.
+ * This function will initialize TX FIFO for given ENC28J60 device.
+ */
+static int32_t enc28j60_tx_fifo_init(ENC28J60 *device)
+{
+    int32_t status;
+
+    /* Set TX buffer start address at ETXSTL/ETXSTH. */
+    status = enc28j60_write_word(device, ENC28J60_ADDR_ETXSTL, ENC28J60_TX_START);
+
+    if (status == SUCCESS)
+    {
+        /* Set TX buffer end address at ETXNDL/ETXNDH. */
+        status = enc28j60_write_word(device, ENC28J60_ADDR_ETXNDL, ENC28J60_TX_END);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* enc28j60_tx_fifo_init */
+
+/*
+ * enc28j60_rx_fifo_init
+ * @device: ENC28J60 device instance for which RX FIFO is needed to be
+ *  initialized.
+ * @return: A success status will be returned RX FIFO was successfully
+ *  initialized.
+ * This function will initialize RX FIFO for given ENC28J60 device.
+ */
+static int32_t enc28j60_rx_fifo_init(ENC28J60 *device)
+{
+    int32_t status;
+
+    /* Set RX buffer start address at ERXSTL/ERXSTH. */
+    status = enc28j60_write_word(device, ENC28J60_ADDR_ERXSTL, ENC28J60_RX_START);
+
+    if (status == SUCCESS)
+    {
+        /* Set RX buffer end address at ERXNDL/ERXNDH. */
+        status = enc28j60_write_word(device, ENC28J60_ADDR_ERXNDL, ENC28J60_RX_END);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Set RX data pointer at ERXRDPTL/ERXRDPTH. */
+        status = enc28j60_write_word(device, ENC28J60_ADDR_ERXRDPTL, ENC28J60_RX_PTR(ENC28J60_RX_START));
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* enc28j60_rx_fifo_init */
 
 #endif /* CONFIG_ENC28J60 */

@@ -34,6 +34,16 @@
 #define ENC28J60_REV_ID         (0x06)
 #define ENC28J60_MTU            (1518)
 
+/* ENC28J60 RX/TX FIFO configuration. */
+#define ENC28J60_FIFO_SIZE      (0x1FFF)
+#define ENC28J60_TX_START       (0)
+#define ENC28J60_TX_END         (((ENC28J60_MTU + 1) & 0xFFFE) - 1)
+#define ENC28J60_RX_START       ((ENC28J60_MTU + 1) & 0xFFFE)
+#define ENC28J60_RX_END         (ENC28J60_FIFO_SIZE)
+
+/* RX pointer calculation macro. */
+#define ENC28J60_RX_PTR(p)      ((((p - 1) < ENC28J60_RX_START) || ((p - 1) > ENC28J60_RX_END)) ? ENC28J60_RX_END : (p - 1))
+
 /* ENC28j60 device structure. */
 typedef struct _enc28j60_device
 {
@@ -50,14 +60,14 @@ typedef struct _enc28j60_device
     /* TODO: Move this to networking device structure. */
     uint32_t    mtu;
 
+    /* Current receive pointer. */
+    uint16_t    rx_ptr;
+
     /* Current selected memory block. */
     uint8_t     mem_block;
 
     /* Device flags for enc28j60 device. */
     uint8_t     flags;
-
-    /* Padding variable. */
-    uint8_t     pad[2];
 
 } ENC28J60;
 
