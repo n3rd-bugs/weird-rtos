@@ -41,6 +41,9 @@ void enc28j60_init(ENC28J60 *device)
     device->suspend.param = NULL;   /* For now unused. */
     device->suspend.timeout = MAX_WAIT;
 
+    /* Set the device MTU. */
+    device->mtu = ENC28J60_MTU;
+
     /* Add networking condition to further process this ethernet device. */
     net_condition_add(&device->condition, &device->suspend, &enc28j60_process, device);
 
@@ -93,11 +96,55 @@ static void enc28j60_process(void *data)
         /* For now we need to sleep to wait for this device to initialize. */
         sleep_ms(50);
 
-        /* Read the revision number. */
-        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_READ_CNTRL, ENC28J60_ADDR_EREVID, 0xFF, &value) != SUCCESS);
+        /* Clear ECON1. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON1, 0x00, NULL) != SUCCESS);
 
-        /* We have initialized this device. */
-        device->flags |= ENC28J60_FLAG_INIT;
+        /* Reset the memory block being used. */
+        device->mem_block = 0;
+
+        /* Read the revision number. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EREVID, 0xFF, &value) != SUCCESS);
+
+        /* If we have a valid revision ID. */
+        if (value == ENC28J60_REV_ID)
+        {
+            /* Enable address auto increment. */
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON2, ENC28J60_ECON2_AUTOINC, NULL) != SUCCESS);
+
+            /* Enable unicast, broadcast and enable CRC validation. */
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ERXFCON, (ENC28J60_ERXFCON_UCEN | ENC28J60_ERXFCON_BCEN | ENC28J60_ERXFCON_CRCEN), NULL) != SUCCESS);
+
+            /* All short frames will be padded with 60-bytes and CRC will be
+             * appended, enable frame length checking and enable full-duplex
+             * mode. */
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MACON3, (ENC28J60_MACON3_PADCFG0 | ENC28J60_MACON3_TXCRCEN | ENC28J60_MACON3_FRMLNEN | ENC28J60_MACON3_FULDPX), NULL) != SUCCESS);
+
+            /* Set MAIPGL to 0x12. */
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAIPGL, 0x12, NULL) != SUCCESS);
+
+            /* Set MABBIPG to 0x15. */
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MABBIPG, 0x15, NULL) != SUCCESS);
+
+            /* Set MAMXFLL/MAMXFLH to configured MTU. */
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAMXFLL, (device->mtu & 0xFF), NULL) != SUCCESS);
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAMXFLH, (uint8_t)(device->mtu >> 8), NULL) != SUCCESS);
+
+            /* Enable full-duplex mode on PHY. */
+            OS_ASSERT(enc28j60_write_phy(device, ENC28J60_ADDR_PHCON1, ENC28J60_PHCON1_PDPXMD) != SUCCESS);
+
+            /* Clear the PHCON2 register. */
+            OS_ASSERT(enc28j60_write_phy(device, ENC28J60_ADDR_PHCON2, 0) != SUCCESS);
+
+            /* We have initialized this device. */
+            device->flags |= ENC28J60_FLAG_INIT;
+        }
+        else
+        {
+            /* Non-supported or invalid revision ID was read. */
+
+            /* Remove this device from the networking condition. */
+            net_condition_remove(&device->condition);
+        }
     }
 
 } /* enc28j60_process */

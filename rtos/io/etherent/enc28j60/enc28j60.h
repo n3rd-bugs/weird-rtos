@@ -30,6 +30,10 @@
 /* ENC28J60 device flags. */
 #define ENC28J60_FLAG_INIT      0x01
 
+/* ENC28J60 device configuration. */
+#define ENC28J60_REV_ID         (0x06)
+#define ENC28J60_MTU            (1518)
+
 /* ENC28j60 device structure. */
 typedef struct _enc28j60_device
 {
@@ -41,6 +45,10 @@ typedef struct _enc28j60_device
 
     /* Suspend structure to be used. */
     SUSPEND     suspend;
+
+    /* Maximum packet size. */
+    /* TODO: Move this to networking device structure. */
+    uint32_t    mtu;
 
     /* Current selected memory block. */
     uint8_t     mem_block;
