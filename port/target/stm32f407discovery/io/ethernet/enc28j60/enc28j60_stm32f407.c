@@ -80,7 +80,15 @@ void enc28j60_stm32f407_init()
  */
 void enc28j60_stm32f407_handle_interrupt()
 {
-    /* Resume tasks waiting for this networking device. */
+    RESUME resume;
+
+    /* Set flag to tell that we have an interrupt to process. */
+    enc28j60.flags |= ENC28J60_FLAG_INT;
+
+    /* Resume tasks waiting for this. */
+    resume.status = TASK_RESUME;
+    resume.param = resume.do_resume = NULL;
+    resume_condition(&enc28j60.condition, &resume, TRUE);
 
     /* Disable interrupt until we process it. */
     enc28j60_stm32f407_disable_interrupt(&enc28j60);
