@@ -42,7 +42,11 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x05  RCC                   */
         (isr)&cpu_interrupt,        /*  0x06  EXTI Line0            */
         (isr)&cpu_interrupt,        /*  0x07  EXTI Line1            */
+#ifdef CONFIG_ETHERNET
+        (isr)&exti2_interrupt,      /*  0x08  EXTI Line2            */
+#else
         (isr)&cpu_interrupt,        /*  0x08  EXTI Line2            */
+#endif
         (isr)&cpu_interrupt,        /*  0x09  EXTI Line3            */
         (isr)&cpu_interrupt,        /*  0x0A  EXTI Line4            */
         (isr)&cpu_interrupt,        /*  0x0B  DMA1 Stream 0         */

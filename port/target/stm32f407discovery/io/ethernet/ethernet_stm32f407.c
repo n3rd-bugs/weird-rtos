@@ -13,11 +13,32 @@
 #include <os.h>
 
 #ifdef CONFIG_ETHERNET
+#include <ethernet.h>
 #include <ethernet_stm32f407.h>
-#ifdef CONFIG_ENC28J60
+#ifdef ETHERNET_ENC28J60
 #include <enc28j60_stm32f407.h>
 #endif
 #include <string.h>
+
+/*
+ * exti2_interrupt
+ * This function is interrupt handler for EXTI2 interrupt.
+ */
+ISR_FUN exti2_interrupt()
+{
+    OS_ISR_ENTER();
+
+#ifdef ETHERNET_ENC28J60
+    /* Handle enc28j60 interrupt. */
+    enc28j60_stm32f407_handle_interrupt();
+#endif
+
+    /* Clear the interrupt pending bit or EXTI2 channel. */
+    EXTI->PR = 0x04;
+
+    OS_ISR_EXIT();
+
+} /* exti2_interrupt */
 
 /*
  * ethernet_stm32f407_init
@@ -25,7 +46,7 @@
  */
 void ethernet_stm32f407_init()
 {
-#ifdef CONFIG_ENC28J60
+#ifdef ETHERNET_ENC28J60
     /* Initialize ENC28j60 ethernet controller. */
     enc28j60_stm32f407_init();
 #endif
