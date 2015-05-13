@@ -123,17 +123,17 @@ void spi_stm32f407_init(SPI_DEVICE *device)
 
     /* Put the CR1 register value. */
     device->data.reg->CR1 = ((uint32_t)((device->cfg_flags & SPI_CFG_1_WIRE) != 0) << STM32F407_SPI_CR1_BIDI_SHIFT) |
-                           ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) != 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F407_SPI_CR1_BIDIOE_SHIFT) |
-                           ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_CRC) != 0) << STM32F407_SPI_CR1_CRCEN_SHIFT) |
-                           ((uint32_t)((device->cfg_flags & SPI_CFG_MODE_16BIT) != 0) << STM32F407_SPI_CR1_DFF_SHIFT) |
-                           ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) == 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F407_SPI_CR1_RXONLY_SHIFT) |
-                           ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) << STM32F407_SPI_CR1_SMM_SHIFT) |
-                           ((uint32_t)(((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) && ((device->cfg_flags & SPI_CFG_MASTER) != 0)) << STM32F407_SPI_CR1_SSI_SHIFT) |
-                           ((uint32_t)((device->cfg_flags & SPI_CFG_LSB_FIRST) != 0) << STM32F407_SPI_CR1_LSB_SHIFT) |
-                           (baud_scale << STM32F407_SPI_CR1_BR_SHIFT) |
-                           ((uint32_t)((device->cfg_flags & SPI_CFG_MASTER) != 0) << STM32F407_SPI_CR1_MSTR_SHIFT) |
-                           ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_IDLE_HIGH) != 0) << STM32F407_SPI_CR1_CPOL_SHIFT) |
-                           ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_FIRST_DATA) == 0) << STM32F407_SPI_CR1_CPHA_SHIFT);
+                            ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) != 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F407_SPI_CR1_BIDIOE_SHIFT) |
+                            ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_CRC) != 0) << STM32F407_SPI_CR1_CRCEN_SHIFT) |
+                            ((uint32_t)((device->cfg_flags & SPI_CFG_MODE_16BIT) != 0) << STM32F407_SPI_CR1_DFF_SHIFT) |
+                            ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) == 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F407_SPI_CR1_RXONLY_SHIFT) |
+                            ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) << STM32F407_SPI_CR1_SMM_SHIFT) |
+                            ((uint32_t)(((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) && ((device->cfg_flags & SPI_CFG_MASTER) != 0)) << STM32F407_SPI_CR1_SSI_SHIFT) |
+                            ((uint32_t)((device->cfg_flags & SPI_CFG_LSB_FIRST) != 0) << STM32F407_SPI_CR1_LSB_SHIFT) |
+                            (baud_scale << STM32F407_SPI_CR1_BR_SHIFT) |
+                            ((uint32_t)((device->cfg_flags & SPI_CFG_MASTER) != 0) << STM32F407_SPI_CR1_MSTR_SHIFT) |
+                            ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_IDLE_HIGH) != 0) << STM32F407_SPI_CR1_CPOL_SHIFT) |
+                            ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_FIRST_DATA) == 0) << STM32F407_SPI_CR1_CPHA_SHIFT);
 
     /* Put the CR2 register value. */
     device->data.reg->CR2 = (((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) != 0) << STM32F407_SPI_CR1_SSOE_SHIFT);
