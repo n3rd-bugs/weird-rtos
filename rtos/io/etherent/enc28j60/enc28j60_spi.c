@@ -11,8 +11,9 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
+#include <ethernet.h>
 
-#ifdef CONFIG_ENC28J60
+#ifdef ETHERNET_ENC28J60
 #include <enc28j60.h>
 #include <enc28j60_spi.h>
 
@@ -254,4 +255,4 @@ int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address
 
 } /* enc28j60_write_read_byte */
 
-#endif /* CONFIG_ENC28J60 */
+#endif /* ETHERNET_ENC28J60 */

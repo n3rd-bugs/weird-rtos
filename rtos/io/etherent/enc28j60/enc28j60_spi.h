@@ -13,8 +13,9 @@
 #ifndef _ENC28J60_SPI_H_
 #define _ENC28J60_SPI_H_
 #include <os.h>
+#include <ethernet.h>
 
-#ifdef CONFIG_ENC28J60
+#ifdef ETHERNET_ENC28J60
 
 /* ENC28J60 operation definitions. */
 #define ENC28J60_OP_READ_CTRL       (0x00)
@@ -172,5 +173,5 @@ int32_t enc28j60_write_word(ENC28J60 *, uint8_t, uint16_t);
 int32_t enc28j60_read_word(ENC28J60 *, uint8_t, uint16_t *);
 int32_t enc28j60_write_read_op(ENC28J60 *, uint8_t, uint8_t, uint8_t, uint8_t *);
 
-#endif /* CONFIG_ENC28J60 */
+#endif /* ETHERNET_ENC28J60 */
 #endif /* _ENC28J60_SPI_H_ */

@@ -13,8 +13,9 @@
 #ifndef _ENC28J60_H_
 #define _ENC28J60_H_
 #include <os.h>
+#include <ethernet.h>
 
-#ifdef CONFIG_ENC28J60
+#ifdef ETHERNET_ENC28J60
 #ifndef CONFIG_NET
 #error "Networking stack required by ENC28j60."
 #endif
@@ -36,15 +37,15 @@
 
 /* ENC28J60 RX/TX FIFO configuration. */
 #define ENC28J60_FIFO_SIZE      (0x1FFF)
-#define ENC28J60_TX_START       (0)
-#define ENC28J60_TX_END         (((ENC28J60_MTU + 1) & 0xFFFE) - 1)
-#define ENC28J60_RX_START       ((ENC28J60_MTU + 1) & 0xFFFE)
-#define ENC28J60_RX_END         (ENC28J60_FIFO_SIZE)
+#define ENC28J60_RX_START       (0)
+#define ENC28J60_RX_END         ((((ENC28J60_FIFO_SIZE - ENC28J60_MTU) + 1) & 0xFFFE) - 1)
+#define ENC28J60_TX_START       ((((ENC28J60_FIFO_SIZE - ENC28J60_MTU) + 1) & 0xFFFE) - 1)
+#define ENC28J60_TX_END         (ENC28J60_FIFO_SIZE)
 
 /* RX pointer calculation macro. */
 #define ENC28J60_RX_PTR(p)      ((((p - 1) < ENC28J60_RX_START) || ((p - 1) > ENC28J60_RX_END)) ? ENC28J60_RX_END : (p - 1))
 
-/* ENC28j60 device structure. */
+/* ENC28J60 device structure. */
 typedef struct _enc28j60_device
 {
     /* SPI device structure. */
@@ -71,8 +72,11 @@ typedef struct _enc28j60_device
 
 } ENC28J60;
 
+/* Include target configuration. */
+#include <enc28j60_target.h>
+
 /* Function prototypes. */
 void enc28j60_init(ENC28J60 *);
 
-#endif /* CONFIG_ENC28J60 */
+#endif /* ETHERNET_ENC28J60 */
 #endif /* _ENC28J60_H_ */

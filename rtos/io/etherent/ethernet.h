@@ -15,6 +15,8 @@
 #include <os.h>
 
 #ifdef CONFIG_ETHERNET
+/* Ethernet configuration. */
+#define ETHERNET_ENC28J60
 
 /* Include ethernet target configurations. */
 #include <ethernet_target.h>
@@ -22,6 +24,6 @@
 /* Function prototypes. */
 void ethernet_init();
 
-#endif /* CONFIG_ETHERNET */
+#endif /* ETHERNET_ENC28J60 */
 
 #endif /* _ETHERNET_H_ */

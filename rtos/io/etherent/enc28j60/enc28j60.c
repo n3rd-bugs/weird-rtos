@@ -11,8 +11,9 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
+#include <ethernet.h>
 
-#ifdef CONFIG_ENC28J60
+#ifdef ETHERNET_ENC28J60
 #include <enc28j60.h>
 #include <enc28j60_spi.h>
 #include <net_condition.h>
@@ -227,4 +228,4 @@ static int32_t enc28j60_rx_fifo_init(ENC28J60 *device)
 
 } /* enc28j60_rx_fifo_init */
 
-#endif /* CONFIG_ENC28J60 */
+#endif /* ETHERNET_ENC28J60 */
