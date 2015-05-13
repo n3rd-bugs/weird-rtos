@@ -30,6 +30,7 @@
 
 /* ENC28J60 device flags. */
 #define ENC28J60_FLAG_INIT      0x01
+#define ENC28J60_FLAG_INT       0x02
 
 /* ENC28J60 device configuration. */
 #define ENC28J60_REV_ID         (0x06)

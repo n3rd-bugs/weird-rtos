@@ -68,8 +68,9 @@ static uint8_t enc28j60_do_suspend(void *data, void *suspend_data)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(suspend_data);
 
-    /* If this device is not yet initialized. */
-    if ((device->flags & ENC28J60_FLAG_INIT) == 0)
+    /* If this device is not yet initialized, or we have an interrupt to
+     * process. */
+    if (((device->flags & ENC28J60_FLAG_INIT) == 0) || (device->flags & ENC28J60_FLAG_INT))
     {
         /* Don't suspend and initialize this device. */
         do_suspend = FALSE;
@@ -158,6 +159,9 @@ static void enc28j60_process(void *data)
 
             /* We have initialized this device. */
             device->flags |= ENC28J60_FLAG_INIT;
+
+            /* Enable enc28j60 interrupts. */
+            ENC28J60_ENABLE_INT(device);
         }
         else
         {
@@ -166,6 +170,19 @@ static void enc28j60_process(void *data)
             /* Remove this device from the networking condition. */
             net_condition_remove(&device->condition);
         }
+    }
+
+    /* If we have an interrupt to process. */
+    if (device->flags & ENC28J60_FLAG_INT)
+    {
+        /* Clear the interrupt flag. */
+        device->flags &= (uint8_t)~(ENC28J60_FLAG_INT);
+
+        /* For now we are only expecting link-up/down interrupts. */
+        enc28j60_read_phy(device, ENC28J60_ADDR_PHIR, NULL);
+
+        /* Enable enc28j60 interrupts. */
+        ENC28J60_ENABLE_INT(device);
     }
 
 } /* enc28j60_process */
