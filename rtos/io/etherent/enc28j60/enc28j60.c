@@ -16,6 +16,7 @@
 #ifdef ETHERNET_ENC28J60
 #include <enc28j60.h>
 #include <enc28j60_spi.h>
+#include <net_device.h>
 #include <net_condition.h>
 
 /* Internal function prototypes. */
@@ -23,6 +24,7 @@ static uint8_t enc28j60_do_suspend(void *, void *);
 static void enc28j60_process(void *);
 static int32_t enc28j60_tx_fifo_init(ENC28J60 *);
 static int32_t enc28j60_rx_fifo_init(ENC28J60 *);
+static void enc28j60_link_changed(ENC28J60 *);
 
 /*
  * enc28j60_init
@@ -44,8 +46,8 @@ void enc28j60_init(ENC28J60 *device)
     device->suspend.param = NULL;   /* For now unused. */
     device->suspend.timeout = MAX_WAIT;
 
-    /* Set the device MTU. */
-    device->mtu = ENC28J60_MTU;
+    /* Initialize the networking device. */
+    device->net_device.mtu = ENC28J60_MTU;
 
     /* Add networking condition to further process this ethernet device. */
     net_condition_add(&device->condition, &device->suspend, &enc28j60_process, device);
@@ -139,7 +141,7 @@ static void enc28j60_process(void *data)
             OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MABBIPG, 0x15, NULL) != SUCCESS);
 
             /* Set MAMXFLL/MAMXFLH to configured MTU. */
-            OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, (device->mtu & 0xFFFF)) != SUCCESS);
+            OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, (device->net_device.mtu & 0xFFFF)) != SUCCESS);
 
             /* Enable full-duplex mode on PHY. */
             OS_ASSERT(enc28j60_write_phy(device, ENC28J60_ADDR_PHCON1, ENC28J60_PHCON1_PDPXMD) != SUCCESS);
@@ -178,8 +180,18 @@ static void enc28j60_process(void *data)
         /* Clear the interrupt flag. */
         device->flags &= (uint8_t)~(ENC28J60_FLAG_INT);
 
-        /* For now we are only expecting link-up/down interrupts. */
-        enc28j60_read_phy(device, ENC28J60_ADDR_PHIR, NULL);
+        /* Get the interrupt status. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EIR, 0xFF, &value) != SUCCESS);
+
+        /* If link status has been changed. */
+        if (value & ENC28J60_EIR_LINKIF)
+        {
+            /* Handle the link status change event. */
+            enc28j60_link_changed(device);
+
+            /* For now we are only expecting link-up/down interrupts. */
+            enc28j60_read_phy(device, ENC28J60_ADDR_PHIR, NULL);
+        }
 
         /* Enable enc28j60 interrupts. */
         ENC28J60_ENABLE_INT(device);
@@ -244,5 +256,31 @@ static int32_t enc28j60_rx_fifo_init(ENC28J60 *device)
     return (status);
 
 } /* enc28j60_rx_fifo_init */
+
+/*
+ * enc28j60_link_changed
+ * @device: ENC28J60 device instance for which link status has been changed.
+ * This function will be called whenever a link status change is detected.
+ */
+static void enc28j60_link_changed(ENC28J60 *device)
+{
+    uint16_t phy_register;
+
+    /* Read the PHY status register. */
+    OS_ASSERT(enc28j60_read_phy(device, ENC28J60_ADDR_PHSTAT2, &phy_register) != SUCCESS);
+
+    /* If we are now in connected state. */
+    if (phy_register & ENC28J60_PHSTAT2_LSTAT)
+    {
+        /* Set link-up for this device. */
+        device->net_device.flags |= NET_DEVICE_UP;
+    }
+    else
+    {
+        /* Clear the link-up flag for this device. */
+        device->net_device.flags &= (uint32_t)(~NET_DEVICE_UP);
+    }
+
+} /* enc28j60_link_changed */
 
 #endif /* ETHERNET_ENC28J60 */

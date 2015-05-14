@@ -24,6 +24,7 @@
 #endif
 #include <spi.h>
 #include <condition.h>
+#include <net_device.h>
 
 /* Error code definitions. */
 #define ENC28J60_SPI_ERROR      -1100
@@ -58,9 +59,8 @@ typedef struct _enc28j60_device
     /* Suspend structure to be used. */
     SUSPEND     suspend;
 
-    /* Maximum packet size. */
-    /* TODO: Move this to networking device structure. */
-    uint32_t    mtu;
+    /* Networking device associated with enc28j60 device. */
+    NET_DEV     net_device;
 
     /* Current receive pointer. */
     uint16_t    rx_ptr;
