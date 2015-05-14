@@ -180,12 +180,12 @@ int32_t enc28j60_read_word(ENC28J60 *device, uint8_t address, uint16_t *value)
     uint8_t first_byte, second_byte;
 
     /* Read the first byte. */
-    status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, (address), 0xFF, &first_byte);
+    status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, address, 0xFF, &first_byte);
 
     if (status == SUCCESS)
     {
         /* Read the second byte. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, (uint8_t)(address + 1), 0xFF, &second_byte);
+        status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, (uint8_t)(address + 1), 0xFF, &second_byte);
     }
 
     if ((status == SUCCESS) && (value != NULL))
@@ -215,10 +215,10 @@ int32_t enc28j60_read_word(ENC28J60 *device, uint8_t address, uint16_t *value)
 int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address, uint8_t value, uint8_t *ret_value)
 {
     int32_t status = SUCCESS;
-    uint8_t data[2];
+    uint8_t len = 2, data[3];
 
     /* Check if we need to switch memory bank. */
-    if ((address & ENC28J60_BANKED_MASK) && (((address & ENC28J60_BANK_MASK) >> ENC28J60_BANK_SHIFT) != device->mem_block))
+    if (((address & ENC28J60_ADDR_MASK) < ENC28J60_NON_BANKED) && (((address & ENC28J60_BANK_MASK) >> ENC28J60_BANK_SHIFT) != device->mem_block))
     {
         /* Clear the memory bank bits. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, (ENC28J60_ECON1_BSEL1|ENC28J60_ECON1_BSEL0), NULL) != SUCCESS)
@@ -234,8 +234,15 @@ int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address
     data[0] = (uint8_t)(opcode | (address & ENC28J60_ADDR_MASK));
     data[1] = value;
 
+    /* If MAC or MII register is being read. */
+    if ((opcode == ENC28J60_OP_READ_CTRL) && (address & ENC28J60_MAC_MII_MASK))
+    {
+        /* Actual data will come after a dummy byte. */
+        len++;
+    }
+
     /* Perform a SPI write read operation. */
-    if (spi_write_read(&device->spi, data, 2) != 2)
+    if (spi_write_read(&device->spi, data, len) != len)
     {
         /* Return error to the caller. */
         status = ENC28J60_SPI_ERROR;
@@ -246,7 +253,7 @@ int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address
         if (ret_value != NULL)
         {
             /* Return read data to the caller. */
-            *ret_value = data[1];
+            *ret_value = data[len - 1];
         }
     }
 
