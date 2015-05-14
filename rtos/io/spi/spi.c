@@ -29,20 +29,24 @@ void spi_init(SPI_DEVICE *device)
 /*
  * spi_write_read
  * @device: SPI device on which we need to write and then read data.
- * @buffer: Buffer from which data will be written, same buffer will be updated
- *  with the data written.
- * @length: Size of the provided buffer.
+ * @tx_buffer: Buffer from which data will be written.
+ * @tx_length: Number of bytes needed to be sent.
+ * @rx_buffer: Buffer in which data will be read.
+ * @rx_length: Number of bytes to read.
  * This function will write and then read data from a SPI device.
  */
-int32_t spi_write_read(SPI_DEVICE *device, uint8_t *buffer, int32_t length)
+int32_t spi_write_read(SPI_DEVICE *device, uint8_t *tx_buffer, int32_t tx_length, uint8_t *rx_buffer, int32_t rx_length)
 {
     int32_t ret_bytes;
 
     /* Select slave for the device. */
     SPI_TGT_SS(device);
 
-    /* While we have a byte to read. */
-    ret_bytes = SPI_TGT_WR(device, buffer, length);
+    /* Read write the TX buffer. */
+    ret_bytes = SPI_TGT_WR(device, tx_buffer, tx_length);
+
+    /* Read write the RX buffer. */
+    ret_bytes += SPI_TGT_WR(device, rx_buffer, rx_length);
 
     /* Un-select the SPI device. */
     SPI_TGT_SUS(device);

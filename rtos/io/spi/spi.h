@@ -49,7 +49,7 @@ typedef struct _spi_device
 
 /* Function prototypes. */
 void spi_init(SPI_DEVICE *);
-int32_t spi_write_read(SPI_DEVICE *, uint8_t *, int32_t);
+int32_t spi_write_read(SPI_DEVICE *, uint8_t *, int32_t, uint8_t *, int32_t);
 
 #endif /* CONFIG_SPI */
 
