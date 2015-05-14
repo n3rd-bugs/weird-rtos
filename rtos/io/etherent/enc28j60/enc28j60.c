@@ -25,6 +25,7 @@ static void enc28j60_process(void *);
 static int32_t enc28j60_tx_fifo_init(ENC28J60 *);
 static int32_t enc28j60_rx_fifo_init(ENC28J60 *);
 static void enc28j60_link_changed(ENC28J60 *);
+static void enc28j60_receive_packet(ENC28J60 *);
 
 /*
  * enc28j60_init
@@ -97,25 +98,25 @@ static void enc28j60_process(void *data)
     if ((device->flags & ENC28J60_FLAG_INIT) == 0)
     {
         /* Reset this device. */
-        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_RESET, ENC28J60_ADDR_RESET, ENC28J60_VALUE_RESET, NULL) != SUCCESS);
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_RESET, ENC28J60_ADDR_RESET, ENC28J60_VALUE_RESET, NULL, 0) != SUCCESS);
 
         /* For now we need to sleep to wait for this device to initialize. */
         sleep_ms(50);
 
         /* Clear ECON1. */
-        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON1, 0x00, NULL) != SUCCESS);
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON1, 0x00, NULL, 0) != SUCCESS);
 
         /* Reset the memory block being used. */
         device->mem_block = 0;
 
         /* Read the revision number. */
-        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EREVID, 0xFF, &value) != SUCCESS);
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EREVID, 0xFF, &value, 1) != SUCCESS);
 
         /* If we have a valid revision ID. */
         if (value == ENC28J60_REV_ID)
         {
             /* Enable address auto increment. */
-            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON2, ENC28J60_ECON2_AUTOINC, NULL) != SUCCESS);
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON2, ENC28J60_ECON2_AUTOINC, NULL, 0) != SUCCESS);
 
             /* Initialize RX FIFO. */
             OS_ASSERT(enc28j60_rx_fifo_init(device) != SUCCESS);
@@ -124,21 +125,21 @@ static void enc28j60_process(void *data)
             OS_ASSERT(enc28j60_tx_fifo_init(device) != SUCCESS);
 
             /* Enable unicast, broadcast and enable CRC validation. */
-            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ERXFCON, (ENC28J60_ERXFCON_UCEN | ENC28J60_ERXFCON_BCEN | ENC28J60_ERXFCON_CRCEN), NULL) != SUCCESS);
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ERXFCON, (ENC28J60_ERXFCON_UCEN | ENC28J60_ERXFCON_BCEN | ENC28J60_ERXFCON_CRCEN), NULL, 0) != SUCCESS);
 
             /* Enable MAC receive and flow control for RX and TX. */
-            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MACON1, (ENC28J60_MACON1_MARXEN | ENC28J60_MACON1_RXPAUS | ENC28J60_MACON1_TXPAUS), NULL) != SUCCESS);
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MACON1, (ENC28J60_MACON1_MARXEN | ENC28J60_MACON1_RXPAUS | ENC28J60_MACON1_TXPAUS), NULL, 0) != SUCCESS);
 
             /* All short frames will be padded with 60-bytes and CRC will be
              * appended, enable frame length checking and enable full-duplex
              * mode. */
-            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MACON3, (ENC28J60_MACON3_PADCFG0 | ENC28J60_MACON3_TXCRCEN | ENC28J60_MACON3_FRMLNEN | ENC28J60_MACON3_FULDPX), NULL) != SUCCESS);
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MACON3, (ENC28J60_MACON3_PADCFG0 | ENC28J60_MACON3_TXCRCEN | ENC28J60_MACON3_FRMLNEN | ENC28J60_MACON3_FULDPX), NULL, 0) != SUCCESS);
 
             /* Set MAIPGL to 0x12. */
-            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAIPGL, 0x12, NULL) != SUCCESS);
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAIPGL, 0x12, NULL, 0) != SUCCESS);
 
             /* Set MABBIPG to 0x15. */
-            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MABBIPG, 0x15, NULL) != SUCCESS);
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MABBIPG, 0x15, NULL, 0) != SUCCESS);
 
             /* Set MAMXFLL/MAMXFLH to configured MTU. */
             OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, (device->net_device.mtu & 0xFFFF)) != SUCCESS);
@@ -153,11 +154,11 @@ static void enc28j60_process(void *data)
             OS_ASSERT(enc28j60_write_phy(device, ENC28J60_ADDR_PHIE, (ENC28J60_PHIE_PGEIE | ENC28J60_PHIE_PLNKIE)) != SUCCESS);
 
             /* Clear all interrupt requests. */
-            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, (ENC28J60_EIR_DMAIF | ENC28J60_EIR_LINKIF | ENC28J60_EIR_TXIF | ENC28J60_EIR_TXERIF | ENC28J60_EIR_RXERIF | ENC28J60_EIR_PKTIF), NULL) != SUCCESS);
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, (ENC28J60_EIR_DMAIF | ENC28J60_EIR_LINKIF | ENC28J60_EIR_TXIF | ENC28J60_EIR_TXERIF | ENC28J60_EIR_RXERIF | ENC28J60_EIR_PKTIF), NULL, 0) != SUCCESS);
 
             /* Enable global interrupts, with receive packet pending,
              * link status change, transmit enable and RX/TX error interrupts. */
-            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_EIE, (ENC28J60_EIE_INTIE | ENC28J60_EIE_PKTIE | ENC28J60_EIE_LINKIE | ENC28J60_EIE_TXIE | ENC28J60_EIE_TXERIE | ENC28J60_EIE_RXERIE), NULL) != SUCCESS);
+            OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_EIE, (ENC28J60_EIE_INTIE | ENC28J60_EIE_PKTIE | ENC28J60_EIE_LINKIE | ENC28J60_EIE_TXIE | ENC28J60_EIE_TXERIE | ENC28J60_EIE_RXERIE), NULL, 0) != SUCCESS);
 
             /* We have initialized this device. */
             device->flags |= ENC28J60_FLAG_INIT;
@@ -177,11 +178,14 @@ static void enc28j60_process(void *data)
     /* If we have an interrupt to process. */
     if (device->flags & ENC28J60_FLAG_INT)
     {
+        /* Disable interrupts. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0) != SUCCESS);
+
         /* Clear the interrupt flag. */
         device->flags &= (uint8_t)~(ENC28J60_FLAG_INT);
 
         /* Get the interrupt status. */
-        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EIR, 0xFF, &value) != SUCCESS);
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EIR, 0xFF, &value, 1) != SUCCESS);
 
         /* If link status has been changed. */
         if (value & ENC28J60_EIR_LINKIF)
@@ -193,8 +197,21 @@ static void enc28j60_process(void *data)
             enc28j60_read_phy(device, ENC28J60_ADDR_PHIR, NULL);
         }
 
+        /* If a packet was received. */
+        if (value & ENC28J60_EIR_PKTIF)
+        {
+            /* Receive a packet from the hardware. */
+            enc28j60_receive_packet(device);
+        }
+
+        /* For now this is not handled. */
+        OS_ASSERT((value & (ENC28J60_EIR_TXERIF | ENC28J60_EIR_RXERIF)));
+
         /* Enable enc28j60 interrupts. */
         ENC28J60_ENABLE_INT(device);
+
+        /* Enable interrupts. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0) != SUCCESS);
     }
 
 } /* enc28j60_process */
@@ -252,6 +269,12 @@ static int32_t enc28j60_rx_fifo_init(ENC28J60 *device)
         status = enc28j60_write_word(device, ENC28J60_ADDR_ERXRDPTL, ENC28J60_RX_PTR(ENC28J60_RX_START));
     }
 
+    if (status == SUCCESS)
+    {
+        /* Save the receive pointer. */
+        device->rx_ptr = ENC28J60_RX_START;
+    }
+
     /* Return status to the caller. */
     return (status);
 
@@ -272,6 +295,9 @@ static void enc28j60_link_changed(ENC28J60 *device)
     /* If we are now in connected state. */
     if (phy_register & ENC28J60_PHSTAT2_LSTAT)
     {
+        /* Enable receive logic. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXEN, NULL, 0) != SUCCESS);
+
         /* Set link-up for this device. */
         device->net_device.flags |= NET_DEVICE_UP;
     }
@@ -282,5 +308,54 @@ static void enc28j60_link_changed(ENC28J60 *device)
     }
 
 } /* enc28j60_link_changed */
+
+uint8_t enc28j60_rx_buffer[1600];
+
+/*
+ * enc28j60_receive_packet
+ * @device: ENC28J60 device instance on which a packet was received.
+ * This function will be called whenever a new packet is received.
+ */
+static void enc28j60_receive_packet(ENC28J60 *device)
+{
+    uint16_t next_ptr, packet_status, packet_length;
+    uint8_t num_packets, receive_header[ENC28J60_RX_HEAD_SIZE];
+
+    /* Read number of packets available to read. */
+    OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EPKTCNT, 0xFF, &num_packets, 1) != SUCCESS);
+
+    /* Process all the received packets. */
+    while (num_packets --)
+    {
+        /* Read the receive buffer header. */
+        OS_ASSERT(enc28j60_read_buffer(device, device->rx_ptr, receive_header, ENC28J60_RX_HEAD_SIZE) != SUCCESS);
+
+        /* Save the next packet pointer. */
+        next_ptr = (uint16_t)((receive_header[1] << 8) | receive_header[0]);
+
+        /* Save the received packet length. */
+        packet_length = (uint16_t)((receive_header[3] << 8) | receive_header[2]);
+
+        /* Save the packet status. */
+        packet_status = (uint16_t)((receive_header[5] << 8) | receive_header[4]);
+
+        /* If packet was successfully received. */
+        if (packet_status & ENC28J60_RX_RXOK)
+        {
+            /* Read the received buffer. */
+            OS_ASSERT(enc28j60_read_buffer(device, (uint16_t)(ENC28J60_RX_START_PTR(device->rx_ptr)), enc28j60_rx_buffer, (int32_t)packet_length) != SUCCESS);
+        }
+
+        /* Set new RX data pointer at ERXRDPTL/ERXRDPTH. */
+        OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_ERXRDPTL, (uint16_t)(ENC28J60_RX_PTR(next_ptr))) != SUCCESS);
+
+        /* Save the next packet pointer. */
+        device->rx_ptr = next_ptr;
+
+        /* Decrement the number of packets. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON2, ENC28J60_ECON2_PKTDEC, NULL, 0) != SUCCESS);
+    }
+
+} /* enc28j60_receive_packet */
 
 #endif /* ETHERNET_ENC28J60 */

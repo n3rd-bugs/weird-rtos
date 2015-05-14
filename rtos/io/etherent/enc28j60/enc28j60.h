@@ -37,15 +37,32 @@
 #define ENC28J60_REV_ID         (0x06)
 #define ENC28J60_MTU            (1518)
 
+/* ENC28J60 receive packet definitions. */
+#define ENC28J60_RX_HEAD_SIZE       (6)
+#define ENC28J60_RX_RXLONGEVDROPEV  (0x0001)
+#define ENC28J60_RX_CARRIEREV       (0x0004)
+#define ENC28J60_RX_CRCERROR        (0x0010)
+#define ENC28J60_RX_LENCHECKERR     (0x0020)
+#define ENC28J60_RX_LENOUTOFRANGE   (0x0040)
+#define ENC28J60_RX_RXOK            (0x0080)
+#define ENC28J60_RX_RXMULTICAST     (0x0100)
+#define ENC28J60_RX_RXBROADCAST     (0x0200)
+#define ENC28J60_RX_DRIBBLENIBBLE   (0x0400)
+#define ENC28J60_RX_RXCONTROLFRAME  (0x0800)
+#define ENC28J60_RX_RXPAUSEFRAME    (0x1000)
+#define ENC28J60_RX_RXUNKNOWNOPCODE (0x2000)
+#define ENC28J60_RX_RXTYPEVLAN      (0x4000)
+
 /* ENC28J60 RX/TX FIFO configuration. */
 #define ENC28J60_FIFO_SIZE      (0x1FFF)
 #define ENC28J60_RX_START       (0)
 #define ENC28J60_RX_END         ((((ENC28J60_FIFO_SIZE - ENC28J60_MTU) + 1) & 0xFFFE) - 1)
-#define ENC28J60_TX_START       ((((ENC28J60_FIFO_SIZE - ENC28J60_MTU) + 1) & 0xFFFE) - 1)
+#define ENC28J60_TX_START       (((ENC28J60_FIFO_SIZE - ENC28J60_MTU) + 1) & 0xFFFE)
 #define ENC28J60_TX_END         (ENC28J60_FIFO_SIZE)
 
 /* RX pointer calculation macro. */
-#define ENC28J60_RX_PTR(p)      ((((p - 1) < ENC28J60_RX_START) || ((p - 1) > ENC28J60_RX_END)) ? ENC28J60_RX_END : (p - 1))
+#define ENC28J60_RX_PTR(p)          ((((p - 1) < ENC28J60_RX_START) || ((p - 1) > ENC28J60_RX_END)) ? ENC28J60_RX_END : (p - 1))
+#define ENC28J60_RX_START_PTR(p)    (((p + ENC28J60_RX_HEAD_SIZE) > ENC28J60_RX_END) ? ((p + ENC28J60_RX_HEAD_SIZE) - (ENC28J60_RX_END - (ENC28J60_RX_START - 1))) : (p + ENC28J60_RX_HEAD_SIZE))
 
 /* ENC28J60 device structure. */
 typedef struct _enc28j60_device
