@@ -33,11 +33,16 @@
 #define ENC28J60_OP_BIT_CLR         (0xA0)
 #define ENC28J60_OP_RESET           (0xE0)
 
+/* ENC28J60 common value definitions. */
+#define ENC28J60_VALUE_RESET        (0xFF)
+
 /* ENC28J60 address definitions. */
 #define ENC28J60_BANK_0             (0x00)
 #define ENC28J60_BANK_1             (0x40)
 #define ENC28J60_BANK_2             (0x80)
 #define ENC28J60_BANK_3             (0xC0)
+#define ENC28J60_ADDR_ERDPTL        (ENC28J60_BANK_0 | 0x00)
+#define ENC28J60_ADDR_ERDPTH        (ENC28J60_BANK_0 | 0x01)
 #define ENC28J60_ADDR_ETXSTL        (ENC28J60_BANK_0 | 0x04)
 #define ENC28J60_ADDR_ETXSTH        (ENC28J60_BANK_0 | 0x05)
 #define ENC28J60_ADDR_ETXNDL        (ENC28J60_BANK_0 | 0x06)
@@ -49,6 +54,7 @@
 #define ENC28J60_ADDR_ERXRDPTL      (ENC28J60_BANK_0 | 0x0C)
 #define ENC28J60_ADDR_ERXRDPTH      (ENC28J60_BANK_0 | 0x0D)
 #define ENC28J60_ADDR_ERXFCON       (ENC28J60_BANK_1 | 0x18)
+#define ENC28J60_ADDR_EPKTCNT       (ENC28J60_BANK_1 | 0x19)
 #define ENC28J60_ADDR_MACON1        (ENC28J60_MAC_MII_MASK | ENC28J60_BANK_2 | 0x00)
 #define ENC28J60_ADDR_MACON3        (ENC28J60_MAC_MII_MASK | ENC28J60_BANK_2 | 0x02)
 #define ENC28J60_ADDR_MABBIPG       (ENC28J60_MAC_MII_MASK | ENC28J60_BANK_2 | 0x04)
@@ -71,6 +77,7 @@
 #define ENC28J60_ADDR_ECON2         (0x1E)
 #define ENC28J60_ADDR_ECON1         (0x1F)
 #define ENC28J60_ADDR_RESET         (0x1F)
+#define ENC28J60_ADDR_BUFFER        (0x1A)
 
 /* ENC28J60 PHY registers. */
 #define ENC28J60_ADDR_PHCON1        (0x00)
@@ -173,15 +180,13 @@
 #define ENC28J60_PHSTAT2_DPXSTAT    (0x0200)
 #define ENC28J60_PHSTAT2_PLRITY     (0x0020)
 
-/* ENC28J60 common value definitions. */
-#define ENC28J60_VALUE_RESET        (0xFF)
-
 /* Function prototypes. */
 int32_t enc28j60_write_phy(ENC28J60 *, uint8_t, uint16_t);
 int32_t enc28j60_read_phy(ENC28J60 *, uint8_t, uint16_t *);
+int32_t enc28j60_read_buffer(ENC28J60 *, uint16_t, uint8_t *, int32_t);
 int32_t enc28j60_write_word(ENC28J60 *, uint8_t, uint16_t);
 int32_t enc28j60_read_word(ENC28J60 *, uint8_t, uint16_t *);
-int32_t enc28j60_write_read_op(ENC28J60 *, uint8_t, uint8_t, uint8_t, uint8_t *);
+int32_t enc28j60_write_read_op(ENC28J60 *, uint8_t, uint8_t, uint8_t, uint8_t *, int32_t);
 
 #endif /* ETHERNET_ENC28J60 */
 #endif /* _ENC28J60_SPI_H_ */

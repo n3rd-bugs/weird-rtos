@@ -43,7 +43,7 @@ static int32_t enc28j60_phy_wait(ENC28J60 *device)
         sleep(1);
 
         /* Read the value of MISTAT. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_READ_BUFFER, ENC28J60_ADDR_MISTAT, 0xFF, &mistat);
+        status = enc28j60_write_read_op(device, ENC28J60_OP_READ_BUFFER, ENC28J60_ADDR_MISTAT, 0xFF, &mistat, 1);
 
     } while ((status == SUCCESS) && (mistat & ENC28J60_MISTAT_BUSY));
 
@@ -55,7 +55,7 @@ static int32_t enc28j60_phy_wait(ENC28J60 *device)
 
 /*
  * enc28j60_write_phy
- * @device: ENC28J60 device instance for which PHY register is needed to be
+ * @device: ENC28J60 device instance for which a PHY register is needed to be
  *  written.
  * @address: Address at which data is needed to be written.
  * @value: Value needed to be written.
@@ -69,7 +69,7 @@ int32_t enc28j60_write_phy(ENC28J60 *device, uint8_t address, uint16_t value)
     int32_t status;
 
     /* Write the PHY address needed to be written on MIREGADR. */
-    status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MIREGADR, address, NULL);
+    status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MIREGADR, address, NULL, 0);
 
     if (status == SUCCESS)
     {
@@ -90,7 +90,8 @@ int32_t enc28j60_write_phy(ENC28J60 *device, uint8_t address, uint16_t value)
 
 /*
  * enc28j60_read_phy
- * @device: ENC28J60 device instance for PHY register is needed to be read.
+ * @device: ENC28J60 device instance for which a PHY register is needed to be
+ *  read.
  * @address: Address from which data is needed to be read.
  * @value: If not null read data will be returned here.
  * @return: A success status will be returned if a register was successfully
@@ -103,12 +104,12 @@ int32_t enc28j60_read_phy(ENC28J60 *device, uint8_t address, uint16_t *value)
     int32_t status;
 
     /* Set the PHY address needed to be read at MIREGADR. */
-    status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MIREGADR, address, NULL);
+    status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MIREGADR, address, NULL, 0);
 
     if (status == SUCCESS)
     {
         /* Start the PHY read operation. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MICMD, ENC28J60_MICMD_MIIRD, NULL);
+        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MICMD, ENC28J60_MICMD_MIIRD, NULL, 0);
     }
 
     if (status == SUCCESS)
@@ -120,7 +121,7 @@ int32_t enc28j60_read_phy(ENC28J60 *device, uint8_t address, uint16_t *value)
     if (status == SUCCESS)
     {
         /* Stop the PHY read operation. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MICMD, 0x00, NULL);
+        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MICMD, 0x00, NULL, 0);
     }
 
     if (status == SUCCESS)
@@ -133,6 +134,36 @@ int32_t enc28j60_read_phy(ENC28J60 *device, uint8_t address, uint16_t *value)
     return (status);
 
 } /* enc28j60_read_phy */
+
+/*
+ * enc28j60_read_buffer
+ * @device: ENC28J60 device instance for which buffer memory is needed to be
+ *  read.
+ * @address: Address from which data is needed to be read.
+ * @value: If not null read data will be returned here.
+ * @length: Number of bytes needed to be read.
+ * @return: A success status will be returned if buffer memory was successfully
+ *  read, ENC28J60_SPI_ERROR will be returned if an error occurred while
+ *  reading from SPI device.
+ * This function will read a buffer memory from a enc28j60 device.
+ */
+int32_t enc28j60_read_buffer(ENC28J60 *device, uint16_t address, uint8_t *value, int32_t length)
+{
+    int32_t status;
+
+    /* Set the buffer address from which we need to read buffer. */
+    status = enc28j60_write_word(device, ENC28J60_ADDR_ERDPTL, address);
+
+    if (status == SUCCESS)
+    {
+        /* Read the buffer memory. */
+        status = enc28j60_write_read_op(device, ENC28J60_OP_READ_BUFFER, ENC28J60_ADDR_BUFFER, 0xFF, value, length);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* enc28j60_read_buffer */
 
 /*
  * enc28j60_write_word
@@ -150,12 +181,12 @@ int32_t enc28j60_write_word(ENC28J60 *device, uint8_t address, uint16_t value)
     int32_t status;
 
     /* Write the first byte. */
-    status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, (address), (uint8_t)(value & 0xFF), NULL);
+    status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, (address), (uint8_t)(value & 0xFF), NULL, 0);
 
     if (status == SUCCESS)
     {
         /* Write the second byte. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, (uint8_t)(address + 1), (uint8_t)(value >> 8), NULL);
+        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, (uint8_t)(address + 1), (uint8_t)(value >> 8), NULL, 0);
     }
 
     /* Return status to the caller. */
@@ -180,12 +211,12 @@ int32_t enc28j60_read_word(ENC28J60 *device, uint8_t address, uint16_t *value)
     uint8_t first_byte, second_byte;
 
     /* Read the first byte. */
-    status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, address, 0xFF, &first_byte);
+    status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, address, 0xFF, &first_byte, 1);
 
     if (status == SUCCESS)
     {
         /* Read the second byte. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, (uint8_t)(address + 1), 0xFF, &second_byte);
+        status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, (uint8_t)(address + 1), 0xFF, &second_byte, 1);
     }
 
     if ((status == SUCCESS) && (value != NULL))
@@ -207,27 +238,29 @@ int32_t enc28j60_read_word(ENC28J60 *device, uint8_t address, uint16_t *value)
  * @address: Address at which data is needed to be written.
  * @value: Value needed to be written.
  * @ret_value: If not null data read from SPI will be returned here.
+ * @length: Number of bytes needed to be read from SPI.
  * @return: A success status will be returned if a register was successfully
  *  written, ENC28J60_SPI_ERROR will be returned if an error occurred while
  *  writing on SPI device.
  * This function will perform a write and read operation on the ENC28J60 device.
  */
-int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address, uint8_t value, uint8_t *ret_value)
+int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address, uint8_t value, uint8_t *ret_value, int32_t length)
 {
     int32_t status = SUCCESS;
-    uint8_t len = 2, data[3];
+    uint8_t tx_length = 1, data[3];
+    int32_t rx_length;
 
     /* Check if we need to switch memory bank. */
     if (((address & ENC28J60_ADDR_MASK) < ENC28J60_NON_BANKED) && (((address & ENC28J60_BANK_MASK) >> ENC28J60_BANK_SHIFT) != device->mem_block))
     {
         /* Clear the memory bank bits. */
-        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, (ENC28J60_ECON1_BSEL1|ENC28J60_ECON1_BSEL0), NULL) != SUCCESS)
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, (ENC28J60_ECON1_BSEL1|ENC28J60_ECON1_BSEL0), NULL, 0) != SUCCESS)
 
         /* Select the required memory bank. */
         device->mem_block = ((address & ENC28J60_BANK_MASK) >> ENC28J60_BANK_SHIFT);
 
         /* Set the required memory bank bits. */
-        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, device->mem_block, NULL) != SUCCESS);
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, device->mem_block, NULL, 0) != SUCCESS);
     }
 
     /* Initialize the data needed to be sent. */
@@ -238,23 +271,30 @@ int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address
     if ((opcode == ENC28J60_OP_READ_CTRL) && (address & ENC28J60_MAC_MII_MASK))
     {
         /* Actual data will come after a dummy byte. */
-        len++;
+        tx_length++;
+    }
+
+    /* If we don't have a buffer in which we will be returning data. */
+    if (ret_value == NULL)
+    {
+        /* Save data in the data buffer. */
+        ret_value = &data[tx_length];
+
+        /* Only read one byte. */
+        rx_length = 1;
+    }
+
+    else
+    {
+        /* Read the required number of bytes. */
+        rx_length = length;
     }
 
     /* Perform a SPI write read operation. */
-    if (spi_write_read(&device->spi, data, len) != len)
+    if (spi_write_read(&device->spi, data, tx_length, ret_value, rx_length) != (tx_length + rx_length))
     {
         /* Return error to the caller. */
         status = ENC28J60_SPI_ERROR;
-    }
-    else
-    {
-        /* If we need to return the read data to the caller. */
-        if (ret_value != NULL)
-        {
-            /* Return read data to the caller. */
-            *ret_value = data[len - 1];
-        }
     }
 
     /* Return status to the caller. */
