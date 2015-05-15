@@ -30,21 +30,21 @@
 #define CDC_CMD_PACKET_SIZE             8       /* Control Endpoint Packet size. */
 
 /* CDC ACM descriptor configuration. */
-#define USB_FUN_CDC_ACM_VID                 0x0483
-#define USB_FUN_CDC_ACM_PID                 0x5740
+#define USB_FUN_CDC_ACM_VID             0x0483
+#define USB_FUN_CDC_ACM_PID             0x5740
 
-#define USB_FUN_CDC_ACM_LANGID_STR          0x409   /* English (United States) */
-#define USB_FUN_CDC_ACM_MFGR_STR            "N3RD Bugs"
+#define USB_FUN_CDC_ACM_LANGID_STR      0x409   /* English (United States) */
+#define USB_FUN_CDC_ACM_MFGR_STR        "N3RD Bugs"
 
-#define USB_FUN_CDC_ACM_PDT_HS_STR          "Tiny-RTOS CDC Console (HS mode)"
-#define USB_FUN_CDC_ACM_SN_HS_STR           "2K15-USB-CDC-HS-00000000"
-#define USB_FUN_CDC_ACM_CFG_HS_STR          "None"
-#define USB_FUN_CDC_ACM_IFACE_HS_STR        "System CDC Console"
+#define USB_FUN_CDC_ACM_PDT_HS_STR      "Tiny-RTOS CDC Console (HS mode)"
+#define USB_FUN_CDC_ACM_SN_HS_STR       "2K15-USB-CDC-HS-00000000"
+#define USB_FUN_CDC_ACM_CFG_HS_STR      "None"
+#define USB_FUN_CDC_ACM_IFACE_HS_STR    "System CDC Console"
 
-#define USB_FUN_CDC_ACM_PDT_FS_STR          "Tiny-RTOS CDC Console (FS mode)"
-#define USB_FUN_CDC_ACM_SN_FS_STR           "2K15-USB-CDC-FS-00000000"
-#define USB_FUN_CDC_ACM_CFG_FS_STR          "None"
-#define USB_FUN_CDC_ACM_IFACE_FS_STR        "System CDC Console"
+#define USB_FUN_CDC_ACM_PDT_FS_STR      "Tiny-RTOS CDC Console (FS mode)"
+#define USB_FUN_CDC_ACM_SN_FS_STR       "2K15-USB-CDC-FS-00000000"
+#define USB_FUN_CDC_ACM_CFG_FS_STR      "None"
+#define USB_FUN_CDC_ACM_IFACE_FS_STR    "System CDC Console"
 
 /* CDC ACM core definitions. */
 #define USB_CDC_CONFIG_DESC_SIZ         (67)
