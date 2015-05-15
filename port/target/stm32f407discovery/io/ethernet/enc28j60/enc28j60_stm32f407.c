@@ -69,6 +69,9 @@ void enc28j60_stm32f407_init()
     /* Set EXT2 IRQ channel priority. */
     NVIC->IP[EXTI2_IRQn] = 2;
 
+    /* Initialize name for this device. */
+    enc28j60.fs.name = "ethernet\\enc28j60";
+
     /* Do enc28j60 initialization. */
     enc28j60_init(&enc28j60);
 
@@ -80,18 +83,20 @@ void enc28j60_stm32f407_init()
  */
 void enc28j60_stm32f407_handle_interrupt()
 {
-    RESUME resume;
+    /* Obtain lock for this device. */
+    OS_ASSERT(fd_get_lock((FD)&enc28j60) != SUCCESS);
 
     /* Set flag to tell that we have an interrupt to process. */
     enc28j60.flags |= ENC28J60_FLAG_INT;
 
-    /* Resume tasks waiting for this. */
-    resume.status = TASK_RESUME;
-    resume.param = resume.do_resume = NULL;
-    resume_condition(&enc28j60.condition, &resume, TRUE);
+    /* Set flag that we have some data available on this device. */
+    fd_data_available((FD)&enc28j60);
 
     /* Disable interrupt until we process it. */
     enc28j60_stm32f407_disable_interrupt(&enc28j60);
+
+    /* Release lock for this file descriptor. */
+    fd_release_lock((FD)&enc28j60);
 
 } /* enc28j60_stm32f407_handle_interrupt */
 

@@ -25,6 +25,7 @@
 #include <spi.h>
 #include <condition.h>
 #include <net_device.h>
+#include <console.h>
 
 /* Error code definitions. */
 #define ENC28J60_SPI_ERROR      -1100
@@ -35,7 +36,12 @@
 
 /* ENC28J60 device configuration. */
 #define ENC28J60_REV_ID         (0x06)
-#define ENC28J60_MTU            (1518)
+#define ENC28J60_MTU            (1522)
+
+/* Buffer configuration for this device. */
+#define ENC28J60_MAX_BUFFER_SIZE    (128)
+#define ENC28J60_NUM_BUFFERS        (32)
+#define ENC28J60_NUM_BUFFER_LISTS   (12)
 
 /* ENC28J60 receive packet definitions. */
 #define ENC28J60_RX_HEAD_SIZE       (6)
@@ -53,12 +59,16 @@
 #define ENC28J60_RX_RXUNKNOWNOPCODE (0x2000)
 #define ENC28J60_RX_RXTYPEVLAN      (0x4000)
 
+/* ENC28J60 transmit packet definitions. */
+#define ENC28J60_TX_HEAD_SIZE       (1 + 6)
+#define ENC28J60_TX_MIN_BUF_SIZE    (ENC28J60_MTU + ENC28J60_TX_HEAD_SIZE)
+
 /* ENC28J60 RX/TX FIFO configuration. */
-#define ENC28J60_FIFO_SIZE      (0x1FFF)
+#define ENC28J60_FIFO_SIZE      (0x2000)
 #define ENC28J60_RX_START       (0)
-#define ENC28J60_RX_END         ((((ENC28J60_FIFO_SIZE - ENC28J60_MTU) + 1) & 0xFFFE) - 1)
-#define ENC28J60_TX_START       (((ENC28J60_FIFO_SIZE - ENC28J60_MTU) + 1) & 0xFFFE)
-#define ENC28J60_TX_END         (ENC28J60_FIFO_SIZE)
+#define ENC28J60_RX_END         (((ENC28J60_FIFO_SIZE - ENC28J60_TX_MIN_BUF_SIZE) & 0xFFFE) - 1)
+#define ENC28J60_TX_START       ((ENC28J60_FIFO_SIZE - ENC28J60_TX_MIN_BUF_SIZE) & 0xFFFE)
+#define ENC28J60_TX_END         (ENC28J60_FIFO_SIZE - 1)
 
 /* RX pointer calculation macro. */
 #define ENC28J60_RX_PTR(p)          ((((p - 1) < ENC28J60_RX_START) || ((p - 1) > ENC28J60_RX_END)) ? ENC28J60_RX_END : (p - 1))
@@ -67,14 +77,26 @@
 /* ENC28J60 device structure. */
 typedef struct _enc28j60_device
 {
+    /* File descriptor for this device. */
+    /* TODO: If needed we can add a specific ethernet file system to handle
+     * these device. */
+    FS          fs;
+
+    /* Buffer used to manage data for this device. */
+    uint8_t     buffer[ENC28J60_MAX_BUFFER_SIZE * ENC28J60_NUM_BUFFERS];
+
+    /* File system buffers. */
+    FS_BUFFER_DATA  fs_buffer_data;
+    FS_BUFFER_ONE   fs_buffer[ENC28J60_NUM_BUFFERS];
+    FS_BUFFER       fs_buffer_list[ENC28J60_NUM_BUFFER_LISTS];
+
+#ifdef CONFIG_SEMAPHORE
+    /* Lock for this device instance. */
+    SEMAPHORE   lock;
+#endif
+
     /* SPI device structure. */
     SPI_DEVICE  spi;
-
-    /* Networking condition for this device. */
-    CONDITION   condition;
-
-    /* Suspend structure to be used. */
-    SUSPEND     suspend;
 
     /* Networking device associated with enc28j60 device. */
     NET_DEV     net_device;

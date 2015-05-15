@@ -14,13 +14,15 @@
 #include <ethernet.h>
 
 #ifdef ETHERNET_ENC28J60
+#include <string.h>
 #include <enc28j60.h>
 #include <enc28j60_spi.h>
 #include <net_device.h>
 #include <net_condition.h>
 
 /* Internal function prototypes. */
-static uint8_t enc28j60_do_suspend(void *, void *);
+static int32_t enc28j60_lock(void *);
+static void enc28j60_unlock(void *);
 static void enc28j60_process(void *);
 static int32_t enc28j60_tx_fifo_init(ENC28J60 *);
 static int32_t enc28j60_rx_fifo_init(ENC28J60 *);
@@ -34,6 +36,8 @@ static void enc28j60_receive_packet(ENC28J60 *);
  */
 void enc28j60_init(ENC28J60 *device)
 {
+    uint32_t i;
+
     /* Initialize SPI parameters. */
     device->spi.baudrate = 20000000;
     device->spi.cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA);
@@ -41,48 +45,106 @@ void enc28j60_init(ENC28J60 *device)
     /* Do SPI initialization. */
     spi_init(&device->spi);
 
-    /* Initialize device suspend condition. */
-    device->condition.data = device;
-    device->suspend.do_suspend = &enc28j60_do_suspend;
-    device->suspend.param = NULL;   /* For now unused. */
-    device->suspend.timeout = MAX_WAIT;
+    /* Initialize file system data. */
+    device->fs.get_lock = &enc28j60_lock;
+    device->fs.release_lock = &enc28j60_unlock;
+    device->fs.timeout = MAX_WAIT;
 
-    /* Initialize the networking device. */
-    device->net_device.mtu = ENC28J60_MTU;
+#ifdef CONFIG_SEMAPHORE
+    /* Create a semaphore to protect this device. */
+    memset(&device->lock, 0, sizeof(SEMAPHORE));
+    semaphore_create(&device->lock, 1, 1, (SEMAPHORE_PRIORITY | SEMAPHORE_IRQ));
+#endif
 
-    /* Add networking condition to further process this ethernet device. */
-    net_condition_add(&device->condition, &device->suspend, &enc28j60_process, device);
+    /* Initialize file system condition. */
+    fs_condition_init(&device->fs);
+
+    /* Register this file descriptor with file system. */
+    fs_register(&device->fs);
+
+    /* This will block on read, and all data that will be given to write must
+     * be flushed, also set the data available flag to start the device
+     * initialization, this is a buffered file descriptor. */
+    device->fs.flags = (FS_BLOCK | FS_FLUSH_WRITE | FS_DATA_AVAILABLE | FS_BUFFERED);
+
+    /* Set the buffer data structure for this file descriptor. */
+    fs_buffer_dataset(&device->fs, &device->fs_buffer_data, ENC28J60_NUM_BUFFERS);
+
+    /* Add buffer for this console. */
+    for (i = 0; i < ENC28J60_NUM_BUFFERS; i++)
+    {
+        /* Initialize a buffer. */
+        fs_buffer_one_init(&device->fs_buffer[i], &device->buffer[ENC28J60_MAX_BUFFER_SIZE * i], ENC28J60_MAX_BUFFER_SIZE);
+
+        /* Add this buffer to the free buffer list for this file descriptor. */
+        fs_buffer_add((FD)&device->fs, &device->fs_buffer[i], FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
+    }
+
+    /* Add buffer lists for this console. */
+    for (i = 0; i < ENC28J60_NUM_BUFFER_LISTS; i++)
+    {
+        /* Initialize a buffer. */
+        fs_buffer_init(&device->fs_buffer_list[i], (FD)&device->fs);
+
+        /* Add this buffer to the free buffer list for this file descriptor. */
+        fs_buffer_add((FD)&device->fs, &device->fs_buffer_list[i], FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    }
+
+    /* Register a networking device. */
+    net_register_fd(&device->net_device, (FD)&device->fs, NULL, &enc28j60_process);
+
+    /* Set MTU for this device. */
+    net_device_set_mtu((FD)&device->fs, ENC28J60_MTU);
+
+    /* We still need to initialize this device. */
+    device->flags = ENC28J60_FLAG_INIT;
 
 } /* enc28j60_init */
 
 /*
- * enc28j60_do_suspend
- * @data: ENC28J60 device instance.
- * @suspend_data: Suspend data for this enc28j60 device.
- * @return: Will return true if we can suspend on this device otherwise false
- *  will be returned.
- * This function will check if we need to suspend on this enc28k60 device.
+ * enc28j60_lock
+ * @fd: File descriptor for a enc28j60 device.
+ * This function will get the lock for a given enc28j60 device.
  */
-static uint8_t enc28j60_do_suspend(void *data, void *suspend_data)
+static int32_t enc28j60_lock(void *fd)
 {
-    ENC28J60 *device = (ENC28J60 *)data;
-    uint8_t do_suspend = TRUE;
+#ifdef CONFIG_SEMAPHORE
+    ENC28J60 *device = (ENC28J60 *)fd;
 
+    /* Obtain data lock for this enc28j60 device. */
+    return semaphore_obtain(&device->lock, MAX_WAIT);
+#else
     /* Remove some compiler warnings. */
-    UNUSED_PARAM(suspend_data);
+    UNUSED_PARAM(fd);
 
-    /* If this device is not yet initialized, or we have an interrupt to
-     * process. */
-    if (((device->flags & ENC28J60_FLAG_INIT) == 0) || (device->flags & ENC28J60_FLAG_INT))
-    {
-        /* Don't suspend and initialize this device. */
-        do_suspend = FALSE;
-    }
+    /* Lock scheduler. */
+    scheduler_lock();
 
-    /* Return if we need to suspend on this enc28k60 device. */
-    return (do_suspend);
+    /* Return success. */
+    return (SUCCESS);
+#endif
+} /* enc28j60_lock */
 
-} /* enc28j60_do_suspend */
+/*
+ * enc28j60_unlock
+ * @fd: File descriptor for a enc28j60 device.
+ * This function will release the lock for a given enc28j60 device.
+ */
+static void enc28j60_unlock(void *fd)
+{
+#ifdef CONFIG_SEMAPHORE
+    ENC28J60 *device = (ENC28J60 *)fd;
+
+    /* Release data lock for this enc28j60 device. */
+    semaphore_release(&device->lock);
+#else
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+
+    /* Enable scheduling. */
+    scheduler_unlock();
+#endif
+} /* enc28j60_unlock */
 
 /*
  * enc28j60_process
@@ -94,8 +156,11 @@ static void enc28j60_process(void *data)
     ENC28J60 *device = (ENC28J60 *)data;
     uint8_t value;
 
+    /* Acquire lock for this device. */
+    OS_ASSERT(fd_get_lock((FD)device) != SUCCESS);
+
     /* If this device is not yet initialized. */
-    if ((device->flags & ENC28J60_FLAG_INIT) == 0)
+    if (device->flags & ENC28J60_FLAG_INIT)
     {
         /* Reset this device. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_RESET, ENC28J60_ADDR_RESET, ENC28J60_VALUE_RESET, NULL, 0) != SUCCESS);
@@ -118,9 +183,6 @@ static void enc28j60_process(void *data)
             /* Enable address auto increment. */
             OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON2, ENC28J60_ECON2_AUTOINC, NULL, 0) != SUCCESS);
 
-            /* Initialize RX FIFO. */
-            OS_ASSERT(enc28j60_rx_fifo_init(device) != SUCCESS);
-
             /* Initialize TX FIFO. */
             OS_ASSERT(enc28j60_tx_fifo_init(device) != SUCCESS);
 
@@ -142,7 +204,7 @@ static void enc28j60_process(void *data)
             OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MABBIPG, 0x15, NULL, 0) != SUCCESS);
 
             /* Set MAMXFLL/MAMXFLH to configured MTU. */
-            OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, (device->net_device.mtu & 0xFFFF)) != SUCCESS);
+            OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, (net_device_get_mtu((FD)&device->fs) & 0xFFFF)) != SUCCESS);
 
             /* Enable full-duplex mode on PHY. */
             OS_ASSERT(enc28j60_write_phy(device, ENC28J60_ADDR_PHCON1, ENC28J60_PHCON1_PDPXMD) != SUCCESS);
@@ -161,17 +223,10 @@ static void enc28j60_process(void *data)
             OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_EIE, (ENC28J60_EIE_INTIE | ENC28J60_EIE_PKTIE | ENC28J60_EIE_LINKIE | ENC28J60_EIE_TXIE | ENC28J60_EIE_TXERIE | ENC28J60_EIE_RXERIE), NULL, 0) != SUCCESS);
 
             /* We have initialized this device. */
-            device->flags |= ENC28J60_FLAG_INIT;
+            device->flags &= (uint8_t)(~ENC28J60_FLAG_INIT);
 
             /* Enable enc28j60 interrupts. */
             ENC28J60_ENABLE_INT(device);
-        }
-        else
-        {
-            /* Non-supported or invalid revision ID was read. */
-
-            /* Remove this device from the networking condition. */
-            net_condition_remove(&device->condition);
         }
     }
 
@@ -193,7 +248,7 @@ static void enc28j60_process(void *data)
             /* Handle the link status change event. */
             enc28j60_link_changed(device);
 
-            /* For now we are only expecting link-up/down interrupts. */
+            /* Clear the link status changed interrupt. */
             enc28j60_read_phy(device, ENC28J60_ADDR_PHIR, NULL);
         }
 
@@ -204,7 +259,7 @@ static void enc28j60_process(void *data)
             enc28j60_receive_packet(device);
         }
 
-        /* For now this is not handled. */
+        /* For now these are not handled. */
         OS_ASSERT((value & (ENC28J60_EIR_TXERIF | ENC28J60_EIR_RXERIF)));
 
         /* Enable enc28j60 interrupts. */
@@ -213,6 +268,12 @@ static void enc28j60_process(void *data)
         /* Enable interrupts. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0) != SUCCESS);
     }
+
+    /* Just clear the data available flag. */
+    fd_data_flushed((FD)device);
+
+    /* Release lock for this device. */
+    fd_release_lock((FD)device);
 
 } /* enc28j60_process */
 
@@ -295,6 +356,9 @@ static void enc28j60_link_changed(ENC28J60 *device)
     /* If we are now in connected state. */
     if (phy_register & ENC28J60_PHSTAT2_LSTAT)
     {
+        /* Initialize RX FIFO. */
+        OS_ASSERT(enc28j60_rx_fifo_init(device) != SUCCESS);
+
         /* Enable receive logic. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXEN, NULL, 0) != SUCCESS);
 
@@ -309,8 +373,6 @@ static void enc28j60_link_changed(ENC28J60 *device)
 
 } /* enc28j60_link_changed */
 
-uint8_t enc28j60_rx_buffer[1600];
-
 /*
  * enc28j60_receive_packet
  * @device: ENC28J60 device instance on which a packet was received.
@@ -318,6 +380,9 @@ uint8_t enc28j60_rx_buffer[1600];
  */
 static void enc28j60_receive_packet(ENC28J60 *device)
 {
+    FS_BUFFER *buffer;
+    FS_BUFFER_ONE *one_buffer;
+    FD fd = (FD)device;
     uint16_t next_ptr, packet_status, packet_length;
     uint8_t num_packets, receive_header[ENC28J60_RX_HEAD_SIZE];
 
@@ -342,8 +407,50 @@ static void enc28j60_receive_packet(ENC28J60 *device)
         /* If packet was successfully received. */
         if (packet_status & ENC28J60_RX_RXOK)
         {
-            /* Read the received buffer. */
-            OS_ASSERT(enc28j60_read_buffer(device, (uint16_t)(ENC28J60_RX_START_PTR(device->rx_ptr)), enc28j60_rx_buffer, (int32_t)packet_length) != SUCCESS);
+            /* Pull a buffer list from the file descriptor. */
+            buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+
+            /* If we do have a receive buffer. */
+            if (buffer != NULL)
+            {
+                while (packet_length > 0)
+                {
+                    /* Pull a one buffer in which we will copy the data. */
+                    one_buffer = fs_buffer_one_get(fd, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
+
+                    if (one_buffer != NULL)
+                    {
+                        /* If we need to copy more data then we can actually
+                         * receive in a buffer. */
+                        if (packet_length > one_buffer->max_length)
+                        {
+                            /* Copy maximum number of bytes we can copy in the
+                             * buffer. */
+                            one_buffer->length = one_buffer->max_length;
+                        }
+                        else
+                        {
+                            /* Only copy remaining packet length. */
+                            one_buffer->length = packet_length;
+                        }
+
+                        /* Read the received buffer. */
+                        OS_ASSERT(enc28j60_read_buffer(device, (uint16_t)(ENC28J60_RX_START_PTR(device->rx_ptr)), one_buffer->buffer, (int32_t)one_buffer->length) != SUCCESS);
+
+                        /* Update the remaining number of bytes in the packet. */
+                        packet_length = (uint16_t)(packet_length - one_buffer->length);
+                        device->rx_ptr = (uint16_t)(device->rx_ptr + one_buffer->length);
+
+                        /* Append this new buffer to the buffer chain. */
+                        fs_buffer_add_one(buffer, one_buffer, 0);
+                    }
+                    else
+                    {
+                        /* We don't have enough buffers to process this packet. */
+                        break;
+                    }
+                }
+            }
         }
 
         /* Set new RX data pointer at ERXRDPTL/ERXRDPTH. */
