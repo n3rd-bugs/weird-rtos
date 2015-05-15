@@ -91,13 +91,14 @@ void fs_buffer_init(FS_BUFFER *buffer, FD fd)
  */
 void fs_buffer_one_init(FS_BUFFER_ONE *one, void *data, uint32_t size)
 {
-    /* Clear this buffer. */
-    memset(one, 0, sizeof(FS_BUFFER_ONE));
-
     /* Initialize this buffer. */
     one->id = FS_BUFFER_ID_ONE;
     one->data = one->buffer = (uint8_t *)data;
     one->max_length = size;
+
+    /* Clear the remaining members. */
+    one->length = 0;
+    one->next = NULL;
 
 } /* fs_buffer_one_init */
 
