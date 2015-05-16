@@ -183,15 +183,22 @@ static void enc28j60_interrupt(void *data)
         enc28j60_read_phy(device, ENC28J60_ADDR_PHIR, NULL);
     }
 
-    /* If a packet was received. */
-    if (value & ENC28J60_EIR_PKTIF)
+    /* If a packet was received or an RX error was detected. */
+    if ((value & ENC28J60_EIR_PKTIF) || (value & ENC28J60_EIR_RXERIF))
     {
         /* Receive a packet from the hardware. */
         enc28j60_receive_packet(device);
     }
 
+    /* If an RX error was detected. */
+    if (value & ENC28J60_EIR_RXERIF)
+    {
+        /* Clear the RX error interrupt. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_RXERIF, NULL, 0) != SUCCESS);
+    }
+
     /* For now these are not handled. */
-    OS_ASSERT((value & (ENC28J60_EIR_TXERIF | ENC28J60_EIR_RXERIF)));
+    OS_ASSERT((value & (ENC28J60_EIR_TXERIF)));
 
     /* Enable enc28j60 interrupts. */
     ENC28J60_ENABLE_INT(device);
