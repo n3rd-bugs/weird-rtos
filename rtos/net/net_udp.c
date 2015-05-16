@@ -220,8 +220,19 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         OS_ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.foreign_port, 2, (ihl + UDP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
         OS_ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.local_port, 2, (ihl + UDP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
-        /* If UDP header length value is correct. */
-        if (buffer->total_length == (ihl + length))
+        /* If UDP header length value is not correct. */
+        if (buffer->total_length < (ihl + length))
+        {
+            /* Invalid UDP header. */
+            status = NET_INVALID_HDR;
+        }
+        else if (buffer->total_length > (ihl + length))
+        {
+            /* Pull padding from the buffer. */
+            OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - (ihl + length)), FS_BUFFER_TAIL) != SUCCESS);
+        }
+
+        if (status == SUCCESS)
         {
             /* Release semaphore for the buffer file descriptor. */
             fd_release_lock(buffer->fd);
@@ -254,16 +265,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
             /* Obtain lock for buffer file descriptor. */
             OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
-        }
 
-        else
-        {
-            /* Invalid UDP header. */
-            status = NET_INVALID_HDR;
-        }
-
-        if (status == SUCCESS)
-        {
             /* If we have a valid UDP port for this datagram. */
             if (udp_port != NULL)
             {
