@@ -220,6 +220,9 @@ static int32_t net_buffer_read(void *fd, uint8_t *buffer, int32_t size)
     }
     else
     {
+        /* Remove the buffer link. */
+        fs_buffer->next = NULL;
+
         /* Return the buffer to the caller. */
         *((FS_BUFFER **)buffer) = fs_buffer;
     }
