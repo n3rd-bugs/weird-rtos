@@ -57,7 +57,7 @@ typedef struct _eth_device
     ETH_INIT        *initialize;
     ETH_INTERRUPT   *interrupt;
 
-    /* Device flags for enc28j60 device. */
+    /* Device flags. */
     uint8_t     flags;
 
     /* Structure padding. */
@@ -71,6 +71,6 @@ void ethernet_regsiter(ETH_DEVICE *, ETH_INIT *, ETH_INTERRUPT *);
 void ethernet_interrupt(ETH_DEVICE *);
 int32_t ethernet_buffer_receive(FS_BUFFER *);
 
-#endif /* ETHERNET_ENC28J60 */
+#endif /* CONFIG_ETHERNET */
 
 #endif /* _ETHERNET_H_ */

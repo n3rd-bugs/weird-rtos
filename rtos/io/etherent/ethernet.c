@@ -1,5 +1,5 @@
 /*
- * spi.c
+ * ethernet.c
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
