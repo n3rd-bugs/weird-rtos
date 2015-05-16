@@ -354,7 +354,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
         if (packet_status & ENC28J60_RX_RXOK)
         {
             /* Pull a buffer list from the file descriptor. */
-            buffer = fs_buffer_get(fd, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
 
             /* If we do have a receive buffer. */
             if (buffer != NULL)
