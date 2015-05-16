@@ -24,19 +24,13 @@
 #endif
 #include <spi.h>
 #include <condition.h>
-#include <net_device.h>
 #include <console.h>
 
 /* Error code definitions. */
 #define ENC28J60_SPI_ERROR      -1100
 
-/* ENC28J60 device flags. */
-#define ENC28J60_FLAG_INIT      0x01
-#define ENC28J60_FLAG_INT       0x02
-
 /* ENC28J60 device configuration. */
 #define ENC28J60_REV_ID         (0x06)
-#define ENC28J60_MTU            (1522)
 
 /* Buffer configuration for this device. */
 #define ENC28J60_MAX_BUFFER_SIZE    (128)
@@ -61,7 +55,7 @@
 
 /* ENC28J60 transmit packet definitions. */
 #define ENC28J60_TX_HEAD_SIZE       (1 + 6)
-#define ENC28J60_TX_MIN_BUF_SIZE    (ENC28J60_MTU + ENC28J60_TX_HEAD_SIZE)
+#define ENC28J60_TX_MIN_BUF_SIZE    (ETH_MTU_SIZE + ENC28J60_TX_HEAD_SIZE)
 
 /* ENC28J60 RX/TX FIFO configuration. */
 #define ENC28J60_FIFO_SIZE      (0x2000)
@@ -77,10 +71,8 @@
 /* ENC28J60 device structure. */
 typedef struct _enc28j60_device
 {
-    /* File descriptor for this device. */
-    /* TODO: If needed we can add a specific ethernet file system to handle
-     * these device. */
-    FS          fs;
+    /* Ethernet device structure. */
+    ETH_DEVICE  ethernet_device;
 
     /* Buffer used to manage data for this device. */
     uint8_t     buffer[ENC28J60_MAX_BUFFER_SIZE * ENC28J60_NUM_BUFFERS];
@@ -90,16 +82,8 @@ typedef struct _enc28j60_device
     FS_BUFFER_ONE   fs_buffer[ENC28J60_NUM_BUFFERS];
     FS_BUFFER       fs_buffer_list[ENC28J60_NUM_BUFFER_LISTS];
 
-#ifdef CONFIG_SEMAPHORE
-    /* Lock for this device instance. */
-    SEMAPHORE   lock;
-#endif
-
     /* SPI device structure. */
     SPI_DEVICE  spi;
-
-    /* Networking device associated with enc28j60 device. */
-    NET_DEV     net_device;
 
     /* Current receive pointer. */
     uint16_t    rx_ptr;
@@ -107,8 +91,8 @@ typedef struct _enc28j60_device
     /* Current selected memory block. */
     uint8_t     mem_block;
 
-    /* Device flags for enc28j60 device. */
-    uint8_t     flags;
+    /* Structure padding. */
+    uint8_t     pad[1];
 
 } ENC28J60;
 
