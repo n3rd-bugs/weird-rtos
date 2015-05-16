@@ -85,6 +85,32 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_INTERRUPT *
 } /* ethernet_regsiter */
 
 /*
+ * ethernet_random_mac
+ * @device: Ethernet device instance for which random MAC address is needed to
+ *  be generated.
+ * @return: Returns the start of random MAC address generated.
+ * This function will generate a random MAC address for this ethernet device.
+ */
+uint8_t *ethernet_random_mac(ETH_DEVICE *device)
+{
+    uint8_t i;
+
+    /* Initialize a random MAC address. */
+    for (i = 0; i < ETH_ADDR_LEN; i++)
+    {
+        device->mac[i] = (uint8_t)(current_system_tick64() & 0xFF);
+    }
+
+    /* Set the OUI bit and reset the multicast bit. */
+    device->mac[0] |= ETH_MAC_OUI;
+    device->mac[0] &= ((uint8_t)~(ETH_MAC_MULTICAST));
+
+    /* Return the generated MAC address. */
+    return (device->mac);
+
+} /* ethernet_random_mac */
+
+/*
  * ethernet_lock
  * @fd: File descriptor for a ethernet device.
  * This function will get the lock for a given ethernet device.

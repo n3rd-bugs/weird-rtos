@@ -26,6 +26,10 @@
 #define ETH_PROTO_LEN       (2)
 #define ETH_MTU_SIZE        (1522)
 
+/* Ethernet MAC address definitions. */
+#define ETH_MAC_OUI         (0x02)
+#define ETH_MAC_MULTICAST   (0x01)
+
 /* Ethernet protocol definitions. */
 #define ETH_PROTO_IP        (0x0800)
 
@@ -57,6 +61,9 @@ typedef struct _eth_device
     ETH_INIT        *initialize;
     ETH_INTERRUPT   *interrupt;
 
+    /* MAC address assigned to this device. */
+    uint8_t     mac[ALLIGN_CEIL(ETH_ADDR_LEN)];
+
     /* Device flags. */
     uint8_t     flags;
 
@@ -68,6 +75,7 @@ typedef struct _eth_device
 /* Function prototypes. */
 void ethernet_init();
 void ethernet_regsiter(ETH_DEVICE *, ETH_INIT *, ETH_INTERRUPT *);
+uint8_t *ethernet_random_mac(ETH_DEVICE *);
 void ethernet_interrupt(ETH_DEVICE *);
 int32_t ethernet_buffer_receive(FS_BUFFER *);
 
