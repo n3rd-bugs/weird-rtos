@@ -18,11 +18,15 @@
 #ifdef ETHERNET_ENC28J60
 #include <enc28j60.h>
 
+/* ENC28J60 device configuration. */
+#define ENC28J60_STM32F407_RESET_DELAY  (100)
+
 /* Function prototypes. */
 void enc28j60_stm32f407_init();
 void enc28j60_stm32f407_handle_interrupt();
 void enc28j60_stm32f407_enable_interrupt(ENC28J60 *);
 void enc28j60_stm32f407_disable_interrupt(ENC28J60 *);
+void enc28j60_stm32f407_reset(ENC28J60 *);
 
 #endif /* ETHERNET_ENC28J60 */
 #endif /* _ENC28J60_STM32F407_H_ */

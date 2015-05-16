@@ -36,19 +36,20 @@ void enc28j60_stm32f407_init()
     /* Enable GPIO A clock. */
     RCC->AHB1ENR |= 0x00000001;
 
-    /* Configure GPIO mode input for GPIOA.2. */
-    GPIOA->MODER &= (uint32_t)(~(GPIO_MODER_MODER0 << (2 * 2)));
+    /* Configure GPIO mode input for GPIOA.2 and output for GPIOA.3. */
+    GPIOA->MODER &= ~((GPIO_MODER_MODER0 << (2 * 2)) | (GPIO_MODER_MODER0 << (3 * 2)));
+    GPIOA->MODER |= (0x01 << (3 * 2));
 
     /* Configure output type (PP). */
-    GPIOA->OTYPER &= (uint32_t)(~(GPIO_OTYPER_OT_0 << (2 * 2)));
+    GPIOA->OTYPER &= (uint32_t)(~((GPIO_OTYPER_OT_0 << (2 * 2)) | (GPIO_OTYPER_OT_0 << (3 * 2))));
 
-    /* Enable pull-up on GPIOA.2. */
-    GPIOA->PUPDR &= (uint32_t)(~(GPIO_PUPDR_PUPDR0 << (2 * 2)));
+    /* Enable pull-up on GPIOA.2 and GPIOA.3. */
+    GPIOA->PUPDR &= (uint32_t)(~(((GPIO_PUPDR_PUPDR0 << (2 * 2)) | (GPIO_PUPDR_PUPDR0 << (3 * 2)))));
     GPIOA->PUPDR |= (0x01 << (2 * 2));
 
     /* Configure GPIO speed (100MHz). */
-    GPIOA->OSPEEDR &= (uint32_t)(~(GPIO_OSPEEDER_OSPEEDR0 << (2 * 2)));
-    GPIOA->OSPEEDR |= (0x03 << (2 * 2));
+    GPIOA->OSPEEDR &= (uint32_t)(~((GPIO_OSPEEDER_OSPEEDR0 << (2 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (3 * 2))));
+    GPIOA->OSPEEDR |= ((0x03 << (2 * 2)) | (0x03 << (3 * 2)));
 
     /* Set EXTI line for processing interrupts on GPIOA.2.s */
     SYSCFG->EXTICR[(0x02 >> 0x02)] &= (uint32_t)(~(0x0F << (0x04 * (0x02 & 0x03))));
@@ -122,5 +123,26 @@ void enc28j60_stm32f407_disable_interrupt(ENC28J60 *device)
     NVIC->ICER[EXTI2_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI2_IRQn & (uint8_t)0x1F);
 
 } /* enc28j60_stm32f407_disable_interrupt */
+
+/*
+ * enc28j60_stm32f407_reset
+ * device: ENC28J60 device needed to be reset.
+ * This function will reset the target enc28j60 device.
+ */
+void enc28j60_stm32f407_reset(ENC28J60 *device)
+{
+    /* For now unused. */
+    UNUSED_PARAM(device);
+
+    /* Clear the RST, i.e. GPIOA.3. */
+    GPIOA->BSRR |= (1 << (3 + 16));
+
+    /* Sleep to wait for target to actually reset. */
+    sleep_ms(ENC28J60_STM32F407_RESET_DELAY);
+
+    /* Set the RST, i.e. GPIOA.3. */
+    GPIOA->BSRR |= (1 << 3);
+
+} /* enc28j60_stm32f407_reset */
 
 #endif /* ETHERNET_ENC28J60 */

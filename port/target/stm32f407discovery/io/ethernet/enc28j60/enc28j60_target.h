@@ -23,6 +23,7 @@
 /* Hook-up enc28j60 driver. */
 #define ENC28J60_ENABLE_INT     enc28j60_stm32f407_enable_interrupt
 #define ENC28J60_DISABLE_INT    enc28j60_stm32f407_disable_interrupt
+#define ENC28J60_RESET          enc28j60_stm32f407_reset
 
 #endif /* ETHERNET_ENC28J60 */
 
