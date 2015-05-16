@@ -46,9 +46,6 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     /* Will only work with buffered file descriptors. */
     OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
 
-    /* Clear the networking device instance data. */
-    memset(net_device, 0, sizeof(NET_DEV));
-
     /* Save the file descriptor for this networking device. */
     net_device->fd = fd;
 
@@ -148,7 +145,7 @@ uint32_t net_device_get_mtu(FD fd)
 
 /*
  * net_device_buffer_receive
- * @buffer: A net buffer needed to be added in the receive list.
+ * @buffer: A networking buffer needed to be added in the receive list.
  * @protocol: Packet protocol as parsed on the lower layer required by upper
  *  layers to parse the contents of this buffer.
  * This function will be called by a device when it wants to transfer a buffer
@@ -173,7 +170,7 @@ void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
 
 /*
  * net_device_buffer_transmit
- * @buffer: A net buffer needed to be transmitted.
+ * @buffer: A networking buffer needed to be transmitted.
  * @protocol: Packet protocol as parsed by the upper layers.
  * @flags: Operation flags.
  *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
