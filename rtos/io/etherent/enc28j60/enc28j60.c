@@ -22,6 +22,7 @@ static void enc28j60_initialize(void *);
 static void enc28j60_interrupt(void *);
 static int32_t enc28j60_tx_fifo_init(ENC28J60 *);
 static int32_t enc28j60_rx_fifo_init(ENC28J60 *);
+static void enc28j60_set_mac_address(ENC28J60 *, uint8_t *);
 static void enc28j60_link_changed(ENC28J60 *);
 static void enc28j60_receive_packet(ENC28J60 *);
 
@@ -265,6 +266,24 @@ static int32_t enc28j60_rx_fifo_init(ENC28J60 *device)
 } /* enc28j60_rx_fifo_init */
 
 /*
+ * enc28j60_set_mac
+ * @device: ENC28J60 device instance for which MAC address is needed to be set.
+ * @mac: MAC address needed to be set.
+ * This function will update the MAC address for a ENC28J60 device.
+ */
+static void enc28j60_set_mac_address(ENC28J60 *device, uint8_t *mac)
+{
+    /* Update MAC address in the hardware. */
+    OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAADR0, mac[5], NULL, 0) != SUCCESS);
+    OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAADR1, mac[4], NULL, 0) != SUCCESS);
+    OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAADR2, mac[3], NULL, 0) != SUCCESS);
+    OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAADR3, mac[2], NULL, 0) != SUCCESS);
+    OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAADR4, mac[1], NULL, 0) != SUCCESS);
+    OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAADR5, mac[0], NULL, 0) != SUCCESS);
+
+} /* enc28j60_set_mac_address */
+
+/*
  * enc28j60_link_changed
  * @device: ENC28J60 device instance for which link status has been changed.
  * This function will be called whenever a link status change is detected.
@@ -280,6 +299,9 @@ static void enc28j60_link_changed(ENC28J60 *device)
     /* If we are now in connected state. */
     if (phy_register & ENC28J60_PHSTAT2_LSTAT)
     {
+        /* Generate a random MAC address and assign it to the device. */
+        enc28j60_set_mac_address(device, ethernet_random_mac(&device->ethernet_device));
+
         /* Initialize RX FIFO. */
         OS_ASSERT(enc28j60_rx_fifo_init(device) != SUCCESS);
 
