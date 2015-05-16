@@ -82,10 +82,15 @@ static void enc28j60_initialize(void *data)
     FD fd = (FD)&device->ethernet_device;
 
     /* Reset this device. */
-    OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_RESET, ENC28J60_ADDR_RESET, ENC28J60_VALUE_RESET, NULL, 0) != SUCCESS);
+    ENC28J60_RESET(device);
 
-    /* For now we need to sleep to wait for this device to initialize. */
-    sleep_ms(50);
+    /* Wait for clock signal. */
+    do
+    {
+        /* Read the value of ESTAT. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_ESTAT, 0xFF, &value, 1) != SUCCESS);
+
+    } while ((value & ENC28J60_ESTAT_CLKRDY) == 0);
 
     /* Clear ECON1. */
     OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON1, 0x00, NULL, 0) != SUCCESS);

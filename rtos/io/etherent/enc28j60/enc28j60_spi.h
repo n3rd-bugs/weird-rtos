@@ -80,8 +80,11 @@
 /* ENC28J60 non-banked control registers. */
 #define ENC28J60_ADDR_EIE           (0x1B)
 #define ENC28J60_ADDR_EIR           (0x1C)
+#define ENC28J60_ADDR_ESTAT         (0x1D)
 #define ENC28J60_ADDR_ECON2         (0x1E)
 #define ENC28J60_ADDR_ECON1         (0x1F)
+
+/* ENC28J60 opcode address definitions. */
 #define ENC28J60_ADDR_RESET         (0x1F)
 #define ENC28J60_ADDR_BUFFER        (0x1A)
 
@@ -147,6 +150,13 @@
 #define ENC28J60_EIR_WOLIF          (0x04)
 #define ENC28J60_EIR_TXERIF         (0x02)
 #define ENC28J60_EIR_RXERIF         (0x01)
+
+/* ENC28J60 ESTAT Register Bit Definitions */
+#define ENC28J60_ESTAT_INT          (0x80)
+#define ENC28J60_ESTAT_LATECOL      (0x10)
+#define ENC28J60_ESTAT_RXBUSY       (0x04)
+#define ENC28J60_ESTAT_TXABRT       (0x02)
+#define ENC28J60_ESTAT_CLKRDY       (0x01)
 
 /* ENC28J60 ECON2 register definitions. */
 #define ENC28J60_ECON2_AUTOINC      (0x80)
