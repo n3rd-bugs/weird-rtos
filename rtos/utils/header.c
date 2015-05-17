@@ -31,13 +31,14 @@ void header_gen_machine_init(HDR_GEN_MACHINE *machine, HRD_PUSH *push)
 
 /*
  * header_generate
- * @headers: Header data needed to be populated.
- * @data: Data needed to be forwarded to the process function.
- * @header: Header definition being processed.
- * @buffer: Buffer from which header is needed to be processed.
- * @proc_buf: Process buffer that will be used to pass data to the process
- *  function.
- * This function will run the header machine.
+ * @machine: Header generator machine instance.
+ * @headers: Header data that will be populated in the given buffer.
+ * @num_headers: Number of headers needed to be generated.
+ * @buffer: Buffer in which header will be generated.
+ * @return: A success status will be returned if the header was successfully
+ *  generated.
+ * This function will generate a header according to the provided header
+ * definition.
  */
 int32_t header_generate(HDR_GEN_MACHINE *machine, HEADER *header, uint32_t num_headers, void *buffer)
 {
@@ -77,16 +78,62 @@ void header_parse_machine_init(HDR_PARSE_MACHINE *machine, HRD_PULL *pull)
 } /* header_parse_machine_init */
 
 /*
- * header_parse_machine_run
+ * header_parse
+ * @machine: Header parser machine instance.
+ * @headers: Header data that will be updated as the header is parsed.
+ * @num_headers: Number of headers needed to be parsed.
+ * @buffer: Buffer from which given header will be parsed.
+ * @return: A success status will be returned if the header was successfully
+ *  generated.
+ * This function will parse a header according to the provided header
+ * definition.
+ */
+int32_t header_parse(HDR_PARSE_MACHINE *machine, HEADER *header, uint32_t num_headers, void *buffer)
+{
+    int32_t status = SUCCESS;
+
+    /* While we have a header to process and we have a success status. */
+    while ((status == SUCCESS) && (num_headers > 0))
+    {
+        /* Pull this header from the buffer. */
+        status = machine->pull(buffer, header->value, header->size, header->flags);
+
+        /* Pick the next header. */
+        header++;
+        num_headers--;
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* header_parse */
+
+/*
+ * header_process_machine_init
+ * @machine: Header machine needed to be initialized.
+ * @pull: Function that will be called to pull data from the buffer.
+ * This function will initialize a header process machine.
+ */
+void header_process_machine_init(HDR_PROCESS_MACHINE *machine, HRD_PULL *pull)
+{
+    /* Clear the machine data. */
+    memset(machine, 0, sizeof(HDR_PROCESS_MACHINE));
+    machine->pull = pull;
+
+} /* header_process_machine_init */
+
+/*
+ * header_process_machine_run
  * @machine: Header machine instance.
  * @data: Data needed to be forwarded to the process function.
  * @header: Header definition being processed.
  * @buffer: Buffer from which header is needed to be processed.
  * @proc_buf: Process buffer that will be used to pass data to the process
  *  function.
- * This function will run the header machine.
+ * This function will run the header machine that will parse and process the
+ * given header.
  */
-int32_t header_parse_machine_run(HDR_PARSE_MACHINE *machine, void *data, const HEADER *header, void *buffer, uint8_t *proc_buf)
+int32_t header_process_machine_run(HDR_PROCESS_MACHINE *machine, void *data, const HEADER *header, void *buffer, uint8_t *proc_buf)
 {
     int32_t status = SUCCESS;
     const HEADER *header_ptr = &header[machine->header];
@@ -116,7 +163,7 @@ int32_t header_parse_machine_run(HDR_PARSE_MACHINE *machine, void *data, const H
         }
 
         /* Pull the required number of bytes. */
-        status = machine->pull(buffer, proc_buf + (machine->num_bits != 0), byte_size);
+        status = machine->pull(buffer, proc_buf + (machine->num_bits != 0), byte_size, 0);
 
         if (status == SUCCESS)
         {
@@ -189,4 +236,4 @@ int32_t header_parse_machine_run(HDR_PARSE_MACHINE *machine, void *data, const H
     /* Return status to the caller. */
     return (status);
 
-} /* header_parse_machine_run */
+} /* header_process_machine_run */

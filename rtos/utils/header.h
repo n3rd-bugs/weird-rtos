@@ -22,7 +22,7 @@
 #define HEADER_END          0x8000
 
 /* This function will be used to pull/push data from/to the provided buffer. */
-typedef int32_t HRD_PULL(void *, uint8_t *, uint32_t);
+typedef int32_t HRD_PULL(void *, uint8_t *, uint32_t, uint16_t);
 typedef int32_t HRD_PUSH(void *, uint8_t *, uint32_t, uint16_t);
 
 /* This function will be used to process a header. */
@@ -46,15 +46,23 @@ typedef struct _hdr_gen_machine
 typedef struct _hdr_parse_machine
 {
     HRD_PULL    *pull;          /* Function that will be called to pull the data from the buffer. */
+} HDR_PARSE_MACHINE;
+
+/* Header process machine data. */
+typedef struct _hdr_process_machine
+{
+    HRD_PULL    *pull;          /* Function that will be called to pull the data from the buffer. */
     uint16_t    header;         /* Current header we are parsing. */
     uint8_t     num_bits;       /* Number of valid bits left. */
     uint8_t     byte;           /* Remaining data in the byte. */
-} HDR_PARSE_MACHINE;
+} HDR_PROCESS_MACHINE;
 
 /* Function prototypes. */
 void header_gen_machine_init(HDR_GEN_MACHINE *, HRD_PUSH *);
 int32_t header_generate(HDR_GEN_MACHINE *, HEADER *, uint32_t, void *);
 void header_parse_machine_init(HDR_PARSE_MACHINE *, HRD_PULL *);
-int32_t header_parse_machine_run(HDR_PARSE_MACHINE *, void *, const HEADER *, void *, uint8_t *);
+int32_t header_parse(HDR_PARSE_MACHINE *, HEADER *, uint32_t, void *);
+void header_process_machine_init(HDR_PROCESS_MACHINE *, HRD_PULL *);
+int32_t header_process_machine_run(HDR_PROCESS_MACHINE *, void *, const HEADER *, void *, uint8_t *);
 
 #endif /* _HEADER_H_ */

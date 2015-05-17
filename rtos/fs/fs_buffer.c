@@ -1657,15 +1657,16 @@ int32_t fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one,
  * @buffer: File buffer from which data is needed to be pulled.
  * @data: Buffer in which data is needed to be pulled.
  * @size: Number of bytes needed to be pulled.
+ * @flags: Header flags.
  * @return: Success if operation was successfully performed,
  *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
  *  buffer.
  * This function is an abstraction function for header utility.
  */
-int32_t fs_buffer_hdr_pull(void *buffer, uint8_t *data, uint32_t size)
+int32_t fs_buffer_hdr_pull(void *buffer, uint8_t *data, uint32_t size, uint16_t flags)
 {
     /* Call the underlying buffer pull function. */
-    return (fs_buffer_pull((FS_BUFFER *)buffer, data, size, 0));
+    return (fs_buffer_pull((FS_BUFFER *)buffer, data, size, (FS_BUFFER_HEAD | (uint8_t)flags)));
 
 } /* fs_buffer_hdr_pull */
 
@@ -1674,6 +1675,7 @@ int32_t fs_buffer_hdr_pull(void *buffer, uint8_t *data, uint32_t size)
  * @buffer: File buffer on which data is needed to be pushed.
  * @data: Buffer from which data is needed to be added.
  * @size: Number of bytes needed to be added.
+ * @flags: Header flags.
  * @return: Success if operation was successfully performed,
  *  FS_BUFFER_NO_SPACE will be returned if there is not enough space in the
  *      buffer.

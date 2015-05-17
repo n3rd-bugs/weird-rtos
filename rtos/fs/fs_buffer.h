@@ -190,7 +190,7 @@ int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *, void *, uint32_t, uint32_t, u
 int32_t fs_buffer_one_divide(FD, FS_BUFFER_ONE *, FS_BUFFER_ONE **, uint32_t, uint32_t);
 
 /* Helper routines. */
-int32_t fs_buffer_hdr_pull(void *, uint8_t *, uint32_t);
+int32_t fs_buffer_hdr_pull(void *, uint8_t *, uint32_t, uint16_t);
 int32_t fs_buffer_hdr_push(void *, uint8_t *, uint32_t, uint16_t);
 uint8_t fs_buffer_type_search(void *, void *);
 
