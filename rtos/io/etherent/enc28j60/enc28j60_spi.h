@@ -43,6 +43,8 @@
 #define ENC28J60_BANK_3             (0xC0)
 #define ENC28J60_ADDR_ERDPTL        (ENC28J60_BANK_0 | 0x00)
 #define ENC28J60_ADDR_ERDPTH        (ENC28J60_BANK_0 | 0x01)
+#define ENC28J60_ADDR_EWRPTL        (ENC28J60_BANK_0 | 0x02)
+#define ENC28J60_ADDR_EWRPTH        (ENC28J60_BANK_0 | 0x03)
 #define ENC28J60_ADDR_ETXSTL        (ENC28J60_BANK_0 | 0x04)
 #define ENC28J60_ADDR_ETXSTH        (ENC28J60_BANK_0 | 0x05)
 #define ENC28J60_ADDR_ETXNDL        (ENC28J60_BANK_0 | 0x06)
@@ -199,6 +201,7 @@
 /* Function prototypes. */
 int32_t enc28j60_write_phy(ENC28J60 *, uint8_t, uint16_t);
 int32_t enc28j60_read_phy(ENC28J60 *, uint8_t, uint16_t *);
+int32_t enc28j60_write_buffer(ENC28J60 *, uint16_t, uint8_t *, int32_t);
 int32_t enc28j60_read_buffer(ENC28J60 *, uint16_t, uint8_t *, int32_t);
 int32_t enc28j60_write_word(ENC28J60 *, uint8_t, uint16_t);
 int32_t enc28j60_read_word(ENC28J60 *, uint8_t, uint16_t *);
