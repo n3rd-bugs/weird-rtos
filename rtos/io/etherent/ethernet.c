@@ -285,6 +285,7 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
     /* Process the protocol. */
     switch(proto)
     {
+#ifdef NET_IPV4
     /* This is an IPv4 frame. */
     case ETH_PROTO_IP:
 
@@ -295,6 +296,7 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
         status = NET_BUFFER_CONSUMED;
 
         break;
+#endif
     }
 
     /* Return status to the caller. */
@@ -331,11 +333,21 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
 
     switch (net_proto)
     {
+#ifdef NET_IPV4
+    /* If an IPv4 packet is needed to be transmitted. */
     case NET_PROTO_IPV4:
+
+        /* Use the ethernet IPv4 type. */
         proto = ETH_PROTO_IP;
+
         break;
+#endif
+
+    /* Unknown protocol. */
     default:
+        /* This protocol is not supported. */
         status = NET_NOT_SUPPORTED;
+
         break;
     }
 
