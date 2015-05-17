@@ -15,6 +15,7 @@
 #include <os.h>
 
 #ifdef CONFIG_SPI
+#include <spi.h>
 
 /* STM32F407 SPI CR1 register definitions. */
 #define STM32F407_SPI_CR1_BIDI_SHIFT    (15)
@@ -70,7 +71,7 @@ typedef struct _stm32f407_spi
 void spi_stm32f407_init();
 void spi_stm32f407_slave_select(SPI_DEVICE *);
 void spi_stm32f407_slave_unselect(SPI_DEVICE *);
-int32_t spi_stm32f407_write_read(SPI_DEVICE *, uint8_t *, int32_t);
+int32_t spi_stm32f407_message(SPI_DEVICE *, SPI_MSG *);
 
 #endif /* CONFIG_SPI */
 #endif /* _SPI_STM32F407_H_ */

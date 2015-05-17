@@ -177,19 +177,19 @@ void spi_stm32f407_slave_unselect(SPI_DEVICE *device)
 } /* spi_stm32f407_slave_unselect */
 
 /*
- * spi_stm32f407_write_read
- * @device: SPI device on which we need to write and then read data.
- * @buffer: Buffer from which data will be written, same buffer will be updated
- *  with the data written.
- * @length: Size of the provided buffer.
- * This function will write and then read data from a SPI device.
+ * spi_stm32f407_message
+ * @device: SPI device for which messages are needed to be processed.
+ * @message: SPI message needed to be sent.
+ * @return: Total number of bytes read or written.
+ * This function will process a SPI message.
  */
-int32_t spi_stm32f407_write_read(SPI_DEVICE *device, uint8_t *buffer, int32_t length)
+int32_t spi_stm32f407_message(SPI_DEVICE *device, SPI_MSG *message)
 {
-    int32_t ret_bytes = length;
+    int32_t num_bytes = message->length;
+    uint8_t *buffer = message->buffer, byte;
 
     /* While we have a byte to write and read. */
-    while (length --)
+    while (num_bytes --)
     {
         /* Wait while TX buffer is not empty. */
         while ((device->data.reg->SR & STM32F407_SPI_SR_TXE) == 0);
@@ -201,15 +201,22 @@ int32_t spi_stm32f407_write_read(SPI_DEVICE *device, uint8_t *buffer, int32_t le
         while ((device->data.reg->SR & STM32F407_SPI_SR_RXNE) == 0);
 
         /* Save the data read from the device. */
-        *buffer = (uint8_t)device->data.reg->DR;
+        byte = (uint8_t)device->data.reg->DR;
+
+        /* Check if we are also reading. */
+        if (message->flags & SPI_MSG_READ)
+        {
+            /* Save the byte read from SPI. */
+            *buffer = byte;
+        }
 
         /* Get next byte to send and update. */
         buffer++;
     }
 
-    /* Return number of bytes written to and read from the SPI. */
-    return (ret_bytes);
+    /* Return number of bytes written and read from SPI. */
+    return (message->length);
 
-} /* spi_stm32f407_write_read */
+} /* spi_stm32f407_message */
 
 #endif /* CONFIG_SPI */

@@ -24,7 +24,7 @@ typedef struct _stm32f407_spi   SPI_TGT_STRUCT;
 #define SPI_TGT_INIT            spi_stm32f407_init
 #define SPI_TGT_SS              spi_stm32f407_slave_select
 #define SPI_TGT_SUS             spi_stm32f407_slave_unselect
-#define SPI_TGT_WR              spi_stm32f407_write_read
+#define SPI_TGT_MSG             spi_stm32f407_message
 
 #endif /* CONFIG_SPI */
 
