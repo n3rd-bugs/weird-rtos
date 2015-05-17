@@ -27,14 +27,19 @@
 #define SPI_CFG_CLK_FIRST_DATA  0x0080
 #define SPI_CFG_ENABLE_HARD_SS  0x0100
 
+/* SPI message flags. */
+#define SPI_MSG_READ            0x01
+#define SPI_MSG_WRITE           0x02
+
 /* Week link SPI device structure. */
-typedef struct _spi_device SPI_DEVICE;
+typedef struct _spi_device  SPI_DEVICE;
+typedef struct _spi_msg     SPI_MSG;
 
 /* Include SPI target configurations. */
 #include <spi_target.h>
 
 /* SPI device structure. */
-typedef struct _spi_device
+struct _spi_device
 {
     /* Target specific data. */
     SPI_TGT_STRUCT  data;
@@ -45,11 +50,25 @@ typedef struct _spi_device
     /* SPI baudrate configuration. */
     uint32_t        baudrate;
 
-} SPI_DEVICE;
+};
+
+/* SPI message structure. */
+struct _spi_msg
+{
+    /* Buffer for read or write operation. */
+    uint8_t     *buffer;
+
+    /* Buffer length. */
+    int32_t     length;
+
+    /* Message flags. */
+    uint32_t    flags;
+
+};
 
 /* Function prototypes. */
 void spi_init(SPI_DEVICE *);
-int32_t spi_write_read(SPI_DEVICE *, uint8_t *, int32_t, uint8_t *, int32_t);
+int32_t spi_message(SPI_DEVICE *, SPI_MSG *, uint32_t);
 
 #endif /* CONFIG_SPI */
 

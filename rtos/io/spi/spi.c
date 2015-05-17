@@ -27,26 +27,29 @@ void spi_init(SPI_DEVICE *device)
 } /* spi_init */
 
 /*
- * spi_write_read
- * @device: SPI device on which we need to write and then read data.
- * @tx_buffer: Buffer from which data will be written.
- * @tx_length: Number of bytes needed to be sent.
- * @rx_buffer: Buffer in which data will be read.
- * @rx_length: Number of bytes to read.
- * This function will write and then read data from a SPI device.
+ * spi_message
+ * @device: SPI device on which we need to process a SPI message.
+ * @messages: SPI message array.
+ * @num_messages: Number of SPI messages to process.
+ * @return: Total number of bytes read or/and written.
+ * This function will process given SPI messages.
  */
-int32_t spi_write_read(SPI_DEVICE *device, uint8_t *tx_buffer, int32_t tx_length, uint8_t *rx_buffer, int32_t rx_length)
+int32_t spi_message(SPI_DEVICE *device, SPI_MSG *messages, uint32_t num_messages)
 {
-    int32_t ret_bytes;
+    int32_t ret_bytes = 0;
 
     /* Select slave for the device. */
     SPI_TGT_SS(device);
 
-    /* Read write the TX buffer. */
-    ret_bytes = SPI_TGT_WR(device, tx_buffer, tx_length);
+    /* While we have a SPI message to send. */
+    while (num_messages --)
+    {
+        /* Process this SPI message on the target. */
+        ret_bytes += SPI_TGT_MSG(device, messages);
 
-    /* Read write the RX buffer. */
-    ret_bytes += SPI_TGT_WR(device, rx_buffer, rx_length);
+        /* Get the next message to be sent. */
+        messages++;
+    }
 
     /* Un-select the SPI device. */
     SPI_TGT_SUS(device);
@@ -54,6 +57,6 @@ int32_t spi_write_read(SPI_DEVICE *device, uint8_t *tx_buffer, int32_t tx_length
     /* Return number of bytes written to and read from the SPI. */
     return (ret_bytes);
 
-} /* spi_write_read */
+} /* spi_message */
 
 #endif /* CONFIG_SPI */
