@@ -40,6 +40,9 @@
 #define ENC28J60_NUM_BUFFERS        (32)
 #define ENC28J60_NUM_BUFFER_LISTS   (12)
 
+/* Networking configuration for a enc28j60 device. */
+#define ENC28J60_NUM_ARP            (4)
+
 /* ENC28J60 receive packet definitions. */
 #define ENC28J60_RX_HEAD_SIZE       (6)
 #define ENC28J60_RX_RXLONGEVDROPEV  (0x0001)
@@ -84,6 +87,11 @@ typedef struct _enc28j60_device
     FS_BUFFER_DATA  fs_buffer_data;
     FS_BUFFER_ONE   fs_buffer[ENC28J60_NUM_BUFFERS];
     FS_BUFFER       fs_buffer_list[ENC28J60_NUM_BUFFER_LISTS];
+
+#ifdef NET_ARP
+    /* ARP entry list. */
+    ARP_ENTRY   arp_entries[ENC28J60_NUM_ARP];
+#endif
 
     /* SPI device structure. */
     SPI_DEVICE  spi;

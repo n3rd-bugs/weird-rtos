@@ -70,6 +70,11 @@ void enc28j60_init(ENC28J60 *device)
     /* Register this ethernet device. */
     ethernet_regsiter(&device->ethernet_device, &enc28j60_initialize, &enc28j60_transmit_packet, &enc28j60_interrupt);
 
+#ifdef NET_ARP
+    /* Set ARP data for this ethernet device. */
+    ethernet_arp_set_data(&device->ethernet_device, device->arp_entries, ENC28J60_NUM_ARP);
+#endif
+
 } /* enc28j60_init */
 
 /*
