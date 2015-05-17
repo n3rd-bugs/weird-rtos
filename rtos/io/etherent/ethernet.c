@@ -265,6 +265,9 @@ void ethernet_interrupt(ETH_DEVICE *device)
 /*
  * ethernet_buffer_receive
  * @buffer: A net buffer needed to be added in the receive list.
+ * @return: NET_NOT_SUPPORTED will be returned if the given ethernet protocol
+ *  is not supported, NET_BUFFER_CONSUMED will be returned if buffer was passed
+ *  to the networking stack.
  * This function will process an ethernet frame and pass it to the networking
  * stack.
  */
@@ -272,6 +275,7 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
     uint16_t proto;
+    uint8_t net_proto;
 
     /* Pull and discard the destination addresses. */
     OS_ASSERT(fs_buffer_pull(buffer, NULL, (ETH_ADDR_LEN), 0) != SUCCESS);
@@ -289,14 +293,37 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
     /* This is an IPv4 frame. */
     case ETH_PROTO_IP:
 
-        /* Receive an IPv4 packet. */
-        net_device_buffer_receive(buffer, NET_PROTO_IPV4);
-
-        /* Buffer is now consumed. */
-        status = NET_BUFFER_CONSUMED;
+        /* Pick IPv4 protocol. */
+        net_proto = NET_PROTO_IPV4;
 
         break;
 #endif
+#ifdef NET_ARP
+    /* This is an ARP frame. */
+    case ETH_PROTO_ARP:
+
+        /* Pick ARP protocol. */
+        net_proto = NET_PROTO_ARP;
+
+        break;
+#endif
+    /* An unsupported protocol. */
+    default:
+
+        /* Return an error. */
+        status = NET_NOT_SUPPORTED;
+
+        break;
+    }
+
+    /* If we have a supported protocol. */
+    if (status == SUCCESS)
+    {
+        /* Pass this frame to the networking stack. */
+        net_device_buffer_receive(buffer, net_proto);
+
+        /* Buffer is now consumed. */
+        status = NET_BUFFER_CONSUMED;
     }
 
     /* Return status to the caller. */
@@ -382,4 +409,38 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
 
 } /* ethernet_buffer_transmit */
 
+#ifdef NET_ARP
+/*
+ * ethernet_arp_set_data
+ * @device: Ethernet device for which ARP data is needed to be initialized.
+ * @entry_list: ARP entry list array.
+ * @num_entries: Number of entries.
+ * This function initializes ARP data for an ethernet device.
+ */
+void ethernet_arp_set_data(ETH_DEVICE *device, ARP_ENTRY *entry_list, uint32_t num_entries)
+{
+    /* ARP entries are already cleared. */
+
+    /* Initialize ARP data for this device. */
+    device->arp.entries = entry_list;
+    device->arp.num_entries = num_entries;
+
+} /* ethernet_arp_set_data */
+
+/*
+ * ethernet_arp_get_data
+ * @fd: Ethernet file descriptor for which ARP data is needed.
+ * @return: Returns the ARP data for this ethernet device.
+ * This function returns ARP data structure for a given ethernet file descriptor.
+ */
+ARP_DATA *ethernet_arp_get_data(FD fd)
+{
+    ETH_DEVICE *device = (ETH_DEVICE *)fd;
+
+    /* Return ARP data for this device. */
+    return (&device->arp);
+
+} /* ethernet_arp_get_data */
+
+#endif /* NET_ARP */
 #endif /* CONFIG_ETHERNET */

@@ -14,7 +14,13 @@
 
 #ifdef CONFIG_NET
 #include <net.h>
+#ifdef NET_IPV4
 #include <net_ipv4.h>
+#endif
+#ifdef NET_ARP
+#include <ethernet.h>
+#include <net_arp.h>
+#endif
 
 /*
  * net_buffer_process
@@ -42,6 +48,16 @@ int32_t net_buffer_process(FS_BUFFER *buffer)
 
         /* Process this IPv4 buffer. */
         status = net_process_ipv4(buffer);
+
+        break;
+#endif
+
+#ifdef NET_ARP
+    /* ARP packet. */
+    case NET_PROTO_ARP:
+
+        /* Process this ARP buffer. */
+        status = net_process_arp(buffer);
 
         break;
 #endif

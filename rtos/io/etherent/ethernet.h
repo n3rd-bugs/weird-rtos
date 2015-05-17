@@ -17,6 +17,7 @@
 #ifdef CONFIG_ETHERNET
 #include <fs.h>
 #include <fs_buffer.h>
+#include <net.h>
 #include <net_device.h>
 
 /* Ethernet configuration. */
@@ -41,6 +42,7 @@
 
 /* Ethernet protocol definitions. */
 #define ETH_PROTO_IP        (0x0800)
+#define ETH_PROTO_ARP       (0x0806)
 
 /* Ethernet device flags. */
 #define ETH_FLAG_INIT       0x01
@@ -54,7 +56,11 @@ typedef int32_t ETH_TRANSMIT (void *, FS_BUFFER *);
 
 /* Include ethernet target configurations. */
 #include <ethernet_target.h>
+#ifdef NET_ARP
+#include <net_arp.h>
+#endif
 
+/* Ethernet device data structure. */
 typedef struct _eth_device
 {
     /* File descriptor for this ethernet device. */
@@ -71,6 +77,11 @@ typedef struct _eth_device
     /* TX queue suspend for this device. */
     FS_PARAM    fs_param;
     SUSPEND     suspend;
+
+#ifdef NET_ARP
+    /* ARP device data. */
+    ARP_DATA    arp;
+#endif
 
     /* Ethernet driver hooks. */
     ETH_INIT        *initialize;
@@ -94,6 +105,10 @@ void ethernet_regsiter(ETH_DEVICE *, ETH_INIT *, ETH_TRANSMIT *, ETH_INTERRUPT *
 uint8_t *ethernet_random_mac(ETH_DEVICE *);
 void ethernet_interrupt(ETH_DEVICE *);
 int32_t ethernet_buffer_receive(FS_BUFFER *);
+#ifdef NET_ARP
+void ethernet_arp_set_data(ETH_DEVICE *, ARP_ENTRY *, uint32_t);
+ARP_DATA *ethernet_arp_get_data(FD fd);
+#endif /* NET_ARP */
 
 #endif /* CONFIG_ETHERNET */
 

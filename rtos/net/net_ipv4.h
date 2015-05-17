@@ -29,6 +29,7 @@
 #define IP_PROTO_UDP                (0x11)
 
 /* IPv4 header definitions. */
+#define IPV4_ADDR_LEN               (4)
 #define IPV4_HDR_SIZE               (20)
 #define IPV4_HDR_VER                (0x40)
 

@@ -20,6 +20,7 @@
 #define NET_IPV4
 #define NET_ICMP
 #define NET_UDP
+#define NET_ARP
 
 #include <net_buffer.h>
 #include <net_device.h>

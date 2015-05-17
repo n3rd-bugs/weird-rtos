@@ -22,6 +22,7 @@
 /* Protocol definitions that the networking stack will be expecting on a buffer
  * to invoke an interrupt routine for that. */
 #define NET_PROTO_IPV4              0x01
+#define NET_PROTO_ARP               0x02
 
 /* Global network buffer data. */
 typedef struct _net_buffer_fs
