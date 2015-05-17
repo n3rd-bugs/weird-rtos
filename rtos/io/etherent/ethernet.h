@@ -16,10 +16,19 @@
 
 #ifdef CONFIG_ETHERNET
 #include <fs.h>
+#include <fs_buffer.h>
 #include <net_device.h>
 
 /* Ethernet configuration. */
 #define ETHERNET_ENC28J60
+
+/* Ethernet error definitions. */
+#define ETH_TX_BLOCKED      -1100
+
+/* Ethernet header definitions. */
+#define ETH_HDR_DST_OFFSET  (0)
+#define ETH_HDR_SRC_OFFSET  (6)
+#define ETH_HDR_TYPE_OFFSET (12)
 
 /* Ethernet definitions. */
 #define ETH_ADDR_LEN        (6)
@@ -34,12 +43,14 @@
 #define ETH_PROTO_IP        (0x0800)
 
 /* Ethernet device flags. */
-#define ETH_FLAG_INIT      0x01
-#define ETH_FLAG_INT       0x02
+#define ETH_FLAG_INIT       0x01
+#define ETH_FLAG_INT        0x02
+#define ETH_FLAG_TX         0x04
 
 /* Ethernet device API. */
 typedef void ETH_INIT (void *);
 typedef void ETH_INTERRUPT (void *);
+typedef int32_t ETH_TRANSMIT (void *, FS_BUFFER *);
 
 /* Include ethernet target configurations. */
 #include <ethernet_target.h>
@@ -57,9 +68,14 @@ typedef struct _eth_device
     SEMAPHORE   lock;
 #endif
 
+    /* TX queue suspend for this device. */
+    FS_PARAM    fs_param;
+    SUSPEND     suspend;
+
     /* Ethernet driver hooks. */
     ETH_INIT        *initialize;
     ETH_INTERRUPT   *interrupt;
+    ETH_TRANSMIT    *transmit;
 
     /* MAC address assigned to this device. */
     uint8_t     mac[ALLIGN_CEIL(ETH_ADDR_LEN)];
@@ -74,7 +90,7 @@ typedef struct _eth_device
 
 /* Function prototypes. */
 void ethernet_init();
-void ethernet_regsiter(ETH_DEVICE *, ETH_INIT *, ETH_INTERRUPT *);
+void ethernet_regsiter(ETH_DEVICE *, ETH_INIT *, ETH_TRANSMIT *, ETH_INTERRUPT *);
 uint8_t *ethernet_random_mac(ETH_DEVICE *);
 void ethernet_interrupt(ETH_DEVICE *);
 int32_t ethernet_buffer_receive(FS_BUFFER *);

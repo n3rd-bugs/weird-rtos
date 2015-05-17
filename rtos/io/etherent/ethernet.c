@@ -16,6 +16,7 @@
 #include <string.h>
 #include <ethernet.h>
 #include <net_buffer.h>
+#include <header.h>
 
 /* Internal function prototypes. */
 static int32_t ethernet_buffer_transmit(FS_BUFFER *, uint8_t);
@@ -34,15 +35,21 @@ void ethernet_init()
 
 } /* ethernet_init */
 
+
+uint8_t eth_dst_mac[ETH_ADDR_LEN];
+
 /*
  * ethernet_regsiter
  * @device: Ethernet device instance needed to be registered.
- * @ethernet_init: Ethernet device initialization function.
- * @ethernet_interrupt: Ethernet interrupt callback.
+ * @initialize: Ethernet device initialization function.
+ * @transmit: Function that will be called to transmit a packet.
+ * @interrupt: Ethernet interrupt callback.
  * This function will register an ethernet device.
  */
-void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_INTERRUPT *interrupt)
+void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *transmit, ETH_INTERRUPT *interrupt)
 {
+    FD fd = (FD)&device->fs;
+
     /* Initialize file system data. */
     device->fs.get_lock = &ethernet_lock;
     device->fs.release_lock = &ethernet_unlock;
@@ -55,10 +62,10 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_INTERRUPT *
 #endif
 
     /* Initialize file system condition. */
-    fs_condition_init(&device->fs);
+    fs_condition_init(fd);
 
     /* Register this file descriptor with file system. */
-    fs_register(&device->fs);
+    fs_register(fd);
 
     /* This will block on read, and all data that will be given to write must
      * be flushed, also set the data available flag to start the device
@@ -66,13 +73,14 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_INTERRUPT *
     device->fs.flags = (FS_BLOCK | FS_FLUSH_WRITE | ((initialize != NULL) ? FS_DATA_AVAILABLE : 0) | FS_BUFFERED);
 
     /* Register a networking device. */
-    net_register_fd(&device->net_device, (FD)&device->fs, &ethernet_buffer_transmit, &ethernet_process);
+    net_register_fd(&device->net_device, fd, &ethernet_buffer_transmit, &ethernet_process);
 
     /* Set MTU for this device. */
-    net_device_set_mtu((FD)&device->fs, ETH_MTU_SIZE);
+    net_device_set_mtu(fd, ETH_MTU_SIZE);
 
     /* Initialize Ethernet driver hooks. */
     device->initialize = initialize;
+    device->transmit = transmit;
     device->interrupt = interrupt;
 
     /* If we do have an initialize callback for this device. */
@@ -164,6 +172,9 @@ static void ethernet_unlock(void *fd)
 static void ethernet_process(void *data)
 {
     ETH_DEVICE *device = (ETH_DEVICE *)data;
+    FD fd = (FD)data;
+    FS_BUFFER *buffer;
+    int32_t status = SUCCESS;
 
     /* Acquire lock for this device. */
     OS_ASSERT(fd_get_lock((FD)device) != SUCCESS);
@@ -176,6 +187,39 @@ static void ethernet_process(void *data)
 
         /* We have processed interrupt for this device. */
         device->flags &= (uint8_t)(~ETH_FLAG_INT);
+    }
+
+    /* Check if we have to transmit a buffer. */
+    if (device->flags & ETH_FLAG_TX)
+    {
+        /* While we have a buffer to transmit. */
+        do
+        {
+            /* Get a buffer we need to transmit. */
+            buffer = fs_buffer_get(fd, FS_BUFFER_TX, 0);
+
+            /* If we have a buffer to transmit. */
+            if (buffer != NULL)
+            {
+                /* Transmit this buffer. */
+                status = device->transmit(device, buffer);
+
+                if (status == SUCCESS)
+                {
+                    /* Free this buffer. */
+                    fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                }
+                else
+                {
+                    /* Put back this buffer on the transmission list. */
+                    fs_buffer_add(fd, buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+                }
+            }
+
+        } while ((status == SUCCESS) && (buffer != NULL));
+
+        /* Clear the transmit flag. */
+        device->flags &= (uint8_t)(~ETH_FLAG_TX);
     }
 
     /* Check if we need to do device initialization. */
@@ -229,8 +273,11 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
     int32_t status = SUCCESS;
     uint16_t proto;
 
-    /* Pull and discard the source and destination addresses. */
-    OS_ASSERT(fs_buffer_pull(buffer, NULL, (ETH_ADDR_LEN * 2), 0) != SUCCESS);
+    /* Pull and discard the destination addresses. */
+    OS_ASSERT(fs_buffer_pull(buffer, NULL, (ETH_ADDR_LEN), 0) != SUCCESS);
+
+    /* Pull and save the source address. */
+    OS_ASSERT(fs_buffer_pull(buffer, eth_dst_mac, (ETH_ADDR_LEN), 0) != SUCCESS);
 
     /* Pull the protocol. */
     OS_ASSERT(fs_buffer_pull(buffer, &proto, ETH_PROTO_LEN, FS_BUFFER_PACKED) != SUCCESS);
@@ -260,18 +307,63 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
  * @buffer: A net buffer needed to be be sent.
  * @flags: Operation flags.
  *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
- * @return: A success status will be returned if buffer was successfully
- *  transmitted, NET_BUFFER_CONSUMED will be returned if buffer is passed to
- *  the device and will be freed from there.
+ * @return: NET_NOT_SUPPORTED will be returned if specified protocol is not
+ *  supported, NET_BUFFER_CONSUMED will be returned as this packet will be
+ *  pushed in the ethernet transmission queue.
  * This function will transmit an ethernet frame.
  */
 static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
 {
-    int32_t status = SUCCESS;
+    ETH_DEVICE *device = (ETH_DEVICE *)buffer->fd;
+    int32_t status;
+    HDR_GEN_MACHINE hdr_machine;
+    uint16_t proto = 0;
+    uint8_t net_proto;
+    HEADER eth_hdr[] =
+    {
+        {eth_dst_mac,       ETH_ADDR_LEN,   (flags) },                      /* Destination address. */
+        {device->mac,       ETH_ADDR_LEN,   (flags) },                      /* Source address. */
+        {(uint8_t *)&proto, 2,              (FS_BUFFER_PACKED | flags) },   /* Ethernet type. */
+    };
 
-    /* TODO */
-    UNUSED_PARAM(buffer);
-    UNUSED_PARAM(flags);
+    /* Skim the protocol from the buffer. */
+    OS_ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
+
+    switch (net_proto)
+    {
+    case NET_PROTO_IPV4:
+        proto = ETH_PROTO_IP;
+        break;
+    default:
+        status = NET_NOT_SUPPORTED;
+        break;
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Generate an ethernet header on this buffer. */
+
+        /* Initialize header generator machine. */
+        header_gen_machine_init(&hdr_machine, &fs_buffer_hdr_push);
+
+        /* Push the ethernet header on the buffer. */
+        status = header_generate(&hdr_machine, eth_hdr, sizeof(eth_hdr)/sizeof(HEADER), buffer);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Add this buffer in the device transmission list. */
+        fs_buffer_add(buffer->fd, buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+
+        /* Set flag to tell that we have a packet to transmit. */
+        device->flags |= ETH_FLAG_TX;
+
+        /* Set flag that we have some data available on this device. */
+        fd_data_available(buffer->fd);
+
+        /* This buffer is now in device transmission queue. */
+        status = NET_BUFFER_CONSUMED;
+    }
 
     /* Return status to the caller. */
     return (status);
