@@ -27,10 +27,13 @@
 #include <console.h>
 
 /* Error code definitions. */
-#define ENC28J60_SPI_ERROR      -1100
+#define ENC28J60_SPI_ERROR      -11000
 
 /* ENC28J60 device configuration. */
-#define ENC28J60_REV_ID         (0x06)
+#define ENC28J60_REV_ID             (0x06)
+
+/* ENC28J60 device flag definitions. */
+#define ENC28J60_IN_TX              (0x01)
 
 /* Buffer configuration for this device. */
 #define ENC28J60_MAX_BUFFER_SIZE    (128)
@@ -91,8 +94,8 @@ typedef struct _enc28j60_device
     /* Current selected memory block. */
     uint8_t     mem_block;
 
-    /* Structure padding. */
-    uint8_t     pad[1];
+    /* Device flags. */
+    uint8_t     flags;
 
 } ENC28J60;
 

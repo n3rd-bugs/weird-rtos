@@ -25,6 +25,7 @@ static int32_t enc28j60_rx_fifo_init(ENC28J60 *);
 static void enc28j60_set_mac_address(ENC28J60 *, uint8_t *);
 static void enc28j60_link_changed(ENC28J60 *);
 static void enc28j60_receive_packet(ENC28J60 *);
+static int32_t enc28j60_transmit_packet(void *, FS_BUFFER *);
 
 /*
  * enc28j60_init
@@ -67,7 +68,7 @@ void enc28j60_init(ENC28J60 *device)
     }
 
     /* Register this ethernet device. */
-    ethernet_regsiter(&device->ethernet_device, &enc28j60_initialize, &enc28j60_interrupt);
+    ethernet_regsiter(&device->ethernet_device, &enc28j60_initialize, &enc28j60_transmit_packet, &enc28j60_interrupt);
 
 } /* enc28j60_init */
 
@@ -107,9 +108,6 @@ static void enc28j60_initialize(void *data)
     {
         /* Enable address auto increment. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON2, ENC28J60_ECON2_AUTOINC, NULL, 0) != SUCCESS);
-
-        /* Initialize TX FIFO. */
-        OS_ASSERT(enc28j60_tx_fifo_init(device) != SUCCESS);
 
         /* Enable unicast, broadcast and enable CRC validation. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ERXFCON, (ENC28J60_ERXFCON_UCEN | ENC28J60_ERXFCON_BCEN | ENC28J60_ERXFCON_CRCEN), NULL, 0) != SUCCESS);
@@ -165,6 +163,7 @@ static void enc28j60_initialize(void *data)
 static void enc28j60_interrupt(void *data)
 {
     ENC28J60 *device = (ENC28J60 *)data;
+    FD fd = (FD)data;
     uint8_t value;
 
     /* Disable interrupts. */
@@ -197,8 +196,29 @@ static void enc28j60_interrupt(void *data)
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_RXERIF, NULL, 0) != SUCCESS);
     }
 
-    /* For now these are not handled. */
-    OS_ASSERT((value & (ENC28J60_EIR_TXERIF)));
+    /* If a packet was successfully transmitted. */
+    if (value & ENC28J60_EIR_TXIF)
+    {
+        /* A packet was successfully transmitted, un-block the TX. */
+        device->ethernet_device.flags |= ETH_FLAG_TX;
+        device->flags &= (uint8_t)(~(ENC28J60_IN_TX));
+
+        /* Set event that will unblock any tasks waiting for it. */
+        fd_data_available(fd);
+
+        /* Clear the TX complete interrupt. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_TXIF, NULL, 0) != SUCCESS);
+    }
+
+    /* If a transmit error was detected. */
+    if (value & ENC28J60_EIR_TXERIF)
+    {
+        /* Initialize TX FIFO. */
+        OS_ASSERT(enc28j60_tx_fifo_init(device) != SUCCESS);
+
+        /* Clear the TX error interrupt. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_TXERIF, NULL, 0) != SUCCESS);
+    }
 
     /* Enable enc28j60 interrupts. */
     ENC28J60_ENABLE_INT(device);
@@ -223,10 +243,17 @@ static int32_t enc28j60_tx_fifo_init(ENC28J60 *device)
     /* Set TX buffer start address at ETXSTL/ETXSTH. */
     status = enc28j60_write_word(device, ENC28J60_ADDR_ETXSTL, ENC28J60_TX_START);
 
+    /* Reset transmission. */
     if (status == SUCCESS)
     {
-        /* Set TX buffer end address at ETXNDL/ETXNDH. */
-        status = enc28j60_write_word(device, ENC28J60_ADDR_ETXNDL, ENC28J60_TX_END);
+        /* Set TX reset bit. */
+        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRST, NULL, 0) ;
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Clear TX reset bit. */
+        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRST, NULL, 0) ;
     }
 
     /* Return status to the caller. */
@@ -314,6 +341,9 @@ static void enc28j60_link_changed(ENC28J60 *device)
 
         /* Enable receive logic. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXEN, NULL, 0) != SUCCESS);
+
+        /* Initialize TX FIFO. */
+        OS_ASSERT(enc28j60_tx_fifo_init(device) != SUCCESS);
 
         /* Set link-up for this device. */
         net_device_link_up(fd);
@@ -428,5 +458,64 @@ static void enc28j60_receive_packet(ENC28J60 *device)
     }
 
 } /* enc28j60_receive_packet */
+
+/*
+ * enc28j60_transmit_packet
+ * @data: ENC28J60 device instance on which a packet is needed to be
+ *  transmitted.
+ * @buffer: Buffer needed to be transmitted.
+ * @return: A success status will be returned if packet was successfully queued
+ *  for transmission, ETH_TX_BLOCKED will be returned to tell that TX is blocked
+ *  and we don't have space to send this packet.
+ * This function will send an ethernet frame on wire for a given enc28j60
+ * device.
+ */
+static int32_t enc28j60_transmit_packet(void *data, FS_BUFFER *buffer)
+{
+    FS_BUFFER_ONE *one = buffer->list.head;
+    ENC28J60 *device = (ENC28J60 *)data;
+    int32_t status = SUCCESS;
+    uint16_t tx_ptr = ENC28J60_TX_START;
+    uint8_t value;
+
+    /* If we are currently not doing any transmission. */
+    if ((device->flags & ENC28J60_IN_TX) == 0)
+    {
+        /* Write the packet control register. */
+        value = 0x00;
+        enc28j60_write_buffer(device, tx_ptr++, &value, 1);
+
+        /* Write the given buffer. */
+        while (one != NULL)
+        {
+            /* Write this packet fragment. */
+            OS_ASSERT(enc28j60_write_buffer(device, tx_ptr, one->buffer, (int32_t)one->length) != SUCCESS);
+
+            /* Increment the TX pointer. */
+            tx_ptr = (uint16_t)(tx_ptr + one->length);
+
+            /* Pick the next one buffer. */
+            one = one->next;
+        }
+
+        /* Set TX buffer end address at ETXNDL/ETXNDH. */
+        OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_ETXNDL, (uint16_t)(tx_ptr - 1)) != SUCCESS);
+
+        /* Start the TX. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRTS, NULL, 0) != SUCCESS);
+
+        /* We are now transmitting a frame. */
+        device->flags |= ENC28J60_IN_TX;
+    }
+    else
+    {
+        /* TX is currently blocked. */
+        status = ETH_TX_BLOCKED;
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* enc28j60_transmit_packet */
 
 #endif /* ETHERNET_ENC28J60 */
