@@ -194,22 +194,38 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     /* Pull the length of UDP datagram. */
     OS_ASSERT(fs_buffer_pull_offset(buffer, &length, 2, (ihl + UDP_HRD_LEN_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
-#ifdef UDP_CSUM
-    /* Pull the checksum for UDP datagram. */
-    OS_ASSERT(fs_buffer_pull_offset(buffer, &csum_hdr, 2, (ihl + UDP_HRD_CSUM_OFFSET), (FS_BUFFER_INPLACE)) != SUCCESS);
-
-    /* If we can verify the checksum for UDP header. */
-    if (csum_hdr != 0)
+    /* If UDP header length value is not correct. */
+    if (buffer->total_length < (ihl + length))
     {
-        /* Calculate checksum for the pseudo header. */
-        status = udp_csum_get(buffer, src_ip, dst_ip, length, ihl, 0, &csum);
+        /* Invalid UDP header. */
+        status = NET_INVALID_HDR;
+    }
+    else if (buffer->total_length > (ihl + length))
+    {
+        /* Pull padding from the buffer. */
+        OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - (ihl + length)), FS_BUFFER_TAIL) != SUCCESS);
+    }
 
-        /* If checksum was successfully calculated and we don't have the
-         * anticipated checksum. */
-        if ((status == SUCCESS) && (csum != 0))
+
+#ifdef UDP_CSUM
+    if (status == SUCCESS)
+    {
+        /* Pull the checksum for UDP datagram. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &csum_hdr, 2, (ihl + UDP_HRD_CSUM_OFFSET), (FS_BUFFER_INPLACE)) != SUCCESS);
+
+        /* If we can verify the checksum for UDP header. */
+        if (csum_hdr != 0)
         {
-            /* Return an error to the caller. */
-            status = NET_INVALID_CSUM;
+            /* Calculate checksum for the pseudo header. */
+            status = udp_csum_get(buffer, src_ip, dst_ip, length, ihl, 0, &csum);
+
+            /* If checksum was successfully calculated and we don't have the
+             * anticipated checksum. */
+            if ((status == SUCCESS) && (csum != 0))
+            {
+                /* Return an error to the caller. */
+                status = NET_INVALID_CSUM;
+            }
         }
     }
 #endif
@@ -220,99 +236,84 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         OS_ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.foreign_port, 2, (ihl + UDP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
         OS_ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.local_port, 2, (ihl + UDP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
-        /* If UDP header length value is not correct. */
-        if (buffer->total_length < (ihl + length))
-        {
-            /* Invalid UDP header. */
-            status = NET_INVALID_HDR;
-        }
-        else if (buffer->total_length > (ihl + length))
-        {
-            /* Pull padding from the buffer. */
-            OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - (ihl + length)), FS_BUFFER_TAIL) != SUCCESS);
-        }
-
-        if (status == SUCCESS)
-        {
-            /* Release semaphore for the buffer file descriptor. */
-            fd_release_lock(buffer->fd);
+        /* Release semaphore for the buffer file descriptor. */
+        fd_release_lock(buffer->fd);
 
 #ifdef CONFIG_SEMAPHORE
-            /* Obtain the global data semaphore. */
-            OS_ASSERT(semaphore_obtain(&udp_data.lock, MAX_WAIT) != SUCCESS);
+        /* Obtain the global data semaphore. */
+        OS_ASSERT(semaphore_obtain(&udp_data.lock, MAX_WAIT) != SUCCESS);
 #else
-            /* Lock the scheduler. */
-            scheduler_lock();
+        /* Lock the scheduler. */
+        scheduler_lock();
 #endif
-            /* Initialize search parameter for this UDP datagram. */
-            port_param.socket_address.local_ip = dst_ip;
-            port_param.socket_address.foreign_ip = src_ip;
-            port_param.port = NULL;
+        /* Initialize search parameter for this UDP datagram. */
+        port_param.socket_address.local_ip = dst_ip;
+        port_param.socket_address.foreign_ip = src_ip;
+        port_param.port = NULL;
 
-            /* Search for a UDP port that can be used to receive this packet. */
-            sll_search(&udp_data.port_list, NULL, &net_port_seach, &port_param, OFFSETOF(UDP_PORT, next));
+        /* Search for a UDP port that can be used to receive this packet. */
+        sll_search(&udp_data.port_list, NULL, &net_port_seach, &port_param, OFFSETOF(UDP_PORT, next));
 
-            /* Save the resolved port. */
-            udp_port = port_param.port;
+        /* Save the resolved port. */
+        udp_port = port_param.port;
 
 #ifndef CONFIG_SEMAPHORE
-            /* Enable scheduling. */
-            scheduler_unlock();
+        /* Enable scheduling. */
+        scheduler_unlock();
 #else
-            /* Release the global semaphore. */
-            semaphore_release(&udp_data.lock);
+        /* Release the global semaphore. */
+        semaphore_release(&udp_data.lock);
 #endif
 
-            /* Obtain lock for buffer file descriptor. */
-            OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
+        /* Obtain lock for buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
 
-            /* If we have a valid UDP port for this datagram. */
-            if (udp_port != NULL)
+        /* If we have a valid UDP port for this datagram. */
+        if (udp_port != NULL)
+        {
+            /* Check if we are not at threshold, as this might cause a dead
+             * lock in the stack. */
+            if (fs_buffer_threshold_locked(buffer->fd) == FALSE)
             {
-                /* Check if we are not at threshold, as this might cause a dead
-                 * lock in the stack. */
-                if (fs_buffer_threshold_locked(buffer->fd) == FALSE)
+                /* Release lock for buffer file descriptor as we might need to
+                 * suspend to wait for UDP port lock. */
+                fd_release_lock(buffer->fd);
+
+                /* Obtain lock for this UDP port. */
+                status = fd_get_lock((FD)udp_port);
+
+                /* If lock for UDP port was successfully obtained. */
+                if (status == SUCCESS)
                 {
-                    /* Release lock for buffer file descriptor as we might need to
-                     * suspend to wait for UDP port lock. */
-                    fd_release_lock(buffer->fd);
+                    /* Again obtain lock for buffer file descriptor. */
+                    OS_ASSERT(fd_get_lock(buffer->fd));
 
-                    /* Obtain lock for this UDP port. */
-                    status = fd_get_lock((FD)udp_port);
+                    /* Add this buffer in the buffer list for UDP port. */
+                    sll_append(&udp_port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-                    /* If lock for UDP port was successfully obtained. */
-                    if (status == SUCCESS)
-                    {
-                        /* Again obtain lock for buffer file descriptor. */
-                        OS_ASSERT(fd_get_lock(buffer->fd));
+                    /* Set an event to tell that new data is now available. */
+                    fd_data_available((FD)udp_port);
 
-                        /* Add this buffer in the buffer list for UDP port. */
-                        sll_append(&udp_port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+                    /* Release lock for this UDP port. */
+                    fd_release_lock((FD)udp_port);
 
-                        /* Set an event to tell that new data is now available. */
-                        fd_data_available((FD)udp_port);
-
-                        /* Release lock for this UDP port. */
-                        fd_release_lock((FD)udp_port);
-
-                        /* This buffer is now consumed by the UDP port. */
-                        status = NET_BUFFER_CONSUMED;
-                    }
-                }
-                else
-                {
-                    /* There are less amount of buffers available so we cannot
-                     * pass this buffer to application. */
-                    status = NET_THRESHOLD;
+                    /* This buffer is now consumed by the UDP port. */
+                    status = NET_BUFFER_CONSUMED;
                 }
             }
-
-            /* If this datagram was intended for us. */
-            else if (dst_ip == iface_addr)
+            else
             {
-                /* Destination port is unreachable. */
-                status = NET_DST_PRT_UNREACHABLE;
+                /* There are less amount of buffers available so we cannot
+                 * pass this buffer to application. */
+                status = NET_THRESHOLD;
             }
+        }
+
+        /* If this datagram was intended for us. */
+        else if (dst_ip == iface_addr)
+        {
+            /* Destination port is unreachable. */
+            status = NET_DST_PRT_UNREACHABLE;
         }
     }
 
