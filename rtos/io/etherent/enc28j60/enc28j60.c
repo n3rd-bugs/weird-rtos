@@ -129,6 +129,9 @@ static void enc28j60_initialize(void *data)
         /* Set MAMXFLL/MAMXFLH to configured MTU. */
         OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, (net_device_get_mtu(fd) & 0xFFFF)) != SUCCESS);
 
+        /* Generate a random MAC address and assign it to the device. */
+        enc28j60_set_mac_address(device, ethernet_random_mac(&device->ethernet_device));
+
         /* Enable full-duplex mode on PHY. */
         OS_ASSERT(enc28j60_write_phy(device, ENC28J60_ADDR_PHCON1, ENC28J60_PHCON1_PDPXMD) != SUCCESS);
 
@@ -145,7 +148,7 @@ static void enc28j60_initialize(void *data)
          * link status change, transmit enable and RX/TX error interrupts. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_EIE, (ENC28J60_EIE_INTIE | ENC28J60_EIE_PKTIE | ENC28J60_EIE_LINKIE | ENC28J60_EIE_TXIE | ENC28J60_EIE_TXERIE | ENC28J60_EIE_RXERIE), NULL, 0) != SUCCESS);
 
-        /* Assign a random MAC address to this device. */
+        /* Enable PHY global interrupts with link change interrupt. */
         OS_ASSERT(enc28j60_write_phy(device, ENC28J60_ADDR_PHIE, (ENC28J60_PHIE_PGEIE | ENC28J60_PHIE_PLNKIE)) != SUCCESS);
 
         /* Enable enc28j60 interrupts. */
@@ -333,9 +336,6 @@ static void enc28j60_link_changed(ENC28J60 *device)
     /* If we are now in connected state. */
     if (phy_register & ENC28J60_PHSTAT2_LSTAT)
     {
-        /* Generate a random MAC address and assign it to the device. */
-        enc28j60_set_mac_address(device, ethernet_random_mac(&device->ethernet_device));
-
         /* Initialize RX FIFO. */
         OS_ASSERT(enc28j60_rx_fifo_init(device) != SUCCESS);
 
