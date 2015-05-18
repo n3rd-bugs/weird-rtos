@@ -155,6 +155,9 @@ void sleep(uint32_t ticks)
     /* Current task should not be null. */
     OS_ASSERT(tcb == NULL);
 
+    /* IRQ must not be locked. */
+    OS_ASSERT(tcb->irq_lock_count != 0);
+
     /* Add current task to the sleep list. */
     sleep_add_to_list(tcb, ticks);
 
