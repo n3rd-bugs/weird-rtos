@@ -72,6 +72,9 @@ void fs_register(FS *file_system)
     OS_ASSERT(semaphore_obtain(&file_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
+    /* Just a consistency check. */
+    OS_ASSERT(file_system->name[0] != '\\');
+
     /* Just push this file system in the list. */
     sll_push(&file_data.list, file_system, OFFSETOF(FS, next));
 
