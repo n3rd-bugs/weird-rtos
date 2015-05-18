@@ -53,7 +53,7 @@ static int32_t arp_process_prologue(FS_BUFFER *buffer)
     if (status == SUCCESS)
     {
         /* Verify that we have ethernet header type, IPv4 protocol and address
-         * fields are correct. */
+         * size fields are correct. */
         if ((hardtype != ARP_ETHER_TYPE) || (prototype != ARP_PROTO_IP) || (hardlen != ETH_ADDR_LEN) || (protolen != IPV4_ADDR_LEN))
         {
             /* This either not supported of an invalid header was parsed. */
