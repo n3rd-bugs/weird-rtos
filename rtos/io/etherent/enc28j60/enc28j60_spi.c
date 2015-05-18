@@ -38,10 +38,6 @@ static int32_t enc28j60_phy_wait(ENC28J60 *device)
     /* Wait for PHY register to be written. */
     do
     {
-        /* Takes around 10.24 micro seconds, just sleep for 1 tick that
-         * should be enough. */
-        sleep(1);
-
         /* Read the value of MISTAT. */
         status = enc28j60_write_read_op(device, ENC28J60_OP_READ_BUFFER, ENC28J60_ADDR_MISTAT, 0xFF, &mistat, 1);
 

@@ -71,7 +71,7 @@ void enc28j60_stm32f407_init()
     NVIC->IP[EXTI2_IRQn] = 2;
 
     /* Initialize name for this device. */
-    enc28j60.ethernet_device.fs.name = "ethernet\\enc28j60";
+    enc28j60.ethernet_device.fs.name = "\\ethernet\\enc28j60";
 
     /* Do enc28j60 initialization. */
     enc28j60_init(&enc28j60);
@@ -131,14 +131,19 @@ void enc28j60_stm32f407_disable_interrupt(ENC28J60 *device)
  */
 void enc28j60_stm32f407_reset(ENC28J60 *device)
 {
-    /* For now unused. */
-    UNUSED_PARAM(device);
+    FD *fd = (FD)device;
 
     /* Clear the RST, i.e. GPIOA.3. */
     GPIOA->BSRR |= (1 << (3 + 16));
 
+    /* Release lock for this device. */
+    fd_release_lock(fd);
+
     /* Sleep to wait for target to actually reset. */
     sleep_ms(ENC28J60_STM32F407_RESET_DELAY);
+
+    /* Acquire lock for this device. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Set the RST, i.e. GPIOA.3. */
     GPIOA->BSRR |= (1 << 3);
