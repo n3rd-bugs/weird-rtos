@@ -158,8 +158,14 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
 
     if (net_device != NULL)
     {
+        /* Acquire lock for this file descriptor. */
+        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+
         /* Update the IPv4 address assigned to this device. */
         net_device->ipv4.address = address;
+
+        /* Release lock for this file descriptor. */
+        fd_release_lock(fd);
     }
     else
     {

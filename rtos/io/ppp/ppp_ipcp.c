@@ -215,8 +215,14 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
         /* We are now in network phase. */
         ppp->state = PPP_STATE_NETWORK;
 
+        /* Release lock for this file descriptor. */
+        fd_release_lock(fd);
+
         /* Set the IPv4 address for this device. */
         OS_ASSERT(ipv4_set_device_address(fd, ppp->local_ip_address) != SUCCESS);
+
+        /* Acquire lock for this file descriptor. */
+        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
         /* Set link-up for the associated networking device. */
         net_device_link_up(fd);
