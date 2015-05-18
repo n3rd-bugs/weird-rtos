@@ -64,7 +64,7 @@ void pipe_init()
  * @size: Size of buffer.
  * This function will initialize and register a pipe.
  */
-void pipe_create(PIPE *pipe, char *name, char *buffer, uint32_t size)
+void pipe_create(PIPE *pipe, char *name, uint8_t *buffer, uint32_t size)
 {
     NODE_PARAM param;
 
@@ -268,7 +268,7 @@ static void *pipe_open(char *name, uint32_t flags)
  * @return: Number of bytes written on this pipe.
  * This function will write data on pipe.
  */
-int32_t pipe_write(void *fd, char *data, int32_t nbytes)
+int32_t pipe_write(void *fd, uint8_t *data, int32_t nbytes)
 {
     PIPE *pipe = (PIPE *)fd;
     uint32_t required_space, part_size;
@@ -371,7 +371,7 @@ int32_t pipe_write(void *fd, char *data, int32_t nbytes)
  * @return: Number of bytes read from the pipe.
  * This function will read data from a pipe.
  */
-int32_t pipe_read(void *fd, char *buffer, int32_t size)
+int32_t pipe_read(void *fd, uint8_t *buffer, int32_t size)
 {
     PIPE *pipe = (PIPE *)fd;
     MSG_DATA *message;
