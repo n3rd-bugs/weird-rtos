@@ -158,19 +158,25 @@ ISR_FUN isr_sysclock_handle(void)
 
             /* Get the task that should run next. */
             current_task = scheduler_get_next_task();
-        }
 
-        /* Check if we need to switch context. */
-        if (current_task != last_task)
-        {
-            /* Schedule a context switch. */
-            PEND_SV();
+            /* Check if we need to switch context. */
+            if (current_task != last_task)
+            {
+                /* Schedule a context switch. */
+                PEND_SV();
+            }
+
+            else
+            {
+                /* We are not scheduling a context switch. */
+                last_task = NULL;
+            }
         }
 
         else
         {
-            /* We are not scheduling a context switch. */
-            last_task = NULL;
+            /* Set the flag that we need to process a context switch. */
+            current_task->flags |= TASK_SCHED_DRIFT;
         }
     }
 

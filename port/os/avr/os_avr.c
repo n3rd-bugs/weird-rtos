@@ -45,6 +45,12 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
         set_current_task(scheduler_get_next_task());
     }
 
+    else
+    {
+        /* Set the flag that we need to process a context switch. */
+        current_task->flags |= TASK_SCHED_DRIFT;
+    }
+
     /* Restore the previous task's context. */
     RESTORE_CONTEXT();
 

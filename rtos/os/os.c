@@ -79,6 +79,12 @@ void task_yield()
         SET_INTERRUPT_LEVEL(interrupt_level);
     }
 
+    else
+    {
+        /* Set the flag that we need to process a context switch. */
+        current_task->flags |= TASK_SCHED_DRIFT;
+    }
+
     if (in_isr == TRUE)
     {
         /* Save the return task. */

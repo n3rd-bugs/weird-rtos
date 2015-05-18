@@ -301,6 +301,17 @@ void scheduler_unlock()
 
         /* Decrement the lock count for this task. */
         tcb->lock_count --;
+
+        /* If scheduler is actually unlocked, and we might have missed a
+         * context switch because of this lock. */
+        if ((tcb->lock_count == 0) && (tcb->flags & TASK_SCHED_DRIFT))
+        {
+            /* Clear the drift flag. */
+            tcb->flags &= (uint8_t)(~(TASK_SCHED_DRIFT));
+
+            /* Try to yield this task. */
+            task_yield();
+        }
     }
 
 } /* scheduler_unlock */
