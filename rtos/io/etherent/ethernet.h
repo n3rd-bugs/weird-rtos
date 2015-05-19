@@ -103,6 +103,7 @@ typedef struct _eth_device
 void ethernet_init();
 void ethernet_regsiter(ETH_DEVICE *, ETH_INIT *, ETH_TRANSMIT *, ETH_INTERRUPT *);
 uint8_t *ethernet_random_mac(ETH_DEVICE *);
+uint8_t *ethernet_get_mac_address(FD);
 void ethernet_interrupt(ETH_DEVICE *);
 int32_t ethernet_buffer_receive(FS_BUFFER *);
 #ifdef NET_ARP

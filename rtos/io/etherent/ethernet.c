@@ -35,9 +35,6 @@ void ethernet_init()
 
 } /* ethernet_init */
 
-
-uint8_t eth_dst_mac[ETH_ADDR_LEN];
-
 /*
  * ethernet_regsiter
  * @device: Ethernet device instance needed to be registered.
@@ -117,6 +114,21 @@ uint8_t *ethernet_random_mac(ETH_DEVICE *device)
     return (device->mac);
 
 } /* ethernet_random_mac */
+
+/*
+ * ethernet_get_mac_address
+ * @fd: File descriptor associated with an ethernet device.
+ * @return: Returns the start of random MAC address generated.
+ * This function will return MAC address associated with an ethernet device.
+ */
+uint8_t *ethernet_get_mac_address(FD fd)
+{
+    ETH_DEVICE *device = (ETH_DEVICE *)fd;
+
+    /* Return MAC address associated with given device. */
+    return (device->mac);
+
+} /* ethernet_get_mac_address */
 
 /*
  * ethernet_lock
@@ -277,11 +289,8 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
     uint16_t proto;
     uint8_t net_proto;
 
-    /* Pull and discard the destination addresses. */
-    OS_ASSERT(fs_buffer_pull(buffer, NULL, (ETH_ADDR_LEN), 0) != SUCCESS);
-
-    /* Pull and save the source address. */
-    OS_ASSERT(fs_buffer_pull(buffer, eth_dst_mac, (ETH_ADDR_LEN), 0) != SUCCESS);
+    /* Pull and discard the destination and source addresses. */
+    OS_ASSERT(fs_buffer_pull(buffer, NULL, (ETH_ADDR_LEN * 2), 0) != SUCCESS);
 
     /* Pull the protocol. */
     OS_ASSERT(fs_buffer_pull(buffer, &proto, ETH_PROTO_LEN, FS_BUFFER_PACKED) != SUCCESS);
@@ -347,10 +356,10 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
     int32_t status;
     HDR_GEN_MACHINE hdr_machine;
     uint16_t proto = 0;
-    uint8_t net_proto;
+    uint8_t net_proto, dst_mac[ETH_ADDR_LEN];
     HEADER eth_hdr[] =
     {
-        {eth_dst_mac,       ETH_ADDR_LEN,   (flags) },                      /* Destination address. */
+        {dst_mac,           ETH_ADDR_LEN,   (flags) },                      /* Destination address. */
         {device->mac,       ETH_ADDR_LEN,   (flags) },                      /* Source address. */
         {(uint8_t *)&proto, 2,              (FS_BUFFER_PACKED | flags) },   /* Ethernet type. */
     };
@@ -364,8 +373,24 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
     /* If an IPv4 packet is needed to be transmitted. */
     case NET_PROTO_IPV4:
 
+        /* Not supported. */
+        OS_ASSERT(1);
+
         /* Use the ethernet IPv4 type. */
         proto = ETH_PROTO_IP;
+
+        break;
+#endif
+
+#ifdef NET_ARP
+    /* If an ARP packet is needed to be transmitted. */
+    case NET_PROTO_ARP:
+
+        /* Pull the destination HW address from the ARP packet. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, dst_mac, ETH_ADDR_LEN, (ARP_HDR_PRE_LEN + ARP_HDR_TGT_HW_OFFSET), (FS_BUFFER_INPLACE)) != SUCCESS);
+
+        /* Use the ethernet ARP type. */
+        proto = ETH_PROTO_ARP;
 
         break;
 #endif
