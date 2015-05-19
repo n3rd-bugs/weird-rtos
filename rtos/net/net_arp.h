@@ -27,11 +27,23 @@
 #include <ethernet.h>
 
 /* ARP entry flags. */
-#define ARP_FLAG_VALID      0x01
+#define ARP_FLAG_VALID          0x01
 
 /* ARP header definitions. */
-#define ARP_ETHER_TYPE      (1)
-#define ARP_PROTO_IP        (ETH_PROTO_IP)
+#define ARP_HDR_LEN             (28)
+#define ARP_HDR_PRE_LEN         (8)
+#define ARP_HDR_SRC_HW_OFFSET   (0)
+#define ARP_HDR_SRC_IPV4_OFFSET (6)
+#define ARP_HDR_TGT_HW_OFFSET   (10)
+#define ARP_HDR_TGT_IPV4_OFFSET (16)
+
+/* ARP protocol definitions. */
+#define ARP_ETHER_TYPE          (1)
+#define ARP_PROTO_IP            (ETH_PROTO_IP)
+
+/* ARP operation definitions. */
+#define ARP_OP_REQUEST          (1)
+#define ARP_OP_RESPONSE         (2)
 
 /* ARP entry data. */
 typedef struct _arp_entry
