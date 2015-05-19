@@ -143,12 +143,12 @@ ISR_FUN isr_sysclock_handle(void)
     /* If we have already scheduled a context switch. */
     if (last_task == NULL)
     {
-        /* Save the current task pointer. */
-        last_task = current_task;
-
         /* Check if we can actually preempt the current task. */
         if (current_task->lock_count == 0)
         {
+            /* Save the current task pointer. */
+            last_task = current_task;
+
             /* If current task has a scheduler defined. */
             if (current_task->scheduler != NULL)
             {
