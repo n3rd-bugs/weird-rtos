@@ -45,6 +45,7 @@
 
 /* ENC28J60 receive packet definitions. */
 #define ENC28J60_RX_HEAD_SIZE       (6)
+#define ENC28J60_RX_CRC_LEN         (4)
 #define ENC28J60_RX_RXLONGEVDROPEV  (0x0001)
 #define ENC28J60_RX_CARRIEREV       (0x0004)
 #define ENC28J60_RX_CRCERROR        (0x0010)

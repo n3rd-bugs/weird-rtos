@@ -393,7 +393,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
         packet_status = (uint16_t)((receive_header[5] << 8) | receive_header[4]);
 
         /* If packet was successfully received. */
-        if (packet_status & ENC28J60_RX_RXOK)
+        if ((packet_status & ENC28J60_RX_RXOK) && (packet_length > ENC28J60_RX_CRC_LEN))
         {
             /* Pull a buffer list from the file descriptor. */
             buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
@@ -401,6 +401,9 @@ static void enc28j60_receive_packet(ENC28J60 *device)
             /* If we do have a receive buffer. */
             if (buffer != NULL)
             {
+                /* Don't copy the trailing CRC. */
+                packet_length = (uint16_t)(packet_length - ENC28J60_RX_CRC_LEN);
+
                 /* While we have some data to copy. */
                 while (packet_length > 0)
                 {
