@@ -25,9 +25,16 @@
 #error "IPv4 stack is required for ARP."
 #endif
 #include <ethernet.h>
+#include <condition.h>
 
 /* ARP entry flags. */
 #define ARP_FLAG_VALID          0x01
+#define ARP_FLAG_UP             0x02
+
+/* ARP configuration. */
+#define ARP_TIMEOUT             (5)
+#define ARP_RETRY_COUNT         (3)
+#define ARP_REUSE_LIFE_TIME     (300 * OS_TICKS_PER_SEC)
 
 /* ARP header definitions. */
 #define ARP_HDR_LEN             (28)
@@ -48,11 +55,25 @@
 /* ARP entry data. */
 typedef struct _arp_entry
 {
+    /* Condition data for this ARP entry. */
+    CONDITION   condition;
+    SUSPEND     suspend;
+
+    /* Buffer list for the buffers waiting on this ARP entry. */
+    struct _arp_buffer_list
+    {
+        FS_BUFFER       *head;
+        FS_BUFFER       *tail;
+    } buffer_list;
+
     /* IP address for this ARP entry. */
     uint32_t    ip;
 
     /* Ethernet MAC address for the destination IP address. */
     uint8_t     mac[ALLIGN_CEIL(ETH_ADDR_LEN)];
+
+    /* Time at which this entry was created. */
+    uint32_t    birth_time;
 
     /* ARP entry flags. */
     uint8_t     flags;
@@ -75,6 +96,7 @@ typedef struct _arp_data
 
 /* Function prototypes. */
 int32_t net_process_arp(FS_BUFFER *);
+int32_t arp_resolve(FS_BUFFER *, uint8_t **);
 
 #endif /* NET_ARP */
 #endif /* CONFIG_NET */
