@@ -1617,7 +1617,7 @@ int32_t fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one,
     int32_t status = SUCCESS;
 
     /* Should never happen. */
-    OS_ASSERT(data_len <= one->length);
+    OS_ASSERT(data_len >= one->length);
     OS_ASSERT(new_one == NULL);
 
     /* Allocate a free buffer. */
