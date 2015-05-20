@@ -49,6 +49,10 @@
 #define ETH_FLAG_INT        0x02
 #define ETH_FLAG_TX         0x04
 
+/* Ethernet address definitions. */
+#define ETH_UNSPEC_ADDR     ((uint8_t []){0, 0, 0, 0, 0, 0})
+#define ETH_BCAST_ADDR      ((uint8_t []){0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF})
+
 /* Ethernet device API. */
 typedef void ETH_INIT (void *);
 typedef void ETH_INTERRUPT (void *);

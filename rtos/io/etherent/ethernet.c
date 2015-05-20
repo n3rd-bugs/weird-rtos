@@ -373,8 +373,8 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
     /* If an IPv4 packet is needed to be transmitted. */
     case NET_PROTO_IPV4:
 
-        /* Not supported. */
-        OS_ASSERT(1);
+        /* Try to resolve destination MAC address for this buffer. */
+        status = arp_resolve(buffer, dst_mac);
 
         /* Use the ethernet IPv4 type. */
         proto = ETH_PROTO_IP;
@@ -388,6 +388,13 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
 
         /* Pull the destination HW address from the ARP packet. */
         OS_ASSERT(fs_buffer_pull_offset(buffer, dst_mac, ETH_ADDR_LEN, (ARP_HDR_PRE_LEN + ARP_HDR_TGT_HW_OFFSET), (FS_BUFFER_INPLACE)) != SUCCESS);
+
+        /* If target address is not known. */
+        if (memcmp(dst_mac, ETH_UNSPEC_ADDR, ETH_ADDR_LEN) == 0)
+        {
+            /* Use broadcast address. */
+            memcpy(dst_mac, ETH_BCAST_ADDR, ETH_ADDR_LEN);
+        }
 
         /* Use the ethernet ARP type. */
         proto = ETH_PROTO_ARP;
@@ -449,6 +456,12 @@ void ethernet_arp_set_data(ETH_DEVICE *device, ARP_ENTRY *entry_list, uint32_t n
     /* Initialize ARP data for this device. */
     device->arp.entries = entry_list;
     device->arp.num_entries = num_entries;
+
+    /* Initialize ARP condition data. */
+    device->arp.condition.data = device;
+
+    /* This will be a timer condition. */
+    device->arp.suspend.flags = CONDITION_TIMER;
 
 } /* ethernet_arp_set_data */
 
