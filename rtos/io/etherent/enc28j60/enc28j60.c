@@ -132,7 +132,7 @@ static void enc28j60_initialize(void *data)
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MABBIPG, 0x15, NULL, 0) != SUCCESS);
 
         /* Set MAMXFLL/MAMXFLH to configured MTU. */
-        OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, (net_device_get_mtu(fd) & 0xFFFF)) != SUCCESS);
+        OS_ASSERT(enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, ((net_device_get_mtu(fd) + ETH_HRD_SIZE) & 0xFFFF)) != SUCCESS);
 
         /* Generate a random MAC address and assign it to the device. */
         enc28j60_set_mac_address(device, ethernet_random_mac(&device->ethernet_device));

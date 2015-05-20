@@ -73,7 +73,7 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
     net_register_fd(&device->net_device, fd, &ethernet_buffer_transmit, &ethernet_process);
 
     /* Set MTU for this device. */
-    net_device_set_mtu(fd, ETH_MTU_SIZE);
+    net_device_set_mtu(fd, (ETH_MTU_SIZE - ETH_HRD_SIZE));
 
     /* Initialize Ethernet driver hooks. */
     device->initialize = initialize;
