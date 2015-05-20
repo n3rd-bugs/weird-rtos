@@ -72,7 +72,7 @@ void enc28j60_init(ENC28J60 *device)
 
 #ifdef NET_ARP
     /* Set ARP data for this ethernet device. */
-    ethernet_arp_set_data(&device->ethernet_device, device->arp_entries, ENC28J60_NUM_ARP);
+    arp_set_data(fd, device->arp_entries, ENC28J60_NUM_ARP);
 #endif
 
 } /* enc28j60_init */

@@ -441,44 +441,4 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
 
 } /* ethernet_buffer_transmit */
 
-#ifdef NET_ARP
-/*
- * ethernet_arp_set_data
- * @device: Ethernet device for which ARP data is needed to be initialized.
- * @entry_list: ARP entry list array.
- * @num_entries: Number of entries.
- * This function initializes ARP data for an ethernet device.
- */
-void ethernet_arp_set_data(ETH_DEVICE *device, ARP_ENTRY *entry_list, uint32_t num_entries)
-{
-    /* ARP entries are already cleared. */
-
-    /* Initialize ARP data for this device. */
-    device->arp.entries = entry_list;
-    device->arp.num_entries = num_entries;
-
-    /* Initialize ARP condition data. */
-    device->arp.condition.data = device;
-
-    /* This will be a timer condition. */
-    device->arp.suspend.flags = CONDITION_TIMER;
-
-} /* ethernet_arp_set_data */
-
-/*
- * ethernet_arp_get_data
- * @fd: Ethernet file descriptor for which ARP data is needed.
- * @return: Returns the ARP data for this ethernet device.
- * This function returns ARP data structure for a given ethernet file descriptor.
- */
-ARP_DATA *ethernet_arp_get_data(FD fd)
-{
-    ETH_DEVICE *device = (ETH_DEVICE *)fd;
-
-    /* Return ARP data for this device. */
-    return (&device->arp);
-
-} /* ethernet_arp_get_data */
-
-#endif /* NET_ARP */
 #endif /* CONFIG_ETHERNET */

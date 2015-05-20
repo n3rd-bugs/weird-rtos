@@ -132,7 +132,7 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
     uint32_t src_ip, i;
-    ARP_DATA *arp_data = ethernet_arp_get_data(buffer->fd);
+    ARP_DATA *arp_data = arp_get_data(buffer->fd);
 
     /* Pull the IPv4 address sent by the remote. */
     OS_ASSERT(fs_buffer_pull_offset(buffer, &src_ip, IPV4_ADDR_LEN, ARP_HDR_SRC_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
@@ -243,7 +243,7 @@ static void arp_free_entry(ARP_ENTRY *entry)
 static ARP_ENTRY *arp_find_entry(FD fd, uint32_t address)
 {
     /* Get ARP data for this device. */
-    ARP_DATA *arp_data = ethernet_arp_get_data(fd);
+    ARP_DATA *arp_data = arp_get_data(fd);
     ARP_ENTRY *entry = NULL;
     uint32_t i, clock = (uint32_t)current_system_tick();
 
@@ -281,7 +281,7 @@ static ARP_ENTRY *arp_find_entry(FD fd, uint32_t address)
 static void arp_update_timers(FD fd)
 {
     /* Get ARP data for this device. */
-    ARP_DATA *arp_data = ethernet_arp_get_data(fd);
+    ARP_DATA *arp_data = arp_get_data(fd);
     uint32_t i, this_timeout, next_timeout = MAX_WAIT, clock = (uint32_t)current_system_tick();
 
     /* Go though all the ARP entries in the device. */
@@ -365,7 +365,7 @@ static int32_t arp_route(FD fd, ARP_ENTRY *entry)
 static void arp_event(void *data)
 {
     FD fd = (FD)data;
-    ARP_DATA *arp_data = ethernet_arp_get_data(fd);
+    ARP_DATA *arp_data = arp_get_data(fd);
     uint32_t i, clock = (uint32_t)current_system_tick();
 
     /* Acquire lock for this file descriptor. */
@@ -479,6 +479,46 @@ int32_t arp_resolve(FS_BUFFER *buffer, uint8_t *dst_addr)
     return (status);
 
 } /* arp_resolve */
+
+/*
+ * arp_set_data
+ * @fd: Ethernet file descriptor for which ARP data is needed.
+ * @entry_list: ARP entry list array.
+ * @num_entries: Number of entries.
+ * This function initializes ARP data for an ethernet device.
+ */
+void arp_set_data(FD fd, ARP_ENTRY *entry_list, uint32_t num_entries)
+{
+    ETH_DEVICE *device = (ETH_DEVICE *)fd;
+
+    /* ARP entries are already cleared. */
+
+    /* Initialize ARP data for this device. */
+    device->arp.entries = entry_list;
+    device->arp.num_entries = num_entries;
+
+    /* Initialize ARP condition data. */
+    device->arp.condition.data = device;
+
+    /* This will be a timer condition. */
+    device->arp.suspend.flags = CONDITION_TIMER;
+
+} /* arp_set_data */
+
+/*
+ * arp_get_data
+ * @fd: Ethernet file descriptor for which ARP data is needed.
+ * @return: Returns the ARP data for this ethernet device.
+ * This function returns ARP data structure for a given ethernet file descriptor.
+ */
+ARP_DATA *arp_get_data(FD fd)
+{
+    ETH_DEVICE *device = (ETH_DEVICE *)fd;
+
+    /* Return ARP data for this device. */
+    return (&device->arp);
+
+} /* arp_get_data */
 
 /*
  * net_process_arp

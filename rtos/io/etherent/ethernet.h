@@ -110,10 +110,6 @@ uint8_t *ethernet_random_mac(ETH_DEVICE *);
 uint8_t *ethernet_get_mac_address(FD);
 void ethernet_interrupt(ETH_DEVICE *);
 int32_t ethernet_buffer_receive(FS_BUFFER *);
-#ifdef NET_ARP
-void ethernet_arp_set_data(ETH_DEVICE *, ARP_ENTRY *, uint32_t);
-ARP_DATA *ethernet_arp_get_data(FD fd);
-#endif /* NET_ARP */
 
 #endif /* CONFIG_ETHERNET */
 
