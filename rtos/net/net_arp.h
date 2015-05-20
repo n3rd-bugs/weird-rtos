@@ -55,10 +55,6 @@
 /* ARP entry data. */
 typedef struct _arp_entry
 {
-    /* Condition data for this ARP entry. */
-    CONDITION   condition;
-    SUSPEND     suspend;
-
     /* Buffer list for the buffers waiting on this ARP entry. */
     struct _arp_buffer_list
     {
@@ -75,17 +71,24 @@ typedef struct _arp_entry
     /* Time at which this entry was created. */
     uint32_t    birth_time;
 
+    /* Number of retries we have sent for this ARP entry. */
+    uint8_t     retry_count;
+
     /* ARP entry flags. */
     uint8_t     flags;
 
     /* Structure padding. */
-    uint8_t     pad[3];
+    uint8_t     pad[2];
 
 } ARP_ENTRY;
 
 /* ARP device data. */
 typedef struct _arp_data
 {
+    /* Condition data to process ARP events for this device. */
+    CONDITION   condition;
+    SUSPEND     suspend;
+
     /* Array of ARP entries for a device. */
     ARP_ENTRY   *entries;
 
@@ -96,7 +99,7 @@ typedef struct _arp_data
 
 /* Function prototypes. */
 int32_t net_process_arp(FS_BUFFER *);
-int32_t arp_resolve(FS_BUFFER *, uint8_t **);
+int32_t arp_resolve(FS_BUFFER *, uint8_t *);
 
 #endif /* NET_ARP */
 #endif /* CONFIG_NET */
