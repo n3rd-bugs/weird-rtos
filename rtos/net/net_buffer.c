@@ -135,6 +135,9 @@ static int32_t net_buffer_lock(void *fd)
     /* Obtain data lock for networking buffers. */
     return semaphore_obtain(&((NET_BUFFER_FS *)fd)->lock, MAX_WAIT);
 #else
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+
     /* Lock scheduler. */
     scheduler_lock();
 
@@ -154,6 +157,9 @@ static void net_buffer_unlock(void *fd)
     /* Release data lock for networking buffers. */
     semaphore_release(&((NET_BUFFER_FS *)fd)->lock);
 #else
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+
     /* Enable scheduling. */
     scheduler_unlock();
 #endif

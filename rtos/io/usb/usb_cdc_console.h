@@ -56,6 +56,11 @@ typedef struct _cdc_console
     /* Number of bytes valid in the receive buffer. */
     uint32_t    rx_valid;
 
+#ifndef CONFIG_SEMAPHORE
+    /* Interrupt status used to protect this CDC console. */
+    uint32_t    irq_status;
+#endif
+
 } CDC_CONSOLE;
 
 /* Function prototypes. */

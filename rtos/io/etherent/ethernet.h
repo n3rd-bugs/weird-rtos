@@ -77,6 +77,9 @@ typedef struct _eth_device
 #ifdef CONFIG_SEMAPHORE
     /* Lock for this device instance. */
     SEMAPHORE   lock;
+#else
+    /* IRQ status. */
+    uint32_t    irq_status;
 #endif
 
     /* TX queue suspend for this device. */

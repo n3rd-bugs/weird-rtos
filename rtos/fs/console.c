@@ -131,8 +131,10 @@ void console_unregister(CONSOLE *console)
         /* Resume all tasks waiting on this file descriptor. */
         fd_handle_criteria((FD)console, NULL, FS_NODE_DELETED);
 
+#ifdef CONFIG_SEMAPHORE
         /* Delete the console lock. */
         semaphore_destroy(&console->lock);
+#endif
 
         /* Just remove this console from console list. */
         OS_ASSERT(sll_remove(&console_data.list, console, OFFSETOF(CONSOLE, fs.next)) != console);
@@ -211,6 +213,9 @@ static int32_t console_lock(void *fd)
     /* Obtain data lock for this console. */
     return semaphore_obtain(&((CONSOLE *)fd)->lock, MAX_WAIT);
 #else
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+
     /* Lock scheduler. */
     scheduler_lock();
 
@@ -230,6 +235,9 @@ static void console_unlock(void *fd)
     /* Release data lock for this console. */
     semaphore_release(&((CONSOLE *)fd)->lock);
 #else
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+
     /* Enable scheduling. */
     scheduler_unlock();
 #endif

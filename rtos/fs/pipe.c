@@ -152,8 +152,10 @@ void pipe_destroy(PIPE *pipe)
         /* Resume all tasks waiting on this file descriptor. */
         fd_handle_criteria((FD)pipe, NULL, FS_NODE_DELETED);
 
+#ifdef CONFIG_SEMAPHORE
         /* Delete the pipe semaphore. */
         semaphore_destroy(&pipe->lock);
+#endif
 
         /* Just remove this pipe from the pipe list. */
         OS_ASSERT(sll_remove(&pipe_data.list, pipe, OFFSETOF(PIPE, fs.next)) != pipe);
@@ -182,6 +184,9 @@ static int32_t pipe_lock(void *fd)
     /* Obtain data lock for this pipe. */
     return semaphore_obtain(&((PIPE *)fd)->lock, MAX_WAIT);
 #else
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+
     /* Lock scheduler. */
     scheduler_lock();
 
@@ -201,6 +206,9 @@ static void pipe_unlock(void *fd)
     /* Release data lock for this pipe. */
     semaphore_release(&((PIPE *)fd)->lock);
 #else
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+
     /* Enable scheduling. */
     scheduler_unlock();
 #endif

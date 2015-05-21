@@ -137,14 +137,22 @@ uint8_t *ethernet_get_mac_address(FD fd)
  */
 static int32_t ethernet_lock(void *fd)
 {
-#ifdef CONFIG_SEMAPHORE
     ETH_DEVICE *device = (ETH_DEVICE *)fd;
 
+#ifdef CONFIG_SEMAPHORE
     /* Obtain data lock for this ethernet device. */
     return semaphore_obtain(&device->lock, MAX_WAIT);
 #else
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(fd);
+
+    /* If this is IRQ accessible. */
+    if (device->interrupt != NULL)
+    {
+        /* Save interrupt status for this device. */
+        device->irq_status = GET_INTERRUPT_LEVEL();
+
+        /* Disable global interrupts. */
+        DISABLE_INTERRUPTS();
+    }
 
     /* Lock scheduler. */
     scheduler_lock();
@@ -161,14 +169,19 @@ static int32_t ethernet_lock(void *fd)
  */
 static void ethernet_unlock(void *fd)
 {
-#ifdef CONFIG_SEMAPHORE
     ETH_DEVICE *device = (ETH_DEVICE *)fd;
 
+#ifdef CONFIG_SEMAPHORE
     /* Release data lock for this ethernet device. */
     semaphore_release(&device->lock);
 #else
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(fd);
+
+    /* If this is IRQ accessible. */
+    if (device->interrupt != NULL)
+    {
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(device->irq_status);
+    }
 
     /* Enable scheduling. */
     scheduler_unlock();

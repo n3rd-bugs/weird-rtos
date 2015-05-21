@@ -18,6 +18,10 @@
 #include <sll.h>
 
 /* Internal function prototypes. */
+#ifndef CONFIG_SEMAPHORE
+static int32_t usb_cdc_console_lock(void *);
+static void usb_cdc_console_unlock(void *);
+#endif
 static int32_t usb_cdc_fun_console_read(void *, uint8_t *, int32_t);
 static int32_t usb_cdc_fun_console_write(void *, uint8_t *, int32_t);
 static void usb_cdc_fun_console_rx_consumed(void *, void *);
@@ -46,6 +50,10 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
 #ifdef CONFIG_SEMAPHORE
     /* This is IRQ accessible console. */
     semaphore_update(&cdc_cons->console.lock, 1, 1, (SEMAPHORE_PRIORITY | SEMAPHORE_IRQ));
+#else
+    /* For this console we require IRQ lock. */
+    cdc_cons->console.fs.get_lock = &usb_cdc_console_lock;
+    cdc_cons->console.fs.release_lock = &usb_cdc_console_unlock;
 #endif
 
     /* This will block on read, and all data that will be given to write must
@@ -88,6 +96,51 @@ void usb_cdc_console_unregister(CDC_CONSOLE *cdc_cons)
     console_unregister(&cdc_cons->console);
 
 } /* usb_cdc_console_unregister */
+
+
+#ifndef CONFIG_SEMAPHORE
+
+/*
+ * usb_cdc_console_lock
+ * @fd: File descriptor for a USB CDC console.
+ * This function will get the lock for a given USB CDC console.
+ */
+static int32_t usb_cdc_console_lock(void *fd)
+{
+    CDC_CONSOLE *console = (CDC_CONSOLE *)fd;
+
+    /* Save interrupt status for this console. */
+    console->irq_status = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
+
+    /* Lock scheduler. */
+    scheduler_lock();
+
+    /* Return success. */
+    return (SUCCESS);
+
+} /* usb_cdc_console_lock */
+
+/*
+ * usb_cdc_console_unlock
+ * @fd: File descriptor for a USB CDC console.
+ * This function will release the lock for a given USB CDC console.
+ */
+static void usb_cdc_console_unlock(void *fd)
+{
+    CDC_CONSOLE *console = (CDC_CONSOLE *)fd;
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(console->irq_status);
+
+    /* Enable scheduling. */
+    scheduler_unlock();
+
+} /* usb_cdc_console_unlock */
+
+#endif /* CONFIG_SEMAPHORE */
 
 /*
  * usb_cdc_console_handle_connect
