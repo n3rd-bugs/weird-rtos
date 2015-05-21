@@ -20,7 +20,7 @@
 
 /* ST32F407 USB function configuration. */
 #define STM32F407_USB_CDC_ACM
-//#define STM32F407_USB_CDC_DEBUG
+#define STM32F407_USB_CDC_DEBUG
 #ifdef CONFIG_PPP
 #define STM32F407_USB_CDC_ACM_PPP
 #endif
