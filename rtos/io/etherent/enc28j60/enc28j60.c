@@ -20,6 +20,7 @@
 /* Internal function prototypes. */
 static void enc28j60_initialize(void *);
 static void enc28j60_interrupt(void *);
+static void enc28j60_handle_rx_error(ENC28J60 *);
 static int32_t enc28j60_tx_fifo_init(ENC28J60 *);
 static int32_t enc28j60_rx_fifo_init(ENC28J60 *);
 static void enc28j60_set_mac_address(ENC28J60 *, uint8_t *);
@@ -38,7 +39,7 @@ void enc28j60_init(ENC28J60 *device)
     FD fd = (FD)&device->ethernet_device;
 
     /* Initialize SPI parameters. */
-    device->spi.baudrate = 20000000;
+    device->spi.baudrate = 40000000;
     device->spi.cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA);
 
     /* Do SPI initialization. */
@@ -193,27 +194,37 @@ static void enc28j60_interrupt(void *data)
     /* If a packet was received or an RX error was detected. */
     if ((value & ENC28J60_EIR_PKTIF) || (value & ENC28J60_EIR_RXERIF))
     {
-        /* Receive a packet from the hardware. */
+        /* Receive packets from the hardware. */
         enc28j60_receive_packet(device);
     }
 
     /* If an RX error was detected. */
     if (value & ENC28J60_EIR_RXERIF)
     {
+        /* Handle RX error. */
+        enc28j60_handle_rx_error(device);
+
         /* Clear the RX error interrupt. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_RXERIF, NULL, 0) != SUCCESS);
     }
 
-    /* If a packet was successfully transmitted. */
-    if (value & ENC28J60_EIR_TXIF)
+    /* In case of TX complete or TX error unblock the TX. */
+    if ((value & ENC28J60_EIR_TXIF) || (value & ENC28J60_EIR_TXERIF))
     {
+        /* Stop the TX. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRTS, NULL, 0) != SUCCESS);
+
         /* A packet was successfully transmitted, un-block the TX. */
         device->ethernet_device.flags |= ETH_FLAG_TX;
         device->flags &= (uint8_t)(~(ENC28J60_IN_TX));
 
         /* Set event that will unblock any tasks waiting for it. */
         fd_data_available(fd);
+    }
 
+    /* If a packet was successfully transmitted. */
+    if (value & ENC28J60_EIR_TXIF)
+    {
         /* Clear the TX complete interrupt. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_TXIF, NULL, 0) != SUCCESS);
     }
@@ -223,6 +234,9 @@ static void enc28j60_interrupt(void *data)
     {
         /* Initialize TX FIFO. */
         OS_ASSERT(enc28j60_tx_fifo_init(device) != SUCCESS);
+
+        /* Retransmit the old buffer. */
+        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRTS, NULL, 0) != SUCCESS);
 
         /* Clear the TX error interrupt. */
         OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_TXERIF, NULL, 0) != SUCCESS);
@@ -237,6 +251,24 @@ static void enc28j60_interrupt(void *data)
 } /* enc28j60_interrupt */
 
 /*
+ * enc28j60_handle_rx_error
+ * @device: ENC28J60 device instance for which RX error is needed to be handled.
+ * This function will handle RX error on a enc28j60 device.
+ */
+static void enc28j60_handle_rx_error(ENC28J60 *device)
+{
+    /* Disable receive logic. */
+    OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXEN, NULL, 0) != SUCCESS);
+
+    /* Reinitialize RX FIFO. */
+    OS_ASSERT(enc28j60_rx_fifo_init(device) != SUCCESS);
+
+    /* Enable receive logic. */
+    OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXEN, NULL, 0) != SUCCESS);
+
+} /* enc28j60_handle_rx_error */
+
+/*
  * enc28j60_tx_fifo_init
  * @device: ENC28J60 device instance for which TX FIFO is needed to be
  *  initialized.
@@ -248,20 +280,19 @@ static int32_t enc28j60_tx_fifo_init(ENC28J60 *device)
 {
     int32_t status;
 
-    /* Set TX buffer start address at ETXSTL/ETXSTH. */
-    status = enc28j60_write_word(device, ENC28J60_ADDR_ETXSTL, ENC28J60_TX_START);
-
-    /* Reset transmission. */
-    if (status == SUCCESS)
-    {
-        /* Set TX reset bit. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRST, NULL, 0) ;
-    }
+    /* Set TX reset bit. */
+    status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRST, NULL, 0);
 
     if (status == SUCCESS)
     {
         /* Clear TX reset bit. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRST, NULL, 0) ;
+        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRST, NULL, 0);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Set TX buffer start address at ETXSTL/ETXSTH. */
+        status = enc28j60_write_word(device, ENC28J60_ADDR_ETXSTL, ENC28J60_TX_START);
     }
 
     /* Return status to the caller. */
@@ -281,8 +312,20 @@ static int32_t enc28j60_rx_fifo_init(ENC28J60 *device)
 {
     int32_t status;
 
-    /* Set RX buffer start address at ERXSTL/ERXSTH. */
-    status = enc28j60_write_word(device, ENC28J60_ADDR_ERXSTL, ENC28J60_RX_START);
+    /* Set RX reset bit. */
+    status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXRST, NULL, 0);
+
+    if (status == SUCCESS)
+    {
+        /* Clear RX reset bit. */
+        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXRST, NULL, 0);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Set RX buffer start address at ERXSTL/ERXSTH. */
+        status = enc28j60_write_word(device, ENC28J60_ADDR_ERXSTL, ENC28J60_RX_START);
+    }
 
     if (status == SUCCESS)
     {
@@ -385,6 +428,16 @@ static void enc28j60_receive_packet(ENC28J60 *device)
 
         /* Save the next packet pointer. */
         next_ptr = (uint16_t)((receive_header[1] << 8) | receive_header[0]);
+
+        /* If we don't have an anticipated RX pointer. */
+        if ((next_ptr & 0x01) || (next_ptr > ENC28J60_RX_END))
+        {
+            /* Handle RX error. */
+            enc28j60_handle_rx_error(device);
+
+            /* Break out of this loop. */
+            break;
+        }
 
         /* Save the received packet length. */
         packet_length = (uint16_t)((receive_header[3] << 8) | receive_header[2]);
