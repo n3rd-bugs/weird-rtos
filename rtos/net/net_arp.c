@@ -106,7 +106,7 @@ static int32_t arp_process_request(FS_BUFFER *buffer)
         OS_ASSERT(fs_buffer_pull_offset(buffer, &target_ip, IPV4_ADDR_LEN, ARP_HDR_SRC_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
 
         /* Pull the ethernet address to which we need to send this a response. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &dst_mac, IPV4_ADDR_LEN, ARP_HDR_SRC_HW_OFFSET, (FS_BUFFER_INPLACE)) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &dst_mac, ETH_ADDR_LEN, ARP_HDR_SRC_HW_OFFSET, (FS_BUFFER_INPLACE)) != SUCCESS);
 
         /* Pull and discard any data still on this buffer. */
         OS_ASSERT(fs_buffer_pull(buffer, NULL, buffer->total_length, 0) != SUCCESS);
