@@ -31,8 +31,7 @@
 
 /* Internal function prototypes. */
 #ifdef IPV4_ENABLE_FRAG
-static void ipv4_fragment_initailize(IPV4_FRAGMENT *);
-static void ipv4_fragment_reset(IPV4_FRAGMENT *);
+static void ipv4_fragment_update_timer(NET_DEV *);
 static void ipv4_fragment_expired(void *);
 static uint8_t ipv4_frag_sort(void *, void *);
 static int32_t ipv4_frag_add(FS_BUFFER *, uint16_t);
@@ -46,19 +45,8 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *, FS_BUFFER *);
  */
 void ipv4_device_initialize(NET_DEV *net_dev)
 {
-    uint32_t n;
-
     /* Clear the IPv4 address assigned to this device. */
     net_dev->ipv4.address = 0;
-
-#ifdef IPV4_ENABLE_FRAG
-    /* Initialize all IPv4 fragments. */
-    for (n = 0; n < IPV4_NUM_FRAGS; n++)
-    {
-        /* Initialize IPv4 fragment data. */
-        ipv4_fragment_initailize(&net_dev->ipv4.fragments[n]);
-    }
-#endif /* IPV4_ENABLE_FRAG */
 
 } /* ipv4_device_initialize */
 
@@ -584,66 +572,101 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
 #ifdef IPV4_ENABLE_FRAG
 
 /*
- * ipv4_fragment_initailize
- * @fragment: IPv4 fragment needed to be initialized.
- * This function will initialize an IPv4 fragment.
+ * ipv4_fragment_set_data
+ * @fd: File descriptor associated with a networking device for which fragment
+ * data is needed to be set.
+ * @fragments: IPv4 fragment list.
+ * @num: Number of IPv4 fragments.
+ * This function will initialize IPv4 fragment data for an networking device.
  */
-static void ipv4_fragment_initailize(IPV4_FRAGMENT *fragment)
+void ipv4_fragment_set_data(FD fd, IPV4_FRAGMENT *fragments, uint32_t num)
 {
-    /* Fragment data is already cleared. */
+    NET_DEV *net_device = net_device_get_fd(fd);
 
-    /* Initialize fragment condition as a timer condition. */
-    fragment->suspend.flags = CONDITION_TIMER;
-    fragment->suspend.timeout = IPV4_FRAG_TIMEOUT;
+    /* Initialize the IPv4 fragment data. */
+    net_device->ipv4.fargment.list = fragments;
+    net_device->ipv4.fargment.num = num;
 
-} /* ipv4_fragment_initailize */
+    /* Initialize the IPv4 fragment condition. */
+    net_device->ipv4.fargment.suspend.flags = CONDITION_TIMER;
+    net_device->ipv4.fargment.suspend.timeout = MAX_WAIT;
+
+    /* Add condition for this fragment in networking stack. */
+    net_condition_add(&net_device->ipv4.fargment.condition, &net_device->ipv4.fargment.suspend, &ipv4_fragment_expired, net_device);
+
+} /* ipv4_fragment_set_data */
 
 /*
- * ipv4_fragment_reset
- * @fragment: IPv4 fragment needed to be reset.
- * This function will reset the fragment data.
+ * ipv4_fragment_update_timer
+ * @net_device: Networking device for which IPv4 fragment timer is needed to be
+ *  updated.
+ * This function will update IPv4 fragment timer for given networking device.
  */
-static void ipv4_fragment_reset(IPV4_FRAGMENT *fragment)
+static void ipv4_fragment_update_timer(NET_DEV *net_device)
 {
-    /* Clear the fragment data. */
-    memset(fragment, 0, sizeof(IPV4_FRAGMENT));
+    uint32_t n, next_timeout = MAX_WAIT;
 
-    /* Initialize the fragment structure. */
-    ipv4_fragment_initailize(fragment);
+    /* Go though all the fragments in this device. */
+    for (n = 0; n < net_device->ipv4.fargment.num; n++)
+    {
+        /* If this fragment is being used. */
+        if (net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE)
+        {
+            /* If this fragment will expire before the last saved expire time. */
+            if (net_device->ipv4.fargment.list[n].timeout < next_timeout)
+            {
+                /* Use this fragment's timeout. */
+                next_timeout = net_device->ipv4.fargment.list[n].timeout;
+            }
+        }
+    }
 
-} /* ipv4_fragment_reset */
+    /* Save the timeout at which we will need to expire next fragment. */
+    net_device->ipv4.fargment.suspend.timeout = next_timeout;
+
+} /* ipv4_fragment_update_timer */
 
 /*
  * ipv4_fragment_expired
- * @data: IPv4 fragment for which time expired.
+ * @data: Networking device for which IPv4 fragments are needed to be
+ * processed.
  * This function will called when we timeout receiving data for a fragment.
  */
 static void ipv4_fragment_expired(void *data)
 {
-    IPV4_FRAGMENT *fragment = (IPV4_FRAGMENT *)data;
+    NET_DEV *net_device = (NET_DEV *)data;
     FD buffer_fd;
+    uint32_t n, clock = (uint32_t)current_system_tick();
 
-    /* We should have at least one buffer on this fragment. */
-    OS_ASSERT(fragment->buffer_list.head == NULL);
+    /* Go though all the fragments in this device. */
+    for (n = 0; n < net_device->ipv4.fargment.num; n++)
+    {
+        /* If this fragment is now expired. */
+        if ((net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE) && (net_device->ipv4.fargment.list[n].timeout <= clock))
+        {
+            /* We should have at least one buffer on this fragment. */
+            OS_ASSERT(net_device->ipv4.fargment.list[n].buffer_list.head == NULL);
 
-    /* Save the file descriptor on which data was received. */
-    buffer_fd = fragment->buffer_list.head->fd;
+            /* Save the file descriptor on which data was received. */
+            buffer_fd = net_device->ipv4.fargment.list[n].buffer_list.head->fd;
 
-    /* Obtain lock for the file descriptor on which this semaphore was
-     * received. */
-    OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+            /* Obtain lock for the file descriptor on which this semaphore was
+             * received. */
+            OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
-    /* Free this buffer list. */
-    fs_buffer_add_buffer_list(fragment->buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            /* Free this buffer list. */
+            fs_buffer_add_buffer_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
-    /* Release semaphore for the buffer. */
-    fd_release_lock(buffer_fd);
+            /* Release semaphore for the buffer. */
+            fd_release_lock(buffer_fd);
 
-    /* Remove condition for this fragment. */
-    net_condition_remove(&fragment->condition);
+            /* Clear the fragment data. */
+            memset(&net_device->ipv4.fargment.list[n], 0, sizeof(IPV4_FRAGMENT));
+        }
+    }
 
-    /* Reset the fragment. */
-    ipv4_fragment_reset(fragment);
+    /* Update fragment timer. */
+    ipv4_fragment_update_timer(net_device);
 
 } /* ipv4_fragment_expired */
 
@@ -694,8 +717,8 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
     NET_DEV *net_device = net_device_get_fd(buffer->fd);
     FS_BUFFER *tmp_buffer;
     IPV4_FRAGMENT *fragment = NULL;
-    uint32_t sa;
-    int32_t status = NET_NO_BUFFERS, n;
+    uint32_t sa, n;
+    int32_t status = NET_NO_BUFFERS;
     uint16_t id;
 
     /* Should never happen. */
@@ -708,21 +731,21 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
     OS_ASSERT(fs_buffer_pull_offset(buffer, &sa, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
     /* Search all the fragments for a free one. */
-    for (n = 0; n < IPV4_NUM_FRAGS; n++)
+    for (n = 0; n < net_device->ipv4.fargment.num; n++)
     {
         /* If this fragment list is free. */
         if ((fragment == NULL) &&
-            ((net_device->ipv4.fragments[n].flags & IPV4_FRAG_IN_USE) == 0))
+            ((net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE) == 0))
         {
             /* Save the fragment as it is free. */
-            fragment = &net_device->ipv4.fragments[n];
+            fragment = &net_device->ipv4.fargment.list[n];
         }
 
         /* If we already have a fragment list for this fragment */
-        else if ((net_device->ipv4.fragments[n].sa == sa) && (net_device->ipv4.fragments[n].id == id))
+        else if ((net_device->ipv4.fargment.list[n].sa == sa) && (net_device->ipv4.fargment.list[n].id == id))
         {
             /* Use this fragment to reassemble the packet. */
-            fragment = &net_device->ipv4.fragments[n];
+            fragment = &net_device->ipv4.fargment.list[n];
 
             /* Break out of this loop. */
             break;
@@ -746,8 +769,11 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
                 fragment->id = id;
                 fragment->sa = sa;
 
-                /* Add condition for this fragment in networking stack. */
-                net_condition_add(&fragment->condition, &fragment->suspend, &ipv4_fragment_expired, fragment);
+                /* Save the timeout at which we will need to expire this fragment. */
+                fragment->timeout = (uint32_t)(IPV4_FRAG_TIMEOUT + current_system_tick());
+
+                /* Update fragment timer. */
+                ipv4_fragment_update_timer(net_device);
             }
 
             /* Move data from the original buffer to the temporary buffer. */
@@ -874,11 +900,8 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER *buffer)
             /* Free the fragment head. */
             fs_buffer_add(last_buffer->fd, last_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
-            /* Remove condition for this fragment. */
-            net_condition_remove(&fragment->condition);
-
-            /* Reset the fragment. */
-            ipv4_fragment_reset(fragment);
+            /* Clear the fragment data. */
+            memset(fragment, 0, sizeof(IPV4_FRAGMENT));
         }
         else
         {

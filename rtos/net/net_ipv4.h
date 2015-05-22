@@ -21,7 +21,6 @@
 #define IPV4_ENABLE_FRAG
 
 /* IPv4 fragmentation configuration. */
-#define IPV4_NUM_FRAGS              2
 #define IPV4_FRAG_TIMEOUT           (OS_TICKS_PER_SEC * 2)  /* Needs to be 60 seconds according to the RFC. */
 
 /* Protocol definitions. */
@@ -64,10 +63,6 @@
 /* IPv4 fragment structure. */
 typedef struct _ipv4_fragment
 {
-    /* Condition data for this fragment. */
-    CONDITION   condition;
-    SUSPEND     suspend;
-
     /* Networking buffer list for the buffers belong in this fragment. */
     struct _ipv4_fragment_buffer_list
     {
@@ -90,6 +85,21 @@ typedef struct _ipv4_fragment
 
 } IPV4_FRAGMENT;
 
+/* IPv4 fragment data. */
+typedef struct _ipv4_fragment_data
+{
+    /* IPv4 fragment list. */
+    IPV4_FRAGMENT   *list;
+
+    /* Number of fragments for this device. */
+    uint32_t    num;
+
+    /* Condition data for fragments. */
+    CONDITION   condition;
+    SUSPEND     suspend;
+
+} IPV4_FRAGMENT_DATA;
+
 /* IPv4 device data. */
 typedef struct _ipv4_device
 {
@@ -98,7 +108,7 @@ typedef struct _ipv4_device
 
 #ifdef IPV4_ENABLE_FRAG
     /* IPv4 fragments for this device. */
-    IPV4_FRAGMENT   fragments[IPV4_NUM_FRAGS];
+    IPV4_FRAGMENT_DATA  fargment;
 #endif
 } IPV4_DEVICE;
 
@@ -113,6 +123,9 @@ NET_DEV *ipv4_get_source_device(uint32_t);
 uint8_t ipv4_sreach_device(void *, void *);
 int32_t net_process_ipv4(FS_BUFFER *);
 int32_t ipv4_header_add(FS_BUFFER *, uint8_t, uint32_t, uint32_t, uint8_t);
+#ifdef IPV4_ENABLE_FRAG
+void ipv4_fragment_set_data(FD, IPV4_FRAGMENT *, uint32_t);
+#endif
 
 #endif /* NET_IPV4 */
 #endif /* CONFIG_NET */
