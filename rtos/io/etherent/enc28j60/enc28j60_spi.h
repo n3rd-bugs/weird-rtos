@@ -182,6 +182,12 @@
 #define ENC28J60_PHCON1_PPWRSV      (0x0800)
 #define ENC28J60_PHCON1_PDPXMD      (0x0100)
 
+/* ENC28J60 PHCON2 register definitions. */
+#define ENC28J60_PHCON2_FRCLINK     (0x4000)
+#define ENC28J60_PHCON2_TXDIS       (0x2000)
+#define ENC28J60_PHCON2_JABBER      (0x0400)
+#define ENC28J60_PHCON2_HDLDIS      (0x0100)
+
 /* ENC28J60 PHIE register definitions. */
 #define ENC28J60_PHIE_PLNKIE        (0x10)
 #define ENC28J60_PHIE_PGEIE         (0x02)
