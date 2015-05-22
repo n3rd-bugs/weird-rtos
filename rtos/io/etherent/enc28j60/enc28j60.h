@@ -38,10 +38,11 @@
 /* Buffer configuration for a enc28j60 device. */
 #define ENC28J60_MAX_BUFFER_SIZE    (128)
 #define ENC28J60_NUM_BUFFERS        (32)
-#define ENC28J60_NUM_BUFFER_LISTS   (12)
+#define ENC28J60_NUM_BUFFER_LISTS   (24)
 
 /* Networking configuration for a enc28j60 device. */
 #define ENC28J60_NUM_ARP            (4)
+#define ENC28J60_NUM_IPV4_FRAGS     (2)
 
 /* ENC28J60 receive packet definitions. */
 #define ENC28J60_RX_HEAD_SIZE       (6)
@@ -92,6 +93,11 @@ typedef struct _enc28j60_device
 #ifdef NET_ARP
     /* ARP entry list. */
     ARP_ENTRY   arp_entries[ENC28J60_NUM_ARP];
+#endif
+
+#ifdef IPV4_ENABLE_FRAG
+    /* IPv4 fragment list. */
+    IPV4_FRAGMENT   ipv4_fragments[ENC28J60_NUM_IPV4_FRAGS];
 #endif
 
     /* SPI device structure. */

@@ -39,7 +39,7 @@ void enc28j60_init(ENC28J60 *device)
     FD fd = (FD)&device->ethernet_device;
 
     /* Initialize SPI parameters. */
-    device->spi.baudrate = 40000000;
+    device->spi.baudrate = 42000000;
     device->spi.cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA);
 
     /* Do SPI initialization. */
@@ -74,6 +74,11 @@ void enc28j60_init(ENC28J60 *device)
 #ifdef NET_ARP
     /* Set ARP data for this ethernet device. */
     arp_set_data(fd, device->arp_entries, ENC28J60_NUM_ARP);
+#endif
+
+#ifdef IPV4_ENABLE_FRAG
+    /* Initialize fragment data for this device. */
+    ipv4_fragment_set_data(fd, device->ipv4_fragments, ENC28J60_NUM_IPV4_FRAGS);
 #endif
 
 } /* enc28j60_init */
