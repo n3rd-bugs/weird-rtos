@@ -143,6 +143,10 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
         /* Check if this is the entry for which we have received a response. */
         if (arp_data->entries[i].ip == src_ip)
         {
+            /* Pull the ethernet address of the source and update it in the ARP
+             * entry. */
+            OS_ASSERT(fs_buffer_pull_offset(buffer, arp_data->entries[i].mac, ETH_ADDR_LEN, ARP_HDR_SRC_HW_OFFSET, (FS_BUFFER_INPLACE)) != SUCCESS);
+
             /* Set this entry as up. */
             arp_data->entries[i].flags |= ARP_FLAG_UP;
 
