@@ -30,11 +30,12 @@
 /* ARP entry flags. */
 #define ARP_FLAG_VALID          0x01
 #define ARP_FLAG_UP             0x02
+#define ARP_FLAG_IN_USE         0x04
 
 /* ARP configuration. */
-#define ARP_TIMEOUT             (5)
+#define ARP_TIMEOUT             (1 * OS_TICKS_PER_SEC)
 #define ARP_RETRY_COUNT         (3)
-#define ARP_REUSE_LIFE_TIME     (300 * OS_TICKS_PER_SEC)
+#define ARP_UPDATE_TIME         (5 * OS_TICKS_PER_SEC)
 
 /* ARP header definitions. */
 #define ARP_HDR_LEN             (28)
@@ -68,8 +69,8 @@ typedef struct _arp_entry
     /* Ethernet MAC address for the destination IP address. */
     uint8_t     mac[ALLIGN_CEIL(ETH_ADDR_LEN)];
 
-    /* Time at which this entry was created. */
-    uint32_t    birth_time;
+    /* Tick at which we will be routing this entry again. */
+    uint32_t    next_timeout;
 
     /* Number of retries we have sent for this ARP entry. */
     uint8_t     retry_count;

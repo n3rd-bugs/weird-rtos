@@ -146,6 +146,9 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
             /* Set this entry as up. */
             arp_data->entries[i].flags |= ARP_FLAG_UP;
 
+            /* Clear the in-use flag. */
+            arp_data->entries[i].flags &= (uint8_t)(~ARP_FLAG_IN_USE);
+
             /* Send any packets that are still needed to be sent. */
             if (arp_data->entries[i].buffer_list.head != NULL)
             {
@@ -155,6 +158,9 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
                 /* Clear the ARP buffer list. */
                 arp_data->entries[i].buffer_list.head = arp_data->entries[i].buffer_list.tail = NULL;
             }
+
+            /* Break out of this loop. */
+            break;
         }
     }
 
@@ -245,7 +251,7 @@ static ARP_ENTRY *arp_find_entry(FD fd, uint32_t address)
     /* Get ARP data for this device. */
     ARP_DATA *arp_data = arp_get_data(fd);
     ARP_ENTRY *entry = NULL;
-    uint32_t i, clock = (uint32_t)current_system_tick();
+    uint32_t i;
 
     /* Go though all the ARP entries in the device. */
     for (i = 0; i < arp_data->num_entries; i++)
@@ -261,7 +267,7 @@ static ARP_ENTRY *arp_find_entry(FD fd, uint32_t address)
         }
 
         /* Check if this entry is free, or we can reuse this ARP entry. */
-        else if ((entry == NULL) && (((arp_data->entries[i].flags & ARP_FLAG_VALID) == 0) || ((clock - arp_data->entries[i].birth_time) > ARP_REUSE_LIFE_TIME)))
+        else if ((entry == NULL) && (((arp_data->entries[i].flags & ARP_FLAG_VALID) == 0) || ((arp_data->entries[i].flags & ARP_FLAG_IN_USE) == 0)))
         {
             /* Save this APR entry as it can be reused. */
             entry = &arp_data->entries[i];
@@ -282,36 +288,30 @@ static void arp_update_timers(FD fd)
 {
     /* Get ARP data for this device. */
     ARP_DATA *arp_data = arp_get_data(fd);
-    uint32_t i, this_timeout, next_timeout = MAX_WAIT, clock = (uint32_t)current_system_tick();
+    uint32_t i, next_timeout = MAX_WAIT;
 
     /* Go though all the ARP entries in the device. */
     for (i = 0; i < arp_data->num_entries; i++)
     {
-        /* Check if we have a still to be processed entry. */
-        if ((arp_data->entries[i].flags & ARP_FLAG_VALID) && ((arp_data->entries[i].flags & ARP_FLAG_UP) == 0))
+        /* If this is a valid entry. */
+        if (arp_data->entries[i].flags & ARP_FLAG_VALID)
         {
-            /* Calculate the next timeout for this entry. */
-            this_timeout = (((uint32_t)(arp_data->entries[i].retry_count * ARP_RETRY_COUNT) + arp_data->entries[i].birth_time) - clock);
-
-            /* If this time out is smaller then the one we have previously
-             * calculated. */
-            if (this_timeout < next_timeout)
+            /* Check if we need to route this entry. */
+            if (((arp_data->entries[i].flags & ARP_FLAG_UP) == 0) || (arp_data->entries[i].flags & ARP_FLAG_IN_USE))
             {
-                /* Use this timeout. */
-                next_timeout = this_timeout;
+                /* If this time out is smaller then the one we have previously
+                 * saved. */
+                if (arp_data->entries[i].next_timeout < next_timeout)
+                {
+                    /* Use this timeout. */
+                    next_timeout = arp_data->entries[i].next_timeout;
+                }
             }
         }
     }
 
-    /* If we do have a timeout that we need to process. */
-    if (next_timeout != MAX_WAIT)
-    {
-        /* Save the timeout at which we will need to process next ARP event. */
-        arp_data->suspend.timeout = next_timeout;
-
-        /* Add networking condition to process ARP for this device. */
-        net_condition_add(&arp_data->condition, &arp_data->suspend, &arp_event, fd);
-    }
+    /* Save the timeout at which we will need to process next ARP event. */
+    arp_data->suspend.timeout = next_timeout;
 
 } /* arp_update_timers */
 
@@ -374,31 +374,43 @@ static void arp_event(void *data)
     /* Go though all the ARP entries in the device. */
     for (i = 0; i < arp_data->num_entries; i++)
     {
-        /* Check if we have sent maximum number of ARP requests for this ARP
-         * entry. */
-        if (arp_data->entries[i].retry_count == ARP_RETRY_COUNT)
+        /* Check if this is a valid entry. */
+        if (arp_data->entries[i].flags & ARP_FLAG_VALID)
         {
-            /* Free this ARP entry. */
-            arp_free_entry(&arp_data->entries[i]);
-        }
+            /* Check if we have sent maximum number of ARP requests for this ARP
+             * entry. */
+            if (((arp_data->entries[i].flags & ARP_FLAG_UP) == 0) && (arp_data->entries[i].retry_count == ARP_RETRY_COUNT))
+            {
+                /* Free this ARP entry. */
+                arp_free_entry(&arp_data->entries[i]);
+            }
 
-        /* Check if we have a still to be processed entry. */
-        else if ((arp_data->entries[i].flags & ARP_FLAG_VALID) && ((arp_data->entries[i].flags & ARP_FLAG_UP) == 0))
-        {
             /* Check if we need to send a new request for this ARP entry. */
-            if (((uint32_t)(arp_data->entries[i].retry_count * ARP_RETRY_COUNT) + arp_data->entries[i].birth_time) <= clock)
+            else if (arp_data->entries[i].next_timeout <= clock)
             {
                 /* Try to find route for this entry. */
                 OS_ASSERT(arp_route(fd, &arp_data->entries[i]) != SUCCESS);
 
-                /* Increment the retry count for this ARP entry. */
-                arp_data->entries[i].retry_count++;
+                /* Update the timeout at which we will try to route this entry again. */
+                if ((arp_data->entries[i].flags & ARP_FLAG_UP) == 0)
+                {
+                    /* Try to route it again after timeout period. */
+                    arp_data->entries[i].next_timeout = (clock + ARP_TIMEOUT);
+
+                    /* Increment the retry count for this ARP entry. */
+                    arp_data->entries[i].retry_count++;
+                }
+
+                /* If this entry is still being used update it again after
+                 * sometime. */
+                else if (arp_data->entries[i].flags & ARP_FLAG_IN_USE)
+                {
+                    /* Try to route it again after update timeout. */
+                    arp_data->entries[i].next_timeout = (clock + ARP_UPDATE_TIME);
+                }
             }
         }
     }
-
-    /* Remove this ARP condition from networking stack. */
-    net_condition_remove(&arp_data->condition);
 
     /* Update ARP timers. */
     arp_update_timers(fd);
@@ -436,6 +448,9 @@ int32_t arp_resolve(FS_BUFFER *buffer, uint8_t *dst_addr)
         {
             /* Free this ARP entry. */
             arp_free_entry(entry);
+
+            /* Update ARP timers. */
+            arp_update_timers(buffer->fd);
         }
 
         /* If destination is reachable. */
@@ -443,6 +458,17 @@ int32_t arp_resolve(FS_BUFFER *buffer, uint8_t *dst_addr)
         {
             /* Return the destination MAC address to be used. */
             memcpy(dst_addr, entry->mac, ETH_ADDR_LEN);
+
+            /* If we are not using this entry. */
+            if ((entry->flags & ARP_FLAG_IN_USE) == 0)
+            {
+                /* This ARP entry is being used, try to update this entry again. */
+                entry->flags |= ARP_FLAG_IN_USE;
+                entry->next_timeout = (uint32_t)current_system_tick() + ARP_UPDATE_TIME;
+
+                /* Update ARP timers. */
+                arp_update_timers(buffer->fd);
+            }
         }
         else
         {
@@ -455,14 +481,14 @@ int32_t arp_resolve(FS_BUFFER *buffer, uint8_t *dst_addr)
                 /* Initialize this ARP entry. */
                 entry->flags |= ARP_FLAG_VALID;
                 entry->ip = dst_ip;
-                entry->birth_time = (uint32_t)current_system_tick();
+                entry->next_timeout = (uint32_t)current_system_tick();
+
+                /* Update ARP timers. */
+                arp_update_timers(buffer->fd);
             }
 
             /* Put this buffer in the ARP buffer list. */
             sll_append(&entry->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
-
-            /* Start the ARP timer to start routing for the destination address. */
-            arp_update_timers(buffer->fd);
 
             /* This packet will be sent when we have resolved the destination
              * MAC address. */
@@ -502,6 +528,10 @@ void arp_set_data(FD fd, ARP_ENTRY *entry_list, uint32_t num_entries)
 
     /* This will be a timer condition. */
     device->arp.suspend.flags = CONDITION_TIMER;
+    device->arp.suspend.timeout = MAX_WAIT;
+
+    /* Add networking condition to process ARP for this device. */
+    net_condition_add(&device->arp.condition, &device->arp.suspend, &arp_event, fd);
 
 } /* arp_set_data */
 
