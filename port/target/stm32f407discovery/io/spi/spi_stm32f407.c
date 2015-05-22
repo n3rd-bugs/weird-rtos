@@ -50,9 +50,9 @@ void spi_stm32f407_init(SPI_DEVICE *device)
         GPIOA->PUPDR &= ~((GPIO_PUPDR_PUPDR0 << (4 * 2)) | (GPIO_PUPDR_PUPDR0 << (5 * 2)) | (GPIO_PUPDR_PUPDR0 << (6 * 2)) | (GPIO_PUPDR_PUPDR0 << (7 * 2)));
         GPIOA->PUPDR |= ((0x02 << (5 * 2)) | (0x02 << (6 * 2)) | (0x02 << (7 * 2)));
 
-        /* Configure GPIO speed (50MHz). */
+        /* Configure GPIO speed (100MHz). */
         GPIOA->OSPEEDR &= ~((GPIO_OSPEEDER_OSPEEDR0 << (4 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (5 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (6 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (7 * 2)));
-        GPIOA->OSPEEDR |= ((0x02 << (4 * 2)) | (0x02 << (5 * 2)) | (0x02 << (6 * 2)) | (0x02 << (7 * 2)));
+        GPIOA->OSPEEDR |= ((0x03 << (4 * 2)) | (0x03 << (5 * 2)) | (0x03 << (6 * 2)) | (0x03 << (7 * 2)));
 
         /* Enable SPI mode on GPIOA.5. */
         GPIOA->AFR[0x05 >> 0x03] &= (uint32_t)(~(0xF << ((0x05 & 0x07) * 4)));
