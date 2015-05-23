@@ -39,7 +39,7 @@ void enc28j60_init(ENC28J60 *device)
     FD fd = (FD)&device->ethernet_device;
 
     /* Initialize SPI parameters. */
-    device->spi.baudrate = 42000000;
+    device->spi.baudrate = 21000000;
     device->spi.cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA);
 
     /* Do SPI initialization. */
