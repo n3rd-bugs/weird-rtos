@@ -124,12 +124,12 @@ TASK *scheduler_get_next_task()
             /* If we have not yet selected a task to run. */
             if ( (tcb_hp == NULL) ||
 
-              /* If this scheduler has a higher priority task. */
-              (tcb->priority < tcb_hp->priority) ||
+                 /* If this scheduler has a higher priority task. */
+                 (tcb->priority < tcb_hp->priority) ||
 
-              /* If this tasks have same priority but the scheduler has higher priority. */
-              ( (tcb->priority == tcb_hp->priority) &&
-                (scheduler->priority < scheduler_hp->priority) ) )
+                 /* If this tasks have same priority but the scheduler has higher priority. */
+                 ( (tcb->priority == tcb_hp->priority) &&
+                   (scheduler->priority < scheduler_hp->priority) ) )
             {
                 if (tcb_hp != NULL)
                 {
