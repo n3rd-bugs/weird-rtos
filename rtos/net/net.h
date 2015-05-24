@@ -21,6 +21,7 @@
 #define NET_ICMP
 #define NET_UDP
 #define NET_ARP
+#define NET_DHCP
 
 #include <net_buffer.h>
 #include <net_device.h>
