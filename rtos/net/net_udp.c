@@ -590,16 +590,12 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
     int32_t ret_size = size, status;
     FS_BUFFER *fs_buffer = (FS_BUFFER *)buffer;
     FD buffer_fd;
-    SOCKET_ADDRESS socket_address;
-
-    /* Copy the socket address. */
-    socket_address = port->socket_address;
 
     /* Release lock for this UDP port. */
     fd_release_lock(fd);
 
     /* Resolve the device from which we need to send a UDP datagram. */
-    net_device = ipv4_get_source_device(socket_address.local_ip);
+    net_device = net_device_get_fd(fs_buffer->fd);
 
     /* If a valid device was resolved. */
     if (net_device != NULL)
@@ -612,13 +608,13 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
         OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Add UDP header on the buffer. */
-        status = udp_header_add(fs_buffer, &socket_address, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+        status = udp_header_add(fs_buffer, &port->socket_address, 0);
 
         /* If UDP header was successfully added. */
         if (status == SUCCESS)
         {
             /* Add IP header on this buffer. */
-            status = ipv4_header_add(fs_buffer, IP_PROTO_UDP, socket_address.local_ip, socket_address.foreign_ip, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+            status = ipv4_header_add(fs_buffer, IP_PROTO_UDP, port->socket_address.local_ip, port->socket_address.foreign_ip, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
         }
 
         /* If IP header was successfully added. */
@@ -675,19 +671,15 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
 {
     UDP_PORT *port = (UDP_PORT *)fd;
     NET_DEV *net_device;
-    int32_t ret_size = size, status;
+    int32_t ret_size, status;
     FS_BUFFER *fs_buffer;
     FD buffer_fd;
-    SOCKET_ADDRESS socket_address;
-
-    /* Copy the socket address. */
-    socket_address = port->socket_address;
 
     /* Release lock for this UDP port. */
     fd_release_lock(fd);
 
     /* Resolve the device from which we need to send a UDP datagram. */
-    net_device = ipv4_get_source_device(socket_address.local_ip);
+    net_device = ipv4_get_source_device(port->socket_address.local_ip);
 
     /* If a valid device was resolved. */
     if (net_device != NULL)
@@ -731,7 +723,24 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
     if (status == SUCCESS)
     {
         /* Write data on this file descriptor. */
-        status = udp_write_buffer(fd, (uint8_t *)fs_buffer, size);
+        status = udp_write_buffer(fd, (uint8_t *)fs_buffer, sizeof(FS_BUFFER));
+
+        /* Reset the status if this is a success status. */
+        if (status > 0)
+        {
+            status = SUCCESS;
+        }
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Return the number of bytes written. */
+        ret_size = size;
+    }
+    else
+    {
+        /* Return the error to the caller. */
+        ret_size = status;
     }
 
     /* Return number of bytes. */
