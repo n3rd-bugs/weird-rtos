@@ -27,8 +27,10 @@ UDP_DATA udp_data;
 
 /* Internal function prototypes. */
 static uint8_t net_port_seach(void *, void *);
-static int32_t udp_read(void *, uint8_t *, int32_t);
-static int32_t udp_write(void *, uint8_t *, int32_t);
+static int32_t udp_read_buffer(void *, uint8_t *, int32_t);
+static int32_t udp_read_data(void *, uint8_t *, int32_t);
+static int32_t udp_write_buffer(void *, uint8_t *, int32_t);
+static int32_t udp_write_data(void *, uint8_t *, int32_t);
 
 /*
  * udp_initialize
@@ -55,9 +57,6 @@ void udp_initialize()
  */
 void udp_register(UDP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
 {
-    /* Clear the UDP port data. */
-    memset(port, 0, sizeof(UDP_PORT));
-
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data semaphore. */
     OS_ASSERT(semaphore_obtain(&udp_data.lock, MAX_WAIT) != SUCCESS);
@@ -74,10 +73,22 @@ void udp_register(UDP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
 
     /* Register this UDP port as a console. */
     port->console.fs.name = name;
-    port->console.fs.read = &udp_read;
-    port->console.fs.write = &udp_write;
     port->console.fs.flags |= (FS_BLOCK | FS_SPACE_AVAILABLE);
     console_register(&port->console);
+
+    /* If this is buffer port. */
+    if (port->console.fs.flags & FS_BUFFERED)
+    {
+        /* Use buffer APIs to read and write data from this UDP port. */
+        port->console.fs.read = &udp_read_buffer;
+        port->console.fs.write = &udp_write_buffer;
+    }
+    else
+    {
+        /* Use data APIs to read and write data from this UDP port. */
+        port->console.fs.read = &udp_read_data;
+        port->console.fs.write = &udp_write_data;
+    }
 
 #ifndef CONFIG_SEMAPHORE
     /* Enable scheduling. */
@@ -451,19 +462,22 @@ int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint8_
 } /* udp_header_add */
 
 /*
- * udp_read
+ * udp_read_buffer
  * @fd: File descriptor.
- * @buffer: Buffer in which data will be read.
+ * @buffer: File system buffer will be returned here.
  * @size: Size of buffer.
  * @return: Number of bytes read.
- * This function will read data from a UDP port.
+ * This function will read a buffer from the given UDP port.
  */
-static int32_t udp_read(void *fd, uint8_t *buffer, int32_t size)
+static int32_t udp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
 {
     UDP_PORT *port = (UDP_PORT *)fd;
-    FS_BUFFER *fs_buffer;
+    FS_BUFFER *fs_buffer = NULL;
     int32_t ret_size = 0;
     uint8_t ihl;
+
+    /* For now unused. */
+    UNUSED_PARAM(size);
 
     /* Get a buffer from the UDP port. */
     fs_buffer = sll_pop(&port->buffer_list, OFFSETOF(FS_BUFFER, next));
@@ -489,6 +503,47 @@ static int32_t udp_read(void *fd, uint8_t *buffer, int32_t size)
         /* Pull the IP and UDP headers from the packet. */
         OS_ASSERT(fs_buffer_pull_offset(fs_buffer, NULL, (uint32_t)(ihl + UDP_HRD_LENGTH), 0, 0) != SUCCESS);
 
+        /* Return the number of bytes read. */
+        ret_size = (int32_t)fs_buffer->total_length;
+
+        /* Release lock for the buffer file descriptor. */
+        fd_release_lock(fs_buffer->fd);
+    }
+
+    /* If there is no more data to read. */
+    if (port->buffer_list.head == NULL)
+    {
+        /* Tell file system that there is no more data to read from us. */
+        fd_data_flushed(fd);
+    }
+
+    /* Return the read buffer to the caller. */
+    *(FS_BUFFER **)buffer = fs_buffer;
+
+    /* Return number of bytes. */
+    return (ret_size);
+
+} /* udp_read_buffer */
+
+/*
+ * udp_read_data
+ * @fd: File descriptor.
+ * @buffer: Buffer in which data will be read.
+ * @size: Size of buffer.
+ * @return: Number of bytes read.
+ * This function will read data from a UDP port.
+ */
+static int32_t udp_read_data(void *fd, uint8_t *buffer, int32_t size)
+{
+    FS_BUFFER *fs_buffer;
+    int32_t ret_size = 0;
+
+    /* Read a buffer from given UDP port. */
+    if (udp_read_buffer(fd, (uint8_t *)&fs_buffer, 0) > 0)
+    {
+        /* Get lock for the buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(fs_buffer->fd));
+
         /* If we need to copy more data. */
         if (size > (int32_t)fs_buffer->total_length)
         {
@@ -511,20 +566,102 @@ static int32_t udp_read(void *fd, uint8_t *buffer, int32_t size)
         fd_release_lock(fs_buffer->fd);
     }
 
-    /* If there is no more data to read. */
-    if (port->buffer_list.head == NULL)
+    /* Return number of bytes. */
+    return (ret_size);
+
+} /* udp_read_data */
+
+/*
+ * udp_write_buffer
+ * @fd: File descriptor.
+ * @buffer: File system buffer needed to be sent on this UDP port.
+ * @size: Number of bytes to copy from the buffer.
+ * @return: If >= 0 number of bytes sent, NET_UNKNOWN_SRC will be returned if
+ *  a valid device was not resolved or the given source address,
+ *  FS_BUFFER_NO_SPACE will be returned if there are not enough buffer to send
+ *  the reply.
+ * This function will write a file system buffer on given UDP port. This
+ * function will consume the provided buffer in any case.
+ */
+static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
+{
+    UDP_PORT *port = (UDP_PORT *)fd;
+    NET_DEV *net_device;
+    int32_t ret_size = size, status;
+    FS_BUFFER *fs_buffer = (FS_BUFFER *)buffer;
+    FD buffer_fd;
+    SOCKET_ADDRESS socket_address;
+
+    /* Copy the socket address. */
+    socket_address = port->socket_address;
+
+    /* Release lock for this UDP port. */
+    fd_release_lock(fd);
+
+    /* Resolve the device from which we need to send a UDP datagram. */
+    net_device = ipv4_get_source_device(socket_address.local_ip);
+
+    /* If a valid device was resolved. */
+    if (net_device != NULL)
     {
-        /* Tell file system that there is no more data to read from us. */
-        fd_data_flushed(fd);
+        /* Save the file descriptor associated with the networking device. */
+        buffer_fd = net_device->fd;
+
+        /* Get lock for the file descriptor associated with this networking
+         * device. */
+        OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+
+        /* Add UDP header on the buffer. */
+        status = udp_header_add(fs_buffer, &socket_address, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+
+        /* If UDP header was successfully added. */
+        if (status == SUCCESS)
+        {
+            /* Add IP header on this buffer. */
+            status = ipv4_header_add(fs_buffer, IP_PROTO_UDP, socket_address.local_ip, socket_address.foreign_ip, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+        }
+
+        /* If IP header was successfully added. */
+        if (status == SUCCESS)
+        {
+            /* Transmit an UDP datagram. */
+            status = net_device_buffer_transmit(fs_buffer, NET_PROTO_IPV4, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+        }
+
+        /* If buffer was not consumed. */
+        if (status != NET_BUFFER_CONSUMED)
+        {
+            /* Add the allocated buffer back to the descriptor. */
+            fs_buffer_add_buffer_list(fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+
+            /* If an error has occurred. */
+            if (status != SUCCESS)
+            {
+                /* Return status to the caller. */
+                ret_size = status;
+            }
+        }
+
+        /* Release lock for the file descriptor associated with this networking
+         * device. */
+        fd_release_lock(buffer_fd);
     }
+    else
+    {
+        /* Return an error to the caller. */
+        ret_size = NET_UNKNOWN_SRC;
+    }
+
+    /* Obtain lock for this port before returning. */
+    OS_ASSERT(fd_get_lock(fd));
 
     /* Return number of bytes. */
     return (ret_size);
 
-} /* udp_read */
+} /* udp_write_buffer */
 
 /*
- * udp_write
+ * udp_write_data
  * @fd: File descriptor.
  * @buffer: Buffer from which data is needed to be copied.
  * @size: Number of bytes to copy from the buffer.
@@ -534,7 +671,7 @@ static int32_t udp_read(void *fd, uint8_t *buffer, int32_t size)
  *  the reply.
  * This function will write data on given UDP port.
  */
-static int32_t udp_write(void *fd, uint8_t *buffer, int32_t size)
+static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
 {
     UDP_PORT *port = (UDP_PORT *)fd;
     NET_DEV *net_device;
@@ -570,45 +707,6 @@ static int32_t udp_write(void *fd, uint8_t *buffer, int32_t size)
         {
             /* Push UDP payload on the buffer. */
             status = fs_buffer_push(fs_buffer, buffer, (uint32_t)size, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
-
-            if (status == SUCCESS)
-            {
-                /* Add UDP header on the buffer. */
-                status = udp_header_add(fs_buffer, &socket_address, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
-
-                /* If UDP header was successfully added. */
-                if (status == SUCCESS)
-                {
-                    /* Add IP header on this buffer. */
-                    status = ipv4_header_add(fs_buffer, IP_PROTO_UDP, socket_address.local_ip, socket_address.foreign_ip, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
-                }
-
-                /* If IP header was successfully added. */
-                if (status == SUCCESS)
-                {
-                    /* Transmit an UDP datagram. */
-                    status = net_device_buffer_transmit(fs_buffer, NET_PROTO_IPV4, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
-                }
-            }
-            else
-            {
-                /* Return the status to the caller. */
-                ret_size = status;
-            }
-
-            /* If buffer was not consumed. */
-            if (status != NET_BUFFER_CONSUMED)
-            {
-                /* Add the allocated buffer back to the descriptor. */
-                fs_buffer_add_buffer_list(fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-
-                /* If an error has occurred. */
-                if (status != SUCCESS)
-                {
-                    /* Return status to the caller. */
-                    ret_size = status;
-                }
-            }
         }
         else
         {
@@ -626,13 +724,20 @@ static int32_t udp_write(void *fd, uint8_t *buffer, int32_t size)
         ret_size = NET_UNKNOWN_SRC;
     }
 
-    /* Obtain lock for this port before returning. */
+    /* Obtain lock for this port. */
     OS_ASSERT(fd_get_lock(fd));
+
+    /* If we have allocated a buffer and now can be sent. */
+    if (status == SUCCESS)
+    {
+        /* Write data on this file descriptor. */
+        status = udp_write_buffer(fd, (uint8_t *)fs_buffer, size);
+    }
 
     /* Return number of bytes. */
     return (ret_size);
 
-} /* udp_write */
+} /* udp_write_data */
 
 #endif /* NET_UDP */
 #endif /* CONFIG_NET */
