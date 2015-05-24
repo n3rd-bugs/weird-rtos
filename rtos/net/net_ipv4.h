@@ -57,6 +57,7 @@
 
 /* IPv4 address definitions. */
 #define IPV4_ADDR_UNSPEC            (0)
+#define IPV4_ADDR_BCAST             (0xFFFFFFFF)
 
 #ifdef IPV4_ENABLE_FRAG
 
