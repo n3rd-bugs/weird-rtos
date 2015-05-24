@@ -317,10 +317,10 @@ static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
     for (n = 1; n < num; n++)
     {
         /* If this is a timer condition. */
-        if (((*suspend)->flags & CONDITION_TIMER) && ((*suspend)->timeout != MAX_WAIT))
+        if ((*suspend)->flags & CONDITION_TIMER)
         {
             /* Calculate the tick at which this timer is expected. */
-            if ((*suspend)->timeout < (clock + min_timeout))
+            if (((*suspend)->timeout != MAX_WAIT) && (*suspend)->timeout < min_timeout)
             {
                 /* Update the minimum timeout. */
                 min_timeout = (((*suspend)->timeout > clock) ? ((*suspend)->timeout - clock) : 0);
