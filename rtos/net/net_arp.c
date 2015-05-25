@@ -100,7 +100,7 @@ static int32_t arp_process_request(FS_BUFFER *buffer)
     OS_ASSERT(ipv4_get_device_address(buffer->fd, &own_ip) != SUCCESS);
 
     /* If remote needs our target hardware address. */
-    if (own_ip == target_ip)
+    if ((own_ip != IPV4_ADDR_UNSPEC) && (own_ip == target_ip))
     {
         /* Pull the IPv4 address to which we need to send this a response. */
         OS_ASSERT(fs_buffer_pull_offset(buffer, &target_ip, IPV4_ADDR_LEN, ARP_HDR_SRC_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);

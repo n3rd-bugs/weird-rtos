@@ -46,7 +46,7 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *, FS_BUFFER *);
 void ipv4_device_initialize(NET_DEV *net_dev)
 {
     /* Clear the IPv4 address assigned to this device. */
-    net_dev->ipv4.address = 0;
+    ipv4_set_device_address(net_dev->fd, 0);
 
 } /* ipv4_device_initialize */
 
@@ -299,7 +299,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         {
             /* Broadcast and multicast packets cannot be fragmented so if we are
              * not the destination just drop this packet. */
-            if (ip_dst == ip_iface)
+            if ((ip_iface != IPV4_ADDR_UNSPEC) && (ip_dst == ip_iface))
             {
 #ifdef IPV4_ENABLE_FRAG
                 /* Try to process this fragment. */
