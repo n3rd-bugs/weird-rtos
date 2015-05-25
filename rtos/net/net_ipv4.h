@@ -17,6 +17,14 @@
 #ifdef CONFIG_NET
 #ifdef NET_IPV4
 
+#ifdef NET_DHCP
+#include <net_dhcp.h>
+#endif
+
+#ifdef DHCP_CLIENT
+typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
+#endif
+
 /* IPv4 stack configuration. */
 #define IPV4_ENABLE_FRAG
 
@@ -110,6 +118,11 @@ typedef struct _ipv4_device
 #ifdef IPV4_ENABLE_FRAG
     /* IPv4 fragments for this device. */
     IPV4_FRAGMENT_DATA  fargment;
+#endif
+
+#ifdef DHCP_CLIENT
+    /* IPv4 DHCP client data. */
+    DHCP_CLIENT_DEVICE  *dhcp_client;
 #endif
 } IPV4_DEVICE;
 

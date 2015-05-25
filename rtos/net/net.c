@@ -21,6 +21,12 @@
 #ifdef CONFIG_ETHERNET
 #include <ethernet.h>
 #endif
+#ifdef NET_DHCP
+#include <net_dhcp.h>
+#endif
+#ifdef DHCP_CLIENT
+#include <net_dhcp_client.h>
+#endif
 
 /*
  * net_init
@@ -40,6 +46,11 @@ void net_init()
 #ifdef NET_UDP
     /* Initialize UDP stack. */
     udp_initialize();
+#endif
+
+#ifdef DHCP_CLIENT
+    /* Initialize DHCP client stack. */
+    net_dhcp_client_initialize();
 #endif
 
 #ifdef CONFIG_ETHERNET

@@ -16,6 +16,13 @@
 #include <string.h>
 #include <sll.h>
 #include <net.h>
+#ifdef NET_DHCP
+#include <net_dhcp.h>
+#endif
+#ifdef DHCP_CLIENT
+#include <net_dhcp_client.h>
+#endif
+
 
 /* Global network device data. */
 NET_DEV_DATA net_dev_data;
@@ -260,7 +267,8 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
  * net_device_link_up
  * @fd: File descriptor associated with a networking device.
  * This function will be called whenever link is up for this networking
- * device.
+ * device, the caller must have lock for this device, it will be released and
+ * acquired again if required.
  */
 void net_device_link_up(FD fd)
 {
@@ -268,6 +276,17 @@ void net_device_link_up(FD fd)
 
     /* Set this device UP. */
     net_device->flags |= NET_DEVICE_UP;
+
+#ifdef DHCP_CLIENT
+
+    /* If this device is using DHCP client, invoke the DHCP for it. */
+    if (net_device->ipv4.dhcp_client != NULL)
+    {
+        /* Start DHCP client. */
+        net_dhcp_client_start(net_device);
+    }
+
+#endif
 
 } /* net_device_link_up */
 
