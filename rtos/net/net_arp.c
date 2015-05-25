@@ -44,7 +44,7 @@ static void arp_event(void *);
 static int32_t arp_process_prologue_ipv4(FS_BUFFER *buffer)
 {
     int32_t status;
-    HDR_PARSE_MACHINE hdr_machine;
+    HDR_PARSE_MACHINE machine;
     uint16_t hardtype, prototype;
     uint8_t hardlen, protolen;
     HEADER headers[] =
@@ -56,10 +56,10 @@ static int32_t arp_process_prologue_ipv4(FS_BUFFER *buffer)
     };
 
     /* Initialize a header parse machine. */
-    header_parse_machine_init(&hdr_machine, &fs_buffer_hdr_pull);
+    header_parse_machine_init(&machine, &fs_buffer_hdr_pull);
 
     /* Try to parse the prologue header from the packet. */
-    status = header_parse(&hdr_machine, headers, sizeof(headers)/sizeof(HEADER), buffer);
+    status = header_parse(&machine, headers, sizeof(headers)/sizeof(HEADER), buffer);
 
     /* If ARP prologue was successfully parsed. */
     if (status == SUCCESS)
