@@ -41,6 +41,7 @@
 #define DHCP_MAGIC_COKIE    (0x63825363)
 
 /* DHCP option definitions. */
+#define DHCP_OPT_REQ_IP     (0x32)
 #define DHCP_OPT_LEASE_TIME (0x33)
 #define DHCP_OPT_MSG_TYPE   (0x35)
 #define DHCP_OPT_SRV_ID     (0x36)
@@ -49,6 +50,9 @@
 /* DHCP message type definitions. */
 #define DHCP_MSG_DICOVER    (0x01)
 #define DHCP_MSG_OFFER      (0x02)
+#define DHCP_MSG_REQUEST    (0x03)
+#define DHCP_MSG_ACK        (0x05)
+#define DHCP_MSG_NACK       (0x06)
 
 /* Function prototypes. */
 int32_t dhcp_add_header(FS_BUFFER *, uint8_t, uint32_t, uint16_t, uint8_t, uint32_t, uint32_t, uint32_t, uint8_t *);
