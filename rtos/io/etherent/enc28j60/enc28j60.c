@@ -81,6 +81,11 @@ void enc28j60_init(ENC28J60 *device)
     ipv4_fragment_set_data(fd, device->ipv4_fragments, ENC28J60_NUM_IPV4_FRAGS);
 #endif
 
+#ifdef DHCP_CLIENT
+    /* Initialize the DHCP client data for this device. */
+    net_dhcp_client_initialize_device(net_device_get_fd(fd), &device->dhcp_client);
+#endif
+
 } /* enc28j60_init */
 
 /*

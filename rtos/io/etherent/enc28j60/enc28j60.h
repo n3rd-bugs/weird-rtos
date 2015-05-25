@@ -25,6 +25,12 @@
 #include <spi.h>
 #include <condition.h>
 #include <console.h>
+#ifdef NET_DHCP
+#include <net_dhcp.h>
+#endif
+#ifdef DHCP_CLIENT
+#include <net_dhcp_client.h>
+#endif
 
 /* Error code definitions. */
 #define ENC28J60_SPI_ERROR      -11000
@@ -98,6 +104,11 @@ typedef struct _enc28j60_device
 #ifdef IPV4_ENABLE_FRAG
     /* IPv4 fragment list. */
     IPV4_FRAGMENT   ipv4_fragments[ENC28J60_NUM_IPV4_FRAGS];
+#endif
+
+#ifdef DHCP_CLIENT
+    /* DHCP client data. */
+    DHCP_CLIENT_DEVICE  dhcp_client;
 #endif
 
     /* SPI device structure. */
