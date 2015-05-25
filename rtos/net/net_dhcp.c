@@ -23,7 +23,7 @@
 /*
  * dhcp_add_header
  * @buffer: File system buffer needed to be populated.
- * @operation: DHCP operation.
+ * @operation: BOOTP operation.
  * @xid: Transaction ID.
  * @seconds: Time passed since this transaction was started.
  * @bcast: If TRUE broadcast flag will be set otherwise this is a unicast.
@@ -32,7 +32,7 @@
  * @server_address: Server IPv4 address.
  * @hw_address: Ethernet address for client.
  * @return: A success status will be returned if DHCP header was successfully
- * added to the given buffer.
+ *  added to the given buffer.
  * This function will add the given DHCP header on the provided buffer.
  */
 int32_t dhcp_add_header(FS_BUFFER *buffer, uint8_t operation, uint32_t xid, uint16_t seconds, uint8_t bcast, uint32_t client_address, uint32_t your_address, uint32_t server_address, uint8_t *hw_address)
@@ -82,6 +82,55 @@ int32_t dhcp_add_header(FS_BUFFER *buffer, uint8_t operation, uint32_t xid, uint
 } /* dhcp_add_header */
 
 /*
+ * dhcp_get_header
+ * @buffer: File system buffer needed to be parsed.
+ * @operation: BOOTP parsed will be returned here.
+ * @xid: Transaction ID.
+ * @client_address: Client IPv4 address.
+ * @your_address: Your IPv4 address.
+ * @server_address: Server IPv4 address.
+ * @hw_address: Ethernet address parsed.
+ * @return: A success status will be returned if DHCP header was successfully
+ *  parsed from the given buffer.
+ * This function will parse the DHCP header from the given buffer.
+ */
+int32_t dhcp_get_header(FS_BUFFER *buffer, uint8_t *operation, uint32_t *xid, uint32_t *client_address, uint32_t *your_address, uint32_t *server_address, uint8_t *hw_address)
+{
+    int32_t status;
+    uint32_t op_word;
+    HDR_PARSE_MACHINE machine;
+    HEADER headers[] =
+    {
+        {&op_word,          4,                                              (FS_BUFFER_PACKED) },   /* Operation, hardware type/hardware address length, hop limit. */
+        {xid,               4,                                              0 },                    /* Transaction ID. */
+        {NULL,              4,                                              0 },                    /* Transaction life time, flags. */
+        {client_address,    IPV4_ADDR_LEN,                                  (FS_BUFFER_PACKED) },   /* Client IP address. */
+        {your_address,      IPV4_ADDR_LEN,                                  (FS_BUFFER_PACKED) },   /* Your IP address. */
+        {server_address,    IPV4_ADDR_LEN,                                  (FS_BUFFER_PACKED) },   /* Server IP address. */
+        {NULL,              IPV4_ADDR_LEN,                                  0 },                    /* Relay agent address. */
+        {hw_address,        ETH_ADDR_LEN,                                   0 },                    /* Ethernet address length. */
+        {NULL,              (DHCP_HDR_CHADDR_LEN - ETH_ADDR_LEN) + 4 + 192, 0 },                    /* Address padding, server name, file name, DHCP magic number. */
+    };
+
+    /* Initialize a header parse machine. */
+    header_parse_machine_init(&machine, &fs_buffer_hdr_pull);
+
+    /* Try to parse the DHCP header from the packet. */
+    status = header_parse(&machine, headers, sizeof(headers)/sizeof(HEADER), buffer);
+
+    /* If DHCP header was successfully parsed. */
+    if (status == SUCCESS)
+    {
+        /* Return the operation parsed from the header. */
+        *operation = (uint8_t)(op_word >> DHCP_HDR_OP_SHIFT);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* dhcp_get_header */
+
+/*
  * dhcp_add_option
  * @buffer: File system buffer needed to be populated.
  * @type: DHCP option type.
@@ -116,6 +165,36 @@ int32_t dhcp_add_option(FS_BUFFER *buffer, uint8_t type, void *value, uint8_t le
     return (status);
 
 } /* dhcp_add_option */
+
+/*
+ * dhcp_get_option
+ * @buffer: File system buffer from which option will be parsed.
+ * @type: DHCP option type will be returned here.
+ * @length: DHCP option value length will be returned here.
+ * @return: A success status will be returned if a DHCP option was successfully
+ *  parsed.
+ * This function will parse a DHCP option from the given buffer, the option
+ * value will remain on the start of buffer and caller is responsible for
+ * pulling it from the buffer.
+ */
+int32_t dhcp_get_option(FS_BUFFER *buffer, uint8_t *type, uint8_t *length)
+{
+    int32_t status = SUCCESS;
+
+    /* Pull option type. */
+    status = fs_buffer_pull(buffer, type, 1, 0);
+
+    /* If we do have some option value next. */
+    if ((status == SUCCESS) && (*type != DHCP_OPT_END))
+    {
+        /* Pull option length. */
+        status = fs_buffer_pull(buffer, length, 1, 0);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* dhcp_get_option */
 
 #endif /* NET_DHCP */
 
