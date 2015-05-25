@@ -307,14 +307,11 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
  */
 static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
 {
-    uint32_t n, min_timeout = (*suspend)->timeout, min_index = 0;
+    uint32_t n, min_timeout = MAX_WAIT, min_index = 0;
     uint32_t clock = (uint32_t)current_system_tick();
 
-    /* Pick next condition. */
-    suspend++;
-
     /* For all conditions search the minimum timeout. */
-    for (n = 1; n < num; n++)
+    for (n = 0; n < num; n++)
     {
         /* If this is a timer condition. */
         if ((*suspend)->flags & CONDITION_TIMER)
