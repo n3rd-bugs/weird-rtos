@@ -41,11 +41,14 @@
 #define DHCP_MAGIC_COKIE    (0x63825363)
 
 /* DHCP option definitions. */
+#define DHCP_OPT_LEASE_TIME (0x33)
 #define DHCP_OPT_MSG_TYPE   (0x35)
+#define DHCP_OPT_SRV_ID     (0x36)
 #define DHCP_OPT_END        (0xFF)
 
 /* DHCP message type definitions. */
 #define DHCP_MSG_DICOVER    (0x01)
+#define DHCP_MSG_OFFER      (0x02)
 
 /* Function prototypes. */
 int32_t dhcp_add_header(FS_BUFFER *, uint8_t, uint32_t, uint16_t, uint8_t, uint32_t, uint32_t, uint32_t, uint8_t *);

@@ -52,7 +52,7 @@ int32_t dhcp_add_header(FS_BUFFER *buffer, uint8_t operation, uint32_t xid, uint
         {&your_address,                     IPV4_ADDR_LEN,                          (FS_BUFFER_PACKED) },   /* Your IP address. */
         {&server_address,                   IPV4_ADDR_LEN,                          (FS_BUFFER_PACKED) },   /* Server IP address. */
         {(uint32_t []){IPV4_ADDR_UNSPEC},   IPV4_ADDR_LEN,                          (FS_BUFFER_PACKED) },   /* Relay agent address. */
-        {hw_address,                        ETH_ADDR_LEN,                           0 },                    /* Ethernet address length. */
+        {hw_address,                        ETH_ADDR_LEN,                           0 },                    /* Ethernet address. */
         {padding,                           (DHCP_HDR_CHADDR_LEN - ETH_ADDR_LEN),   0 },                    /* Address padding. */
     };
 
@@ -108,7 +108,7 @@ int32_t dhcp_get_header(FS_BUFFER *buffer, uint8_t *operation, uint32_t *xid, ui
         {your_address,      IPV4_ADDR_LEN,                                  (FS_BUFFER_PACKED) },   /* Your IP address. */
         {server_address,    IPV4_ADDR_LEN,                                  (FS_BUFFER_PACKED) },   /* Server IP address. */
         {NULL,              IPV4_ADDR_LEN,                                  0 },                    /* Relay agent address. */
-        {hw_address,        ETH_ADDR_LEN,                                   0 },                    /* Ethernet address length. */
+        {hw_address,        ETH_ADDR_LEN,                                   0 },                    /* Ethernet address. */
         {NULL,              (DHCP_HDR_CHADDR_LEN - ETH_ADDR_LEN) + 4 + 192, 0 },                    /* Address padding, server name, file name, DHCP magic number. */
     };
 
