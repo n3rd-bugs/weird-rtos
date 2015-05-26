@@ -303,6 +303,17 @@ void net_device_link_down(FD fd)
     /* Clear the UP flag for this device. */
     net_device->flags &= (uint32_t)(~(NET_DEVICE_UP));
 
+#ifdef DHCP_CLIENT
+
+    /* If this device is using DHCP client, terminate the DHCP for it. */
+    if (net_device->ipv4.dhcp_client != NULL)
+    {
+        /* Stop DHCP client. */
+        net_dhcp_client_stop(net_device);
+    }
+
+#endif
+
 } /* net_device_link_down */
 
 #endif /* CONFIG_NET */

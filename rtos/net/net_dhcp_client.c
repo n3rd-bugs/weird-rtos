@@ -62,12 +62,18 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
         client_data->suspend.timeout = (uint32_t)current_system_tick();
     }
 
+    /* If we need to start a new transaction in next state. */
+    if ((state == DHCP_CLI_DISCOVER) || (state == DHCP_CLI_LEASED))
+    {
+        /* Create a new transaction ID. */
+        client_data->xid = (uint32_t)(current_system_tick64());
+    }
+
     /* If we are moving to discover state, reinitialize the transaction data. */
     if (state == DHCP_CLI_DISCOVER)
     {
         /* Initialize the DHCP client data. */
         client_data->start_time = (uint16_t)current_system_tick();
-        client_data->xid = (uint32_t)(current_system_tick64());
         client_data->client_ip = client_data->server_ip = client_data->lease_time = 0;
     }
 
@@ -88,7 +94,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
     int32_t status;
 
     /* Add DHCP header on the buffer. */
-    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)(((uint16_t)current_system_tick() - client_data->start_time) / OS_TICKS_PER_SEC), TRUE, 0x00, 0x00, 0x00, ethernet_get_mac_address(fd));
+    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)(((uint16_t)current_system_tick() - client_data->start_time) / OS_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_LEASED) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
 
     if (status == SUCCESS)
     {
@@ -171,7 +177,8 @@ static void dhcp_event(void *data)
 
             break;
 
-        /* We are requesting a new address. */
+        /* We are requesting a new address or an old lease is expired. */
+        case DHCP_CLI_LEASED:
         case DHCP_CLI_REQUEST:
 
             /* If we have not tried this for maximum number of times. */
@@ -385,6 +392,7 @@ static void net_dhcp_client_process(void *data)
 
                 /* If we have sent a request and waiting for an ACK. */
                 case DHCP_CLI_REQUEST:
+                case DHCP_CLI_LEASED:
 
                     /* Process the DHCP message type. */
                     switch (dhcp_type)
@@ -507,6 +515,25 @@ void net_dhcp_client_start(NET_DEV *net_device)
     }
 
 } /* net_dhcp_client_start */
+
+/*
+ * net_dhcp_client_stop
+ * @net_device: Networking device for which DHCP client is needed to be
+ *  stopped.
+ * This function will deinitialize DHCP client operation.
+ */
+void net_dhcp_client_stop(NET_DEV *net_device)
+{
+    DHCP_CLIENT_DEVICE *client_data = net_device->ipv4.dhcp_client;
+
+    /* If DHCP client data is actually set. */
+    if (client_data != NULL)
+    {
+        /* For now just remove the networking condition for this device. */
+        net_condition_remove(&client_data->condition);
+    }
+
+} /* net_dhcp_client_stop */
 
 #endif /* DHCP_CLIENT */
 #endif /* CONFIG_NET */
