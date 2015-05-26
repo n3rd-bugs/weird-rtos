@@ -307,7 +307,7 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
  */
 static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
 {
-    uint32_t n, min_timeout = MAX_WAIT, min_index = 0;
+    uint32_t n, min_timeout = MAX_WAIT, this_timeout, min_index = 0;
     uint32_t clock = (uint32_t)current_system_tick();
 
     /* For all conditions search the minimum timeout. */
@@ -316,14 +316,21 @@ static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
         /* If this is a timer condition. */
         if ((*suspend)->flags & CONDITION_TIMER)
         {
-            /* Calculate the tick at which this timer is expected. */
-            if (((*suspend)->timeout != MAX_WAIT) && (*suspend)->timeout < min_timeout)
+            /* If we are actually using this timer. */
+            if ((*suspend)->timeout != MAX_WAIT)
             {
-                /* Update the minimum timeout. */
-                min_timeout = (((*suspend)->timeout > clock) ? ((*suspend)->timeout - clock) : 0);
+                /* Calculate the number of ticks left till it's timeout. */
+                this_timeout = (((*suspend)->timeout > clock) ? ((*suspend)->timeout - clock) : 0);
 
-                /* Save the entry index. */
-                min_index = n;
+                /* If this timer has minimum ticks left on it. */
+                if (this_timeout < min_timeout)
+                {
+                    /* Update the minimum timeout. */
+                    min_timeout = this_timeout;
+
+                    /* Save the entry index. */
+                    min_index = n;
+                }
             }
         }
 
