@@ -47,6 +47,7 @@ void enc28j60_init(ENC28J60 *device)
 
     /* Set the buffer data structure for this file descriptor. */
     fs_buffer_dataset(&device->ethernet_device, &device->fs_buffer_data, ENC28J60_NUM_BUFFERS);
+    device->fs_buffer_data.threshold_buffers = ENC28J60_NUM_THR_BUFFER;
 
     /* Add buffer for this console. */
     for (i = 0; i < ENC28J60_NUM_BUFFERS; i++)

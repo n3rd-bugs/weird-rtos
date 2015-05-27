@@ -45,6 +45,7 @@
 #define ENC28J60_MAX_BUFFER_SIZE    (128)
 #define ENC28J60_NUM_BUFFERS        (32)
 #define ENC28J60_NUM_BUFFER_LISTS   (24)
+#define ENC28J60_NUM_THR_BUFFER     (16)
 
 /* Networking configuration for a enc28j60 device. */
 #define ENC28J60_NUM_ARP            (4)
