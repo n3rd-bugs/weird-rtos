@@ -284,7 +284,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         {
             /* Check if we are not at threshold, as this might cause a dead
              * lock in the stack. */
-            if (fs_buffer_threshold_locked(buffer->fd) == FALSE)
+            if ((udp_port->flags & UDP_FLAG_THR_BUFFERS) || (fs_buffer_threshold_locked(buffer->fd) == FALSE))
             {
                 /* Release lock for buffer file descriptor as we might need to
                  * suspend to wait for UDP port lock. */
@@ -608,20 +608,20 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
         OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Add UDP header on the buffer. */
-        status = udp_header_add(fs_buffer, &port->socket_address, 0);
+        status = udp_header_add(fs_buffer, &port->socket_address, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
 
         /* If UDP header was successfully added. */
         if (status == SUCCESS)
         {
             /* Add IP header on this buffer. */
-            status = ipv4_header_add(fs_buffer, IP_PROTO_UDP, port->socket_address.local_ip, port->socket_address.foreign_ip, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+            status = ipv4_header_add(fs_buffer, IP_PROTO_UDP, port->socket_address.local_ip, port->socket_address.foreign_ip, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
         }
 
         /* If IP header was successfully added. */
         if (status == SUCCESS)
         {
             /* Transmit an UDP datagram. */
-            status = net_device_buffer_transmit(fs_buffer, NET_PROTO_IPV4, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+            status = net_device_buffer_transmit(fs_buffer, NET_PROTO_IPV4, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
         }
 
         /* If buffer was not consumed. */
@@ -692,13 +692,13 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
         OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Allocate a buffer from the required descriptor. */
-        fs_buffer = fs_buffer_get(buffer_fd, FS_BUFFER_LIST, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+        fs_buffer = fs_buffer_get(buffer_fd, FS_BUFFER_LIST, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
 
         /* If we do have a buffer. */
         if (fs_buffer != NULL)
         {
             /* Push UDP payload on the buffer. */
-            status = fs_buffer_push(fs_buffer, buffer, (uint32_t)size, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+            status = fs_buffer_push(fs_buffer, buffer, (uint32_t)size, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
         }
         else
         {

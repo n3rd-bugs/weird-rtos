@@ -29,6 +29,9 @@
 #define UDP_HRD_LEN_OFFSET          (4)
 #define UDP_HRD_CSUM_OFFSET         (6)
 
+/* UDP port flags. */
+#define UDP_FLAG_THR_BUFFERS        (0x01)
+
 /* UDP port structure. */
 typedef struct _udp_port UDP_PORT;
 struct _udp_port
@@ -51,6 +54,13 @@ struct _udp_port
 
     /* Last datagram address. */
     SOCKET_ADDRESS  last_datagram_address;
+
+    /* UDP port flags. */
+    uint8_t         flags;
+
+    /* Padding variable. */
+    uint8_t         pad[3];
+
 };
 
 /* UDP global data. */
