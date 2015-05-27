@@ -462,6 +462,7 @@ void net_dhcp_client_initialize()
 
     /* This will be a buffered UDP port. */
     dhcp_client.udp.console.fs.flags = FS_BUFFERED;
+    dhcp_client.udp.flags = UDP_FLAG_THR_BUFFERS;
 
     /* Register UDP port for DHCP client. */
     udp_register(fd, "dhcp_client", &sock_addr);
