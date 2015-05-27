@@ -30,9 +30,9 @@
 #define DHCP_MAX_RETRY      (4)
 
 /* DHCP client states. */
-#define DHCP_CLI_DISCOVER   (0x00)
-#define DHCP_CLI_REQUEST    (0x01)
-#define DHCP_CLI_LEASED     (0xFF)
+#define DHCP_CLI_DISCOVER       (0x00)
+#define DHCP_CLI_REQUEST        (0x01)
+#define DHCP_CLI_LEASE_EXPIRE   (0xFF)
 
 /* DHCP client data. */
 typedef struct _dhcp_client_data

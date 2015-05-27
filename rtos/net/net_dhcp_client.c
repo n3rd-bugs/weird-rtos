@@ -50,8 +50,8 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     /* Process the state change. */
     client_data->current_timeout = (DHCP_BASE_TIMEOUT / 2);
 
-    /* We are moving to leased state. */
-    if (state == DHCP_CLI_LEASED)
+    /* If next state is lease expire state. */
+    if (state == DHCP_CLI_LEASE_EXPIRE)
     {
         /* Wait until the lease expire and then trigger this state. */
         client_data->suspend.timeout = (uint32_t)(current_system_tick() + (client_data->lease_time * OS_TICKS_PER_SEC));
@@ -63,7 +63,7 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     }
 
     /* If we need to start a new transaction in next state. */
-    if ((state == DHCP_CLI_DISCOVER) || (state == DHCP_CLI_LEASED))
+    if ((state == DHCP_CLI_DISCOVER) || (state == DHCP_CLI_LEASE_EXPIRE))
     {
         /* Create a new transaction ID. */
         client_data->xid = (uint32_t)(current_system_tick64());
@@ -94,7 +94,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
     int32_t status;
 
     /* Add DHCP header on the buffer. */
-    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)(((uint16_t)current_system_tick() - client_data->start_time) / OS_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_LEASED) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
+    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)(((uint16_t)current_system_tick() - client_data->start_time) / OS_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_LEASE_EXPIRE) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
 
     if (status == SUCCESS)
     {
@@ -178,8 +178,8 @@ static void dhcp_event(void *data)
             break;
 
         /* We are requesting a new address or an old lease is expired. */
-        case DHCP_CLI_LEASED:
         case DHCP_CLI_REQUEST:
+        case DHCP_CLI_LEASE_EXPIRE:
 
             /* If we have not tried this for maximum number of times. */
             if (client_data->retry < DHCP_MAX_RETRY)
@@ -392,13 +392,16 @@ static void net_dhcp_client_process(void *data)
 
                 /* If we have sent a request and waiting for an ACK. */
                 case DHCP_CLI_REQUEST:
-                case DHCP_CLI_LEASED:
+                case DHCP_CLI_LEASE_EXPIRE:
 
                     /* Process the DHCP message type. */
                     switch (dhcp_type)
                     {
                     /* Got an ACK from the server. */
                     case DHCP_MSG_ACK:
+
+                        /* Save/update the lease time. */
+                        client_data->lease_time = lease_time;
 
                         /* Release lock for networking file descriptor. */
                         fd_release_lock(net_fd);
@@ -409,8 +412,9 @@ static void net_dhcp_client_process(void *data)
                         /* Acquire lock for networking file descriptor. */
                         OS_ASSERT(fd_get_lock(net_fd) != SUCCESS);
 
-                        /* Move to the leased state. */
-                        dhcp_change_state(client_data, DHCP_CLI_LEASED);
+                        /* We have a lease, we will try to renew it when it
+                         * expires. */
+                        dhcp_change_state(client_data, DHCP_CLI_LEASE_EXPIRE);
 
                         break;
 
