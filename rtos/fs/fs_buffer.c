@@ -129,7 +129,7 @@ void fs_buffer_move(FS_BUFFER *dst_buffer, FS_BUFFER *src_buffer)
     FD buffer_fd = dst_buffer->fd;
 
     /* Copy the buffer data as it is. */
-    mempcpy(dst_buffer, src_buffer, sizeof(FS_BUFFER));
+    memcpy(dst_buffer, src_buffer, sizeof(FS_BUFFER));
 
     /* Restore the file descriptor for destination buffer. */
     dst_buffer->fd = buffer_fd;
