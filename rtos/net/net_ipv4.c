@@ -178,7 +178,7 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
 uint8_t ipv4_sreach_device(void *node, void *param)
 {
     NET_DEV *net_device = (NET_DEV *)node;
-    uint32_t address = (uint32_t)param;
+    uint32_t address = *(uint32_t *)param;
     uint8_t match = FALSE;
 
     /* If this is the required device. */
@@ -209,7 +209,7 @@ NET_DEV *ipv4_get_source_device(uint32_t address)
     DISABLE_INTERRUPTS();
 
     /* Search for the required device. */
-    ret_device = sll_search(&net_dev_data.devices, NULL, &ipv4_sreach_device, (void *)address, OFFSETOF(NET_DEV, next));
+    ret_device = sll_search(&net_dev_data.devices, NULL, &ipv4_sreach_device, &address, OFFSETOF(NET_DEV, next));
 
     /* Restore the IRQ interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);

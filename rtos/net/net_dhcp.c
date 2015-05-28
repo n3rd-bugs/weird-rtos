@@ -38,7 +38,7 @@
 int32_t dhcp_add_header(FS_BUFFER *buffer, uint8_t operation, uint32_t xid, uint16_t seconds, uint8_t bcast, uint32_t client_address, uint32_t your_address, uint32_t server_address, uint8_t *hw_address)
 {
     int32_t status;
-    uint32_t magic_cookie = DHCP_MAGIC_COKIE, op_word = (uint32_t)((operation << DHCP_HDR_OP_SHIFT) | DHCP_OP_HEADER), padding[4] = {0, 0, 0, 0}; /* 16 byte padding size. */
+    uint32_t magic_cookie = DHCP_MAGIC_COKIE, op_word = (((uint32_t)operation << DHCP_HDR_OP_SHIFT) | DHCP_OP_HEADER), padding[4] = {0, 0, 0, 0}; /* 16 byte padding size. */
     uint16_t flags = (uint16_t)(bcast << DHCP_HDR_BCAST_SHIFT);
     uint8_t num_paddings = 12;
     HDR_GEN_MACHINE machine;

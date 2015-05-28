@@ -48,7 +48,7 @@ typedef struct _dhcp_client_data
 } DHCP_CLIENT_DATA;
 
 /* DHCP client device data. */
-typedef struct _dhcp_client_device
+struct _dhcp_client_device
 {
     /* Condition data for this DHCP client. */
     CONDITION   condition;
@@ -79,7 +79,7 @@ typedef struct _dhcp_client_device
      * state. */
     uint8_t     retry;
 
-} DHCP_CLIENT_DEVICE;
+};
 
 /* Function prototypes. */
 void net_dhcp_client_initialize();
