@@ -1,7 +1,7 @@
 Purpose of this page is to provide any useful information about using weird-rtos
 on STM32F407-Discovery platform.
 
-#Eclipse configuration:
+###Eclipse configuration:
     1. You must have installed CDT plug-in and a GNU-GCC tool chain on your host.
     2. Create a new empty executable c project with required cross-toolchain.
     3. Copy content of the GIT repository in the empty project.
