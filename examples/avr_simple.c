@@ -17,19 +17,19 @@
 #include <fs.h>
 #include <sys_info.h>
 
-char    stack_1[192];
+uint8_t stack_1[192];
 TASK    task_cb_1;
-char    stack_2[128];
+uint8_t stack_2[128];
 TASK    task_cb_2;
-char    stack_3[128];
+uint8_t stack_3[128];
 TASK    task_cb_3;
-char    stack_4[128];
+uint8_t stack_4[128];
 TASK    task_cb_4;
-char    stack_5[256];
+uint8_t stack_5[256];
 TASK    task_cb_5;
-char    stack_6[128];
+uint8_t stack_6[128];
 TASK    task_cb_6;
-char    stack_7[128];
+uint8_t stack_7[128];
 TASK    task_cb_7;
 
 SEMAPHORE semaphore;
