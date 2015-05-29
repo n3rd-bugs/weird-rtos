@@ -32,7 +32,7 @@ void ctx_sample_task(void *argv)
     while(1)
     {
         n= n + 1;
-        last_tick = current_system_tick64();
+        last_tick = current_hardware_tick();
         task_yield();
 
         if (com > 0x0FFFFFFF)
@@ -41,7 +41,7 @@ void ctx_sample_task(void *argv)
             n = 1;
         }
 
-        com += current_system_tick64() - last_tick;
+        com += current_hardware_tick() - last_tick;
         ret_time[0] = (com / n);
     }
 }
