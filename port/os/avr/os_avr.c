@@ -60,9 +60,21 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 } /* ISR(TIMER1_COMPA_vect, ISR_NAKED) */
 
 /*
+ * current_hardware_tick
+ * @return: This function will return 16-bit value of hardware tick.
+ * This function will return current hardware tick.
+ */
+uint16_t current_hardware_tick()
+{
+    /* Return 16-bit value of system timer. */
+    return ((TCNT1H << 8) | TCNT1L);
+
+} /* current_hardware_tick */
+
+/*
  * system_tick_Init
- * This initializes system tick.
- * On AVR we are using Timer1 with CCP1 module to reload the timer when expired.
+ * This initializes system tick. On AVR we are using Timer1 with CCP1 module to
+ * reload the timer when expired.
  */
 void system_tick_Init()
 {
