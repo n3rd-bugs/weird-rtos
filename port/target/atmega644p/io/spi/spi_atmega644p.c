@@ -59,7 +59,7 @@ void spi_atmega644_init(SPI_DEVICE *device)
            ((baud_scale & 0x06) << 1);
 
     /* Update SPCR. */
-    SPSR = (baud_scale & 0x01);
+    SPSR = (((baud_scale & 0x01) == 0) << ATMEGA644P_SPI_SPSR_SPI2X);
 
     /* Enable SPI device. */
     SPCR |= (1 << ATMEGA644P_SPI_SPCR_SPE_SHIFT);
