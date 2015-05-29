@@ -672,7 +672,7 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
     UDP_PORT *port = (UDP_PORT *)fd;
     NET_DEV *net_device;
     int32_t ret_size, status;
-    FS_BUFFER *fs_buffer;
+    FS_BUFFER *fs_buffer = NULL;
     FD buffer_fd;
 
     /* Release lock for this UDP port. */
@@ -703,7 +703,7 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
         else
         {
             /* No buffers are available to send this buffer. */
-            ret_size = NET_NO_BUFFERS;
+            status = NET_NO_BUFFERS;
         }
 
         /* Release lock for the file descriptor associated with this networking
@@ -713,14 +713,14 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
     else
     {
         /* Return an error to the caller. */
-        ret_size = NET_UNKNOWN_SRC;
+        status = NET_UNKNOWN_SRC;
     }
 
     /* Obtain lock for this port. */
     OS_ASSERT(fd_get_lock(fd));
 
     /* If we have allocated a buffer and now can be sent. */
-    if (status == SUCCESS)
+    if ((status == SUCCESS) && (fs_buffer != NULL))
     {
         /* Write data on this file descriptor. */
         status = udp_write_buffer(fd, (uint8_t *)fs_buffer, sizeof(FS_BUFFER));

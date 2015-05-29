@@ -377,7 +377,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     TASK *tcb = get_current_task();
     int32_t status = SUCCESS, task_status = TASK_RESUME;
     uint32_t num_conditions = *num, timeout, timeout_index;
-    CONDITION *resume_condition;
+    CONDITION *resume_condition = NULL;
 
 #ifndef CONFIG_SLEEP
     /* Remove some compiler warning. */

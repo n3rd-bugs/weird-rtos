@@ -28,7 +28,7 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offse
 {
     FS_BUFFER_ONE *one = buffer->list.head;
     uint32_t csum = 0, left = 0;
-    uint16_t *bytes;
+    uint16_t *bytes = (uint16_t *)one->buffer;
     uint8_t last_left = FALSE;
 
     /* If we have negative number of bytes. */
