@@ -26,12 +26,24 @@ void spi_atmega644_init(SPI_DEVICE *device)
     uint32_t baud_scale;
     uint8_t bit_count = 0;
 
+    /* SPI baudrate table.
+     * Divisor  SP1     SP0     SPX
+     * 2        0       0       1
+     * 4        0       0       0
+     * 8        0       1       1
+     * 16       0       1       0
+     * 32       1       0       1
+     * 64       1       0       0
+     * 128      1       1       0
+     * 64       1       1       1
+     */
+
     /* Calculate the required baudrate prescaler. */
     baud_scale = PCLK_FREQ / device->baudrate;
-    if (baud_scale >= 256)
+    if (baud_scale >= 128)
     {
-        /* Use baud scale 7. */
-        baud_scale = 7;
+        /* Use baud scale 6. */
+        baud_scale = 6;
     }
     else if (baud_scale <= 2)
     {
