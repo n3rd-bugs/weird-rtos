@@ -83,12 +83,12 @@ void ctx_sample_task(void *argv)
     mem_test_list.tail = NULL;
 
     /* Initialize random seed. */
-    srand(current_system_tick64());
+    srand(current_hardware_tick());
 
     while(1)
     {
         n= n + 1;
-        last_tick = current_system_tick64();
+        last_tick = current_hardware_tick();
         task_yield();
 
         if (com > 0x0FFFFFFF)
@@ -97,7 +97,7 @@ void ctx_sample_task(void *argv)
             n = 1;
         }
 
-        last_tick = current_system_tick64() - last_tick;
+        last_tick = current_hardware_tick() - last_tick;
         if (last_tick < MAX_TIMER_TICKS)
         {
             com += last_tick;
