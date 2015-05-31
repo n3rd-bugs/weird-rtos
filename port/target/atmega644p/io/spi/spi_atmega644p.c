@@ -73,6 +73,37 @@ void spi_atmega644_init(SPI_DEVICE *device)
     /* Update SPCR. */
     SPSR = (((baud_scale & 0x01) == 0) << ATMEGA644P_SPI_SPSR_SPI2X);
 
+    /* PIN configurations for SPI is
+     *  SS - PB4
+     *  MOSI - PB5
+     *  MISO - PB6
+     *  SCLK - PB7
+     */
+
+    /* If we are operating in master mode. */
+    if (device->cfg_flags & SPI_CFG_MASTER)
+    {
+        /* MOSI, SCLK and SS will be output. */
+        DDRB |= ((1 << 4) | (1 << 5) | (1 << 7));
+
+        /* Set MOSI, SCLK and SS low. */
+        PORTB &= (uint8_t)~((1 << 4) | (1 << 5) | (1 << 7));
+
+        /* MISO will be input. */
+        DDRB &= (uint8_t)~(1 << 6);
+    }
+    else
+    {
+        /* MOSI, SCLK and SS will be input. */
+        DDRB &= (uint8_t)~((1 << 4) | (1 << 5) | (1 << 7));
+
+        /* MISO will be output. */
+        DDRB |= (1 << 6);
+
+        /* Set MISO low. */
+        PORTB &= (uint8_t)~(1 << 6);
+    }
+
     /* Enable SPI device. */
     SPCR |= (1 << ATMEGA644P_SPI_SPCR_SPE_SHIFT);
 
@@ -84,7 +115,8 @@ void spi_atmega644_init(SPI_DEVICE *device)
  */
 void spi_atmega644_slave_select(SPI_DEVICE *device)
 {
-    /* TODO */
+    /* Set SS high. */
+    PORTB |= (1 << 4);
 
 } /* spi_atmega644_slave_select */
 
@@ -94,7 +126,8 @@ void spi_atmega644_slave_select(SPI_DEVICE *device)
  */
 void spi_atmega644_slave_unselect(SPI_DEVICE *device)
 {
-    /* TODO */
+    /* Set SS low. */
+    PORTB &= (uint8_t)~(1 << 4);
 
 } /* spi_atmega644_slave_unselect */
 
@@ -107,10 +140,31 @@ void spi_atmega644_slave_unselect(SPI_DEVICE *device)
  */
 int32_t spi_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
 {
-    /* TODO */
+    int32_t num_bytes = message->length;
+    uint8_t *buffer = message->buffer;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(device);
+
+    /* While we have a byte to write and read. */
+    while (num_bytes --)
+    {
+        /* Send a byte. */
+        SPDR = *buffer;
+
+        /* Wait for transmission to complete. */
+        while(!(SPSR & (1<<SPIF) ));
+
+        /* Check if we are also reading. */
+        if (message->flags & SPI_MSG_READ)
+        {
+            /* Save the byte read from SPI. */
+            *buffer = SPDR;
+        }
+
+        /* Get next byte to send and update. */
+        buffer++;
+    }
 
     /* Return number of bytes written and read from SPI. */
     return (message->length);
