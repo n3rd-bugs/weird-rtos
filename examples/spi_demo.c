@@ -18,48 +18,48 @@
 /* Function prototypes. */
 void spi_demo_task(void *);
 
+/* Global variables. */
+SPI_DEVICE spi_device;
+SPI_MSG spi_mesg;
+uint8_t spi_data[10];
+
+/* Demo task stack. */
+uint8_t demo_stack[256];
+
 void spi_demo_task(void *argv)
 {
-    SPI_DEVICE device;
-    uint8_t data[10];
-
     UNUSED_PARAM(argv);
 
-    memset(&device, 0, sizeof(SPI_DEVICE));
+    /* Clear the device structures. */
+    memset(&spi_device, 0, sizeof(SPI_DEVICE));
+    memset(&spi_data, 'A', 10);
 
-    device.cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA);
-    device.baudrate = 1122;
-
-    device.data.device_num = 1;
+    /* Initialize SPI device configuration. */
+    spi_device.cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA);
+    spi_device.baudrate = 10000000;
 
     /* Initialize this SPI device. */
-    SPI_TGT_INIT(&device);
+    SPI_TGT_INIT(&spi_device);
 
-    /* Write some data on the SPI device. */
-    data[0] = 0x40 | 0x1B;
-    data[1] = 0xAA;
-    spi_write_read(&device, data, 2);
+    /* Initialize SPI message. */
+    spi_mesg.buffer = spi_data;
+    spi_mesg.length = 10;
+    spi_mesg.flags = SPI_MSG_WRITE;
 
-    /* Read back the same data. */
-    data[0] = 0x00 | 0x1B;
-    spi_write_read(&device, data, 2);
-
+    /* Send a write message on SPI. */
+    spi_message(&spi_device, &spi_mesg, 1);
 }
 
 int main(void)
 {
-    TASK *spi_demo_task_cb;
+    TASK spi_demo_task_cb;
 
     /* Initialize scheduler. */
     scheduler_init();
 
-    /* Initialize memory. */
-    mem_init();
-
     /* Create a task for SPI demo. */
-    spi_demo_task_cb = (TASK *)mem_static_alloc(sizeof(TASK) + 4096);
-    task_create(spi_demo_task_cb, "SPI", (uint8_t *)(spi_demo_task_cb + 1), 4096, &spi_demo_task, (void *)(NULL), 0);
-    scheduler_task_add(spi_demo_task_cb, TASK_APERIODIC, 5, 0);
+    task_create(&spi_demo_task_cb, "SPI", demo_stack, 256, &spi_demo_task, (void *)(NULL), 0);
+    scheduler_task_add(&spi_demo_task_cb, TASK_APERIODIC, 5, 0);
 
     /* Run scheduler. */
     os_run();
