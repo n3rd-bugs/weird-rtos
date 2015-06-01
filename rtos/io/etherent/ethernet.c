@@ -103,7 +103,7 @@ uint8_t *ethernet_random_mac(ETH_DEVICE *device)
     /* Initialize a random MAC address. */
     for (i = 0; i < ETH_ADDR_LEN; i++)
     {
-        device->mac[i] = (uint8_t)(current_system_tick64() & 0xFF);
+        device->mac[i] = (uint8_t)(current_hardware_tick() & 0xFF);
     }
 
     /* Set the OUI bit and reset the multicast bit. */
@@ -366,7 +366,7 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
 static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
 {
     ETH_DEVICE *device = (ETH_DEVICE *)buffer->fd;
-    int32_t status;
+    int32_t status = SUCCESS;
     HDR_GEN_MACHINE hdr_machine;
     uint16_t proto = 0;
     uint8_t net_proto, dst_mac[ETH_ADDR_LEN];

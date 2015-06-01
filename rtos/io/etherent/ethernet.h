@@ -15,9 +15,17 @@
 #include <os.h>
 
 #ifdef CONFIG_ETHERNET
+#ifndef CONFIG_NET
+#error "Networking stack is required for ethernet driver."
+#endif
+#include <net.h>
+#ifdef NET_IPV4
+#ifndef NET_ARP
+#error "ARP is required for IPv4 over ethernet."
+#endif
+#endif
 #include <fs.h>
 #include <fs_buffer.h>
-#include <net.h>
 #include <net_device.h>
 
 /* Ethernet configuration. */
