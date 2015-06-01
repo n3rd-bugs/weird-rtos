@@ -153,7 +153,7 @@ int32_t spi_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
         SPDR = *buffer;
 
         /* Wait for transmission to complete. */
-        while(!(SPSR & (1<<SPIF) ));
+        while(!(SPSR & (1 << SPIF)));
 
         /* Check if we are also reading. */
         if (message->flags & SPI_MSG_READ)
