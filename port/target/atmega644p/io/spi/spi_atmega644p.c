@@ -86,8 +86,11 @@ void spi_atmega644_init(SPI_DEVICE *device)
         /* MOSI, SCLK and SS will be output. */
         DDRB |= ((1 << 4) | (1 << 5) | (1 << 7));
 
-        /* Set MOSI, SCLK and SS low. */
-        PORTB &= (uint8_t)~((1 << 4) | (1 << 5) | (1 << 7));
+        /* Set SS high. */
+        PORTB |= (1 << 4);
+
+        /* Clear MOSI and SCLK. */
+        PORTB &= (uint8_t)~((1 << 5) | (1 << 7));
 
         /* MISO will be input. */
         DDRB &= (uint8_t)~(1 << 6);
@@ -115,8 +118,8 @@ void spi_atmega644_init(SPI_DEVICE *device)
  */
 void spi_atmega644_slave_select(SPI_DEVICE *device)
 {
-    /* Set SS high. */
-    PORTB |= (1 << 4);
+    /* Set SS low. */
+    PORTB &= (uint8_t)~(1 << 4);
 
 } /* spi_atmega644_slave_select */
 
@@ -126,8 +129,8 @@ void spi_atmega644_slave_select(SPI_DEVICE *device)
  */
 void spi_atmega644_slave_unselect(SPI_DEVICE *device)
 {
-    /* Set SS low. */
-    PORTB &= (uint8_t)~(1 << 4);
+    /* Set SS high. */
+    PORTB |= (1 << 4);
 
 } /* spi_atmega644_slave_unselect */
 
