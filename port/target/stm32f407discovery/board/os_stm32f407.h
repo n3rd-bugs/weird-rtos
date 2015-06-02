@@ -34,8 +34,8 @@
 #define CORTEX_M4_FPU                   (TRUE)
 
 /* 64-bit clock management. */
-#define current_system_tick64()         pit_get_clock()
-#define current_system_tick64_usec()    (pit_get_clock() / PCLK_FREQ)
+#define current_hardware_tick()         pit_get_clock()
+#define current_hardware_tick_usec()    (pit_get_clock() / PCLK_FREQ)
 
 /* Hook-up the STDIO printf function. */
 #ifdef printf
