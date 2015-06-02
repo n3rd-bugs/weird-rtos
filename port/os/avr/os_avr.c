@@ -64,10 +64,10 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
  * @return: This function will return 16-bit value of hardware tick.
  * This function will return current hardware tick.
  */
-uint16_t current_hardware_tick()
+uint64_t current_hardware_tick()
 {
     /* Return 16-bit value of system timer. */
-    return ((TCNT1H << 8) | TCNT1L);
+    return ((current_system_tick() << 16) + TCNT1);
 
 } /* current_hardware_tick */
 
@@ -79,8 +79,8 @@ uint16_t current_hardware_tick()
 void system_tick_Init()
 {
     /* Using 16bit timer 1 to generate the system tick. */
-    OCR1AH = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFF00) >> 8;
-    OCR1AL = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0x00FF);
+    TCNT1 = 0x00;
+    OCR1B = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
 
     /* Setup clock source and compare match behavior. */
     TCCR1B =  0x03 | 0x08;
@@ -150,4 +150,4 @@ void control_to_system()
         RETURN_ENABLING_INTERRUPTS();
     }
 
-} /* run_first_task */
+} /* control_to_system */

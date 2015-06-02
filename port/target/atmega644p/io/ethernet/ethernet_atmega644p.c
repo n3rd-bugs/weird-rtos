@@ -22,11 +22,12 @@
 #include <string.h>
 
 /*
- * ISR(TIMER1_COMPA_vect, ISR_NAKED)
+ * ISR(SIG_INTERRUPT0, ISR_NAKED)
  * This is interrupt callback for external interrupt signal 0.
  */
 ISR(SIG_INTERRUPT0, ISR_NOBLOCK)
 {
+    /* We have entered an ISR. */
     OS_ISR_ENTER();
 
 #ifdef ETHERNET_ENC28J60
@@ -34,6 +35,7 @@ ISR(SIG_INTERRUPT0, ISR_NOBLOCK)
     enc28j60_atmega644p_handle_interrupt();
 #endif
 
+    /* We are now exiting the ISR. */
     OS_ISR_EXIT();
 
 } /* ISR(SIG_INTERRUPT0, ISR_NOBLOCK) */
