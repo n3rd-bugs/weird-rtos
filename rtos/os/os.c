@@ -68,6 +68,9 @@ void task_yield()
         /* If current task has a scheduler defined. */
         if (current_task->scheduler != NULL)
         {
+            /* Task is being suspending. */
+            current_task->status = TASK_SUSPENDED;
+
             /* Re-enqueue/schedule this task in the scheduler. */
             ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_MANUAL);
         }

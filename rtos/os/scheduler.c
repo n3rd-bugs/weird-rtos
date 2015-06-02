@@ -202,6 +202,7 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
             tcb->class              = class;
             tcb->priority           = priority;
             tcb->scheduler_data_1   = param;
+            tcb->status             = TASK_SUSPENDED;
 
             /* Enqueue this task in the required scheduler. */
             scheduler->yield(tcb, YIELD_INIT);

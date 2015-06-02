@@ -61,17 +61,11 @@ static void sch_aperiodic_task_yield(TASK *tcb, uint8_t from)
         /* Schedule the task being yielded/re-enqueued. */
         sll_insert(&aperiodic_scheduler.ready_tasks, tcb, &sch_aperiodic_task_sort, OFFSETOF(TASK, next));
 
-        /* Task is being suspended. */
-        tcb->status = TASK_SUSPENDED;
-
         break;
 
     case YIELD_CANNOT_RUN:
         /* Just put back this task on the scheduler list. */
         sll_push(&aperiodic_scheduler.ready_tasks, tcb, OFFSETOF(TASK, next));
-
-        /* Task is being suspended. */
-        tcb->status = TASK_SUSPENDED;
 
         break;
 

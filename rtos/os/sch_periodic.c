@@ -66,9 +66,6 @@ static void sch_periodic_task_yield(TASK *tcb, uint8_t from)
         /* Just put back this task on the scheduler list. */
         sll_push(&periodic_scheduler.ready_tasks, tcb, OFFSETOF(TASK, next));
 
-        /* Task is being suspended. */
-        tcb->status = TASK_SUSPENDED;
-
         break;
 
     case YIELD_INIT:
@@ -78,9 +75,6 @@ static void sch_periodic_task_yield(TASK *tcb, uint8_t from)
 
         /* Schedule this task. */
         sll_insert(&periodic_scheduler.ready_tasks, tcb, &sch_periodic_task_sort, OFFSETOF(TASK, next));
-
-        /* Task is being suspended. */
-        tcb->status = TASK_SUSPENDED;
 
         break;
 
@@ -95,9 +89,6 @@ static void sch_periodic_task_yield(TASK *tcb, uint8_t from)
         /* For periodic tasks we don't want to lose original time period. */
         tcb->scheduler_data_2 = last_time;
 
-        /* Task is being suspended. */
-        tcb->status = TASK_SUSPENDED;
-
         break;
 
     case YIELD_MANUAL:
@@ -106,9 +97,6 @@ static void sch_periodic_task_yield(TASK *tcb, uint8_t from)
 
         /* Schedule the task being yielded/re-enqueued. */
         sll_insert(&periodic_scheduler.ready_tasks, tcb, &sch_periodic_task_sort, OFFSETOF(TASK, next));
-
-        /* Task is being suspended. */
-        tcb->status = TASK_SUSPENDED;
 
         break;
 
