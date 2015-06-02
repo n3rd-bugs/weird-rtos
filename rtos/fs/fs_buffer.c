@@ -1308,42 +1308,42 @@ int32_t fs_buffer_divide(FS_BUFFER *buffer, uint32_t flags, uint32_t data_len)
     /* Should never happen. */
     OS_ASSERT(one == NULL);
 
-    /* Get a new buffer to store the remaining data for this buffer. */
-    new_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, flags);
-
-    /* If we do have a buffer to store remaining data of this buffer. */
-    if (new_buffer != NULL)
+    /* If we really do need to divide this one buffer. */
+    if (this_len != 0)
     {
-        /* If we really do need to divide this one buffer. */
-        if (this_len != 0)
+        /* Get a new buffer to store the remaining data for this buffer. */
+        new_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, flags);
+
+        /* If we do have a buffer to store remaining data of this buffer. */
+        if (new_buffer != NULL)
         {
             /* Remove the extra data from this one buffer to a new buffer. */
             OS_ASSERT(fs_buffer_one_divide(buffer->fd, one, &new_one, flags, this_len) != SUCCESS);
 
             /* Initialize the new one buffers. */
             new_one->next = one->next;
+
+            /* This will be last one buffer in the original buffer. */
+            one->next = NULL;
+
+            /* Initialize the new buffer. */
+            new_buffer->list.head = new_one;
+            new_buffer->list.tail = buffer->list.tail;
+            new_buffer->total_length = (buffer->total_length - data_len);
+
+            /* Divide the original buffer. */
+            buffer->list.tail = one;
+            buffer->total_length = data_len;
+
+            /* Put new buffer in the buffer chain. */
+            buffer->next = new_buffer;
+            new_buffer->next = NULL;
         }
-
-        /* This will be last one buffer in the original buffer. */
-        one->next = NULL;
-
-        /* Initialize the new buffer. */
-        new_buffer->list.head = new_one;
-        new_buffer->list.tail = buffer->list.tail;
-        new_buffer->total_length = (buffer->total_length - data_len);
-
-        /* Divide the original buffer. */
-        buffer->list.tail = one;
-        buffer->total_length = data_len;
-
-        /* Put new buffer in the buffer chain. */
-        buffer->next = new_buffer;
-        new_buffer->next = NULL;
-    }
-    else
-    {
-        /* Return error to the caller. */
-        status = FS_BUFFER_NO_SPACE;
+        else
+        {
+            /* Return error to the caller. */
+            status = FS_BUFFER_NO_SPACE;
+        }
     }
 
     /* Return status to the caller. */
