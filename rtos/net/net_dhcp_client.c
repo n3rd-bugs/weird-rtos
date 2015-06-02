@@ -66,7 +66,7 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     if ((state == DHCP_CLI_DISCOVER) || (state == DHCP_CLI_LEASE_EXPIRE))
     {
         /* Create a new transaction ID. */
-        client_data->xid = (uint32_t)(current_system_tick64());
+        client_data->xid = (uint32_t)(current_hardware_tick());
     }
 
     /* If we are moving to discover state, reinitialize the transaction data. */
