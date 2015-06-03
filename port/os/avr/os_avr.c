@@ -61,12 +61,12 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 
 /*
  * current_hardware_tick
- * @return: This function will return 16-bit value of hardware tick.
+ * @return: This function will return hardware system tick.
  * This function will return current hardware tick.
  */
 uint64_t current_hardware_tick()
 {
-    /* Return 16-bit value of system timer. */
+    /* Return hardware system tick. */
     return ((current_system_tick() << 16) + TCNT1);
 
 } /* current_hardware_tick */
