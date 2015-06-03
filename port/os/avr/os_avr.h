@@ -177,6 +177,6 @@ extern uint32_t sys_interrupt_level;
 void system_tick_Init();
 void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv);
 void control_to_system();
-uint16_t current_hardware_tick();
+uint64_t current_hardware_tick();
 
 #endif /* OS_AVR_H */

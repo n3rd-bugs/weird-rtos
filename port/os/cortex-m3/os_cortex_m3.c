@@ -140,7 +140,7 @@ ISR_FUN isr_sysclock_handle(void)
     /* Process system tick. */
     os_process_system_tick();
 
-    /* If we have already scheduled a context switch. */
+    /* If we have not already scheduled a context switch. */
     if (last_task == NULL)
     {
         /* Check if we can actually preempt the current task. */
