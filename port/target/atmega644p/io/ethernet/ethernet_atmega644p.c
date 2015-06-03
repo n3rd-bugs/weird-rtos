@@ -22,10 +22,10 @@
 #include <string.h>
 
 /*
- * ISR(SIG_INTERRUPT0, ISR_NAKED)
+ * ISR(INT0_vect, ISR_BLOCK)
  * This is interrupt callback for external interrupt signal 0.
  */
-ISR(SIG_INTERRUPT0, ISR_NOBLOCK)
+ISR(INT0_vect, ISR_BLOCK)
 {
     /* We have entered an ISR. */
     OS_ISR_ENTER();
@@ -38,7 +38,7 @@ ISR(SIG_INTERRUPT0, ISR_NOBLOCK)
     /* We are now exiting the ISR. */
     OS_ISR_EXIT();
 
-} /* ISR(SIG_INTERRUPT0, ISR_NOBLOCK) */
+} /* ISR(INT0_vect, ISR_BLOCK) */
 
 /*
  * ethernet_atmega644p_init
