@@ -80,7 +80,7 @@ void system_tick_Init()
 {
     /* Using 16bit timer 1 to generate the system tick. */
     TCNT1 = 0x00;
-    OCR1B = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
+    OCR1A = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
 
     /* Setup clock source and compare match behavior. */
     TCCR1B =  0x03 | 0x08;
