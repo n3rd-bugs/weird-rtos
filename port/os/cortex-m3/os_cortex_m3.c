@@ -114,6 +114,9 @@ void control_to_system()
         {
             /* Schedule a context switch. */
             PEND_SV();
+
+            /* Enable interrupts. */
+            ENABLE_INTERRUPTS();
         }
 
         else
@@ -121,12 +124,9 @@ void control_to_system()
             /* We are not scheduling a context switch. */
             last_task = NULL;
         }
-
-        /* Enable interrupts. */
-        ENABLE_INTERRUPTS();
     }
 
-} /* run_first_task */
+} /* control_to_system */
 
 /*
  * isr_sysclock_handle
