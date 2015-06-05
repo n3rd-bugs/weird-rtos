@@ -19,6 +19,12 @@
  * FALSE: Interrupt Disabled */
 volatile uint32_t sys_interrupt_level = TRUE;
 
+/* Local variable definitions. */
+/* If we have just did a forced tick. */
+static volatile uint8_t force_tick = FALSE;
+static TASK *next_task;
+
+/* Current task pointer */
 extern TASK *current_task;
 
 /*
@@ -31,27 +37,39 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
     /* This will also disable global interrupts. */
     SAVE_CONTEXT();
 
-    /* Process system tick. */
-    os_process_system_tick();
-
-    /* Check if we can actually preempt the current task. */
-    if (current_task->lock_count == 0)
+    /* If this was not a forced tick. */
+    if (force_tick == FALSE)
     {
-        /* If current task has a scheduler defined. */
-        if (current_task->scheduler != NULL)
+        /* Process system tick. */
+        os_process_system_tick();
+
+        /* Check if we can actually preempt the current task. */
+        if (current_task->lock_count == 0)
         {
-            /* Re-enqueue/schedule this task in the scheduler. */
-            ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_SYSTEM);
+            /* If current task has a scheduler defined. */
+            if (current_task->scheduler != NULL)
+            {
+                /* Re-enqueue/schedule this task in the scheduler. */
+                ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_SYSTEM);
+            }
+
+            /* Get and set the task that should run next. */
+            set_current_task(scheduler_get_next_task());
         }
 
-        /* Get and set the task that should run next. */
-        set_current_task(scheduler_get_next_task());
+        else
+        {
+            /* Set the flag that we need to process a context switch. */
+            current_task->flags |= TASK_SCHED_DRIFT;
+        }
     }
-
     else
     {
-        /* Set the flag that we need to process a context switch. */
-        current_task->flags |= TASK_SCHED_DRIFT;
+        /* Get and set the task that should run next. */
+        set_current_task(next_task);
+
+        /* We have processed a forced tick. */
+        force_tick = FALSE;
     }
 
     /* Restore the previous task's context. */
@@ -133,24 +151,41 @@ void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
  */
 void control_to_system()
 {
+    uint16_t timer_value;
+
     /* If we are not in an ISR. */
     if (get_current_task() != NULL)
     {
-        /* Save the context on the current task's stack. */
-        /* This will also disable global interrupts. */
-        SAVE_CONTEXT();
+        /* Get next task we need to run. */
+        next_task = scheduler_get_next_task();
 
-        /* We will not re-enqueue this task as it is suspended and only the
-         * suspending component can resume this task. */
+        /* If we really need to schedule a context switch. */
+        if (next_task != current_task)
+        {
+            /* Save current timer tick. */
+            timer_value = TCNT1;
 
-        /* Get and set the task that should run next. */
-        set_current_task(scheduler_get_next_task());
+            /* This will be a forced interrupt. */
+            force_tick = TRUE;
 
-        /* Restore the previous task's context. */
-        RESTORE_CONTEXT();
+            /* Trigger a forced timer interrupt. */
+            OCR1A = (TCNT1 + 1);
 
-        /* Return and enable global interrupts. */
-        RETURN_ENABLING_INTERRUPTS();
+            /* Wait for timer interrupt to trigger. */
+            while ((TIFR1 & 0x02) == 0);
+
+            /* Restore the timer tick and compare register. */
+            TCNT1 = timer_value;
+            OCR1A = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
+
+            /* If we are in an ISR then we don't want to enable interrupts here
+             * as it might cause a nested interrupt. */
+            if (return_task == NULL)
+            {
+                /* Enable interrupts. */
+                ENABLE_INTERRUPTS();
+            }
+        }
     }
 
 } /* control_to_system */
