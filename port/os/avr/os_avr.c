@@ -14,8 +14,11 @@
 #include <os.h>
 #include <os_avr.h>
 
-/* System interrupt management. */
-uint32_t sys_interrupt_level;
+/* Global interrupt level. */
+/* TRUE: Interrupt Enabled
+ * FALSE: Interrupt Disabled */
+volatile uint32_t sys_interrupt_level = TRUE;
+
 extern TASK *current_task;
 
 /*
