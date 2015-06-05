@@ -236,8 +236,11 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
     uint32_t ip_iface = 0, ip_dst, ip_src;
-    uint8_t proto, keep, ver_ihl, icmp_rep;
+    uint8_t proto, ver_ihl;
     uint16_t flag_offset;
+#ifdef NET_ICMP
+    uint8_t keep, icmp_rep;
+#endif
 
     /* We must have at least one byte to verify an IPv4 packet. */
     if (buffer->total_length >= 1)
@@ -436,8 +439,8 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
                     status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0);
                 }
             }
-#endif /* NET_ICMP */
         }
+#endif /* NET_ICMP */
     }
 
     /* Return status to the caller. */
