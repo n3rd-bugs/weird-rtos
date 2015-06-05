@@ -274,16 +274,17 @@ static void ethernet_process(void *data)
 void ethernet_interrupt(ETH_DEVICE *device)
 {
     /* Obtain lock for this device. */
-    OS_ASSERT(fd_get_lock((FD)device) != SUCCESS);
+    if (fd_get_lock((FD)device) == SUCCESS)
+    {
+        /* Set flag to tell that we have an interrupt to process. */
+        device->flags |= ETH_FLAG_INT;
 
-    /* Set flag to tell that we have an interrupt to process. */
-    device->flags |= ETH_FLAG_INT;
+        /* Set flag that we have some data available on this device. */
+        fd_data_available((FD)device);
 
-    /* Set flag that we have some data available on this device. */
-    fd_data_available((FD)device);
-
-    /* Release lock for this file descriptor. */
-    fd_release_lock((FD)device);
+        /* Release lock for this file descriptor. */
+        fd_release_lock((FD)device);
+    }
 
 } /* ethernet_interrupt */
 
