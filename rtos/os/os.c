@@ -22,6 +22,7 @@ TASK *return_task = NULL;
 
 /* This is used for time keeping in the system. */
 uint64_t current_tick = 0;
+
 /*
  * os_process_system_tick
  * This function is called at each system tick.
