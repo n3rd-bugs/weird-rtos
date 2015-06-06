@@ -27,14 +27,17 @@
 extern volatile uint32_t sys_interrupt_level;
 
 /* Macros to manipulate interrupts. */
-#define ENABLE_INTERRUPTS()             {                                       \
-                                            sys_interrupt_level = 1;            \
-                                            asm volatile("   SEI         ");    \
+#define ENABLE_INTERRUPTS()             {                                           \
+                                            sys_interrupt_level = 1;                \
+                                            if (return_task == NULL)                \
+                                            {                                       \
+                                                asm volatile("   SEI         ");    \
+                                            }                                       \
                                         }
 
-#define DISABLE_INTERRUPTS()            {                                       \
-                                            asm volatile("   CLI         ");    \
-                                            sys_interrupt_level = 0;            \
+#define DISABLE_INTERRUPTS()            {                                           \
+                                            asm volatile("   CLI         ");        \
+                                            sys_interrupt_level = 0;                \
                                         }
 
 #define GET_INTERRUPT_LEVEL()           (sys_interrupt_level)

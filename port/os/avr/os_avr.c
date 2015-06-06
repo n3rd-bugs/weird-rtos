@@ -153,8 +153,8 @@ void control_to_system()
 {
     uint16_t timer_value;
 
-    /* If we are not in an ISR. */
-    if (get_current_task() != NULL)
+    /* If we do have a task to switch. */
+    if (current_task != NULL)
     {
         /* Get next task we need to run. */
         next_task = scheduler_get_next_task();
@@ -178,13 +178,8 @@ void control_to_system()
             TCNT1 = timer_value;
             OCR1A = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
 
-            /* If we are in an ISR then we don't want to enable interrupts here
-             * as it might cause a nested interrupt. */
-            if (return_task == NULL)
-            {
-                /* Enable interrupts. */
-                ENABLE_INTERRUPTS();
-            }
+            /* Enable interrupts. */
+            ENABLE_INTERRUPTS();
         }
     }
 
