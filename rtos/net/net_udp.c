@@ -293,12 +293,12 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                 /* Obtain lock for this UDP port. */
                 status = fd_get_lock((FD)udp_port);
 
+                /* Again obtain lock for buffer file descriptor. */
+                OS_ASSERT(fd_get_lock(buffer->fd));
+
                 /* If lock for UDP port was successfully obtained. */
                 if (status == SUCCESS)
                 {
-                    /* Again obtain lock for buffer file descriptor. */
-                    OS_ASSERT(fd_get_lock(buffer->fd));
-
                     /* Add this buffer in the buffer list for UDP port. */
                     sll_append(&udp_port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
