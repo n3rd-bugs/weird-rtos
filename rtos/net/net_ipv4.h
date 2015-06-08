@@ -108,6 +108,7 @@ typedef struct _ipv4_fragment_data
     SUSPEND     suspend;
 
 } IPV4_FRAGMENT_DATA;
+#endif /* IPV4_ENABLE_FRAG */
 
 /* IPv4 device data. */
 typedef struct _ipv4_device
@@ -125,8 +126,6 @@ typedef struct _ipv4_device
     DHCP_CLIENT_DEVICE  *dhcp_client;
 #endif
 } IPV4_DEVICE;
-
-#endif /* IPV4_ENABLE_FRAG */
 
 /* Function prototypes. */
 void ipv4_device_initialize(NET_DEV *);
