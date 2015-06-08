@@ -169,13 +169,13 @@ void control_to_system()
             force_tick = TRUE;
 
             /* Trigger a forced timer interrupt. */
-            OCR1A = TCNT1;
+            OCR1A = (TCNT1 + 1);
 
             /* Wait for timer interrupt to trigger. */
             while ((TIFR1 & 0x02) == 0);
 
             /* Restore the timer tick and compare register. */
-            TCNT1 = timer_value;
+            TCNT1 = (timer_value + 1);
             OCR1A = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
 
             /* Enable interrupts. */
