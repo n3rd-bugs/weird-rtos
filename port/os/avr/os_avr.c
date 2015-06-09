@@ -174,9 +174,15 @@ void control_to_system()
             /* Wait for timer interrupt to trigger. */
             while ((TIFR1 & 0x02) == 0);
 
-            /* Restore the timer tick and compare register. */
-            TCNT1 = (timer_value + 1);
+            /* Reset the compare value. */
             OCR1A = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
+
+            /* If the timer tick will not go over the compare value. */
+            if ((timer_value + 1) < (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF))
+            {
+                /* Restore the timer count. */
+                TCNT1 = (timer_value + 1);
+            }
 
             /* Enable interrupts. */
             ENABLE_INTERRUPTS();
