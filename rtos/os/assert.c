@@ -12,6 +12,7 @@
  */
 
 #include <os.h>
+#include <sys_info.h>
 
 /*
  * system_assert
@@ -31,6 +32,16 @@ void system_assert(int32_t code, char *file, uint32_t line, TASK *task)
 
     /* Disable system interrupts. */
     DISABLE_INTERRUPTS();
+
+#ifdef ASSERT_FILE_INFO
+    /* Print file information. */
+    printf("%s:%d\r\n", file, line);
+#endif
+
+#ifdef CONFIG_TASK_STATS
+    /* Print current system information. */
+    util_print_sys_info();
+#endif
 
     /* For now there are no recovery mechanisms defined. */
     while (1)
