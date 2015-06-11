@@ -19,6 +19,9 @@
 #include <arpa/inet.h>
 #include <string.h>
 
+/* Configurations. */
+#define PACKET_SIZE     strlen(MSG)
+
 /* Message that will be sent. */
 #define MSG "01234567890123456789012345678901234567890123456789"   \
             "01234567890123456789012345678901234567890123456789"   \
@@ -69,7 +72,7 @@ int main(int argc, char **argv)
 
     saddr.sin_family = PF_INET;
     saddr.sin_port = htons(11001);
-    saddr.sin_addr.s_addr = inet_addr("192.168.0.1");
+    saddr.sin_addr.s_addr = inet_addr("0.0.0.0");
     if (bind(sockfd, (struct sockaddr *)&saddr, sizeof(struct sockaddr_in)) < 0)
     {
         perror("Unable to bind the socket.");
@@ -78,7 +81,7 @@ int main(int argc, char **argv)
 
     for(;;)
     {
-        sprintf(result, "[%d]%s", n++, MSG);
+        sprintf(result, "[%d]%.*s", n++, PACKET_SIZE, MSG);
 
         socklen = sizeof(servaddr);
         if( (sendto(sockfd, result, strlen(result), 0, (struct sockaddr*) &servaddr, socklen)) < 0 )
