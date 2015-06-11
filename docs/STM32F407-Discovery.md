@@ -25,7 +25,7 @@ on STM32F407-Discovery platform.
         #define RTOS_TARGET         TARGET_CORTEX_M4
         #define TOOL_TARGET         TOOL_ARM_GCC
     7. Select an appropriate sample and exclude all other samples from the build.
-        a. For "enc28j60_demo.c" connect the device as provided configuration
+        a. For "enc28j60_demo.c" connect the enc28j60 as provided configuration
             PA2 -> INT
             PA3 -> POW-RST
             PA4 -> CS
