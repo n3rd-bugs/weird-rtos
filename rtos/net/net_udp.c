@@ -450,6 +450,13 @@ int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint8_
         /* If checksum was successfully calculated. */
         if (status == SUCCESS)
         {
+            /* If calculated checksum is 0. */
+            if (csum == 0x00)
+            {
+                /* Update checksum to all ones. */
+                csum = 0xFFFF;
+            }
+
             /* Push the UDP checksum on the buffer. */
             status = fs_buffer_push_offset(buffer, &csum, 2, UDP_HRD_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
         }
