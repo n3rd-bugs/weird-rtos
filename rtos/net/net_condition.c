@@ -88,8 +88,16 @@ void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PRO
     /* If this is not the networking task. */
     if ((tcb) && (tcb != &net_condition_tcb))
     {
-        /* For now this is not supported. */
-        OS_ASSERT(TRUE);
+        /* Resume the networking condition task to add this new condition. */
+
+        /* Get lock for buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(net_buff_fd) != SUCCESS);
+
+        /* Set flag that new data is available on buffer file descriptor. */
+        fd_data_available(net_buff_fd);
+
+        /* Release lock for buffer file descriptor. */
+        fd_release_lock(net_buff_fd);
     }
 
 } /* net_condition_add */
