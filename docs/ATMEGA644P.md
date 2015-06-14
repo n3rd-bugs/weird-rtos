@@ -36,10 +36,12 @@ on ATMEGA644P platform.
             #define ENC28J60_MAX_BUFFER_SIZE    (32)
             #define ENC28J60_NUM_BUFFERS        (24)
             #define ENC28J60_NUM_BUFFER_LISTS   (12)
-            #define ENC28J60_NUM_THR_BUFFER     (8)
+            #define ENC28J60_NUM_THR_BUFFER     (4)
            Open "net_condition.h" and update following configuration
             #define NET_COND_STACK_SIZE     512
            Build and execute the project.
            On Host build the "udp_echo_host.c" and execute after modifying the 
            target IP address that can obtained from the DHCP server running on 
-           the network and updating the PACKET_SIZE to (64).
+           the network and updating the PACKET_SIZE to (512).
+           When executed you should see the stack usage of all the tasks running in 
+           the system.
