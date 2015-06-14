@@ -120,6 +120,12 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
                 status = dhcp_add_option(buffer, DHCP_OPT_SRV_ID, &client_data->server_ip, IPV4_ADDR_LEN, FS_BUFFER_PACKED);
             }
 
+            if (status == SUCCESS)
+            {
+                /* Add host name option. */
+                status = dhcp_add_option(buffer, DHCP_OPT_HOST_NAME, DHCP_CLIENT_HOSTNAME, (sizeof(DHCP_CLIENT_HOSTNAME) - 1), 0);
+            }
+
             break;
         }
     }

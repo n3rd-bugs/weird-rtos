@@ -41,6 +41,7 @@
 #define DHCP_MAGIC_COKIE    (0x63825363)
 
 /* DHCP option definitions. */
+#define DHCP_OPT_HOST_NAME  (0x0C)
 #define DHCP_OPT_REQ_IP     (0x32)
 #define DHCP_OPT_LEASE_TIME (0x33)
 #define DHCP_OPT_MSG_TYPE   (0x35)
