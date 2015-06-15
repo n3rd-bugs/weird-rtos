@@ -758,8 +758,9 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
     /* If do have a fragment list to process this fragment. */
     if (fragment != NULL)
     {
-        /* Allocate a temporary buffer list. */
-        tmp_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+        /* Try to allocate a temporary buffer list keeping threshold buffers as
+         * we would want our threshold buffer to wait on a fragment to complete. */
+        tmp_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, FS_BUFFER_TH);
 
         /* If a temporary buffer list was successfully allocated. */
         if (tmp_buffer != NULL)
