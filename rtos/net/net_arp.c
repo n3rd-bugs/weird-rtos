@@ -396,7 +396,11 @@ static void arp_event(void *data)
             else if (arp_data->entries[i].next_timeout <= clock)
             {
                 /* Try to find route for this entry. */
-                OS_ASSERT(arp_route(fd, &arp_data->entries[i]) != SUCCESS);
+                if (arp_route(fd, &arp_data->entries[i]) != SUCCESS)
+                {
+                    /* Free this ARP entry. */
+                    arp_free_entry(&arp_data->entries[i]);
+                }
 
                 /* Update the timeout at which we will try to route this entry again. */
                 if ((arp_data->entries[i].flags & ARP_FLAG_UP) == 0)
