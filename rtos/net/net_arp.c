@@ -374,6 +374,7 @@ static void arp_event(void *data)
     FD fd = (FD)data;
     ARP_DATA *arp_data = arp_get_data(fd);
     uint32_t i, clock = (uint32_t)current_system_tick();
+    int32_t status;
 
     /* Acquire lock for this file descriptor. */
     OS_ASSERT(fd_get_lock(fd) != SUCCESS);
@@ -396,28 +397,37 @@ static void arp_event(void *data)
             else if (arp_data->entries[i].next_timeout <= clock)
             {
                 /* Try to find route for this entry. */
-                if (arp_route(fd, &arp_data->entries[i]) != SUCCESS)
+                status = arp_route(fd, &arp_data->entries[i]);
+
+                /* If ARP packet was sent. */
+                if (status != SUCCESS)
                 {
-                    /* Free this ARP entry. */
-                    arp_free_entry(&arp_data->entries[i]);
+                    /* Update the timeout at which we will try to route this entry again. */
+                    if ((arp_data->entries[i].flags & ARP_FLAG_UP) == 0)
+                    {
+                        /* Try to route it again after timeout period. */
+                        arp_data->entries[i].next_timeout = (clock + ARP_TIMEOUT);
+
+                        /* Increment the retry count for this ARP entry. */
+                        arp_data->entries[i].retry_count++;
+                    }
+
+                    /* If this entry is still being used update it again after
+                     * sometime. */
+                    else if (arp_data->entries[i].flags & ARP_FLAG_IN_USE)
+                    {
+                        /* Try to route it again after update timeout. */
+                        arp_data->entries[i].next_timeout = (clock + ARP_UPDATE_TIME);
+                    }
                 }
-
-                /* Update the timeout at which we will try to route this entry again. */
-                if ((arp_data->entries[i].flags & ARP_FLAG_UP) == 0)
+                else
                 {
-                    /* Try to route it again after timeout period. */
-                    arp_data->entries[i].next_timeout = (clock + ARP_TIMEOUT);
-
-                    /* Increment the retry count for this ARP entry. */
-                    arp_data->entries[i].retry_count++;
-                }
-
-                /* If this entry is still being used update it again after
-                 * sometime. */
-                else if (arp_data->entries[i].flags & ARP_FLAG_IN_USE)
-                {
-                    /* Try to route it again after update timeout. */
-                    arp_data->entries[i].next_timeout = (clock + ARP_UPDATE_TIME);
+                    /* If link is down. */
+                    if (status == NET_LINK_DOWN)
+                    {
+                        /* Free this ARP entry. */
+                        arp_free_entry(&arp_data->entries[i]);
+                    }
                 }
             }
         }
