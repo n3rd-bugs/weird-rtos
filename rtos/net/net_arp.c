@@ -428,6 +428,11 @@ static void arp_event(void *data)
                         /* Free this ARP entry. */
                         arp_free_entry(&arp_data->entries[i]);
                     }
+                    else
+                    {
+                        /* Try to update this entry again after some time. */
+                        arp_data->entries[i].next_timeout = (clock + ARP_UPDATE_TIME);
+                    }
                 }
             }
         }
