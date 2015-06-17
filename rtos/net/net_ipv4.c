@@ -350,7 +350,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
             status = net_process_udp(buffer, ver_ihl, ip_iface, ip_src, ip_dst);
 
             break;
-#endif /* NET_ICMP */
+#endif /* NET_UDP */
 
         /* A valid protocol was not resolved. */
         default:
