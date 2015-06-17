@@ -186,11 +186,12 @@ static uint8_t net_port_seach(void *node, void *param)
  *  unreachable.
  *  NET_INVALID_HDR will be returned if invalid header was parsed.
  *  NET_INVALID_CSUM will be returned if an invalid checksum was received.
- *  NET_NO_BUFFERS if we ran out of buffers, NET_BUFFER_CONSUMED will be returned
- *  if buffer was consumed and caller don't need to free it, NET_THRESHOLD will
- *  be returned if we cannot pass the buffer to networking stack as that will
- *  cause buffer starvation.
- * This function will process an incoming UDP header.
+ *  NET_NO_BUFFERS if we ran out of buffers.
+ *  NET_BUFFER_CONSUMED will be returned if buffer was consumed and caller
+ *  don't need to free it.
+ *  NET_THRESHOLD will be returned if we cannot pass the buffer to networking
+ *  stack as that will cause buffer starvation.
+ * This function will process an incoming UDP packet.
  */
 int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, uint32_t src_ip, uint32_t dst_ip)
 {
