@@ -511,7 +511,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
                 /* If we were not able to receive a complete packet due to
                  * unavailability of buffer, or ethernet stack did not consume
                  * this buffer. */
-                if ((packet_length != 0) || (ethernet_buffer_receive(buffer) != NET_BUFFER_CONSUMED))
+                if ((packet_length != 0) || (buffer->total_length < ETH_HRD_SIZE) || (ethernet_buffer_receive(buffer) != NET_BUFFER_CONSUMED))
                 {
                     /* Free the buffers that we allocated. */
                     fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
