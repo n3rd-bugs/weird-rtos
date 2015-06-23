@@ -30,6 +30,7 @@
                             }
 
 /* Function prototypes. */
+int32_t net_pseudo_csum_calculate(FS_BUFFER *, uint32_t, uint32_t, uint8_t, uint16_t, uint32_t, uint8_t, uint16_t *);
 uint16_t net_csum_calculate(FS_BUFFER *, int32_t, uint32_t);
 
 #endif /* CONFIG_NET */

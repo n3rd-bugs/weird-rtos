@@ -26,7 +26,7 @@
 UDP_DATA udp_data;
 
 /* Internal function prototypes. */
-static uint8_t net_port_seach(void *, void *);
+static uint8_t udp_port_search(void *, void *);
 static int32_t udp_read_buffer(void *, uint8_t *, int32_t);
 static int32_t udp_read_data(void *, uint8_t *, int32_t);
 static int32_t udp_write_buffer(void *, uint8_t *, int32_t);
@@ -138,14 +138,14 @@ void udp_unregister(UDP_PORT *port)
 } /* udp_unregister */
 
 /*
- * udp_unregister
+ * udp_port_search
  * @node: A UDP port in the list.
  * @param: UDP port search parameter.
  * @return: Will return true if we matched an exact UDP port for given UDP
  *  parameter.
  * This function is a search callback to find a specific UDP port.
  */
-static uint8_t net_port_seach(void *node, void *param)
+static uint8_t udp_port_search(void *node, void *param)
 {
     UDP_PORT_PARAM *udp_param = (UDP_PORT_PARAM *)param;
     UDP_PORT *port = (UDP_PORT *)node;
@@ -171,7 +171,7 @@ static uint8_t net_port_seach(void *node, void *param)
     /* Return if this is required port. */
     return (match);
 
-} /* net_port_seach */
+} /* udp_port_search */
 
 /*
  * net_process_udp
@@ -203,21 +203,30 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     uint16_t csum_hdr, csum;
 #endif
 
-    /* Pull the length of UDP datagram. */
-    OS_ASSERT(fs_buffer_pull_offset(buffer, &length, 2, (ihl + UDP_HRD_LEN_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-
-    /* If UDP header length value is not correct. */
-    if (buffer->total_length < (ihl + length))
+    /* Check if we don't have enough number of bytes in the incoming packet. */
+    if ((buffer->total_length - ihl) < UDP_HRD_LENGTH)
     {
-        /* Invalid UDP header. */
+        /* Return an error to the caller. */
         status = NET_INVALID_HDR;
     }
-    else if (buffer->total_length > (ihl + length))
-    {
-        /* Pull padding from the buffer. */
-        OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - (ihl + length)), FS_BUFFER_TAIL) != SUCCESS);
-    }
 
+    if (status == SUCCESS)
+    {
+        /* Pull the length of UDP datagram. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &length, 2, (ihl + UDP_HRD_LEN_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+
+        /* If UDP header length value is not correct. */
+        if (buffer->total_length < (ihl + length))
+        {
+            /* Invalid UDP header. */
+            status = NET_INVALID_HDR;
+        }
+        else if (buffer->total_length > (ihl + length))
+        {
+            /* Pull padding from the buffer. */
+            OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - (ihl + length)), FS_BUFFER_TAIL) != SUCCESS);
+        }
+    }
 
 #ifdef UDP_CSUM
     if (status == SUCCESS)
@@ -229,7 +238,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         if (csum_hdr != 0)
         {
             /* Calculate checksum for the pseudo header. */
-            status = udp_csum_get(buffer, src_ip, dst_ip, length, ihl, 0, &csum);
+            status = net_pseudo_csum_calculate(buffer, src_ip, dst_ip, IP_PROTO_UDP, length, ihl, 0, &csum);
 
             /* If checksum was successfully calculated and we don't have the
              * anticipated checksum. */
@@ -264,7 +273,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         port_param.port = NULL;
 
         /* Search for a UDP port that can be used to receive this packet. */
-        sll_search(&udp_data.port_list, NULL, &net_port_seach, &port_param, OFFSETOF(UDP_PORT, next));
+        sll_search(&udp_data.port_list, NULL, &udp_port_search, &port_param, OFFSETOF(UDP_PORT, next));
 
         /* Save the resolved port. */
         udp_port = port_param.port;
@@ -334,81 +343,6 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
 } /* net_process_udp */
 
-#ifdef UDP_CSUM
-/*
- * udp_csum_get
- * @buffer: File buffer for which checksum is required.
- * @src_ip: Source IP address.
- * @dst_ip: Destination IP address.
- * @length: Length of UDP datagram.
- * @offset: Offset in the buffer at which the actual UDP header lies.
- * @flags: Operation flags.
- *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
- * @csum: Pointer where checksum will be returned.
- * @return: A success status will be returned if UDP checksum was successfully
- *  calculated. NET_NO_BUFFERS will be returned if we don't have any buffers to
- *  calculate the checksum.
- * This function will calculate UDP checksum for the given UDP packet.
- */
-int32_t udp_csum_get(FS_BUFFER *buffer, uint32_t src_ip, uint32_t dst_ip, uint16_t length, uint32_t offset, uint8_t flags, uint16_t *csum)
-{
-    int32_t status;
-    uint32_t ret_csum;
-    FS_BUFFER *csum_buffer;
-    HDR_GEN_MACHINE hdr_machine;
-    HEADER pseudo_hdr[] =
-    {
-        {(uint8_t *)&src_ip,            4, (FS_BUFFER_PACKED | flags) },    /* Source address. */
-        {(uint8_t *)&dst_ip,            4, (FS_BUFFER_PACKED | flags) },    /* Destination address. */
-        {(uint8_t []){0},               1, flags },                         /* Zero. */
-        {(uint8_t []){IP_PROTO_UDP},    1, flags },                         /* Protocol. */
-        {(uint8_t *)&length,            2, (FS_BUFFER_PACKED |flags) },     /* UDP length. */
-    };
-
-    /* Allocate a buffer and initialize a pseudo header. */
-    csum_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
-
-    /* If we have to buffer to compute checksum. */
-    if (csum_buffer != NULL)
-    {
-        /* Initialize header generator machine. */
-        header_gen_machine_init(&hdr_machine, &fs_buffer_hdr_push);
-
-        /* Push the pseudo header on the buffer. */
-        status = header_generate(&hdr_machine, pseudo_hdr, sizeof(pseudo_hdr)/sizeof(HEADER), csum_buffer);
-
-        /* If pseudo header was successfully generated. */
-        if (status == SUCCESS)
-        {
-            /* Calculate and return the checksum for the pseudo header. */
-            ret_csum = net_csum_calculate(csum_buffer, -1, 0);
-
-            /* Calculate and add the checksum for UDP datagram. */
-            NET_CSUM_ADD(ret_csum, net_csum_calculate(buffer, -1, offset));
-        }
-
-        /* Free the pseudo header buffer. */
-        fs_buffer_add(buffer->fd, csum_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-    }
-    else
-    {
-        /* There are no buffers. */
-        status = NET_NO_BUFFERS;
-    }
-
-    /* If checksum was successfully calculated. */
-    if (status == SUCCESS)
-    {
-        /* Return the calculated checksum. */
-        *csum = (uint16_t)ret_csum;
-    }
-
-    /* Return status to the caller. */
-    return (status);
-
-} /* udp_csum_get */
-#endif /* UDP_CSUM */
-
 /*
  * udp_header_add
  * @buffer: File buffer on which UDP header is needed to be added.
@@ -446,7 +380,7 @@ int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint8_
     if (status == SUCCESS)
     {
         /* Calculate the UDP checksum. */
-        status = udp_csum_get(buffer, socket_address->local_ip, socket_address->foreign_ip, length, 0, flags, &csum);
+        status = net_pseudo_csum_calculate(buffer, socket_address->local_ip, socket_address->foreign_ip, IP_PROTO_UDP, length, 0, flags, &csum);
 
         /* If checksum was successfully calculated. */
         if (status == SUCCESS)

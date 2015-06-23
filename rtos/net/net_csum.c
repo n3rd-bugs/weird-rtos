@@ -15,6 +15,82 @@
 #ifdef CONFIG_NET
 #include <net.h>
 #include <net_csum.h>
+#include <header.h>
+
+/*
+ * net_pseudo_csum_calculate
+ * @buffer: File buffer for which checksum is required.
+ * @src_ip: Source IP address.
+ * @dst_ip: Destination IP address.
+ * @protocol: Protocol for which pseudo checksum is needed to be calculated.
+ * @offset: Offset in the buffer at which the actual protocol header lies.
+ * @flags: Operation flags.
+ *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
+ * @csum: Pointer where checksum will be returned.
+ * @return: A success status will be returned if TCP checksum was successfully
+ *  calculated.
+ *  NET_NO_BUFFERS will be returned if we don't have any buffers to
+ *  calculate the checksum.
+ * This function will calculate pseudo checksum for the given packet and
+ * protocol.
+ */
+int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t dst_ip, uint8_t protocol, uint16_t length, uint32_t offset, uint8_t flags, uint16_t *csum)
+{
+    int32_t status;
+    uint32_t ret_csum;
+    FS_BUFFER *csum_buffer;
+    HDR_GEN_MACHINE hdr_machine;
+    HEADER pseudo_hdr[] =
+    {
+        {&src_ip,           4, (FS_BUFFER_PACKED | flags) },    /* Source address. */
+        {&dst_ip,           4, (FS_BUFFER_PACKED | flags) },    /* Destination address. */
+        {(uint8_t []){0},   1, flags },                         /* Zero. */
+        {&protocol,         1, flags },                         /* Protocol. */
+        {&length,           2, (FS_BUFFER_PACKED |flags) },     /* UDP length. */
+    };
+
+    /* Allocate a buffer and initialize a pseudo header. */
+    csum_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+
+    /* If we have to buffer to compute checksum. */
+    if (csum_buffer != NULL)
+    {
+        /* Initialize header generator machine. */
+        header_gen_machine_init(&hdr_machine, &fs_buffer_hdr_push);
+
+        /* Push the pseudo header on the buffer. */
+        status = header_generate(&hdr_machine, pseudo_hdr, sizeof(pseudo_hdr)/sizeof(HEADER), csum_buffer);
+
+        /* If pseudo header was successfully generated. */
+        if (status == SUCCESS)
+        {
+            /* Calculate and return the checksum for the pseudo header. */
+            ret_csum = net_csum_calculate(csum_buffer, -1, 0);
+
+            /* Calculate and add the checksum for actual packet. */
+            NET_CSUM_ADD(ret_csum, net_csum_calculate(buffer, -1, offset));
+        }
+
+        /* Free the pseudo header buffer. */
+        fs_buffer_add(buffer->fd, csum_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    }
+    else
+    {
+        /* There are no buffers. */
+        status = NET_NO_BUFFERS;
+    }
+
+    /* If checksum was successfully calculated. */
+    if (status == SUCCESS)
+    {
+        /* Return the calculated checksum. */
+        *csum = (uint16_t)ret_csum;
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* net_pseudo_csum_calculate */
 
 /*
  * net_csum_calculate

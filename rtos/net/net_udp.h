@@ -16,9 +16,10 @@
 
 #ifdef CONFIG_NET
 #include <net.h>
-#include <console.h>
 
 #ifdef NET_UDP
+#include <console.h>
+
 /* UDP stack configuration. */
 //#define UDP_CSUM
 
@@ -95,9 +96,6 @@ void udp_initialize();
 void udp_register(UDP_PORT *, char *, SOCKET_ADDRESS *);
 void udp_unregister(UDP_PORT *);
 int32_t net_process_udp(FS_BUFFER *, uint32_t, uint32_t, uint32_t, uint32_t);
-#ifdef UDP_CSUM
-int32_t udp_csum_get(FS_BUFFER *, uint32_t, uint32_t, uint16_t, uint32_t, uint8_t, uint16_t *);
-#endif
 int32_t udp_header_add(FS_BUFFER *, SOCKET_ADDRESS *, uint8_t);
 
 #endif /* NET_UDP */
