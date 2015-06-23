@@ -29,7 +29,8 @@ typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 #define IPV4_ENABLE_FRAG
 
 /* IPv4 fragmentation configuration. */
-#define IPV4_FRAG_TIMEOUT           (OS_TICKS_PER_SEC * 2)  /* Needs to be 60 seconds according to the RFC. */
+#define IPV4_FRAG_TIMEOUT           (OS_TICKS_PER_SEC * 60)
+#define IPV4_FRAG_DROP_TIMEOUT      (OS_TICKS_PER_SEC * 5)
 
 /* Protocol definitions. */
 #define IP_PROTO_ICMP               (0x01)
@@ -62,6 +63,7 @@ typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 #define IPV4_FRAG_IN_USE            0x01
 #define IPV4_FRAG_HAVE_FIRST        0x02
 #define IPV4_FRAG_LAST_RCVD         0x04
+#define IPV4_FRAG_DROP              0x08
 
 /* IPv4 address definitions. */
 #define IPV4_ADDR_UNSPEC            (0)

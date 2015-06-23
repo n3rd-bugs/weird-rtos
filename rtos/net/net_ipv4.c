@@ -237,7 +237,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
     int32_t status = SUCCESS;
     uint32_t ip_iface = 0, ip_dst, ip_src;
     uint8_t proto, ver_ihl;
-    uint16_t flag_offset;
+    uint16_t flag_offset, ip_length;
 #ifdef NET_ICMP
     uint8_t keep, icmp_rep;
 #endif
@@ -297,6 +297,26 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         /* Get IPv4 address assigned to this device. */
         OS_ASSERT(ipv4_get_device_address(buffer->fd, &ip_iface) != SUCCESS);
 
+        /* Pull the IPv4 length for this packet. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &ip_length, 2, IPV4_HDR_LENGTH_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+
+        /* Check if we need to remove buffer padding. */
+        if (ip_length < buffer->total_length)
+        {
+            /* Pull padding from the buffer. */
+            OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - ip_length), FS_BUFFER_TAIL) != SUCCESS);
+        }
+
+        /* If buffer don't have anticipated IP data. */
+        else if (ip_length > buffer->total_length)
+        {
+            /* Return an error. */
+            status = NET_INVALID_HDR;
+        }
+    }
+
+    if (status == SUCCESS)
+    {
         /* If this is a fragmented packet and this is intended for us. */
         if ((flag_offset & IPV4_HDR_FALG_MF) || ((flag_offset & IPV4_HDR_FRAG_MASK) != 0))
         {
@@ -647,21 +667,22 @@ static void ipv4_fragment_expired(void *data)
         /* If this fragment is now expired. */
         if ((net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE) && (net_device->ipv4.fargment.list[n].timeout <= clock))
         {
-            /* We should have at least one buffer on this fragment. */
-            OS_ASSERT(net_device->ipv4.fargment.list[n].buffer_list.head == NULL);
+            /* If we do have at least one buffer on this fragment. */
+            if (net_device->ipv4.fargment.list[n].buffer_list.head)
+            {
+                /* Save the file descriptor on which data was received. */
+                buffer_fd = net_device->ipv4.fargment.list[n].buffer_list.head->fd;
 
-            /* Save the file descriptor on which data was received. */
-            buffer_fd = net_device->ipv4.fargment.list[n].buffer_list.head->fd;
+                /* Obtain lock for the file descriptor on which this semaphore was
+                 * received. */
+                OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
-            /* Obtain lock for the file descriptor on which this semaphore was
-             * received. */
-            OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+                /* Free this buffer list. */
+                fs_buffer_add_buffer_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
-            /* Free this buffer list. */
-            fs_buffer_add_buffer_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-
-            /* Release semaphore for the buffer. */
-            fd_release_lock(buffer_fd);
+                /* Release semaphore for the buffer. */
+                fd_release_lock(buffer_fd);
+            }
 
             /* Clear the fragment data. */
             memset(&net_device->ipv4.fargment.list[n], 0, sizeof(IPV4_FRAGMENT));
@@ -758,50 +779,84 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
     /* If do have a fragment list to process this fragment. */
     if (fragment != NULL)
     {
-        /* Try to allocate a temporary buffer list keeping threshold buffers as
-         * we would want our threshold buffer to wait on a fragment to complete. */
-        tmp_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, FS_BUFFER_TH);
-
-        /* If a temporary buffer list was successfully allocated. */
-        if (tmp_buffer != NULL)
+        /* If threshold buffers are now being consumed. */
+        if (fs_buffer_threshold_locked(buffer->fd))
         {
-            /* If this is a new fragment. */
-            if ((fragment->flags & IPV4_FRAG_IN_USE) == 0)
+            /* We will drop this fragment and any other fragments that are
+             * accumulated as threshold is activated and we would never able to
+             * complete the enqueued fragments. */
+            /* If we could identify the fragment size before receiving the last
+             * fragment this could have been avoided. */
+            for (n = 0; n < net_device->ipv4.fargment.num; n++)
             {
-                /* Initialize this fragment. */
-                fragment->flags |= IPV4_FRAG_IN_USE;
-                fragment->id = id;
-                fragment->sa = sa;
+                /* If this fragment is in use. */
+                if (net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE)
+                {
+                    /* Free any fragments we have already on this fragment list. */
+                    fs_buffer_add_buffer_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
-                /* Save the timeout at which we will need to expire this fragment. */
-                fragment->timeout = (uint32_t)(IPV4_FRAG_TIMEOUT + current_system_tick());
+                    /* Clear the buffer list for this fragment. */
+                    net_device->ipv4.fargment.list[n].buffer_list.head = net_device->ipv4.fargment.list[n].buffer_list.tail = NULL;
 
-                /* Update fragment timer. */
-                ipv4_fragment_update_timer(net_device);
+                    /* Set flag to drop any more packets received for this fragment. */
+                    net_device->ipv4.fargment.list[n].flags |= IPV4_FRAG_DROP;
+
+                    /* Expire this fragment after drop timeout. */
+                    fragment->timeout = (uint32_t)(IPV4_FRAG_DROP_TIMEOUT + current_system_tick());
+                }
             }
 
-            /* Move data from the original buffer to the temporary buffer. */
-            fs_buffer_move(tmp_buffer, buffer);
+            /* Update fragment timer. */
+            ipv4_fragment_update_timer(net_device);
+        }
 
-            /* Push this fragment on the fragment list. */
-            sll_insert(&fragment->buffer_list, tmp_buffer, &ipv4_frag_sort, OFFSETOF(FS_BUFFER, next));
+        /* If we are not dropping this fragment. */
+        else if ((fragment->flags & IPV4_FRAG_DROP) == 0)
+        {
+            /* Try to allocate a temporary buffer list keeping threshold buffers. */
+            tmp_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, FS_BUFFER_TH);
 
-            /* If this is last fragment. */
-            if ((flag_offset & IPV4_HDR_FRAG_MASK) == 0)
+            /* If a temporary buffer list was successfully allocated. */
+            if (tmp_buffer != NULL)
             {
-                /* Set the first fragment received flag. */
-                fragment->flags |= IPV4_FRAG_HAVE_FIRST;
-            }
+                /* If this is a new fragment. */
+                if ((fragment->flags & IPV4_FRAG_IN_USE) == 0)
+                {
+                    /* Initialize this fragment. */
+                    fragment->flags |= IPV4_FRAG_IN_USE;
+                    fragment->id = id;
+                    fragment->sa = sa;
 
-            /* If we have received the last fragment. */
-            if (((flag_offset & IPV4_HDR_FALG_MF) == 0) || (fragment->flags & IPV4_FRAG_LAST_RCVD))
-            {
-                /* Set the last fragment received flag. */
-                fragment->flags |= IPV4_FRAG_LAST_RCVD;
-            }
+                    /* Save the timeout at which we will need to expire this fragment. */
+                    fragment->timeout = (uint32_t)(IPV4_FRAG_TIMEOUT + current_system_tick());
 
-            /* Merge the received fragments on the go. */
-            status = ipv4_frag_merge(fragment, buffer);
+                    /* Update fragment timer. */
+                    ipv4_fragment_update_timer(net_device);
+                }
+
+                /* Move data from the original buffer to the temporary buffer. */
+                fs_buffer_move(tmp_buffer, buffer);
+
+                /* Push this fragment on the fragment list. */
+                sll_insert(&fragment->buffer_list, tmp_buffer, &ipv4_frag_sort, OFFSETOF(FS_BUFFER, next));
+
+                /* If this is last fragment. */
+                if ((flag_offset & IPV4_HDR_FRAG_MASK) == 0)
+                {
+                    /* Set the first fragment received flag. */
+                    fragment->flags |= IPV4_FRAG_HAVE_FIRST;
+                }
+
+                /* If we have received the last fragment. */
+                if (((flag_offset & IPV4_HDR_FALG_MF) == 0) || (fragment->flags & IPV4_FRAG_LAST_RCVD))
+                {
+                    /* Set the last fragment received flag. */
+                    fragment->flags |= IPV4_FRAG_LAST_RCVD;
+                }
+
+                /* Merge the received fragments on the go. */
+                status = ipv4_frag_merge(fragment, buffer);
+            }
         }
     }
 
