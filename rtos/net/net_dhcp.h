@@ -58,7 +58,7 @@
 /* Function prototypes. */
 int32_t dhcp_add_header(FS_BUFFER *, uint8_t, uint32_t, uint16_t, uint8_t, uint32_t, uint32_t, uint32_t, uint8_t *);
 int32_t dhcp_get_header(FS_BUFFER *, uint8_t *, uint32_t *, uint32_t *, uint32_t *, uint32_t *, uint8_t *);
-int32_t dhcp_add_option(FS_BUFFER *, uint8_t, void *, uint8_t, uint8_t);
+int32_t dhcp_add_option(FS_BUFFER *, uint8_t, uint8_t, void *, uint8_t);
 int32_t dhcp_get_option(FS_BUFFER *, uint8_t *, uint8_t *);
 
 #endif /* NET_DHCP */

@@ -141,7 +141,7 @@ int32_t dhcp_get_header(FS_BUFFER *buffer, uint8_t *operation, uint32_t *xid, ui
  * added to the given buffer.
  * This function will add the given DHCP header on the provided buffer.
  */
-int32_t dhcp_add_option(FS_BUFFER *buffer, uint8_t type, void *value, uint8_t length, uint8_t flags)
+int32_t dhcp_add_option(FS_BUFFER *buffer, uint8_t type, uint8_t length, void *value, uint8_t flags)
 {
     int32_t status = SUCCESS;
 

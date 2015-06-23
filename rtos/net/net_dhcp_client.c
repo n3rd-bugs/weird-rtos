@@ -99,7 +99,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
     if (status == SUCCESS)
     {
         /* Add DHCP message type option with discover type. */
-        status = dhcp_add_option(buffer, DHCP_OPT_MSG_TYPE, &dhcp_type, 1, 0);
+        status = dhcp_add_option(buffer, DHCP_OPT_MSG_TYPE, 1, &dhcp_type, 0);
     }
 
     if (status == SUCCESS)
@@ -111,19 +111,19 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
         case DHCP_MSG_REQUEST:
 
             /* Add requested IP address option. */
-            status = dhcp_add_option(buffer, DHCP_OPT_REQ_IP, &client_data->client_ip, IPV4_ADDR_LEN, FS_BUFFER_PACKED);
+            status = dhcp_add_option(buffer, DHCP_OPT_REQ_IP, IPV4_ADDR_LEN, &client_data->client_ip, FS_BUFFER_PACKED);
 
             if (status == SUCCESS)
             {
                 /* Add server identifier from which we will be acquiring this
                  * lease. */
-                status = dhcp_add_option(buffer, DHCP_OPT_SRV_ID, &client_data->server_ip, IPV4_ADDR_LEN, FS_BUFFER_PACKED);
+                status = dhcp_add_option(buffer, DHCP_OPT_SRV_ID, IPV4_ADDR_LEN, &client_data->server_ip, FS_BUFFER_PACKED);
             }
 
             if (status == SUCCESS)
             {
                 /* Add host name option. */
-                status = dhcp_add_option(buffer, DHCP_OPT_HOST_NAME, DHCP_CLIENT_HOSTNAME, (sizeof(DHCP_CLIENT_HOSTNAME) - 1), 0);
+                status = dhcp_add_option(buffer, DHCP_OPT_HOST_NAME, (sizeof(DHCP_CLIENT_HOSTNAME) - 1), DHCP_CLIENT_HOSTNAME, 0);
             }
 
             break;
@@ -133,7 +133,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
     if (status == SUCCESS)
     {
         /* End the DHCP option list. */
-        status = dhcp_add_option(buffer, DHCP_OPT_END, NULL, 0, 0);
+        status = dhcp_add_option(buffer, DHCP_OPT_END, 0, NULL, 0);
     }
 
     /* Return status to the caller. */
