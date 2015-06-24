@@ -55,6 +55,31 @@ void net_condition_init()
 } /* net_condition_init */
 
 /*
+ * net_condition_updated
+ * This will refresh the networking conditions if required.
+ */
+void net_condition_updated()
+{
+    TASK *tcb = get_current_task();
+
+    /* If this is not the networking task. */
+    if ((tcb) && (tcb != &net_condition_tcb))
+    {
+        /* Resume the networking condition task to add this new condition. */
+
+        /* Get lock for buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(net_buff_fd) != SUCCESS);
+
+        /* Set flag that new data is available on buffer file descriptor. */
+        fd_data_available(net_buff_fd);
+
+        /* Release lock for buffer file descriptor. */
+        fd_release_lock(net_buff_fd);
+    }
+
+} /* net_condition_updated */
+
+/*
  * net_condition_add
  * @condition: Already populated condition.
  * @suspend: Already populated suspend.
@@ -65,7 +90,6 @@ void net_condition_init()
 void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PROCESS *process, void *data)
 {
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
-    TASK *tcb = get_current_task();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
@@ -85,20 +109,8 @@ void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PRO
     /* Restore old interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);
 
-    /* If this is not the networking task. */
-    if ((tcb) && (tcb != &net_condition_tcb))
-    {
-        /* Resume the networking condition task to add this new condition. */
-
-        /* Get lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(net_buff_fd) != SUCCESS);
-
-        /* Set flag that new data is available on buffer file descriptor. */
-        fd_data_available(net_buff_fd);
-
-        /* Release lock for buffer file descriptor. */
-        fd_release_lock(net_buff_fd);
-    }
+    /* Networking condition data has been updated. */
+    net_condition_updated();
 
 } /* net_condition_add */
 
