@@ -46,7 +46,7 @@ int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t d
         {&dst_ip,           4, (FS_BUFFER_PACKED | flags) },    /* Destination address. */
         {(uint8_t []){0},   1, flags },                         /* Zero. */
         {&protocol,         1, flags },                         /* Protocol. */
-        {&length,           2, (FS_BUFFER_PACKED |flags) },     /* UDP length. */
+        {&length,           2, (FS_BUFFER_PACKED |flags) },     /* Packet length. */
     };
 
     /* Allocate a buffer and initialize a pseudo header. */
