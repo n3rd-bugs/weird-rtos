@@ -284,6 +284,54 @@ void sll_remove_node(void *list, void *node, void *prev_node, int offset)
 } /* sll_remove_node */
 
 /*
+ * sll_add_node
+ * @list: List that is needed to be updated.
+ * @node: Node needed to be added.
+ * @prev_node: Node after which this node is needed to be added.
+ * @offset: Offset of the "next" member in a node structure.
+ * This function adds a new node in the given link list at the given location.
+ */
+void sll_add_node(void *list, void *node, void *prev_node, int offset)
+{
+    /* A null member should never be searched. */
+    OS_ASSERT(node == NULL);
+
+    /* Check if we are adding a node on the list's head. */
+    if (prev_node == NULL)
+    {
+        /* Update the node. */
+        ((SLL_NODE *)((uint8_t *)node + offset))->next = ((SLL_HEAD *)list)->head;
+
+        /* Update the list head. */
+        ((SLL_HEAD *)list)->head = node;
+
+        /* Check if this is the first entry in the list. */
+        if (((SLL_HEAD *)list)->tail == NULL)
+        {
+            /* Also update the tail. */
+            ((SLL_HEAD *)list)->tail = node;
+        }
+    }
+
+    else
+    {
+        /* Update the node. */
+        ((SLL_NODE *)((uint8_t *)node + offset))->next = ((SLL_NODE *)((uint8_t *)prev_node + offset))->next;
+
+        /* Update the previous entry in the link list. */
+        ((SLL_NODE *)((uint8_t *)prev_node + offset))->next = node;
+
+        /* Check if we are adding a node at the end of the list. */
+        if (((SLL_NODE *)((uint8_t *)node + offset))->next == NULL)
+        {
+            /* Also update the list tail. */
+            ((SLL_HEAD *)list)->tail = node;
+        }
+    }
+
+} /* sll_add_node */
+
+/*
  * sll_remove
  * @list: List that is needed to be updated.
  * @node: Node that is needed to be removed.

@@ -39,6 +39,7 @@ void sll_insert(void *, void *, uint8_t (*)(void *, void *), int);
 void *sll_search(void *, void **, uint8_t (*match)(void *, void *), void *, int);
 void *sll_search_pop(void *, uint8_t (*)(void *, void *), void *, int);
 void sll_remove_node(void *, void *, void *, int);
+void sll_add_node(void *, void *, void *, int);
 void *sll_remove(void *, void *, int);
 uint32_t sll_num_items(void *, int);
 uint8_t sll_in_list(void *, void *, int);
