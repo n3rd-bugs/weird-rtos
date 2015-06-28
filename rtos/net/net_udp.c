@@ -197,7 +197,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 {
     int32_t status = SUCCESS;
     uint16_t length;
-    UDP_PORT *udp_port;
+    UDP_PORT *port;
     UDP_PORT_PARAM port_param;
 #ifdef UDP_CSUM
     uint16_t csum_hdr, csum;
@@ -276,7 +276,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         sll_search(&udp_data.port_list, NULL, &udp_port_search, &port_param, OFFSETOF(UDP_PORT, next));
 
         /* Save the resolved port. */
-        udp_port = port_param.port;
+        port = port_param.port;
 
 #ifndef CONFIG_SEMAPHORE
         /* Enable scheduling. */
@@ -290,18 +290,18 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
 
         /* If we have a valid UDP port for this datagram. */
-        if (udp_port != NULL)
+        if (port != NULL)
         {
             /* Check if we are not at threshold, as this might cause a dead
              * lock in the stack. */
-            if ((udp_port->flags & UDP_FLAG_THR_BUFFERS) || (fs_buffer_threshold_locked(buffer->fd) == FALSE))
+            if ((port->flags & UDP_FLAG_THR_BUFFERS) || (fs_buffer_threshold_locked(buffer->fd) == FALSE))
             {
                 /* Release lock for buffer file descriptor as we might need to
                  * suspend to wait for UDP port lock. */
                 fd_release_lock(buffer->fd);
 
                 /* Obtain lock for this UDP port. */
-                status = fd_get_lock((FD)udp_port);
+                status = fd_get_lock((FD)port);
 
                 /* Again obtain lock for buffer file descriptor. */
                 OS_ASSERT(fd_get_lock(buffer->fd));
@@ -310,13 +310,13 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                 if (status == SUCCESS)
                 {
                     /* Add this buffer in the buffer list for UDP port. */
-                    sll_append(&udp_port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+                    sll_append(&port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
                     /* Set an event to tell that new data is now available. */
-                    fd_data_available((FD)udp_port);
+                    fd_data_available((FD)port);
 
                     /* Release lock for this UDP port. */
-                    fd_release_lock((FD)udp_port);
+                    fd_release_lock((FD)port);
 
                     /* This buffer is now consumed by the UDP port. */
                     status = NET_BUFFER_CONSUMED;
