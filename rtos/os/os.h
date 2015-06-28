@@ -44,6 +44,7 @@
 #define OS_WRITE_REG32(x, v)        (*(uint32_t *)x = v)
 #define OS_MASK_REG32(x, clr, set)  OS_WRITE_REG32(x, (((OS_READ_REG32(x)) & (uint32_t)(~clr)) | set))
 #define MIN(a, b)                   (((a) < (b)) ? (a) : (b))
+#define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
 
 /* Defines the origin from which this task is being yielded.  */
 #define YIELD_INIT              0x00
