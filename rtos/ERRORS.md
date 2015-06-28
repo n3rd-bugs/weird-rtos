@@ -27,13 +27,16 @@ This list is needed to be updated whenever a new error code is added.
     NET_UNKNOWN_PROTO       -1002
     NET_UNKNOWN_SRC         -1003
     NET_NO_ACTION           -1004
-    NET_DST_UNREACHABLE     -1005
-    NET_DST_PRT_UNREACHABLE -1006
-    NET_NO_BUFFERS          -1007
-    NET_THRESHOLD           -1008
-    NET_LINK_DOWN           -1009
-    NET_INVALID_CSUM        -1010
-    NET_INVALID_HDR         -1011
-    NET_INVALID_FD          -1012
+    NET_REFUSED             -1005
+    NET_CLOSED              -1006
+    NET_DST_UNREACHABLE     -1007
+    NET_DST_PRT_UNREACHABLE -1008
+    NET_NO_BUFFERS          -1009
+    NET_NO_NEXT_OPT         -1010
+    NET_THRESHOLD           -1011
+    NET_LINK_DOWN           -1012
+    NET_INVALID_CSUM        -1013
+    NET_INVALID_HDR         -1014
+    NET_INVALID_FD          -1015
     ETH_TX_BLOCKED          -1100
     ENC28J60_SPI_ERROR      -11000

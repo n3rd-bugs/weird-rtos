@@ -15,6 +15,9 @@
 #ifdef CONFIG_NET
 #include <net.h>
 #include <net_condition.h>
+#ifdef NET_TCP
+#include <net_tcp.h>
+#endif
 #ifdef NET_UDP
 #include <net_udp.h>
 #endif
@@ -42,6 +45,11 @@ void net_init()
 
     /* Initialize networking conditions. */
     net_condition_init();
+
+#ifdef NET_TCP
+    /* Initialize TCP stack. */
+    tcp_initialize();
+#endif
 
 #ifdef NET_UDP
     /* Initialize UDP stack. */

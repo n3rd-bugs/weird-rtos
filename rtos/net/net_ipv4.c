@@ -22,6 +22,9 @@
 #ifdef NET_ICMP
 #include <net_icmp.h>
 #endif
+#ifdef NET_TCP
+#include <net_tcp.h>
+#endif
 #ifdef NET_UDP
 #include <net_udp.h>
 #endif
@@ -361,6 +364,16 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
 
             break;
 #endif /* NET_ICMP */
+
+#ifdef NET_TCP
+        /* If a TCP packet is received. */
+        case IP_PROTO_TCP:
+
+            /* Process a TCP packet. */
+            status = net_process_tcp(buffer, ver_ihl, ip_iface, ip_src, ip_dst);
+
+            break;
+#endif /* NET_TCP */
 
 #ifdef NET_UDP
         /* If a UDP packet is received. */

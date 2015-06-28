@@ -20,6 +20,7 @@
 #define NET_IPV4
 #define NET_ICMP
 #define NET_UDP
+#define NET_TCP
 #define NET_ARP
 #define NET_DHCP
 
@@ -33,14 +34,17 @@
 #define NET_UNKNOWN_PROTO       -1002
 #define NET_UNKNOWN_SRC         -1003
 #define NET_NO_ACTION           -1004
-#define NET_DST_UNREACHABLE     -1005
-#define NET_DST_PRT_UNREACHABLE -1006
-#define NET_NO_BUFFERS          -1007
-#define NET_THRESHOLD           -1008
-#define NET_LINK_DOWN           -1009
-#define NET_INVALID_CSUM        -1010
-#define NET_INVALID_HDR         -1011
-#define NET_INVALID_FD          -1012
+#define NET_REFUSED             -1005
+#define NET_CLOSED              -1006
+#define NET_DST_UNREACHABLE     -1007
+#define NET_DST_PRT_UNREACHABLE -1008
+#define NET_NO_BUFFERS          -1009
+#define NET_NO_NEXT_OPT         -1010
+#define NET_THRESHOLD           -1011
+#define NET_LINK_DOWN           -1012
+#define NET_INVALID_CSUM        -1013
+#define NET_INVALID_HDR         -1014
+#define NET_INVALID_FD          -1015
 
 /* Networking port definitions. */
 #define NET_PORT_UNSPEC         0

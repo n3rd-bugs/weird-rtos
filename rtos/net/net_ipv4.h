@@ -34,6 +34,7 @@ typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 
 /* Protocol definitions. */
 #define IP_PROTO_ICMP               (0x01)
+#define IP_PROTO_TCP                (0x06)
 #define IP_PROTO_UDP                (0x11)
 
 /* IPv4 header definitions. */
