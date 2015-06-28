@@ -140,6 +140,41 @@ void fs_buffer_move(FS_BUFFER *dst_buffer, FS_BUFFER *src_buffer)
 } /* fs_buffer_move */
 
 /*
+ * fs_buffer_move_data
+ * @dst: Buffer to which data will be moved.
+ * @src: Buffer from which data will be moved.
+ * @flags: Operation flags.
+ *  FS_BUFFER_HEAD: If we need to add data on the head of existing data.
+ * This function will move all the data from one buffer to the other buffer.
+ */
+void fs_buffer_move_data(FS_BUFFER *dst, FS_BUFFER *src, uint8_t flags)
+{
+    /* Move all the data from the source buffer to the destination buffer. */
+
+    /* If data is needed to be added at the start of existing data. */
+    if (flags & FS_BUFFER_HEAD)
+    {
+        /* Add data at the end of the existing data. */
+        src->list.tail->next = dst->list.head;
+        dst->list.head = src->list.head;
+    }
+    else
+    {
+        /* Add data at the end of the existing data. */
+        dst->list.tail->next = src->list.head;
+        dst->list.tail = src->list.tail;
+    }
+
+    /* Increment number of bytes added. */
+    dst->total_length += src->total_length;
+
+    /* Clear the list for this buffer. */
+    src->list.head = src->list.tail = NULL;
+    src->total_length = 0;
+
+} /* fs_buffer_move_data */
+
+/*
  * fs_buffer_num_remaining
  * @fd: File descriptor on which number of buffers in a list is required.
  * @type: Type of buffer needed to be checked.

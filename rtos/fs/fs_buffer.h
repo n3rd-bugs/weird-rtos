@@ -163,6 +163,7 @@ void fs_buffer_init(FS_BUFFER *, FD);
 void fs_buffer_one_init(FS_BUFFER_ONE *, void *, uint32_t);
 void fs_buffer_one_update(FS_BUFFER_ONE *, void *, uint32_t);
 void fs_buffer_move(FS_BUFFER *, FS_BUFFER *);
+void fs_buffer_move_data(FS_BUFFER *, FS_BUFFER *, uint8_t);
 int32_t fs_buffer_num_remaining(FD, uint32_t);
 void fs_buffer_condition_init(FD);
 void fs_buffer_condition_get(FD, CONDITION **, SUSPEND *, FS_BUFFER_PARAM *, int32_t, uint32_t);
