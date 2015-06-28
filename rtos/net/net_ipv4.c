@@ -912,13 +912,10 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER *buffer)
             /* Pull the IPv4 header from this buffer. */
             OS_ASSERT(fs_buffer_pull(next_buffer, NULL, (uint32_t)((ver_ihl & IPV4_HDR_IHL_MASK) << 2), 0) != SUCCESS);
 
-            /* Merge this buffer in the return buffer. */
-            last_buffer->list.tail->next = next_buffer->list.head;
-            last_buffer->list.tail = next_buffer->list.tail;
-            last_buffer->total_length += next_buffer->total_length;
+            /* Move data from this buffer in the return buffer. */
+            fs_buffer_move_data(last_buffer, next_buffer, 0);
 
-            /* Clear the list for this buffer. */
-            next_buffer->list.head = next_buffer->list.tail = NULL;
+            /* Save pointer for this buffer. */
             tmp_buffer = next_buffer;
 
             /* Pick the next buffer from the list. */
