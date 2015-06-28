@@ -23,9 +23,9 @@
 #include <net_dhcp_client.h>
 #endif
 
-
 /* Global network device data. */
 NET_DEV_DATA net_dev_data;
+
 /*
  * net_devices_init
  * This function initialize global data structure for networking devices.
