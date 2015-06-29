@@ -28,7 +28,7 @@ TCP_DATA tcp_data;
 /* Internal function prototypes. */
 static void tcp_port_initialize(TCP_PORT *);
 static uint8_t tcp_port_search(void *, void *);
-static int32_t tcp_resume_socket(TCP_PORT *, FS_BUFFER *);
+static void tcp_resume_socket(TCP_PORT *, uint8_t);
 static int32_t tcp_port_wait(TCP_PORT *, uint8_t);
 static int32_t tcp_process_options(FS_BUFFER *, TCP_PORT *, uint32_t, uint16_t);
 static int32_t tcp_add_option(FS_BUFFER *, uint8_t, uint8_t, void *, uint8_t);
@@ -216,50 +216,28 @@ static uint8_t tcp_port_search(void *node, void *param)
 /*
  * tcp_resume_socket
  * @port: Port for which any waiting tasks are needed to be resumed.
- * @buffer: If not null, a file system buffer for which we need to resume this
- *  socket.
- * @return: A success status will be returned if any tasks waiting on this
- *  sockets are now resumed.
- *  NET_BUFFER_CONSUMED will be returned if the given buffer is now consumed.
- *  NET_THRESHOLD will be returned if buffer threshold is active and accepting
- *      this packet will cause buffer dead lock.
+ * @flags: Resume condition flag.
+ *  FS_BLOCK_READ: If we need to resume any tasks waiting for a state change or
+ *  new data on this socket.
+ *  FS_BLOCK_WRITE: If we need to resume tasks waiting for space in TCP window
+ *  to send new data.
  * This function will resume any tasks waiting on a TCP socket.
  */
-static int32_t tcp_resume_socket(TCP_PORT *port, FS_BUFFER *buffer)
+static void tcp_resume_socket(TCP_PORT *port, uint8_t flags)
 {
-    int32_t status = SUCCESS;
-
-    /* Check if we are not at threshold, as this might cause a dead lock in
-     * the stack. */
-    if ((buffer == NULL) || (fs_buffer_threshold_locked(buffer->fd) == FALSE))
+    /* If we need to resume tasks waiting on read. */
+    if (flags & FS_BLOCK_READ)
     {
-        /* If we do have a buffer. */
-        if (buffer != NULL)
-        {
-            /* Add this buffer in the buffer list for TCP port. */
-            sll_append(&port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
-        }
-
         /* Set an event to tell that new data is now available. */
         fd_data_available((FD)port);
-
-        /* If we do have a buffer. */
-        if (buffer != NULL)
-        {
-            /* This buffer is now consumed by the port. */
-            status = NET_BUFFER_CONSUMED;
-        }
     }
-    else
+
+    /* If we need to resume tasks waiting for space in TCP send window. */
+    else if (flags & FS_BLOCK_READ)
     {
-        /* There are less amount of buffers available so we cannot
-         * pass this buffer to application. */
-        status = NET_THRESHOLD;
+        /* Set an event to tell that some space is now available. */
+        fd_space_available((FD)port);
     }
-
-    /* Return status to the caller. */
-    return (status);
-
 } /* tcp_resume_socket */
 
 /*
@@ -644,9 +622,6 @@ static void tcp_rtx_callback(void *data)
         {
         /* If we are in SYN received state. */
         case TCP_SOCK_SYN_RCVD:
-
-        /* If we are in close wait state. */
-        case TCP_SOCK_CLOSE_WAIT:
 
         /* If we are waiting for last ACK. */
         case TCP_SOCK_LAST_ACK:
@@ -1094,7 +1069,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
     if (new_data == TRUE)
     {
         /* Data available to read. */
-        tcp_resume_socket(port, NULL);
+        tcp_resume_socket(port, FS_BLOCK_READ);
     }
 
     /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=ACK) */
@@ -1372,10 +1347,26 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                     /* A connection request is identified by a SYN request. */
                     else if (flags & TCP_HDR_FLAG_SYN)
                     {
-                        /* Push this buffer on the port RX list and resume any
-                         * tasks waiting for it. There we will save TCB data for a
-                         * new socket. */
-                        status = tcp_resume_socket(port, buffer);
+                        if (fs_buffer_threshold_locked(buffer->fd) == FALSE)
+                        {
+                            /* Push this buffer on the port RX list and resume any
+                             * tasks waiting for it. There we will save TCB data for a
+                             * new socket. */
+                            tcp_resume_socket(port, FS_BLOCK_READ);
+
+                            /* Add this buffer in the buffer list for TCP port. */
+                            sll_append(&port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+
+                            /* Buffer was passed to the port, return status to
+                             * the caller. */
+                            status = NET_BUFFER_CONSUMED;
+                        }
+                        else
+                        {
+                            /* Threshold buffers are now being used, it is
+                             * batter to drop this request. */
+                            status = NET_THRESHOLD;
+                        }
                     }
 
                     break;
@@ -1386,9 +1377,6 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
                 /* If connection is established. */
                 case TCP_SOCK_ESTAB:
-
-                /* If we are in close wait state. */
-                case TCP_SOCK_CLOSE_WAIT:
 
                 /* If we are waiting for last ACK. */
                 case TCP_SOCK_LAST_ACK:
@@ -1499,9 +1487,6 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
                             /* If connection is established. */
                             case TCP_SOCK_ESTAB:
-
-                            /* If we are in close wait state. */
-                            case TCP_SOCK_CLOSE_WAIT:
 
                                 /* Match the SEG.ACK number. */
                                 /* SND.UNA < SEG.ACK =< SND.NXT ? */
@@ -1637,11 +1622,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                     {
                         /* Resume any tasks waiting for state change for this
                          * connection. */
-                        if ((tcp_resume_socket(port, NULL) == NET_BUFFER_CONSUMED) && (status != NET_BUFFER_CONSUMED))
-                        {
-                            /* Return status that this buffer is now consumed. */
-                            status = NET_BUFFER_CONSUMED;
-                        }
+                        tcp_resume_socket(port, FS_BLOCK_READ);
                     }
 
                     break;
@@ -1986,9 +1967,6 @@ void tcp_close(TCP_PORT *port)
         /* If we are at established state. */
         case TCP_SOCK_ESTAB:
 
-        /* If we are at closed wait state. */
-        case TCP_SOCK_CLOSE_WAIT:
-
             /* TODO Queue this CLOSE request until all queued SENDs have been
              * segmentized and sent. */
 
@@ -2005,13 +1983,6 @@ void tcp_close(TCP_PORT *port)
 
                 /* Move to FIN wait state. */
                 port->state = TCP_SOCK_FIN_WAIT_1;
-                break;
-
-            case TCP_SOCK_CLOSE_WAIT:
-
-                /* Move to last ACK state. */
-                port->state = TCP_SOCK_LAST_ACK;
-
                 break;
             }
 
@@ -2032,7 +2003,7 @@ void tcp_close(TCP_PORT *port)
         }
 
         /* Resume any tasks waiting for state change for this port. */
-        tcp_resume_socket(port, NULL);
+        tcp_resume_socket(port, FS_BLOCK_READ);
 
         /* Release lock for TCP port. */
         fd_release_lock((FD)port);

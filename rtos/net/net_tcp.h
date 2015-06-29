@@ -67,7 +67,7 @@
 #define TCP_SOCK_SYN_SENT           (2)
 #define TCP_SOCK_SYN_RCVD           (3)
 #define TCP_SOCK_ESTAB              (4)
-#define TCP_SOCK_CLOSE_WAIT         (5)
+#define TCP_SOCK_CLOSE_WAIT         (5)    /* Not used. */
 #define TCP_SOCK_FIN_WAIT_1         (6)
 #define TCP_SOCK_FIN_WAIT_2         (7)
 #define TCP_SOCK_LAST_ACK           (8)
@@ -79,6 +79,21 @@
 
 /* TCP out-of-order parameter flags. */
 #define TCP_FLAG_SEG_CONFLICT       (0x01)
+
+/* Parameter that will be used to process the out-of-order buffer list. */
+typedef struct _tcp_oo_param
+{
+    /* Sequence data for the buffer segment we need to insert. */
+    uint32_t    seg_seq;
+    uint32_t    seg_len;
+
+    /* Buffer operation flags. */
+    uint8_t     flags;
+
+    /* Structure padding. */
+    uint8_t     pad[3];
+
+} TCP_OO_PARAM;
 
 /* TCP retransmission packet structure. */
 typedef struct _tcp_rtx
@@ -105,21 +120,6 @@ typedef struct _tcp_rtx
     uint16_t        wnd_size;
 
 } TCP_RTX;
-
-/* Parameter that will be used to process the out-of-order buffer list. */
-typedef struct _tcp_oo_param
-{
-    /* Sequence data for the buffer segment we need to insert. */
-    uint32_t    seg_seq;
-    uint32_t    seg_len;
-
-    /* Buffer operation flags. */
-    uint8_t     flags;
-
-    /* Structure padding. */
-    uint8_t     pad[3];
-
-} TCP_OO_PARAM;
 
 /* TCP port structure. */
 typedef struct _tcp_port TCP_PORT;
@@ -148,7 +148,7 @@ struct _tcp_port
             FS_BUFFER       *tail;
         } oorx_list;
 
-        /* TCP buffer list to be served to application. */
+        /* TCP accumulated received buffer. */
         FS_BUFFER       *buffer;
     } rx_buffer;
 
