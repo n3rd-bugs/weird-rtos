@@ -38,13 +38,12 @@
 #define NET_CLOSED              -1006
 #define NET_DST_UNREACHABLE     -1007
 #define NET_DST_PRT_UNREACHABLE -1008
-#define NET_NO_BUFFERS          -1009
-#define NET_NO_NEXT_OPT         -1010
-#define NET_THRESHOLD           -1011
-#define NET_LINK_DOWN           -1012
-#define NET_INVALID_CSUM        -1013
-#define NET_INVALID_HDR         -1014
-#define NET_INVALID_FD          -1015
+#define NET_NO_NEXT_OPT         -1009
+#define NET_THRESHOLD           -1010
+#define NET_LINK_DOWN           -1011
+#define NET_INVALID_CSUM        -1012
+#define NET_INVALID_HDR         -1013
+#define NET_INVALID_FD          -1014
 
 /* Networking port definitions. */
 #define NET_PORT_UNSPEC         0

@@ -29,7 +29,7 @@
  * @csum: Pointer where checksum will be returned.
  * @return: A success status will be returned if TCP checksum was successfully
  *  calculated.
- *  NET_NO_BUFFERS will be returned if we don't have any buffers to
+ *  FS_BUFFER_NO_SPACE will be returned if we don't have any buffers to
  *  calculate the checksum.
  * This function will calculate pseudo checksum for the given packet and
  * protocol.
@@ -77,7 +77,7 @@ int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t d
     else
     {
         /* There are no buffers. */
-        status = NET_NO_BUFFERS;
+        status = FS_BUFFER_NO_SPACE;
     }
 
     /* If checksum was successfully calculated. */

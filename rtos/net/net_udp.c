@@ -186,7 +186,7 @@ static uint8_t udp_port_search(void *node, void *param)
  *  unreachable.
  *  NET_INVALID_HDR will be returned if invalid header was parsed.
  *  NET_INVALID_CSUM will be returned if an invalid checksum was received.
- *  NET_NO_BUFFERS if we ran out of buffers.
+ *  FS_BUFFER_NO_SPACE if we ran out of buffers.
  *  NET_BUFFER_CONSUMED will be returned if buffer was consumed and caller
  *  don't need to free it.
  *  NET_THRESHOLD will be returned if we cannot pass the buffer to networking
@@ -645,7 +645,7 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
         else
         {
             /* No buffers are available to send this buffer. */
-            status = NET_NO_BUFFERS;
+            status = FS_BUFFER_NO_SPACE;
         }
 
         /* Release lock for the file descriptor associated with this networking

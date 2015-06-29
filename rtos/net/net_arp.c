@@ -356,7 +356,7 @@ static int32_t arp_route(FD fd, ARP_ENTRY *entry)
     else
     {
         /* No buffer to send a request. */
-        status = NET_NO_BUFFERS;
+        status = FS_BUFFER_NO_SPACE;
     }
 
     /* Return status to the caller. */

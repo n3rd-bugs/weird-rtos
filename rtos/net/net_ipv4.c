@@ -745,7 +745,7 @@ static uint8_t ipv4_frag_sort(void *node, void *new_node)
  * @return: A success status will be returned if all the fragments for this
  *  packet are now received and we can now process this packet. NET_NO_ACTION
  *  will be returned if we don't have a complete fragment and we will need for
- *  more data to process this packet. NET_NO_BUFFERS will be returned if we
+ *  more data to process this packet. FS_BUFFER_NO_SPACE will be returned if we
  *  don't have a free fragment or buffer list to process this packet.
  * This function will add a new fragment for the file descriptor.
  */
@@ -755,7 +755,7 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
     FS_BUFFER *tmp_buffer;
     IPV4_FRAGMENT *fragment = NULL;
     uint32_t sa, n;
-    int32_t status = NET_NO_BUFFERS;
+    int32_t status = FS_BUFFER_NO_SPACE;
     uint16_t id;
 
     /* Should never happen. */
