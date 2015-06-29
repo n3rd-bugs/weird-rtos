@@ -107,6 +107,10 @@ typedef struct _tcp_rtx
     /* Socket address on which this packet is needed to be sent. */
     SOCKET_ADDRESS  *socket_address;
 
+    /* Data needed to be sent with this segment. */
+    uint8_t         *data;
+    int32_t         data_len;
+
     /* Sequence number to be sent. */
     uint32_t        seq_num;
 
