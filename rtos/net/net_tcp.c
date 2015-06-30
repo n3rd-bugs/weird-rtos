@@ -36,6 +36,7 @@ static int32_t tcp_add_options(FS_BUFFER *, TCP_PORT *, uint8_t, uint8_t *, uint
 static void tcp_rtx_timer_register(TCP_PORT *);
 static void tcp_rtx_timer_unregister(TCP_PORT *);
 static void tcp_rtx_start(TCP_PORT *);
+static void tcp_rtx_start_timeout(TCP_PORT *, uint32_t);
 static void tcp_fast_rtx(TCP_PORT *, uint32_t);
 static void tcp_rtx_stop(TCP_PORT *);
 static void tcp_rtx_callback(void *);
@@ -565,13 +566,27 @@ static void tcp_rtx_timer_unregister(TCP_PORT *port)
  */
 static void tcp_rtx_start(TCP_PORT *port)
 {
+    /* Start the RTX timer with default RTO time. */
+    tcp_rtx_start_timeout(port, TCP_RTO);
+
+} /* tcp_rtx_start */
+
+/*
+ * tcp_rtx_start_timeout
+ * @port: TCP port for which retransmission of a segment is needed to be
+ *  scheduled.
+ * @timeout: Timeout after which we need to expire this timer.
+ * This function will schedule next retransmission on a given TCP port.
+ */
+static void tcp_rtx_start_timeout(TCP_PORT *port, uint32_t timeout)
+{
     /* Set required next timeout. */
-    port->rtx_data.suspend.timeout = (uint32_t)(current_system_tick() + TCP_RTO);
+    port->rtx_data.suspend.timeout = (uint32_t)(current_system_tick() + timeout);
 
     /* Networking condition data has been updated. */
     net_condition_updated();
 
-} /* tcp_rtx_start */
+} /* tcp_rtx_start_timeout */
 
 /*
  * tcp_fast_rtx
@@ -620,53 +635,92 @@ static void tcp_rtx_callback(void *data)
     /* Get lock for this port. */
     if (fd_get_lock((FD)port) == SUCCESS)
     {
-        /* Retransmit a TCP segment. */
-        tcp_send_segment(port, port->rtx_data.socket_address, port->rtx_data.seq_num, port->rtx_data.ack_num, port->rtx_data.flags, port->rtx_data.wnd_size, port->rtx_data.data, port->rtx_data.data_len, FALSE);
-
         switch (port->state)
         {
-        /* If we are in SYN received state. */
-        case TCP_SOCK_SYN_RCVD:
 
-        /* If we are waiting for last ACK. */
-        case TCP_SOCK_LAST_ACK:
+        /* If we are in time wait state. */
+        case TCP_SOCK_TIME_WAIT:
 
-            /* Next time out will be at RTO. */
-            next_timeout = TCP_RTO;
+            /* Move to the closed state. */
+            port->state = TCP_SOCK_COLSED;
 
-            break;
+            /* Stop the port timer. */
+            next_timeout = MAX_WAIT;
 
-        /* If we are in established state. */
-        case TCP_SOCK_ESTAB:
-
-            /* (ExpBoff > 1) AND (ExpBoff < 64) ? */
-            if ((port->expboff > 1) && (port->expboff < 64))
-            {
-                /* ExpBoff := ExpBoff × 2. */
-                port->expboff = (uint8_t)(port->expboff * 2);
-            }
-
-            /* SET (ExpBoff × RTO, REXMT) */
-            next_timeout = (uint32_t)(port->expboff * TCP_RTO);
-
-            /* SSthresh := max (SND.WND/2, 2) */
-            port->ssthresh = (uint16_t)MAX((port->snd_wnd/2), 2);
-
-            /* CWND := MSS */
-            port->cwnd = port->mss;
+            /* Resume any tasks waiting for state change. */
+            tcp_resume_socket(port, (FS_BLOCK_READ | FS_BLOCK_WRITE));
 
             break;
 
         default:
 
-            /* TODO */
-            OS_ASSERT(TRUE);
+            /* Retransmit a TCP segment. */
+            tcp_send_segment(port, port->rtx_data.socket_address, port->rtx_data.seq_num, port->rtx_data.ack_num, port->rtx_data.flags, port->rtx_data.wnd_size, port->rtx_data.data, port->rtx_data.data_len, FALSE);
+
+            switch (port->state)
+            {
+            /* If we are in SYN received state. */
+            case TCP_SOCK_SYN_RCVD:
+
+            /* If we are waiting for last ACK. */
+            case TCP_SOCK_LAST_ACK:
+
+            /* If we are in FIN-WAIT-1 state. */
+            case TCP_SOCK_FIN_WAIT_1:
+
+            /* If we are in closing state. */
+            case TCP_SOCK_CLOSING:
+
+                /* Next time out will be at RTO. */
+                next_timeout = TCP_RTO;
+
+                break;
+
+            /* If we are in established state. */
+            case TCP_SOCK_ESTAB:
+
+                /* (ExpBoff > 1) AND (ExpBoff < 64) ? */
+                if ((port->expboff > 1) && (port->expboff < 64))
+                {
+                    /* ExpBoff := ExpBoff × 2. */
+                    port->expboff = (uint8_t)(port->expboff * 2);
+                }
+
+                /* SET (ExpBoff × RTO, REXMT) */
+                next_timeout = (uint32_t)(port->expboff * TCP_RTO);
+
+                /* SSthresh := max (SND.WND/2, 2) */
+                port->ssthresh = (uint16_t)MAX((port->snd_wnd/2), 2);
+
+                /* CWND := MSS */
+                port->cwnd = port->mss;
+
+                break;
+
+            default:
+
+                /* Should never happen. */
+
+                /* Stop the port timer. */
+                next_timeout = MAX_WAIT;
+
+                break;
+            }
 
             break;
         }
 
-        /* Schedule next time out. */
-        port->rtx_data.suspend.timeout = (uint32_t)(current_system_tick() + next_timeout);
+        /* If we don't want to stop this port timer. */
+        if (next_timeout != MAX_WAIT)
+        {
+            /* Schedule next time out. */
+            port->rtx_data.suspend.timeout = (uint32_t)(current_system_tick() + next_timeout);
+        }
+        else
+        {
+            /* Stop this timer. */
+            port->rtx_data.suspend.timeout = (uint32_t)(current_system_tick() + next_timeout);
+        }
 
         /* Release lock for this TCP port. */
         fd_release_lock((FD)port);
@@ -1522,6 +1576,18 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                 /* If we are waiting for last ACK. */
                 case TCP_SOCK_LAST_ACK:
 
+                /* If we are in FIN-WAIT-1 state. */
+                case TCP_SOCK_FIN_WAIT_1:
+
+                /* If we are in FIN-WAIT-2 state. */
+                case TCP_SOCK_FIN_WAIT_2:
+
+                /* If we are in closing state. */
+                case TCP_SOCK_CLOSING:
+
+                /* If we are in time wait state. */
+                case TCP_SOCK_TIME_WAIT:
+
                     /* Verify received sequence number. */
                     /* Check Segment SEQ (SEG.SEQ, SEG.LEN, RCV.NXT, RCV.WND) */
                     if (tcp_check_sequence(seg_seq, seg_len, port->rcv_nxt, port->rcv_wnd) == TRUE)
@@ -1645,6 +1711,12 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                             /* If connection is established. */
                             case TCP_SOCK_ESTAB:
 
+                            /* If we are in FIN-WAIT-1 state. */
+                            case TCP_SOCK_FIN_WAIT_1:
+
+                            /* If we are in FIN-WAIT-2 state. */
+                            case TCP_SOCK_FIN_WAIT_2:
+
                                 /* Match the SEG.ACK number. */
                                 /* SND.UNA < SEG.ACK =< SND.NXT ? */
                                 if ((port->snd_una < seg_ack) && (seg_ack <= port->snd_nxt))
@@ -1674,8 +1746,13 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                     }
                                 }
 
-                                else if (port->state == TCP_SOCK_ESTAB)
+                                /* Process according to port state. */
+                                switch (port->state)
                                 {
+
+                                /* If we are in established state. */
+                                case TCP_SOCK_ESTAB:
+
                                     /* A duplicate ACK is received. */
                                     /* SEG.ACK = SND.UNA ? */
                                     if (port->snd_una == seg_ack)
@@ -1708,7 +1785,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                             /* Release REXMT Timer. */
                                             tcp_rtx_stop(port);
 
-                                            /* We can now send more data on this port. */
+                                            /* We should start sending more data on this port. */
                                             resume_task = TRUE;
                                             resume_flags = (FS_BLOCK_WRITE);
                                         }
@@ -1718,10 +1795,12 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                         /* Invalid TCP ACK, drop this packet. */
                                         invalid_ack = TRUE;
                                     }
+
+                                    break;
                                 }
 
                                 /* If we have not got an invalid TCP ACK. */
-                                if ((port->state == TCP_SOCK_ESTAB) && (invalid_ack != TRUE))
+                                if (invalid_ack != TRUE)
                                 {
                                     /* If we did actually receive a segment. */
                                     if (seg_len > 0)
@@ -1730,18 +1809,83 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                         status = tcp_rx_buffer_merge(port, buffer, seg_len, seg_seq);
                                     }
 
-                                    /* SEG.FIN is on ? */
-                                    if (flags & TCP_HDR_FLAG_FIN)
+                                    /* Process according to port state. */
+                                    switch (port->state)
                                     {
-                                        /* FIN bit Processing (SND.NXT, RCV.NXT, SEG.SEQ) */
-                                        tcp_process_finbit(port, (seg_seq + seg_len));
 
-                                        /* Move to last ACK. */
-                                        port->state = TCP_SOCK_LAST_ACK;
+                                    /* If we are in established state. */
+                                    case TCP_SOCK_ESTAB:
+                                        /* SEG.FIN is on ? */
+                                        if (flags & TCP_HDR_FLAG_FIN)
+                                        {
+                                            /* FIN bit Processing (SND.NXT, RCV.NXT, SEG.SEQ) */
+                                            tcp_process_finbit(port, (seg_seq + seg_len));
 
-                                        /* Indicate this status change. */
-                                        resume_task = TRUE;
-                                        resume_flags = (FS_BLOCK_READ | FS_BLOCK_WRITE);
+                                            /* Move to last ACK. */
+                                            port->state = TCP_SOCK_LAST_ACK;
+
+                                            /* Indicate this status change. */
+                                            resume_task = TRUE;
+                                            resume_flags = (FS_BLOCK_READ | FS_BLOCK_WRITE);
+                                        }
+                                        break;
+
+                                    /* If we are in FIN-WAIT-1 state. */
+                                    case TCP_SOCK_FIN_WAIT_1:
+
+                                        /* If remote has ACKed our FIN segment. */
+                                        if (seg_ack == port->snd_nxt)
+                                        {
+                                            /* SEG.FIN is on? */
+                                            if (flags & TCP_HDR_FLAG_FIN)
+                                            {
+                                                /* FIN bit Processing (SND.NXT, RCV.NXT, SEG.SEQ) */
+                                                tcp_process_finbit(port, (seg_seq + seg_len));
+
+                                                /* Use the RTX timer for time wait. */
+                                                tcp_rtx_start_timeout(port, (2 * TCP_MSL));
+
+                                                /* Move to the TIME-WAIT state. */
+                                                port->state = TCP_SOCK_TIME_WAIT;
+                                            }
+                                            else
+                                            {
+                                                /* Move to the FIN-WAIT-2 state. */
+                                                port->state = TCP_SOCK_FIN_WAIT_2;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            /* SEG.FIN is on? */
+                                            if (flags & TCP_HDR_FLAG_FIN)
+                                            {
+                                                /* FIN bit Processing (SND.NXT, RCV.NXT, SEG.SEQ) */
+                                                tcp_process_finbit(port, (seg_seq + seg_len));
+
+                                                /* Move to the closing state. */
+                                                port->state = TCP_SOCK_CLOSING;
+                                            }
+                                        }
+
+                                        break;
+
+                                    /* If we are in FIN-WAIT-2 state. */
+                                    case TCP_SOCK_FIN_WAIT_2:
+
+                                        /* SEG.FIN is on? */
+                                        if (flags & TCP_HDR_FLAG_FIN)
+                                        {
+                                            /* FIN bit Processing (SND.NXT, RCV.NXT, SEG.SEQ) */
+                                            tcp_process_finbit(port, (seg_seq + seg_len));
+
+                                            /* Use the RTX timer for time wait. */
+                                            tcp_rtx_start_timeout(port, (2 * TCP_MSL));
+
+                                            /* Move to the TIME-WAIT state. */
+                                            port->state = TCP_SOCK_TIME_WAIT;
+                                        }
+
+                                        break;
                                     }
                                 }
 
@@ -1750,21 +1894,49 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                             /* If we are waiting for last ACK. */
                             case TCP_SOCK_LAST_ACK:
 
+                            /* If we are in closing state. */
+                            case TCP_SOCK_CLOSING:
+
+                            /* If we are in time wait state. */
+                            case TCP_SOCK_TIME_WAIT:
+
                                 /* Match the SEG.ACK number. */
                                 /* SND.UNA < SEG.ACK =< SND.NXT ? */
                                 if ((port->snd_una < seg_ack) && (seg_ack <= port->snd_nxt))
                                 {
                                     /* Our FIN has been ACKed? */
-                                    /* We can only queue one segment at a time
-                                     * so this must be the FIN segment. */
+                                    if (seg_ack == port->snd_nxt)
+                                    {
+                                        switch (port->state)
+                                        {
+                                        /* If we are waiting for last ACK. */
+                                        case TCP_SOCK_LAST_ACK:
 
-                                    /* Move to the closed state. */
-                                    port->state = TCP_SOCK_COLSED;
+                                            /* Move to the closed state. */
+                                            port->state = TCP_SOCK_COLSED;
 
-                                    /* Flush Rexmt Queue and indicate state change.  */
-                                    flush_rtx = TRUE;
-                                    resume_task = TRUE;
-                                    resume_flags = (FS_BLOCK_READ | FS_BLOCK_WRITE);
+                                            /* Flush Rexmt Queue and indicate state change.  */
+                                            flush_rtx = TRUE;
+                                            resume_task = TRUE;
+                                            resume_flags = (FS_BLOCK_READ | FS_BLOCK_WRITE);
+
+                                            break;
+
+                                        /* If we are in closing state. */
+                                        case TCP_SOCK_CLOSING:
+
+                                        /* If we are in time wait state. */
+                                        case TCP_SOCK_TIME_WAIT:
+
+                                            /* Use the RTX timer for time wait. */
+                                            tcp_rtx_start_timeout(port, (2 * TCP_MSL));
+
+                                            /* Move to the TIME-WAIT state. */
+                                            port->state = TCP_SOCK_TIME_WAIT;
+
+                                            break;
+                                        }
+                                    }
                                 }
 
                                 break;
@@ -2138,23 +2310,33 @@ void tcp_close(TCP_PORT *port)
         /* If we are at established state. */
         case TCP_SOCK_ESTAB:
 
-            /* TODO Queue this CLOSE request until all queued SENDs have been
-             * segmentized and sent. */
+            /* Queue this CLOSE request until all queued SENDs have been
+             * segmentized and sent and ACKed. */
+            status = tcp_port_wait(port, FS_BLOCK_WRITE);
 
-            /* Segment (SEQ=SND.NXT, CTL=FIN) */
-            tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_FIN), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, TRUE);
-
-            switch (port->state)
+            if (status == SUCCESS)
             {
-            /* If we have received SYN. */
-            case TCP_SOCK_SYN_RCVD:
+                /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=FIN,ACK) */
+                status = tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_FIN | TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, TRUE);
+            }
 
-            /* If we are at established state. */
-            case TCP_SOCK_ESTAB:
+            if (status == SUCCESS)
+            {
+                /* We have sent a FIN. */
+                port->snd_nxt = port->snd_nxt + 1;
 
-                /* Move to FIN wait state. */
-                port->state = TCP_SOCK_FIN_WAIT_1;
-                break;
+                switch (port->state)
+                {
+                /* If we have received SYN. */
+                case TCP_SOCK_SYN_RCVD:
+
+                /* If we are at established state. */
+                case TCP_SOCK_ESTAB:
+
+                    /* Move to FIN wait state. */
+                    port->state = TCP_SOCK_FIN_WAIT_1;
+                    break;
+                }
             }
 
             break;
@@ -2173,8 +2355,12 @@ void tcp_close(TCP_PORT *port)
             }
         }
 
-        /* Resume any tasks waiting for state change for this port. */
-        tcp_resume_socket(port, (FS_BLOCK_READ | FS_BLOCK_WRITE));
+        /* If we have successfully  moved to the closed state. */
+        if (status == SUCCESS)
+        {
+            /* Resume any tasks waiting for state change for this port. */
+            tcp_resume_socket(port, (FS_BLOCK_READ | FS_BLOCK_WRITE));
+        }
 
         /* Release lock for TCP port. */
         fd_release_lock((FD)port);

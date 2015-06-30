@@ -25,6 +25,7 @@
 #define TCP_WND_SIZE                (1024)
 #define TCP_WND_SCALE               (2)
 #define TCP_RTO                     (1 * OS_TICKS_PER_SEC)
+#define TCP_MSL                     (5 * OS_TICKS_PER_SEC)
 #define TCP_INIT_SS_THRESH          (512)
 #define TCP_INIT_CWND               (128)
 
@@ -72,6 +73,7 @@
 #define TCP_SOCK_FIN_WAIT_2         (7)
 #define TCP_SOCK_LAST_ACK           (8)
 #define TCP_SOCK_TIME_WAIT          (9)
+#define TCP_SOCK_CLOSING            (10)
 
 /* TCP socket flags. */
 #define TCP_FLAG_WND_SCALE          (0x01)
