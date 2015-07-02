@@ -69,6 +69,19 @@ void net_init()
 } /* net_buffer_init */
 
 /*
+ * net_port_random
+ * @return: A random 16-bit port number will be returned here.
+ * This function will generate a random 16-bit port number and return it's
+ * value.
+ */
+uint16_t net_port_random()
+{
+    /* Return a random port number. */
+    return ((uint16_t)(current_hardware_tick() & 0xFFFF));
+
+} /* net_port_random */
+
+/*
  * net_port_match
  * @port1: Port needed to be matched.
  * @port2: Given port.
