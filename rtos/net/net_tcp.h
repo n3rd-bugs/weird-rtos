@@ -25,7 +25,7 @@
 #define TCP_WND_SIZE                (1024)
 #define TCP_WND_SCALE               (2)
 #define TCP_RTO                     (1 * OS_TICKS_PER_SEC)
-#define TCP_MSL                     (5 * OS_TICKS_PER_SEC)
+#define TCP_MSL                     (60 * OS_TICKS_PER_SEC)
 #define TCP_INIT_SS_THRESH          (512)
 #define TCP_INIT_CWND               (128)
 
@@ -167,12 +167,10 @@ struct _tcp_port
     TCP_RTX         rtx_data;
 
     /* Receive sequence numbers. */
-    uint32_t        irs;
     uint32_t        rcv_nxt;
     uint32_t        rcv_wnd;
 
     /* Send sequence numbers. */
-    uint32_t        iss;
     uint32_t        snd_nxt;
     uint32_t        snd_una;
     uint32_t        snd_wnd;
@@ -237,6 +235,7 @@ void tcp_unregister(TCP_PORT *);
 int32_t net_process_tcp(FS_BUFFER *, uint32_t, uint32_t, uint32_t, uint32_t);
 int32_t tcp_header_add(FS_BUFFER *, SOCKET_ADDRESS *, uint32_t, uint32_t, uint16_t, uint16_t, uint32_t, uint8_t);
 int32_t tcp_listen(TCP_PORT *);
+int32_t tcp_connect(TCP_PORT *);
 int32_t tcp_accept(TCP_PORT *, TCP_PORT *);
 void tcp_close(TCP_PORT *);
 

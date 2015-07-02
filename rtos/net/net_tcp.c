@@ -24,6 +24,7 @@
 
 /* Global TCP data. */
 TCP_DATA tcp_data;
+volatile uint32_t tcp_iss;
 
 /* Internal function prototypes. */
 static void tcp_port_initialize(TCP_PORT *);
@@ -46,6 +47,7 @@ static void tcp_process_finbit(TCP_PORT *, uint32_t);
 static void tcp_window_update(TCP_PORT *, uint16_t);
 static uint8_t tcp_oo_buffer_process(void *, void *);
 static int32_t tcp_rx_buffer_merge(TCP_PORT *, FS_BUFFER *, uint16_t, uint32_t);
+static void tcp_buffer_get_ihl_flags(FS_BUFFER *, uint8_t *, uint16_t *);
 static int32_t tcp_read_buffer(void *, uint8_t *, int32_t);
 static int32_t tcp_read_data(void *, uint8_t *, int32_t);
 static int32_t tcp_write_buffer(void *, uint8_t *, int32_t);
@@ -637,7 +639,6 @@ static void tcp_rtx_callback(void *data)
     {
         switch (port->state)
         {
-
         /* If we are in time wait state. */
         case TCP_SOCK_TIME_WAIT:
 
@@ -659,6 +660,9 @@ static void tcp_rtx_callback(void *data)
 
             switch (port->state)
             {
+            /* If we have sent a SYN. */
+            case TCP_SOCK_SYN_SENT:
+
             /* If we are in SYN received state. */
             case TCP_SOCK_SYN_RCVD:
 
@@ -719,7 +723,7 @@ static void tcp_rtx_callback(void *data)
         else
         {
             /* Stop this timer. */
-            port->rtx_data.suspend.timeout = (uint32_t)(current_system_tick() + next_timeout);
+            port->rtx_data.suspend.timeout = MAX_WAIT;
         }
 
         /* Release lock for this TCP port. */
@@ -804,6 +808,15 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
 
             if (status == SUCCESS)
             {
+                /* Keep updating the ISS we are using for each sequence number
+                 * we increment. */
+                if (tcp_iss < port->snd_nxt)
+                {
+                    /* Next TCP ISS should be greater than out last segment's
+                     * sequence number. */
+                    tcp_iss = port->snd_nxt;
+                }
+
                 /* Add TCP header with ACK and SYN flag. */
                 status = tcp_header_add(buffer, socket_address, seq_num, ack_num, flags, wnd_size, opt_size, 0);
             }
@@ -1153,6 +1166,25 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
     return (status);
 
 } /* tcp_rx_buffer_merge */
+
+/*
+ * tcp_buffer_get_ihl_flags
+ * @buffer: Buffer from which headers are required.
+ * @ihl: Internet header length will be returned here.
+ * @flags: TCP flag field will be returned here.
+ * This function will read and return the IHL and TCP header flags for the
+ * given TCP buffer.
+ */
+static void tcp_buffer_get_ihl_flags(FS_BUFFER *buffer, uint8_t *ihl, uint16_t *flags)
+{
+    /* Peek the version and IHL. */
+    OS_ASSERT(fs_buffer_pull_offset(buffer, ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+    (*ihl) = (uint8_t)(((*ihl) & IPV4_HDR_IHL_MASK) << 2);
+
+    /* Pull the TCP flags. */
+    OS_ASSERT(fs_buffer_pull_offset(buffer, flags, 2, (uint32_t)((*ihl) + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+
+} /* tcp_buffer_get_ihl_flags */
 
 /*
  * tcp_read_buffer
@@ -1542,19 +1574,20 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                     /* A connection request is identified by a SYN request. */
                     else if (flags & TCP_HDR_FLAG_SYN)
                     {
+                        /* If system is not deprived to buffers. */
                         if (fs_buffer_threshold_locked(buffer->fd) == FALSE)
                         {
-                            /* Push this buffer on the port RX list and resume any
-                             * tasks waiting for it. There we will save TCB data for a
-                             * new socket. */
-                            tcp_resume_socket(port, FS_BLOCK_READ);
-
                             /* Add this buffer in the buffer list for TCP port. */
                             sll_append(&port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
                             /* Buffer was passed to the port, return status to
                              * the caller. */
                             status = NET_BUFFER_CONSUMED;
+
+                            /* Resume any tasks waiting to accept new
+                             * connections on this port. */
+                            resume_task = TRUE;
+                            resume_flags = (FS_BLOCK_READ);
                         }
                         else
                         {
@@ -1562,6 +1595,108 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                              * batter to drop this request. */
                             status = NET_THRESHOLD;
                         }
+                    }
+
+                    break;
+
+                /* If we have sent a SYN. */
+                case TCP_SOCK_SYN_SENT:
+
+                    /* SEG.ACK is on? */
+                    if (flags & TCP_HDR_FLAG_ACK)
+                    {
+                        /* Is ACK acceptable. */
+                        /* (SEG.ACK >= SND.UNA) AND (SEG.ACK <= SND.NXT) ? */
+                        if ((seg_ack >= port->snd_una) && (seg_ack <= port->snd_nxt))
+                        {
+                            /* If RST is on. */
+                            if (flags & TCP_HDR_FLAG_RST)
+                            {
+                                /* Move to the closed state. */
+                                port->state = TCP_SOCK_COLSED;
+
+                                /* Flush Rexmt Queue and indicate state change.  */
+                                flush_rtx = TRUE;
+                                resume_task = TRUE;
+                                resume_flags = (FS_BLOCK_READ);
+                            }
+
+                            else
+                            {
+                                /* If SYN is set. */
+                                if (flags & TCP_HDR_FLAG_SYN)
+                                {
+                                    /* If our SYN was ACKed. */
+                                    if (seg_ack == port->snd_nxt)
+                                    {
+                                        /* Clear the TCP port option flag for window scale. */
+                                        port->flags &= (TCP_FLAG_WND_SCALE);
+
+                                        /* Process received TCP options. */
+                                        status = tcp_process_options(buffer, port, (uint32_t)(ihl + TCP_HRD_SIZE), (uint16_t)(((flags & TCP_HDR_HDR_LEN_MSK) >> (TCP_HDR_HDR_LEN_SHIFT - 2)) - TCP_HRD_SIZE));
+
+                                        /* If TCP options were successfully parsed. */
+                                        if (status == SUCCESS)
+                                        {
+                                            /* If remote did not sent a window scale option. */
+                                            if ((port->flags & TCP_FLAG_WND_SCALE) == 0)
+                                            {
+                                                /* Don't use window scale for both receive and send. */
+                                                port->snd_wnd_scale = port->rcv_wnd_scale = 0;
+                                            }
+                                            /* RCV.NXT := SEG.SEQ + 1 */
+                                            port->rcv_nxt = seg_seq + 1;
+
+                                            /* SND.UNA := SEG.ACK */
+                                            port->snd_una = seg_ack;
+
+                                            /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=ACK) */
+                                            tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+
+                                            /* Move to the established state. */
+                                            port->state = TCP_SOCK_ESTAB;
+
+                                            /* If we have some space in send window. */
+                                            if (port->snd_wnd > 0)
+                                            {
+                                                /* Resume any tasks waiting to write on
+                                                 * this TCP port. */
+                                                resume_flags = FS_BLOCK_WRITE;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            /* Send a RST in response. */
+                                            /* Segment (SEQ=SEG.ACK, CTL=RST) */
+                                            tcp_send_segment(port, &port_param.socket_address, seg_ack, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+
+                                            /* Move to the closed state. */
+                                            port->state = TCP_SOCK_COLSED;
+                                        }
+
+                                        /* Flush Rexmt Queue and indicate state change.  */
+                                        flush_rtx = TRUE;
+                                        resume_task = TRUE;
+                                        resume_flags |= (FS_BLOCK_READ);
+                                    }
+                                }
+                            }
+                        }
+
+                        /* ACK is not acceptable. */
+                        else
+                        {
+                            /* Send a RST in response. */
+                            /* Segment (SEQ=SND.NXT, CTL=RST) */
+                            tcp_send_segment(port, &port->socket_address, port->snd_nxt, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+                        }
+
+                    }
+
+                    /* SEG.RST is on? */
+                    else if (flags & TCP_HDR_FLAG_RST)
+                    {
+                        ;
                     }
 
                     break;
@@ -1954,21 +2089,21 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                         }
                     }
 
-                    /* If we need to flush Rexmt Queue. */
-                    if (flush_rtx == TRUE)
-                    {
-                        /* Stop retransmission of any segment. */
-                        tcp_rtx_stop(port);
-                    }
-
-                    /* if we need to indicate status change. */
-                    if (resume_task == TRUE)
-                    {
-                        /* Resume tasks for the calculated condition. */
-                        tcp_resume_socket(port, resume_flags);
-                    }
-
                     break;
+                }
+
+                /* If we need to flush Rexmt Queue. */
+                if (flush_rtx == TRUE)
+                {
+                    /* Stop retransmission of any segment. */
+                    tcp_rtx_stop(port);
+                }
+
+                /* if we need to indicate status change. */
+                if (resume_task == TRUE)
+                {
+                    /* Resume tasks for the calculated condition. */
+                    tcp_resume_socket(port, resume_flags);
                 }
 
                 /* Release lock for this TCP port. */
@@ -2055,7 +2190,7 @@ int32_t tcp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint32
  * tcp_listen
  * @port: Port on which we need to to listen.
  * @return: A success status will be returned if TCP port was successfully
- *  configured to listen
+ *  configured to listen.
  * This function will configure a TCP port to listen for incoming connections.
  */
 int32_t tcp_listen(TCP_PORT *port)
@@ -2080,6 +2215,89 @@ int32_t tcp_listen(TCP_PORT *port)
 } /* tcp_listen */
 
 /*
+ * tcp_connect
+ * @port: TCP port for which we need to establish connect.
+ * @return: A success status will be returned if TCP port was successfully
+ *  connected to the remote.
+ *  NET_NO_ACTION will be returned if TCP socket state is not closed.
+ * This function will try to establish a TCP connection with the foreign TCP
+ * address.
+ */
+int32_t tcp_connect(TCP_PORT *port)
+{
+    int32_t status = SUCCESS;
+    uint32_t iss;
+    NET_DEV *net_device;
+
+    /* Obtain lock for this port. */
+    status = fd_get_lock((FD)port);
+
+    if (status == SUCCESS)
+    {
+        /* Get the local networking interface descriptor. */
+        net_device = ipv4_get_source_device(port->socket_address.local_ip);
+
+        /* If we have a valid networking device and we are in closed state. */
+        if ((net_device != NULL) && (port->state == TCP_SOCK_COLSED))
+        {
+            /* Select a new ISS. */
+            iss = (tcp_iss + 1);
+
+            /* SND.UNA = ISS. */
+            port->snd_una = iss;
+
+            /* SND.NXT = ISS + 1. */
+            port->snd_nxt = iss + 1;
+
+            /* Initialize TCP max segment size for this socket. */
+            port->mss = (uint16_t)MIN((net_device_get_mtu(net_device->fd) - (IPV4_HDR_SIZE + TCP_HRD_SIZE)), TCP_WND_SIZE);
+
+            /* Initialize TCP port configuration. */
+            tcp_port_initialize(port);
+
+            /* Send SYN-ACK in response with our TCP options. */
+            /* Segment (SEQ=ISS, CTL=SYN) */
+            status = tcp_send_segment(port, &port->socket_address, iss, 0, (TCP_HDR_FLAG_SYN), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, TRUE);
+        }
+        else
+        {
+            /* Return an error that specified action was not taken. */
+            status = NET_NO_ACTION;
+        }
+
+        if (status == SUCCESS)
+        {
+            /* Move to the SYN sent state. */
+            port->state = TCP_SOCK_SYN_SENT;
+
+            /* Wait for a state change. */
+            while ((status == SUCCESS) && (port->state == TCP_SOCK_SYN_SENT))
+            {
+                /* Keep waiting until we get out of this state. */
+                status = tcp_port_wait(port, FS_BLOCK_READ);
+            }
+
+            if (status == SUCCESS)
+            {
+                /* If connection was not established. */
+                if (port->state != TCP_SOCK_ESTAB)
+                {
+                    /* Connection was refused. */
+                    status = NET_REFUSED;
+                }
+            }
+        }
+
+        /* Release lock for this port. */
+        fd_release_lock((FD)port);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* tcp_connect */
+
+/*
  * tcp_accept
  * @server_port: Server port for which a connection is needed to be accepted.
  * @client_port: Port which will be used to accept the new connection. Caller
@@ -2096,6 +2314,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
 {
     int32_t status = SUCCESS;
     FS_BUFFER *buffer;
+    uint32_t irs, iss;
     uint16_t flags;
     uint8_t ihl;
 
@@ -2140,12 +2359,8 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
                     /* Obtain lock for buffer file descriptor. */
                     OS_ASSERT(fd_get_lock(buffer->fd));
 
-                    /* Peek the version and IHL. */
-                    OS_ASSERT(fs_buffer_pull_offset(buffer, &ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
-                    ihl = (uint8_t)((ihl & IPV4_HDR_IHL_MASK) << 2);
-
-                    /* Pull the TCP flags. */
-                    OS_ASSERT(fs_buffer_pull_offset(buffer, &flags, 2, (uint32_t)(ihl + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+                    /* Get value for IHL and TCP header flags. */
+                    tcp_buffer_get_ihl_flags(buffer, &ihl, &flags);
 
                     /* Initialize TCP max segment size for the client socket. */
                     client_port->mss = (uint16_t)MIN((net_device_get_mtu(buffer->fd) - (IPV4_HDR_SIZE + TCP_HRD_SIZE)), TCP_WND_SIZE);
@@ -2175,21 +2390,21 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
 
                         /* Save the remote sequence number. */
                         /* Set IRS = SEG.SEQ. */
-                        OS_ASSERT(fs_buffer_pull_offset(buffer, &client_port->irs, 4, (uint32_t)(ihl + TCP_HRD_SEQ_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        OS_ASSERT(fs_buffer_pull_offset(buffer, &irs, 4, (uint32_t)(ihl + TCP_HRD_SEQ_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
                         /* Set RCV.NXT = SEG.SEQ + 1. */
-                        client_port->rcv_nxt = (uint32_t)(client_port->irs + 1);
+                        client_port->rcv_nxt = (uint32_t)(irs + 1);
 
                         /* Generate a ISS. */
-                        client_port->iss = 0;
+                        iss = (tcp_iss + 1);
 
                         /* Segment will be sent in TCP event. */
 
                         /* SND.NXT = ISS + 1. */
-                        client_port->snd_nxt = client_port->iss + 1;
+                        client_port->snd_nxt = iss + 1;
 
                         /* SND.UNA = ISS. */
-                        client_port->snd_una = client_port->iss;
+                        client_port->snd_una = iss;
 
                         /* A SYN was received. */
 
@@ -2201,7 +2416,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
 
                         /* Send SYN-ACK in response with our TCP options. */
                         /* Segment (SEQ=ISS, ACK=RCV.NXT, CTL=SYN,ACK) */
-                        tcp_send_segment(client_port, &client_port->socket_address, client_port->iss, client_port->rcv_nxt, (TCP_HDR_FLAG_ACK | TCP_HDR_FLAG_SYN), (uint16_t)(client_port->rcv_wnd >> client_port->rcv_wnd_scale), NULL, 0, TRUE);
+                        tcp_send_segment(client_port, &client_port->socket_address, iss, client_port->rcv_nxt, (TCP_HDR_FLAG_ACK | TCP_HDR_FLAG_SYN), (uint16_t)(client_port->rcv_wnd >> client_port->rcv_wnd_scale), NULL, 0, TRUE);
 
                         /* Obtain lock for buffer file descriptor. */
                         OS_ASSERT(fd_get_lock(buffer->fd));
@@ -2299,6 +2514,9 @@ void tcp_close(TCP_PORT *port)
         /* If we are at listen state. */
         case TCP_SOCK_LISTEN:
 
+        /* If we have sent a SYN. */
+        case TCP_SOCK_SYN_SENT:
+
             /* Move to the closed state. */
             port->state = TCP_SOCK_COLSED;
 
@@ -2325,18 +2543,8 @@ void tcp_close(TCP_PORT *port)
                 /* We have sent a FIN. */
                 port->snd_nxt = port->snd_nxt + 1;
 
-                switch (port->state)
-                {
-                /* If we have received SYN. */
-                case TCP_SOCK_SYN_RCVD:
-
-                /* If we are at established state. */
-                case TCP_SOCK_ESTAB:
-
-                    /* Move to FIN wait state. */
-                    port->state = TCP_SOCK_FIN_WAIT_1;
-                    break;
-                }
+                /* Move to FIN wait state. */
+                port->state = TCP_SOCK_FIN_WAIT_1;
             }
 
             break;
