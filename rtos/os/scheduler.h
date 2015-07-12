@@ -20,25 +20,31 @@
 #define CONFIG_PERIODIC_TASK
 
 /* Scheduler priority configurations. */
-#define CONFIG_PERIODIC_PIORITY     0
-#define CONFIG_SLEEP_PIORITY        254
-#define CONFIG_APERIODIC_PIORITY    255
+#define CONFIG_PERIODIC_PIORITY     (0)
+#define CONFIG_SLEEP_PIORITY        (254)
+#define CONFIG_APERIODIC_PIORITY    (255)
 
 /* Scheduler lock configuration. */
-#define SCHEDULER_MAX_LOCK          5
-#define SCHEDULER_MAX_IRQ_LOCK      1
+#define SCHEDULER_MAX_LOCK          (5)
+#define SCHEDULER_MAX_IRQ_LOCK      (1)
 
 /* These defines different scheduler classes. */
-#define TASK_APERIODIC              0x01
-#define TASK_PERIODIC               0x02
-#define TASK_IDLE                   0x03
+#define TASK_APERIODIC              (0x01)
+#define TASK_PERIODIC               (0x02)
+#define TASK_IDLE                   (0x03)
+
+/* Defines the origin from which this task is being yielded.  */
+#define YIELD_INIT                  (0x00)
+#define YIELD_SYSTEM                (0x01)
+#define YIELD_MANUAL                (0x02)
+#define YIELD_CANNOT_RUN            (0x03)
 
 /* Some task resume status. */
-#define TASK_SUSPENDED              0
-#define TASK_WILL_SUSPENDED         1
-#define TASK_RESUME                 2
-#define TASK_FINISHED               3
-#define TASK_RESUME_SLEEP           4
+#define TASK_SUSPENDED              (0)
+#define TASK_WILL_SUSPENDED         (1)
+#define TASK_RESUME                 (2)
+#define TASK_FINISHED               (3)
+#define TASK_RESUME_SLEEP           (4)
 
 /* Scheduler class definition. */
 typedef struct _scheduler SCHEDULER;

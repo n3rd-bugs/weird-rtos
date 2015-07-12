@@ -21,16 +21,16 @@
 #include <os_target.h>
 
 /* Some return codes. */
-#define SUCCESS             0
-#define FALSE               0
-#define TRUE                1
-#define PARTIAL             2
+#define SUCCESS             (0)
+#define FALSE               (0)
+#define TRUE                (1)
+#define PARTIAL             (2)
 #define MAX_WAIT            (uint32_t)(-1)
 
 #ifdef NULL
 #undef NULL
 #endif
-#define NULL                0
+#define NULL                (0)
 
 /* Number of system ticks per second. */
 #define OS_TICKS_PER_SEC    (uint32_t)(100)
@@ -45,12 +45,6 @@
 #define OS_MASK_REG32(x, clr, set)  OS_WRITE_REG32(x, (((OS_READ_REG32(x)) & (uint32_t)(~clr)) | set))
 #define MIN(a, b)                   (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
-
-/* Defines the origin from which this task is being yielded.  */
-#define YIELD_INIT              0x00
-#define YIELD_SYSTEM            0x01
-#define YIELD_MANUAL            0x02
-#define YIELD_CANNOT_RUN        0x03
 
 /* Alignment manipulation macros. */
 #define ALLIGN_SIZE             (uint32_t)(0x4)
