@@ -21,20 +21,20 @@
 #include <os_target.h>
 
 /* Some return codes. */
-#define SUCCESS             (0)
-#define FALSE               (0)
-#define TRUE                (1)
-#define PARTIAL             (2)
-#define MAX_WAIT            (uint32_t)(-1)
+#define SUCCESS                     (0)
+#define FALSE                       (0)
+#define TRUE                        (1)
+#define PARTIAL                     (2)
+#define MAX_WAIT                    (uint32_t)(-1)
 
 #ifdef NULL
 #undef NULL
 #endif
-#define NULL                (0)
+#define NULL                        (0)
 
 /* Number of system ticks per second. */
-#define OS_TICKS_PER_SEC    (uint32_t)(100)
-#define OS_TICK64_PER_SEC   (uint32_t)(1000000)
+#define OS_TICKS_PER_SEC            (uint32_t)(100)
+#define OS_TICK64_PER_SEC           (uint32_t)(1000000)
 
 /* Some useful macros. */
 #define OFFSETOF(type, field)       ((int) &(((type *) 0)->field))
@@ -47,19 +47,19 @@
 #define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
 
 /* Alignment manipulation macros. */
-#define ALLIGN_SIZE             (uint32_t)(0x4)
-#define ALLIGN_FLOOR_N(n, num)  (uint32_t)(((n) % num) ? ((n) & (uint32_t)~(num - 1)) : (n))
-#define ALLIGN_CEIL_N(n, num)   (uint32_t)(((n) % num) ? ((n) & (uint32_t)~(num - 1)) + num : (n))
-#define ALLIGN_FLOOR(n)         (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(ALLIGN_SIZE - 1)) : (n))
-#define ALLIGN_CEIL(n)          (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(ALLIGN_SIZE - 1)) + ALLIGN_SIZE : (n))
+#define ALLIGN_SIZE                 (uint32_t)(0x4)
+#define ALLIGN_FLOOR_N(n, num)      (uint32_t)(((n) % num) ? ((n) & (uint32_t)~(num - 1)) : (n))
+#define ALLIGN_CEIL_N(n, num)       (uint32_t)(((n) % num) ? ((n) & (uint32_t)~(num - 1)) + num : (n))
+#define ALLIGN_FLOOR(n)             (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(ALLIGN_SIZE - 1)) : (n))
+#define ALLIGN_CEIL(n)              (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(ALLIGN_SIZE - 1)) + ALLIGN_SIZE : (n))
 
 /* ISR routines. */
 extern TASK *return_task;
-#define OS_ISR_ENTER();         return_task = get_current_task();           \
-                                set_current_task(NULL);
+#define OS_ISR_ENTER();             return_task = get_current_task();           \
+                                    set_current_task(NULL);
 
-#define OS_ISR_EXIT();          set_current_task(return_task);              \
-                                return_task = NULL;
+#define OS_ISR_EXIT();              set_current_task(return_task);              \
+                                    return_task = NULL;
 
 /* Public function prototypes. */
 void os_run();
@@ -67,7 +67,7 @@ void task_yield();
 
 /* External function prototypes. */
 void sleep(uint32_t);
-#define sleep_ms(ms)            sleep( ((uint32_t)ms * OS_TICKS_PER_SEC) / (1000) )
+#define sleep_ms(ms)                sleep( ((uint32_t)ms * OS_TICKS_PER_SEC) / (1000) )
 
 /* Internal functions should not be called from user applications. */
 void os_process_system_tick();
