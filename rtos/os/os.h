@@ -33,8 +33,8 @@
 #define NULL                0
 
 /* Number of system ticks per second. */
-#define OS_TICKS_PER_SEC    100
-#define OS_TICK64_PER_SEC   1000000
+#define OS_TICKS_PER_SEC    (uint32_t)(100)
+#define OS_TICK64_PER_SEC   (uint32_t)(1000000)
 
 /* Some useful macros. */
 #define OFFSETOF(type, field)       ((int) &(((type *) 0)->field))
