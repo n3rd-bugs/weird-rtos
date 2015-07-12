@@ -115,6 +115,66 @@ void fs_buffer_test_task(void *argv)
     /* Check if we have anticipated data. */
     OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
 
+    /* Push test data on the buffer on head. */
+    fs_buffer_push(buffer, (uint8_t *)test_data, (TEST_NUM_BUFFER * TEST_BUFFER_SIZE), FS_BUFFER_HEAD);
+
+    /* Pull all the data that we pushed in this buffer. */
+    memset(test_cmp_buffer, 0, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER));
+    fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, (FS_BUFFER_INPLACE));
+
+    /* Check if we have anticipated data. */
+    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+
+    for (i = 0; i < (TEST_BUFFER_SIZE * TEST_NUM_BUFFER); i ++)
+    {
+        /* Push test data on the buffer on head with an offset. */
+        fs_buffer_push_offset(buffer, (uint8_t *)(test_data + i), (uint32_t)((TEST_NUM_BUFFER * TEST_BUFFER_SIZE) - i), i, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+
+        /* Pull all the data that we pushed in this buffer. */
+        memset(test_cmp_buffer, 0, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER));
+        fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, (FS_BUFFER_INPLACE));
+
+        /* Check if we have anticipated data. */
+        OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+    }
+
+    /* Pull all the data that we pushed on this buffer. */
+    memset(test_cmp_buffer, 0, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER));
+    fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, 0);
+
+    /* Check if we have anticipated data. */
+    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+
+    /* Push test data on the buffer on head as packet. */
+    fs_buffer_push(buffer, (uint8_t *)test_data, (TEST_NUM_BUFFER * TEST_BUFFER_SIZE), (FS_BUFFER_PACKED | FS_BUFFER_HEAD));
+
+    /* Pull all the data that we pushed in this buffer. */
+    memset(test_cmp_buffer, 0, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER));
+    fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE));
+
+    /* Check if we have anticipated data. */
+    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+
+    for (i = 1; i < (TEST_BUFFER_SIZE * TEST_NUM_BUFFER); i ++)
+    {
+        /* Push test data on the buffer on head with an offset. */
+        fs_buffer_push_offset(buffer, (uint8_t *)test_data, (uint32_t)((TEST_NUM_BUFFER * TEST_BUFFER_SIZE) - i), i, (FS_BUFFER_PACKED | FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+
+        /* Pull all the data that we pushed in this buffer. */
+        memset(test_cmp_buffer, 0, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER));
+        fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE));
+
+        /* Check if we have anticipated data. */
+        OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+    }
+
+    /* Pull all the data that we pushed on this buffer. */
+    memset(test_cmp_buffer, 0, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER));
+    fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, (FS_BUFFER_PACKED));
+
+    /* Check if we have anticipated data. */
+    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+
 }
 
 int main(void)
