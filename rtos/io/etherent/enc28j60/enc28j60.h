@@ -33,7 +33,7 @@
 #endif
 
 /* Error code definitions. */
-#define ENC28J60_SPI_ERROR      -11000
+#define ENC28J60_SPI_ERROR          -11000
 
 /* ENC28J60 device configuration. */
 #define ENC28J60_REV_ID             (0x06)
@@ -73,11 +73,11 @@
 #define ENC28J60_TX_MIN_BUF_SIZE    (ETH_MTU_SIZE + ENC28J60_TX_HEAD_SIZE)
 
 /* ENC28J60 RX/TX FIFO configuration. */
-#define ENC28J60_FIFO_SIZE      (0x2000)
-#define ENC28J60_RX_START       (0)
-#define ENC28J60_RX_END         (((ENC28J60_FIFO_SIZE - ENC28J60_TX_MIN_BUF_SIZE) & 0xFFFE) - 1)
-#define ENC28J60_TX_START       ((ENC28J60_FIFO_SIZE - ENC28J60_TX_MIN_BUF_SIZE) & 0xFFFE)
-#define ENC28J60_TX_END         (ENC28J60_FIFO_SIZE - 1)
+#define ENC28J60_FIFO_SIZE          (0x2000)
+#define ENC28J60_RX_START           (0)
+#define ENC28J60_RX_END             (((ENC28J60_FIFO_SIZE - ENC28J60_TX_MIN_BUF_SIZE) & 0xFFFE) - 1)
+#define ENC28J60_TX_START           ((ENC28J60_FIFO_SIZE - ENC28J60_TX_MIN_BUF_SIZE) & 0xFFFE)
+#define ENC28J60_TX_END             (ENC28J60_FIFO_SIZE - 1)
 
 /* RX pointer calculation macro. */
 #define ENC28J60_RX_PTR(p)          ((((p - 1) < ENC28J60_RX_START) || ((p - 1) > ENC28J60_RX_END)) ? ENC28J60_RX_END : (p - 1))
