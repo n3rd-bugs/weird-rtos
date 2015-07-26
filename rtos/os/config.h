@@ -32,4 +32,7 @@
 //#define CONFIG_PPP
 //#define CONFIG_ETHERNET
 
+/* API's. */
+//#define CONFIG_WEIRD_VIEW
+
 #endif /* _CONFIG_H_ */

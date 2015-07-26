@@ -39,3 +39,6 @@ This list is needed to be updated whenever a new error code is added.
     NET_INVALID_FD          -1014
     ETH_TX_BLOCKED          -1100
     ENC28J60_SPI_ERROR      -11000
+    WV_UNKNOWN_CMD          -20000
+    WV_INAVLID_HRD          -20001
+    WV_NO_DATA              -20002
