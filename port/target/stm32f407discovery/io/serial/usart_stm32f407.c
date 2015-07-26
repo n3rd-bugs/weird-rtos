@@ -29,6 +29,9 @@ static CONSOLE usart_1 =
 
         /* Console manipulation APIs. */
         .write = &usart_stm32f407_puts,
+
+        /* Space is available on this descriptor. */
+        .flags = FS_SPACE_AVAILABLE,
     }
 };
 #endif
