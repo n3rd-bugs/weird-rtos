@@ -285,7 +285,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         if (net_csum_calculate(buffer, ver_ihl, 0) != 0)
         {
             /* Return an error. */
-            status = NET_INVALID_HDR;
+            status = NET_INVALID_CSUM;
         }
     }
 
