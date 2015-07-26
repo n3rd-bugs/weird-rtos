@@ -221,7 +221,7 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     scheduler_lock();
 
     /* Should never happen. */
-    OS_ASSERT((tcb) && ((tcb->irq_lock_count > 0) && ((semaphore->type & SEMAPHORE_IRQ) == 0)));
+    OS_ASSERT((tcb) && ((tcb->irq_lock_count > 0) && (semaphore->type & SEMAPHORE_IRQ)));
 
     /* Check if this semaphore is not available. */
     if (semaphore->count == 0)
