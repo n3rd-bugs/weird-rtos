@@ -116,7 +116,7 @@ void usart_atmega644p_init()
     UBRR0L = UBRRL_VALUE;
 
 #if USE_2X
-    UCSRA |= (1 << U2X0);
+    UCSR0A |= (1 << U2X0);
 #else
     UCSR0A &= ~(1 << U2X0);
 #endif
