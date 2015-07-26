@@ -10,10 +10,15 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
+#include <stdio.h>
 #include <os.h>
 #include <sys_info.h>
 
 #ifdef CONFIG_TASK_STATS
+#ifdef CONFIG_FS
+#include <fs.h>
+#include <string.h>
+#endif
 
 /*
  * util_task_calc_free_stack
@@ -75,5 +80,55 @@ void util_print_sys_info()
     }
 
 } /* util_print_sys_info */
+
+#ifdef CONFIG_FS
+/*
+ * util_print_sys_info_buffer
+ * @buffer: File system buffer in which system information is needed to be
+ *  added.
+ * This function prints generalized information about the operating system in
+ * the given file system buffer.
+ */
+void util_print_sys_info_buffer(FS_BUFFER *buffer)
+{
+    /* Get the first task. */
+    TASK *tcb = sch_task_list.head;
+    uint32_t stack_used;
+    char str[16];
+
+    /* Print current system tick. */
+    OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)"System tick: ", strlen("System tick: "), 0) !=  SUCCESS);
+    snprintf(str, sizeof(str), "%lu", (uint32_t)current_system_tick());
+    OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
+    OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)"\r\n", strlen("\r\n"), 0) !=  SUCCESS);
+
+    /* Print table header. */
+    OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)"Name\tClass\tTotal\tFree\tMin.\tn(T)\r\n", strlen("Name\tClass\tTotal\tFree\tMin.\tn(T)\r\n"), 0) !=  SUCCESS);
+
+    /* Print information about all the tasks in the system. */
+    while (tcb != NULL)
+    {
+        /* Calculate number of bytes still intact on the task's stack. */
+        stack_used = util_task_calc_free_stack(tcb);
+
+        snprintf(str, sizeof(str), "%s\t", tcb->name);
+        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
+        snprintf(str, sizeof(str), "(%d)\t", tcb->class);
+        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
+        snprintf(str, sizeof(str), "%lu\t", tcb->stack_size);
+        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
+        snprintf(str, sizeof(str), "%lu\t", stack_used);
+        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
+        snprintf(str, sizeof(str), "%lu\t", tcb->stack_size - stack_used);
+        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
+        snprintf(str, sizeof(str), "%lu\r\n", (uint32_t)tcb->scheduled);
+        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
+
+        /* Get the next task. */
+        tcb = tcb->next_global;
+    }
+
+} /* util_print_sys_info_buffer */
+#endif /* CONFIG_FS */
 
 #endif /* CONFIG_TASK_STATS */

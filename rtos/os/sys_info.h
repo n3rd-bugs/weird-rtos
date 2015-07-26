@@ -16,10 +16,16 @@
 #include <config.h>
 
 #ifdef CONFIG_TASK_STATS
+#ifdef CONFIG_FS
+#include <fs.h>
+#endif
 
 /* Function prototypes. */
 uint32_t util_task_calc_free_stack(TASK *);
 void util_print_sys_info();
+#ifdef CONFIG_FS
+void util_print_sys_info_buffer(FS_BUFFER *);
+#endif
 
 #endif /* CONFIG_TASK_STATS */
 
