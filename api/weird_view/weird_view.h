@@ -24,14 +24,21 @@
 #define WV_DISC_REPLY           0x134E3A9D
 #define WV_LIST                 0x7DE0B79C
 #define WV_LIST_REPLY           0x57186F8A
-#define WV_REQ                  0x13AC8F62
-#define WV_REQ_REPLY            0x0F4E180A
+#define WV_UPDATE               0x13AC8F62
+#define WV_UPDATE_REPLY         0x0F4E180A
+#define WV_REQ                  0x81c4b463
 
 /* Weird view plugin definitions. */
 #define WV_PLUGIN_LOG           0x00
+#define WV_PLUGIN_SWITCH        0x01
+#define WV_PLUGIN_ANALOG        0x02
 
 /* Weird view log plugin definitions. */
 #define WV_PLUGIN_LOG_UPDATE    0x00
 #define WV_PLUGIN_LOG_APPEND    0x01
+
+/* Weird view switch plugin definitions. */
+#define WV_PLUGIN_SWITCH_OFF    0x00
+#define WV_PLUGIN_SWITCH_ON     0x01
 
 #endif /* _WEIRD_VIEW_SERVER_H_ */

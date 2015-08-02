@@ -25,8 +25,15 @@
 #include <net_udp.h>
 #include <weird_view.h>
 
-/* Weird view log plugin data function prototype. */
-typedef int32_t WV_LOG_DATA (uint16_t, FS_BUFFER *);
+/* Weird view log plugin function prototype. */
+typedef int32_t WV_GET_LOG_DATA (uint16_t, FS_BUFFER *);
+
+/* Weird view switch plugin function prototype. */
+typedef int32_t WV_GET_SWITCH_DATA (uint16_t, uint8_t *);
+typedef void WV_POC_SWITCH_REQ (uint16_t, uint8_t);
+
+/* Weird view analog plugin function prototype. */
+typedef int32_t WV_GET_ANALOG_DATA (uint16_t, uint32_t *, uint32_t *, uint32_t *);
 
 /* Weird view plugin structure. */
 typedef struct _weird_view_plugin
@@ -36,6 +43,9 @@ typedef struct _weird_view_plugin
 
     /* Plugin data pointer. */
     void        *data;
+
+    /* Plugin request pointer. */
+    void        *request;
 
     /* Unique plugin ID. */
     uint16_t    id;

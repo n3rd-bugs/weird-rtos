@@ -96,9 +96,10 @@ static void weird_view_server_process(void *data)
     WEIRD_VIEW_PLUGIN   *plugin;
     FS_BUFFER           *rx_buffer;
     SOCKET_ADDRESS      socket_address;
-    uint32_t            command, i;
+    uint32_t            command, i, value, value_div, disp_max;
     int32_t             received;
     uint16_t            id;
+    uint8_t             state;
 
     /* Receive incoming data from the UDP port. */
     received = fs_read(&weird_view->port, (uint8_t *)&rx_buffer, sizeof(FS_BUFFER));
@@ -168,10 +169,13 @@ static void weird_view_server_process(void *data)
             break;
 
         /* Update requested for a plugin. */
+        case WV_UPDATE:
+
+        /* Need to process a request. */
         case WV_REQ:
 
-            /* If we have only id on the buffer. */
-            if (rx_buffer->total_length == (int32_t)sizeof(uint16_t))
+            /* If we have at least id on the buffer. */
+            if (rx_buffer->total_length >= (int32_t)sizeof(uint16_t))
             {
                 /* Pull the plugin id. */
                 fs_buffer_pull(rx_buffer, &id, sizeof(uint16_t), (FS_BUFFER_HEAD | FS_BUFFER_PACKED));
@@ -180,24 +184,142 @@ static void weird_view_server_process(void *data)
                 plugin = weird_view_get_plugin(weird_view, id);
 
                 /* If we do have a plugin. */
-                if ((plugin != NULL) && (plugin->data != NULL))
+                if (plugin != NULL)
                 {
-                    /* Process this request according to the plugin type. */
-                    switch (plugin->type)
+                    /* Process the given command. */
+                    switch (command)
                     {
 
-                    /* Data was requested for log plugin. */
-                    case WV_PLUGIN_LOG:
+                    /* Update requested for a plugin. */
+                    case WV_UPDATE:
 
-                        /* Fill this buffer with the required log data. */
-                        received = ((WV_LOG_DATA *)plugin->data)(id, rx_buffer);
+                        /* If we do have a function registered to fulfill this
+                         * request. */
+                        if (plugin->data != NULL)
+                        {
+                            /* If we don't have any more data. */
+                            if (rx_buffer->total_length == 0)
+                            {
+                                /* Process this request according to the plugin type. */
+                                switch (plugin->type)
+                                {
+
+                                /* Data was requested for log plugin. */
+                                case WV_PLUGIN_LOG:
+
+                                    /* Fill this buffer with the required data. */
+                                    received = ((WV_GET_LOG_DATA *)plugin->data)(id, rx_buffer);
+
+                                    break;
+
+                                /* Data was requested for switch plugin. */
+                                case WV_PLUGIN_SWITCH:
+
+                                    /* Get current state of the switch. */
+                                    received = ((WV_GET_SWITCH_DATA *)plugin->data)(id, &state);
+
+                                    /* If switch state was successfully queried. */
+                                    if (received == SUCCESS)
+                                    {
+                                        /* If switch is active. */
+                                        if (state == TRUE)
+                                        {
+                                            /* Switch is on. */
+                                            OS_ASSERT(fs_buffer_push(rx_buffer, (uint8_t []){ WV_PLUGIN_SWITCH_ON }, sizeof(uint8_t), 0) !=  SUCCESS);
+                                        }
+                                        else if (state == FALSE)
+                                        {
+                                            /* Switch is off. */
+                                            OS_ASSERT(fs_buffer_push(rx_buffer, (uint8_t []){ WV_PLUGIN_SWITCH_OFF }, sizeof(uint8_t), 0) !=  SUCCESS);
+                                        }
+                                        else
+                                        {
+                                            /* Invalid switch value was given. */
+                                            received = WV_NO_DATA;
+                                        }
+                                    }
+
+                                    break;
+
+                                /* Data was requested for analog plugin. */
+                                case WV_PLUGIN_ANALOG:
+
+                                    /* Get data for analog plugin. */
+                                    received = ((WV_GET_ANALOG_DATA *)plugin->data)(id, &value, &value_div, &disp_max);
+
+                                    /* If switch state was successfully queried. */
+                                    if (received == SUCCESS)
+                                    {
+                                        /* Push data for analog plugin. */
+                                        OS_ASSERT(fs_buffer_push(rx_buffer, &value, sizeof(uint32_t), FS_BUFFER_PACKED) !=  SUCCESS);
+                                        OS_ASSERT(fs_buffer_push(rx_buffer, &value_div, sizeof(uint32_t), FS_BUFFER_PACKED) !=  SUCCESS);
+                                        OS_ASSERT(fs_buffer_push(rx_buffer, &disp_max, sizeof(uint32_t), FS_BUFFER_PACKED) !=  SUCCESS);
+                                    }
+
+                                    break;
+
+                                /* Unknown plugin type. */
+                                default:
+
+                                    /* No data can be added. */
+                                    received = WV_NO_DATA;
+
+                                    break;
+                                }
+                            }
+                            else
+                            {
+                                /* Invalid header. */
+                                received = WV_INAVLID_HRD;
+                            }
+                        }
+                        else
+                        {
+                            /* No reply can be sent for this request. */
+                            received = WV_NO_DATA;
+                        }
 
                         break;
 
-                    /* Unknown plugin type. */
-                    default:
+                    /* Need to process a request. */
+                    case WV_REQ:
 
-                        /* No data can be added. */
+                        /* If we do have a function registered to fulfill this
+                         * request. */
+                        if (plugin->request != NULL)
+                        {
+                            /* Process this request according to the plugin type. */
+                            switch (plugin->type)
+                            {
+                            /* Data was requested for switch plugin. */
+                            case WV_PLUGIN_SWITCH:
+
+                                /* If we have only the new state on the buffer. */
+                                if (rx_buffer->total_length == (int32_t)sizeof(uint8_t))
+                                {
+                                    /* Pull the new state. */
+                                    fs_buffer_pull(rx_buffer, &state, sizeof(uint8_t), 0);
+
+                                    /* On requested. */
+                                    if (state == WV_PLUGIN_SWITCH_ON)
+                                    {
+                                        /* Process an ON request. */
+                                        ((WV_POC_SWITCH_REQ *)plugin->request)(id, TRUE);
+                                    }
+
+                                    /* Off requested. */
+                                    else if (state == WV_PLUGIN_SWITCH_OFF)
+                                    {
+                                        /* Process an OFF request. */
+                                        ((WV_POC_SWITCH_REQ *)plugin->request)(id, FALSE);
+                                    }
+                                }
+
+                                break;
+                            }
+                        }
+
+                        /* No data is needed to be sent for this. */
                         received = WV_NO_DATA;
 
                         break;
@@ -207,7 +329,7 @@ static void weird_view_server_process(void *data)
                     if (received >= 0)
                     {
                         /* Send reply for this request. */
-                        OS_ASSERT(fs_buffer_push(rx_buffer, (uint32_t []){ WV_REQ_REPLY }, sizeof(uint32_t), (FS_BUFFER_HEAD | FS_BUFFER_PACKED)) !=  SUCCESS);
+                        OS_ASSERT(fs_buffer_push(rx_buffer, (uint32_t []){ WV_UPDATE_REPLY }, sizeof(uint32_t), (FS_BUFFER_HEAD | FS_BUFFER_PACKED)) !=  SUCCESS);
                     }
                 }
                 else
