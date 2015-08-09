@@ -202,7 +202,7 @@ static void enc28j60_interrupt(void *data)
         enc28j60_read_phy(device, ENC28J60_ADDR_PHIR, NULL);
     }
 
-    /* ERRACTA: The Receive Packet Pending Interrupt Flag (EIR.PKTIF) does not
+    /* ERRATA: The Receive Packet Pending Interrupt Flag (EIR.PKTIF) does not
      * reliably/accurately report the status of pending packets. */
     /* Solution: In the Interrupt Service Routine, if it is unknown if a packet
      * is pending and the source of the interrupt is unknown, switch to Bank 1
