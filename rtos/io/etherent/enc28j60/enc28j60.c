@@ -202,8 +202,14 @@ static void enc28j60_interrupt(void *data)
         enc28j60_read_phy(device, ENC28J60_ADDR_PHIR, NULL);
     }
 
-    /* If a packet was received or an RX error was detected. */
-    if ((value & ENC28J60_EIR_PKTIF) || (value & ENC28J60_EIR_RXERIF))
+    /* ERRACTA: The Receive Packet Pending Interrupt Flag (EIR.PKTIF) does not
+     * reliably/accurately report the status of pending packets. */
+    /* Solution: In the Interrupt Service Routine, if it is unknown if a packet
+     * is pending and the source of the interrupt is unknown, switch to Bank 1
+     * and check the value in EPKTCNT. */
+    /* If a packet was received or an RX error was detected or source of
+     * interrupt is unknown. */
+    if ((value & ENC28J60_EIR_PKTIF) || (value & ENC28J60_EIR_RXERIF) || (value == 0x00))
     {
         /* Receive packets from the hardware. */
         enc28j60_receive_packet(device);
