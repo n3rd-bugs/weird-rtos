@@ -69,6 +69,9 @@ int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t d
 
             /* Calculate and add the checksum for actual packet. */
             NET_CSUM_ADD(ret_csum, net_csum_calculate(buffer, -1, offset));
+
+            /* Return the calculated checksum. */
+            *csum = (uint16_t)ret_csum;
         }
 
         /* Free the pseudo header buffer. */
@@ -78,13 +81,6 @@ int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t d
     {
         /* There are no buffers. */
         status = FS_BUFFER_NO_SPACE;
-    }
-
-    /* If checksum was successfully calculated. */
-    if (status == SUCCESS)
-    {
-        /* Return the calculated checksum. */
-        *csum = (uint16_t)ret_csum;
     }
 
     /* Return status to the caller. */
