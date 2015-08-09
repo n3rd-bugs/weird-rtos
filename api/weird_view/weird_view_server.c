@@ -43,6 +43,10 @@ void weird_view_server_init(WEIRD_VIEW_SERVER *weird_view, SOCKET_ADDRESS *socke
     /* Use buffered mode for this UDP port. */
     weird_view->port.console.fs.flags = FS_BUFFERED;
 
+    /* As we will be using net condition to process data on this port so it
+     * would not be okay to suspend for buffers. */
+    weird_view->port.flags = UDP_FLAG_THR_BUFFERS;
+
     /* Register the UDP port. */
     udp_register((FD)&weird_view->port, name, socket_address);
 
