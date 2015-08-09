@@ -67,13 +67,14 @@ void util_print_sys_info()
         stack_used = util_task_calc_free_stack(tcb);
 
         /* Print task information. */
-        printf("%s\t(%d)\t%lu\t%lu\t%lu\t%lu\r\n",
+        printf("%s\t(%d)\t%lu\t%lu\t%lu\t%lu%s\r\n",
                tcb->name,
                tcb->class,
                tcb->stack_size,
                stack_used,
                tcb->stack_size - stack_used,
-               (uint32_t)tcb->scheduled);
+               (uint32_t)tcb->scheduled,
+               (tcb == get_current_task()) ? "\t<Running>" : "");
 
         /* Get the next task. */
         tcb = tcb->next_global;
