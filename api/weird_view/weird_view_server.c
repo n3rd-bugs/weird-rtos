@@ -128,10 +128,13 @@ static void weird_view_server_process(void *data)
             if (rx_buffer->total_length == 0)
             {
                 /* Send discover reply. */
-                OS_ASSERT(fs_buffer_push(rx_buffer, (uint32_t []){ WV_DISC_REPLY }, sizeof(uint32_t), (FS_BUFFER_PACKED)) !=  SUCCESS);
+                received = fs_buffer_push(rx_buffer, (uint32_t []){ WV_DISC_REPLY }, sizeof(uint32_t), (FS_BUFFER_PACKED));
 
-                /* Push the device name. */
-                OS_ASSERT(fs_buffer_push(rx_buffer, (uint8_t *)weird_view->device_name, strlen(weird_view->device_name), 0) !=  SUCCESS);
+                if (received == SUCCESS)
+                {
+                    /* Push the device name. */
+                    received = fs_buffer_push(rx_buffer, (uint8_t *)weird_view->device_name, strlen(weird_view->device_name), 0);
+                }
             }
             else
             {
@@ -148,20 +151,29 @@ static void weird_view_server_process(void *data)
             if (rx_buffer->total_length == 0)
             {
                 /* Send list reply. */
-                OS_ASSERT(fs_buffer_push(rx_buffer, (uint32_t []){ WV_LIST_REPLY }, sizeof(uint32_t), (FS_BUFFER_PACKED)) !=  SUCCESS);
+                received = fs_buffer_push(rx_buffer, (uint32_t []){ WV_LIST_REPLY }, sizeof(uint32_t), (FS_BUFFER_PACKED));
 
                 /* Push data for all the registered plugins. */
-                for (i = 0; i < weird_view->num_plugin; i ++)
+                for (i = 0; (i < weird_view->num_plugin) && (received == SUCCESS); i ++)
                 {
                     /* Push plugin ID. */
-                    OS_ASSERT(fs_buffer_push(rx_buffer, &weird_view->plugin[i].id, sizeof(uint16_t), (FS_BUFFER_PACKED)) !=  SUCCESS);
+                    received = fs_buffer_push(rx_buffer, &weird_view->plugin[i].id, sizeof(uint16_t), (FS_BUFFER_PACKED));
 
-                    /* Push plugin type. */
-                    OS_ASSERT(fs_buffer_push(rx_buffer, &weird_view->plugin[i].type, sizeof(uint8_t), 0) !=  SUCCESS);
+                    if (received == SUCCESS)
+                    {
+                        /* Push plugin type. */
+                        received = fs_buffer_push(rx_buffer, &weird_view->plugin[i].type, sizeof(uint8_t), 0);
+                    }
 
                     /* Push plugin name. */
-                    OS_ASSERT(fs_buffer_push(rx_buffer, (uint8_t []){ (uint8_t)strlen(weird_view->plugin[i].name) }, sizeof(uint8_t), 0) !=  SUCCESS);
-                    OS_ASSERT(fs_buffer_push(rx_buffer, (uint8_t *)weird_view->plugin[i].name, strlen(weird_view->plugin[i].name), 0) !=  SUCCESS);
+                    if (received == SUCCESS)
+                    {
+                        received = fs_buffer_push(rx_buffer, (uint8_t []){ (uint8_t)strlen(weird_view->plugin[i].name) }, sizeof(uint8_t), 0);
+                    }
+                    if (received == SUCCESS)
+                    {
+                        received = fs_buffer_push(rx_buffer, (uint8_t *)weird_view->plugin[i].name, strlen(weird_view->plugin[i].name), 0);
+                    }
                 }
             }
             else
@@ -229,12 +241,12 @@ static void weird_view_server_process(void *data)
                                         if (state == TRUE)
                                         {
                                             /* Switch is on. */
-                                            OS_ASSERT(fs_buffer_push(rx_buffer, (uint8_t []){ WV_PLUGIN_SWITCH_ON }, sizeof(uint8_t), 0) !=  SUCCESS);
+                                            received = fs_buffer_push(rx_buffer, (uint8_t []){ WV_PLUGIN_SWITCH_ON }, sizeof(uint8_t), 0);
                                         }
                                         else if (state == FALSE)
                                         {
                                             /* Switch is off. */
-                                            OS_ASSERT(fs_buffer_push(rx_buffer, (uint8_t []){ WV_PLUGIN_SWITCH_OFF }, sizeof(uint8_t), 0) !=  SUCCESS);
+                                            received = fs_buffer_push(rx_buffer, (uint8_t []){ WV_PLUGIN_SWITCH_OFF }, sizeof(uint8_t), 0);
                                         }
                                         else
                                         {
@@ -255,9 +267,21 @@ static void weird_view_server_process(void *data)
                                     if (received == SUCCESS)
                                     {
                                         /* Push data for analog plugin. */
-                                        OS_ASSERT(fs_buffer_push(rx_buffer, &value, sizeof(uint32_t), FS_BUFFER_PACKED) !=  SUCCESS);
-                                        OS_ASSERT(fs_buffer_push(rx_buffer, &value_div, sizeof(uint32_t), FS_BUFFER_PACKED) !=  SUCCESS);
-                                        OS_ASSERT(fs_buffer_push(rx_buffer, &disp_max, sizeof(uint32_t), FS_BUFFER_PACKED) !=  SUCCESS);
+
+                                        /* Push analog value. */
+                                        received = fs_buffer_push(rx_buffer, &value, sizeof(uint32_t), FS_BUFFER_PACKED);
+
+                                        if (received == SUCCESS)
+                                        {
+                                            /* Push analog divisor. */
+                                            received = fs_buffer_push(rx_buffer, &value_div, sizeof(uint32_t), FS_BUFFER_PACKED);
+                                        }
+
+                                        if (received == SUCCESS)
+                                        {
+                                            /* Push analog maximum value. */
+                                            received = fs_buffer_push(rx_buffer, &disp_max, sizeof(uint32_t), FS_BUFFER_PACKED);
+                                        }
                                     }
 
                                     break;
@@ -333,7 +357,7 @@ static void weird_view_server_process(void *data)
                     if (received >= 0)
                     {
                         /* Send reply for this request. */
-                        OS_ASSERT(fs_buffer_push(rx_buffer, (uint32_t []){ WV_UPDATE_REPLY }, sizeof(uint32_t), (FS_BUFFER_HEAD | FS_BUFFER_PACKED)) !=  SUCCESS);
+                        received = fs_buffer_push(rx_buffer, (uint32_t []){ WV_UPDATE_REPLY }, sizeof(uint32_t), (FS_BUFFER_HEAD | FS_BUFFER_PACKED));
                     }
                 }
                 else
