@@ -18,6 +18,10 @@
 #include <fs.h>
 #include <header.h>
 
+#ifdef CONFIG_NET
+#include "net_condition.h"
+#endif
+
 /* Internal function prototypes. */
 static uint8_t fs_buffer_do_suspend(void *, void *);
 static uint8_t fs_buffer_do_resume(void *, void *);
@@ -373,6 +377,11 @@ static int32_t fs_buffer_suspend(FD fd, uint32_t type, uint32_t flags)
     CONDITION *condition;
     FS_BUFFER_PARAM param;
     int32_t status;
+
+#ifdef CONFIG_NET
+    /* We should not be in the networking condition task. */
+    OS_ASSERT(get_current_task() == &net_condition_tcb);
+#endif
 
     /* Get buffer condition. */
     fs_buffer_condition_get(fd, &condition, suspend_ptr, &param, ((flags & FS_BUFFER_TH) ? ((type == FS_BUFFER_ONE_FREE) ? data->threshold_buffers : data->threshold_lists) : 0), type);

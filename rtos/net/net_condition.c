@@ -27,7 +27,7 @@ static int32_t net_condition_get_index(NET_CONDITION *, CONDITION *);
 static void net_condition_task_entry(void *);
 
 /* Networking condition task data. */
-static TASK net_condition_tcb;
+TASK net_condition_tcb;
 static uint8_t net_condition_stack[NET_COND_STACK_SIZE];
 
 /*

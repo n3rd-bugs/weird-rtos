@@ -25,6 +25,7 @@
 /* Networking condition task data. */
 #define NET_COND_STACK_SIZE     1024
 
+/* Networking condition process function. */
 typedef void NET_CONDITION_PROCESS (void *data);
 
 /* Networking condition global data. */
@@ -40,6 +41,9 @@ typedef struct _net_condition
     uint32_t    num;
 
 } NET_CONDITION;
+
+/* Exported definitions. */
+extern TASK net_condition_tcb;
 
 /* Function prototypes. */
 void net_condition_init();
