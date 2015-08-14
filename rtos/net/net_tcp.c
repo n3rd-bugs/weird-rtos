@@ -1136,31 +1136,37 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
         if ((oo_param.flags & TCP_FLAG_SEG_CONFLICT) == 0)
         {
             /* Push the sequence number for this buffer on the buffer head. */
-            OS_ASSERT(fs_buffer_push(buffer, &seg_seq, 4, (FS_BUFFER_HEAD | FS_BUFFER_PACKED)) != SUCCESS);
+            status = fs_buffer_push(buffer, &seg_seq, 4, (FS_BUFFER_HEAD | FS_BUFFER_PACKED));
 
-            /* Put this buffer on the out-of-order buffer list. */
-            sll_add_node(&port->rx_buffer.oorx_list, buffer, prev_buffer, OFFSETOF(FS_BUFFER, next));
+            if (status == SUCCESS)
+            {
+                /* Put this buffer on the out-of-order buffer list. */
+                sll_add_node(&port->rx_buffer.oorx_list, buffer, prev_buffer, OFFSETOF(FS_BUFFER, next));
 
-            /* This buffer is now consumed. */
-            status = NET_BUFFER_CONSUMED;
+                /* This buffer is now consumed. */
+                status = NET_BUFFER_CONSUMED;
 
-            /* RCV.WND := RCV.WND + SEG.LEN */
-            port->rcv_wnd = (port->rcv_wnd + seg_len);
+                /* RCV.WND := RCV.WND + SEG.LEN */
+                port->rcv_wnd = (port->rcv_wnd + seg_len);
+            }
         }
     }
 
     /* Release semaphore for the buffer file descriptor. */
     fd_release_lock(buffer_fd);
 
-    /* If we have received new data. */
-    if (new_data == TRUE)
+    if ((status == SUCCESS) || (status == NET_BUFFER_CONSUMED))
     {
-        /* Data available to read. */
-        tcp_resume_socket(port, FS_BLOCK_READ);
-    }
+        /* If we have received new data. */
+        if (new_data == TRUE)
+        {
+            /* Data available to read. */
+            tcp_resume_socket(port, FS_BLOCK_READ);
+        }
 
-    /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=ACK) */
-    tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+        /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=ACK) */
+        tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+    }
 
     /*  Return status to the caller. */
     return (status);

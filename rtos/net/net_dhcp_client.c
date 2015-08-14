@@ -179,7 +179,7 @@ static void dhcp_event(void *data)
         case DHCP_CLI_DISCOVER:
 
             /* Build a DHCP discover message. */
-            OS_ASSERT(net_dhcp_client_build(fd, buffer, client_data, DHCP_MSG_DICOVER) != SUCCESS);
+            net_dhcp_client_build(fd, buffer, client_data, DHCP_MSG_DICOVER);
 
             break;
 
@@ -191,10 +191,11 @@ static void dhcp_event(void *data)
             if (client_data->retry < DHCP_MAX_RETRY)
             {
                 /* Build a DHCP request message. */
-                OS_ASSERT(net_dhcp_client_build(fd, buffer, client_data, DHCP_MSG_REQUEST) != SUCCESS);
-
-                /* We have sent a request. */
-                client_data->retry++;
+                if (net_dhcp_client_build(fd, buffer, client_data, DHCP_MSG_REQUEST) == SUCCESS)
+                {
+                    /* We have sent a request. */
+                    client_data->retry++;
+                }
             }
             else
             {

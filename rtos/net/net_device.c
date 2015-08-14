@@ -155,23 +155,33 @@ uint32_t net_device_get_mtu(FD fd)
  * @buffer: A networking buffer needed to be added in the receive list.
  * @protocol: Packet protocol as parsed on the lower layer required by upper
  *  layers to parse the contents of this buffer.
+ * @return: A success status will be returned if buffer was successfully added
+ *  to the networking buffer list.
  * This function will be called by a device when it wants to transfer a buffer
  * to the networking stack, the device should already have registered itself
  * with the networking stack.
  */
-void net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
+int32_t net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
 {
+    int32_t status;
+
     /* Push the protocol on the buffer. */
-    OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD) != SUCCESS);
+    status = fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD);
 
-    /* Release lock for buffer file descriptor. */
-    fd_release_lock(buffer->fd);
+    if (status == SUCCESS)
+    {
+        /* Release lock for buffer file descriptor. */
+        fd_release_lock(buffer->fd);
 
-    /* Write this buffer to the networking buffer file descriptor. */
-    OS_ASSERT(fs_write(net_buff_fd, (uint8_t *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
+        /* Write this buffer to the networking buffer file descriptor. */
+        OS_ASSERT(fs_write(net_buff_fd, (uint8_t *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
 
-    /* Again obtain lock for buffer file descriptor. */
-    OS_ASSERT(fd_get_lock(buffer->fd));
+        /* Again obtain lock for buffer file descriptor. */
+        OS_ASSERT(fd_get_lock(buffer->fd));
+    }
+
+    /* Return status to the caller. */
+    return (status);
 
 } /* net_device_buffer_receive */
 
@@ -211,10 +221,13 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
                 tmp_buffer = buffer->next;
 
                 /* Push the protocol on this buffer. */
-                OS_ASSERT(fs_buffer_push(buffer, &protocol, sizeof(uint8_t), (FS_BUFFER_HEAD | flags)) != SUCCESS);
+                status = fs_buffer_push(buffer, &protocol, sizeof(uint8_t), (FS_BUFFER_HEAD | flags));
 
-                /* Transmit this buffer on the networking device. */
-                status = net_device->tx(buffer, flags);
+                if (status == SUCCESS)
+                {
+                    /* Transmit this buffer on the networking device. */
+                    status = net_device->tx(buffer, flags);
+                }
 
                 /* If driver consumed the buffer. */
                 if (status == NET_BUFFER_CONSUMED)
