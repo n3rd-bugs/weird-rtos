@@ -622,7 +622,7 @@ int32_t net_process_arp(FS_BUFFER *buffer)
         if (status == SUCCESS)
         {
             /* Pull the ARP operation. */
-            OS_ASSERT(fs_buffer_pull(buffer, &operation, 2, FS_BUFFER_PACKED) != SUCCESS);
+            OS_ASSERT(fs_buffer_pull(buffer, &operation, sizeof(uint16_t), FS_BUFFER_PACKED) != SUCCESS);
 
             /* Process the ARP operation. */
             switch(operation)
