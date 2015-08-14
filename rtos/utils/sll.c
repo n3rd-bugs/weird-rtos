@@ -60,10 +60,10 @@ void *sll_pop(void *list, int offset)
         {
             ((SLL_HEAD *)list)->tail = NULL;
         }
-    }
 
-    /* Unlink the returned node from the list. */
-    ((SLL_NODE *)((uint8_t *)node + offset))->next = NULL;
+        /* Unlink the returned node from the list. */
+        ((SLL_NODE *)((uint8_t *)node + offset))->next = NULL;
+    }
 
     /* Return the head member of the list. */
     return (node);
