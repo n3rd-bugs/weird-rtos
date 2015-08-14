@@ -1,4 +1,5 @@
 C Includes:
+"${workspace_loc:/${ProjName}/api/weird_view}"
 "${workspace_loc:/${ProjName}/rtos/os}"
 "${workspace_loc:/${ProjName}/rtos/utils}"
 "${workspace_loc:/${ProjName}/rtos/mem}"
