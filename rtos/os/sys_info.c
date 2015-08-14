@@ -90,44 +90,79 @@ void util_print_sys_info()
  * This function prints generalized information about the operating system in
  * the given file system buffer.
  */
-void util_print_sys_info_buffer(FS_BUFFER *buffer)
+int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 {
     /* Get the first task. */
     TASK *tcb = sch_task_list.head;
     uint32_t stack_used;
     char str[16];
+    int32_t status;
 
     /* Print current system tick. */
-    OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)"System tick: ", strlen("System tick: "), 0) !=  SUCCESS);
-    snprintf(str, sizeof(str), "%lu", (uint32_t)current_system_tick());
-    OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
-    OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)"\r\n", strlen("\r\n"), 0) !=  SUCCESS);
+    status = fs_buffer_push(buffer, (uint8_t *)"System tick: ", strlen("System tick: "), 0);
 
-    /* Print table header. */
-    OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)"Name\tClass\tTotal\tFree\tMin.\tn(T)\r\n", strlen("Name\tClass\tTotal\tFree\tMin.\tn(T)\r\n"), 0) !=  SUCCESS);
+    if (status == SUCCESS)
+    {
+        snprintf(str, sizeof(str), "%lu", (uint32_t)current_system_tick());
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+    }
+
+    if (status == SUCCESS)
+    {
+        status = fs_buffer_push(buffer, (uint8_t *)"\r\n", strlen("\r\n"), 0);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Print table header. */
+        status = fs_buffer_push(buffer, (uint8_t *)"Name\tClass\tTotal\tFree\tMin.\tn(T)\r\n", strlen("Name\tClass\tTotal\tFree\tMin.\tn(T)\r\n"), 0);
+    }
 
     /* Print information about all the tasks in the system. */
-    while (tcb != NULL)
+    while ((tcb != NULL) && (status == SUCCESS))
     {
         /* Calculate number of bytes still intact on the task's stack. */
         stack_used = util_task_calc_free_stack(tcb);
 
         snprintf(str, sizeof(str), "%s\t", tcb->name);
-        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
-        snprintf(str, sizeof(str), "(%d)\t", tcb->class);
-        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
-        snprintf(str, sizeof(str), "%lu\t", tcb->stack_size);
-        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
-        snprintf(str, sizeof(str), "%lu\t", stack_used);
-        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
-        snprintf(str, sizeof(str), "%lu\t", tcb->stack_size - stack_used);
-        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
-        snprintf(str, sizeof(str), "%lu\r\n", (uint32_t)tcb->scheduled);
-        OS_ASSERT(fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0) !=  SUCCESS);
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+
+        if (status == SUCCESS)
+        {
+            snprintf(str, sizeof(str), "(%d)\t", tcb->class);
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
+
+        if (status == SUCCESS)
+        {
+            snprintf(str, sizeof(str), "%lu\t", tcb->stack_size);
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
+
+        if (status == SUCCESS)
+        {
+            snprintf(str, sizeof(str), "%lu\t", stack_used);
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
+
+        if (status == SUCCESS)
+        {
+            snprintf(str, sizeof(str), "%lu\t", tcb->stack_size - stack_used);
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
+
+        if (status == SUCCESS)
+        {
+            snprintf(str, sizeof(str), "%lu\r\n", (uint32_t)tcb->scheduled);
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
 
         /* Get the next task. */
         tcb = tcb->next_global;
     }
+
+    /* Return status to the caller. */
+    return (status);
 
 } /* util_print_sys_info_buffer */
 #endif /* CONFIG_FS */
