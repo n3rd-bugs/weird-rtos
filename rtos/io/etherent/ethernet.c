@@ -343,10 +343,14 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
     if (status == SUCCESS)
     {
         /* Pass this frame to the networking stack. */
-        net_device_buffer_receive(buffer, net_proto);
+        status = net_device_buffer_receive(buffer, net_proto);
 
-        /* Buffer is now consumed. */
-        status = NET_BUFFER_CONSUMED;
+        /* If buffer was successfully passed to the networking stack. */
+        if (status == SUCCESS)
+        {
+            /* Buffer is now consumed. */
+            status = NET_BUFFER_CONSUMED;
+        }
     }
 
     /* Return status to the caller. */
