@@ -348,7 +348,7 @@ static void enc28j60_interrupt(void *data)
  */
 static void enc28j60_handle_rx_error(ENC28J60 *device)
 {
-    uint32_t status;
+    int32_t status;
 
     /* Disable receive logic. */
     status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXEN, NULL, 0);
