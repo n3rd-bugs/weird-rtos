@@ -16,6 +16,9 @@
 
 #ifdef CONFIG_SPI
 
+/* SPI error definitions. */
+#define SPI_TIMEOUT             -1200
+
 /* SPI configuration flags. */
 #define SPI_CFG_1_WIRE          0x0001
 #define SPI_CFG_RX_ONLY         0x0002

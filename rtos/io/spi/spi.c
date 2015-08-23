@@ -36,7 +36,7 @@ void spi_init(SPI_DEVICE *device)
  */
 int32_t spi_message(SPI_DEVICE *device, SPI_MSG *messages, uint32_t num_messages)
 {
-    int32_t ret_bytes = 0;
+    int32_t ret_bytes = 0, nbytes;
 
     /* Select slave for the device. */
     SPI_TGT_SS(device);
@@ -45,10 +45,25 @@ int32_t spi_message(SPI_DEVICE *device, SPI_MSG *messages, uint32_t num_messages
     while (num_messages --)
     {
         /* Process this SPI message on the target. */
-        ret_bytes += SPI_TGT_MSG(device, messages);
+        nbytes = SPI_TGT_MSG(device, messages);
 
-        /* Get the next message to be sent. */
-        messages++;
+        /* If this SPI message was successfully processed. */
+        if (nbytes >= 0)
+        {
+            /* Add bytes to total number of bytes processed. */
+            ret_bytes += nbytes;
+
+            /* Get the next message to be sent. */
+            messages++;
+        }
+        else
+        {
+            /* Return received error. */
+            ret_bytes = nbytes;
+
+            /* Break and stop processing SPI messages. */
+            break;
+        }
     }
 
     /* Un-select the SPI device. */
