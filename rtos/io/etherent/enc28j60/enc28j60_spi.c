@@ -295,70 +295,76 @@ int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address
     if (((address & ENC28J60_ADDR_MASK) < ENC28J60_NON_BANKED) && (((address & ENC28J60_BANK_MASK) >> ENC28J60_BANK_SHIFT) != device->mem_block))
     {
         /* Clear the memory bank bits. */
-        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, (ENC28J60_ECON1_BSEL1|ENC28J60_ECON1_BSEL0), NULL, 0) != SUCCESS)
+        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, (ENC28J60_ECON1_BSEL1|ENC28J60_ECON1_BSEL0), NULL, 0);
 
-        /* Select the required memory bank. */
-        device->mem_block = ((address & ENC28J60_BANK_MASK) >> ENC28J60_BANK_SHIFT);
-
-        /* Set the required memory bank bits. */
-        OS_ASSERT(enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, device->mem_block, NULL, 0) != SUCCESS);
-    }
-
-    /* Initialize first SPI message. */
-    msg[0].buffer = op_buffer;
-    msg[0].length = 1;
-    msg[1].flags = SPI_MSG_WRITE;
-
-    /* Initialize the data needed to be sent. */
-    op_buffer[0] = (uint8_t)(opcode | (address & ENC28J60_ADDR_MASK));
-
-    /* If MAC or MII register is being read. */
-    if ((opcode == ENC28J60_OP_READ_CTRL) && (address & ENC28J60_MAC_MII_MASK))
-    {
-        /* Actual data will come after a dummy byte. */
-        msg[0].length++;
-    }
-
-    /* Initialize second SPI message. */
-
-    /* If we have a buffer in which we will be returning data. */
-    if (buffer != NULL)
-    {
-        /* Save data in the given buffer. */
-        msg[1].buffer = buffer;
-
-        /* Read the required number of bytes. */
-        msg[1].length = length;
-
-        /* If we are performing a read operation. */
-        if ((opcode == ENC28J60_OP_READ_CTRL) || (opcode == ENC28J60_OP_READ_BUFFER))
+        if (status == SUCCESS)
         {
-            /* This will be a read message. */
-            msg[1].flags = SPI_MSG_READ;
+            /* Select the required memory bank. */
+            device->mem_block = ((address & ENC28J60_BANK_MASK) >> ENC28J60_BANK_SHIFT);
+
+            /* Set the required memory bank bits. */
+            status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, device->mem_block, NULL, 0);
+        }
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Initialize first SPI message. */
+        msg[0].buffer = op_buffer;
+        msg[0].length = 1;
+        msg[1].flags = SPI_MSG_WRITE;
+
+        /* Initialize the data needed to be sent. */
+        op_buffer[0] = (uint8_t)(opcode | (address & ENC28J60_ADDR_MASK));
+
+        /* If MAC or MII register is being read. */
+        if ((opcode == ENC28J60_OP_READ_CTRL) && (address & ENC28J60_MAC_MII_MASK))
+        {
+            /* Actual data will come after a dummy byte. */
+            msg[0].length++;
+        }
+
+        /* Initialize second SPI message. */
+
+        /* If we have a buffer in which we will be returning data. */
+        if (buffer != NULL)
+        {
+            /* Save data in the given buffer. */
+            msg[1].buffer = buffer;
+
+            /* Read the required number of bytes. */
+            msg[1].length = length;
+
+            /* If we are performing a read operation. */
+            if ((opcode == ENC28J60_OP_READ_CTRL) || (opcode == ENC28J60_OP_READ_BUFFER))
+            {
+                /* This will be a read message. */
+                msg[1].flags = SPI_MSG_READ;
+            }
+            else
+            {
+                /* This will be a write message. */
+                msg[1].flags = SPI_MSG_WRITE;
+            }
         }
         else
         {
-            /* This will be a write message. */
-            msg[1].flags = SPI_MSG_WRITE;
+            /* We might be reading or writing a byte so just perform both of them. */
+            msg[1].flags = (SPI_MSG_WRITE | SPI_MSG_READ);
+
+            /* Save data in a data buffer. */
+            msg[1].buffer = &rx_byte;
+
+            /* Only read one byte. */
+            msg[1].length = 1;
         }
-    }
-    else
-    {
-        /* We might be reading or writing a byte so just perform both of them. */
-        msg[1].flags = (SPI_MSG_WRITE | SPI_MSG_READ);
 
-        /* Save data in a data buffer. */
-        msg[1].buffer = &rx_byte;
-
-        /* Only read one byte. */
-        msg[1].length = 1;
-    }
-
-    /* Process populated SPI messages. */
-    if (spi_message(&device->spi, msg, 2) != (msg[0].length + msg[1].length))
-    {
-        /* Return error to the caller. */
-        status = ENC28J60_SPI_ERROR;
+        /* Process populated SPI messages. */
+        if (spi_message(&device->spi, msg, 2) != (msg[0].length + msg[1].length))
+        {
+            /* Return error to the caller. */
+            status = ENC28J60_SPI_ERROR;
+        }
     }
 
     /* Return status to the caller. */
