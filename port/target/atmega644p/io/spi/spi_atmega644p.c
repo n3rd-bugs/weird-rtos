@@ -143,34 +143,46 @@ void spi_atmega644_slave_unselect(SPI_DEVICE *device)
  */
 int32_t spi_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
 {
-    int32_t num_bytes = message->length;
-    uint8_t *buffer = message->buffer;
+    int32_t bytes = 0, timeout;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(device);
 
     /* While we have a byte to write and read. */
-    while (num_bytes --)
+    while (bytes < message->length)
     {
         /* Send a byte. */
-        SPDR = *buffer;
+        SPDR = message->buffer[bytes];
 
         /* Wait for transmission to complete. */
-        while(!(SPSR & (1 << SPIF)));
+        timeout = 0;
+        while((!(SPSR & (1 << SPIF))) && (timeout++ < ATMEGA644P_SPI_TIMEOUT)) ;
 
-        /* Check if we are also reading. */
-        if (message->flags & SPI_MSG_READ)
+        /* If we did not timeout while transferring data on SPI. */
+        if (timeout < ATMEGA644P_SPI_TIMEOUT)
         {
-            /* Save the byte read from SPI. */
-            *buffer = SPDR;
-        }
+            /* Check if we are also reading. */
+            if (message->flags & SPI_MSG_READ)
+            {
+                /* Save the byte read from SPI. */
+                message->buffer[bytes] = SPDR;
+            }
 
-        /* Get next byte to send and update. */
-        buffer++;
+            /* Get next byte to send and update. */
+            bytes++;
+        }
+        else
+        {
+            /* We timed out while transferring data on the SPI. */
+            bytes = SPI_TIMEOUT;
+
+            /* Break and stop processing any more data for this message. */
+            break;
+        }
     }
 
     /* Return number of bytes written and read from SPI. */
-    return (message->length);
+    return (bytes);
 
 } /* spi_atmega644_message */
 

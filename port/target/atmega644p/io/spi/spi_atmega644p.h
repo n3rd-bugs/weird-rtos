@@ -32,6 +32,9 @@
 #define ATMEGA644P_SPI_SPSR_WCOL    (0x40)
 #define ATMEGA644P_SPI_SPSR_SPI2X   (0x01)
 
+/* Maximum timeout to wait for SPI message to process. */
+#define ATMEGA644P_SPI_TIMEOUT      (100)
+
 /* ATMEGA644P SPI structure. */
 struct _atmega644p_spi
 {
