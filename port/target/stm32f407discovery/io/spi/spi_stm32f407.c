@@ -185,37 +185,63 @@ void spi_stm32f407_slave_unselect(SPI_DEVICE *device)
  */
 int32_t spi_stm32f407_message(SPI_DEVICE *device, SPI_MSG *message)
 {
-    int32_t num_bytes = message->length;
-    uint8_t *buffer = message->buffer, byte;
+    int32_t bytes = 0, timeout;
+    uint8_t byte;
 
     /* While we have a byte to write and read. */
-    while (num_bytes --)
+    while (bytes < message->length)
     {
         /* Wait while TX buffer is not empty. */
-        while ((device->data.reg->SR & STM32F407_SPI_SR_TXE) == 0);
+        timeout = 0;
+        while (((device->data.reg->SR & STM32F407_SPI_SR_TXE) == 0) && (timeout++ < STM32F407_SPI_TIMEOUT));
 
-        /* Send a byte. */
-        device->data.reg->DR = *buffer;
-
-        /* Wait while we don't have any data to read. */
-        while ((device->data.reg->SR & STM32F407_SPI_SR_RXNE) == 0);
-
-        /* Save the data read from the device. */
-        byte = (uint8_t)device->data.reg->DR;
-
-        /* Check if we are also reading. */
-        if (message->flags & SPI_MSG_READ)
+        /* If we did not timeout for this request. */
+        if (timeout < STM32F407_SPI_TIMEOUT)
         {
-            /* Save the byte read from SPI. */
-            *buffer = byte;
+            /* Send a byte. */
+            device->data.reg->DR = message->buffer[bytes];
+        }
+        else
+        {
+            /* Return error to the caller. */
+            bytes = SPI_TIMEOUT;
+
+            /* Stop processing any more data for this message. */
+            break;
         }
 
-        /* Get next byte to send and update. */
-        buffer++;
+        /* Wait while we don't have any data to read. */
+        timeout = 0;
+        while (((device->data.reg->SR & STM32F407_SPI_SR_RXNE) == 0) && (timeout++ < STM32F407_SPI_TIMEOUT));
+
+        /* If we did not timeout for this request. */
+        if (timeout < STM32F407_SPI_TIMEOUT)
+        {
+            /* Save the data read from the device. */
+            byte = (uint8_t)device->data.reg->DR;
+
+            /* Check if we are also reading. */
+            if (message->flags & SPI_MSG_READ)
+            {
+                /* Save the byte read from SPI. */
+                message->buffer[bytes] = byte;
+            }
+
+            /* Get next byte to send and update. */
+            bytes++;
+        }
+        else
+        {
+            /* Return error to the caller. */
+            bytes = SPI_TIMEOUT;
+
+            /* Stop processing any more data for this message. */
+            break;
+        }
     }
 
     /* Return number of bytes written and read from SPI. */
-    return (message->length);
+    return (bytes);
 
 } /* spi_stm32f407_message */
 

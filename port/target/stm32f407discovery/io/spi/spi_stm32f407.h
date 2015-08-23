@@ -56,6 +56,9 @@
 #define STM32F407_SPI_SR_BSY            (0x0080)
 #define STM32F407_SPI_SR_FRE            (0x0100)
 
+/* SPI Timeout configuration. */
+#define STM32F407_SPI_TIMEOUT           (1000)
+
 /* SPI device structure. */
 typedef struct _stm32f407_spi
 {
