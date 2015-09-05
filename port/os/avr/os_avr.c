@@ -65,6 +65,10 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
     }
     else
     {
+        /* Clear the yield flag for current task as we will now actually switching
+         * to another task. */
+        current_task->flags &= (uint8_t)~(TASK_YIELD);
+
         /* Get and set the task that should run next. */
         set_current_task(next_task);
 
@@ -175,10 +179,10 @@ void control_to_system()
             while ((TIFR1 & 0x02) == 0);
 
             /* Reset the compare value. */
-            OCR1A = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
+            OCR1A = (((SYS_FREQ / (OS_TICKS_PER_SEC * 64)) - 1) & 0xFFFF);
 
             /* If the timer tick will not go over the compare value. */
-            if ((timer_value + 1) < (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF))
+            if ((timer_value + 1) < OCR1A)
             {
                 /* Restore the timer count. */
                 TCNT1 = (timer_value + 1);
