@@ -352,6 +352,11 @@ static int32_t arp_route(FD fd, ARP_ENTRY *entry)
             /* Reset the status. */
             status = SUCCESS;
         }
+        else
+        {
+            /* Free this buffer. */
+            fs_buffer_add_buffer_list(buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        }
     }
     else
     {
@@ -400,7 +405,7 @@ static void arp_event(void *data)
                 status = arp_route(fd, &arp_data->entries[i]);
 
                 /* If ARP packet was sent. */
-                if (status != SUCCESS)
+                if (status == SUCCESS)
                 {
                     /* Update the timeout at which we will try to route this entry again. */
                     if ((arp_data->entries[i].flags & ARP_FLAG_UP) == 0)
