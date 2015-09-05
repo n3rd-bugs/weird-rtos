@@ -291,11 +291,7 @@ static void enc28j60_interrupt(void *data)
 
                 /* Set event that will unblock any tasks waiting for it. */
                 fd_data_available(fd);
-            }
 
-            /* If a packet was successfully transmitted. */
-            if (value & ENC28J60_EIR_TXIF)
-            {
                 /* Clear the TX complete interrupt. */
                 status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_TXIF, NULL, 0);
             }
