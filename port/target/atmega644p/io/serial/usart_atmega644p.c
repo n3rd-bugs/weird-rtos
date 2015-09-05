@@ -13,7 +13,8 @@
 #include <os.h>
 #include <avr/io.h>
 #include <stdio.h>
-#define BAUD    BAUD_RATE
+#define BAUD        BAUD_RATE
+#define BAUD_TOL    10
 #include <util/setbaud.h>
 
 #ifdef FS_CONSOLE
