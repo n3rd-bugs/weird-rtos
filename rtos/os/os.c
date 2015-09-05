@@ -62,25 +62,33 @@ void task_yield()
     /* Check if we can actually yield the current task. */
     if (current_task->lock_count == 0)
     {
-        /* Disable interrupts. */
-        interrupt_level = GET_INTERRUPT_LEVEL();
-        DISABLE_INTERRUPTS();
-
-        /* If current task has a scheduler defined. */
-        if (current_task->scheduler != NULL)
+        /* If current task was not already yielded. */
+        if ((current_task->flags & TASK_YIELD) == 0)
         {
-            /* Task is being suspending. */
-            current_task->status = TASK_SUSPENDED;
+            /* Disable interrupts. */
+            interrupt_level = GET_INTERRUPT_LEVEL();
+            DISABLE_INTERRUPTS();
 
-            /* Re-enqueue/schedule this task in the scheduler. */
-            ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_MANUAL);
+            /* If current task has a scheduler defined, and we have not already
+             * yielded it. */
+            if (current_task->scheduler != NULL)
+            {
+                /* Task is being suspending. */
+                current_task->status = TASK_SUSPENDED;
+
+                /* Task was yielded. */
+                current_task->flags |= TASK_YIELD;
+
+                /* Re-enqueue/schedule this task in the scheduler. */
+                ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_MANUAL);
+            }
+
+            /* Schedule next task and enable interrupts. */
+            CONTROL_TO_SYSTEM();
+
+            /* Restore old interrupt level. */
+            SET_INTERRUPT_LEVEL(interrupt_level);
         }
-
-        /* Schedule next task and enable interrupts. */
-        CONTROL_TO_SYSTEM();
-
-        /* Restore old interrupt level. */
-        SET_INTERRUPT_LEVEL(interrupt_level);
     }
 
     else

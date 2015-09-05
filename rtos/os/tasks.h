@@ -23,6 +23,7 @@
 /* These defines different task flags. */
 #define TASK_NO_RETURN      0x01        /* This task will never return. */
 #define TASK_SCHED_DRIFT    0x02        /* This task has caused scheduler to miss a tick. */
+#define TASK_YIELD          0x04        /* This task was already yielded. */
 
 /* This is task entry function. */
 typedef void TASK_ENTRY (void *argv);
