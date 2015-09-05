@@ -268,8 +268,9 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
     /* For all conditions check if we need to suspend. */
     for (n = 0; n < num; n++)
     {
-        /* Check if we don't need to suspend for this condition. */
-        if (((*suspend)->do_suspend) && ((*suspend)->do_suspend((*condition)->data, (*suspend)->param) == FALSE))
+        /* Check if we don't need to suspend for this condition, or if user
+         * has sent a ping on this condition. */
+        if ((((*suspend)->do_suspend) && ((*suspend)->do_suspend((*condition)->data, (*suspend)->param) == FALSE)) || ((*condition)->flags & CONDITION_PING))
         {
             /* We don't need to suspend for this condition. */
             do_suspend = FALSE;
@@ -507,6 +508,13 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         }
     }
 
+    /* If a ping resumed this condition. */
+    if (condition[*num]->flags & CONDITION_PING)
+    {
+        /* Clear the ping flag. */
+        condition[*num]->flags &= ~(CONDITION_PING);
+    }
+
     /* If caller was not in locked state. */
     if (locked == FALSE)
     {
@@ -548,7 +556,7 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
     do
     {
         /* If a parameter was given. */
-        if (resume->param != NULL)
+        if ((resume != NULL) && (resume->param != NULL))
         {
             /* Should never happen. */
             OS_ASSERT(resume->do_resume == NULL);
@@ -574,8 +582,17 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
             /* Try to reschedule this task. */
             ((SCHEDULER *)(suspend->task->scheduler))->yield(suspend->task, YIELD_SYSTEM);
 
-            /* Set the task status as required by resume. */
-            suspend->task->status = resume->status;
+            /* If do have resume data. */
+            if (resume != NULL)
+            {
+                /* Set the task status as required by resume. */
+                suspend->task->status = resume->status;
+            }
+            else
+            {
+                /* Update task status to be resumed normally. */
+                suspend->task->status = TASK_RESUME;
+            }
 
             /* Save the condition for which this task is resuming. */
             suspend->task->suspend_data = condition;
