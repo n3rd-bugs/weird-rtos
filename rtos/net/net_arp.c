@@ -437,6 +437,11 @@ static void arp_event(void *data)
                     {
                         /* Try to update this entry again after some time. */
                         arp_data->entries[i].next_timeout = (clock + ARP_UPDATE_TIME);
+
+                        /* Increment the retry count for this ARP entry. */
+                        /* Retries are incremented as it is possible that this
+                         * ARP entry will starve the buffers. */
+                        arp_data->entries[i].retry_count++;
                     }
                 }
             }
