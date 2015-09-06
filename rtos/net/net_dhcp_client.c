@@ -517,7 +517,7 @@ void net_dhcp_client_start(NET_DEV *net_device)
         client_data->condition.data = fd;
 
         /* This will be a timer condition. */
-        client_data->suspend.flags = CONDITION_TIMER;
+        client_data->suspend.flags = SUSPEND_TIMER;
 
         /* Start from discover state. */
         dhcp_change_state(client_data, DHCP_CLI_DISCOVER);

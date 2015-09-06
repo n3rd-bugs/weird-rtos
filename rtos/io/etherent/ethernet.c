@@ -77,7 +77,7 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
     if (wdt != NULL)
     {
         /* Update suspend flags. */
-        device->net_device.suspend.flags = CONDITION_TIMER;
+        device->net_device.suspend.flags = SUSPEND_TIMER;
         device->net_device.suspend.timeout = MAX_WAIT;
     }
 

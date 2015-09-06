@@ -17,8 +17,8 @@
 #define CONDITION_TIMEOUT               -600
 
 /* Suspend flags. */
-#define CONDITION_PRIORITY              0x01
-#define CONDITION_TIMER                 0x02
+#define SUSPEND_PRIORITY                0x01
+#define SUSPEND_TIMER                   0x02
 
 /* Condition flags. */
 #define CONDITION_LOCK_NO_SUSPEND       0x01

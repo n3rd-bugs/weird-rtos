@@ -162,7 +162,7 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
         (*suspend)->task = tcb;
 
         /* If we need to sort the list on priority. */
-        if ((*suspend)->flags & CONDITION_PRIORITY)
+        if ((*suspend)->flags & SUSPEND_PRIORITY)
         {
             /* Add suspend to the suspend list on priority. */
             sll_insert(&(*condition)->suspend_list, *suspend, &suspend_priority_sort, OFFSETOF(SUSPEND, next));
@@ -315,7 +315,7 @@ static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
     for (n = 0; n < num; n++)
     {
         /* If this is a timer condition. */
-        if ((*suspend)->flags & CONDITION_TIMER)
+        if ((*suspend)->flags & SUSPEND_TIMER)
         {
             /* If we are actually using this timer. */
             if ((*suspend)->timeout != MAX_WAIT)

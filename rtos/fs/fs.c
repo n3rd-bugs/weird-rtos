@@ -504,7 +504,7 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
     /* Initialize file system parameter. */
     param->flag = flag;
     suspend->param = param;
-    suspend->flags = (fs->flags & FS_PRIORITY_SORT ? CONDITION_PRIORITY : 0);
+    suspend->flags = (fs->flags & FS_PRIORITY_SORT ? SUSPEND_PRIORITY : 0);
     suspend->do_suspend = &fs_do_suspend;
     suspend->timeout = fs->timeout;
 

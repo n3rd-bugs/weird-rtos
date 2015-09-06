@@ -121,7 +121,7 @@ void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEN
 {
     /* Initialize suspend criteria. */
     suspend->param = (void *)semaphore;
-    suspend->flags = (semaphore->type & SEMAPHORE_PRIORITY ? CONDITION_PRIORITY : 0);
+    suspend->flags = (semaphore->type & SEMAPHORE_PRIORITY ? SUSPEND_PRIORITY : 0);
     suspend->do_suspend = &semaphore_do_suspend;
     suspend->timeout = timeout;
 

@@ -573,7 +573,7 @@ void arp_set_data(FD fd, ARP_ENTRY *entry_list, uint32_t num_entries)
     device->arp.condition.data = device;
 
     /* This will be a timer condition. */
-    device->arp.suspend.flags = CONDITION_TIMER;
+    device->arp.suspend.flags = SUSPEND_TIMER;
     device->arp.suspend.timeout = MAX_WAIT;
 
     /* Add networking condition to process ARP for this device. */
