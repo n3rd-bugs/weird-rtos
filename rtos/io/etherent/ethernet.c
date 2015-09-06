@@ -41,9 +41,10 @@ void ethernet_init()
  * @initialize: Ethernet device initialization function.
  * @transmit: Function that will be called to transmit a packet.
  * @interrupt: Ethernet interrupt callback.
+ * @wdt: Watch dog event callback.
  * This function will register an ethernet device.
  */
-void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *transmit, ETH_INTERRUPT *interrupt)
+void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *transmit, ETH_INTERRUPT *interrupt, ETH_WDT *wdt)
 {
     FD fd = (FD)&device->fs;
 
@@ -72,6 +73,14 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
     /* Register a networking device. */
     net_register_fd(&device->net_device, fd, &ethernet_buffer_transmit, &ethernet_process);
 
+    /* If we are also require WDT for this ethernet device. */
+    if (wdt != NULL)
+    {
+        /* Update suspend flags. */
+        device->net_device.suspend.flags = CONDITION_TIMER;
+        device->net_device.suspend.timeout = MAX_WAIT;
+    }
+
     /* Set MTU for this device. */
     net_device_set_mtu(fd, (ETH_MTU_SIZE - ETH_HRD_SIZE));
 
@@ -79,6 +88,7 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
     device->initialize = initialize;
     device->transmit = transmit;
     device->interrupt = interrupt;
+    device->wdt = wdt;
 
     /* If we do have an initialize callback for this device. */
     if (initialize != NULL)
@@ -129,6 +139,33 @@ uint8_t *ethernet_get_mac_address(FD fd)
     return (device->mac);
 
 } /* ethernet_get_mac_address */
+
+/*
+ * ethernet_wdt_enable
+ * @device: Ethernet device for which watch dog timer is needed to be enabled.
+ * @ticks: Ticks after which the watch dog event is needed to be triggered.
+ * This function will enable watch dog timer for an ethernet device. Caller must
+ * have lock for the required device and this function.
+ */
+void ethernet_wdt_enable(ETH_DEVICE *device, uint32_t ticks)
+{
+    /* Enable watch dog timer for this device. */
+    device->net_device.suspend.timeout = current_system_tick() + ticks;
+
+} /* ethernet_wdt_enable */
+
+/*
+ * ethernet_wdt_disable
+ * @device: Ethernet device for which watch dog timer is needed to be disabled.
+ * This function will reset the watch dog timer for an ethernet device. Caller
+ * must have lock for the required device and this function.
+ */
+void ethernet_wdt_disable(ETH_DEVICE *device)
+{
+    /* Disable the watch dog timer. */
+    device->net_device.suspend.timeout = MAX_WAIT;
+
+} /* ethernet_wdt_disable */
 
 /*
  * ethernet_lock
@@ -204,6 +241,26 @@ static void ethernet_process(void *data)
     /* Acquire lock for this device. */
     OS_ASSERT(fd_get_lock((FD)device) != SUCCESS);
 
+    /* If watch dog interrupt was triggered for this device. */
+    if ((device->net_device.suspend.timeout != MAX_WAIT) && (device->net_device.suspend.timeout <= current_system_tick()))
+    {
+        /* Disable watch dog timer. */
+        ethernet_wdt_disable(device);
+
+        /* Trigger watch dog event. */
+        device->wdt(device);
+    }
+
+    /* Check if we need to do device initialization. */
+    if (device->flags & ETH_FLAG_INIT)
+    {
+        /* Initialize this device. */
+        device->initialize(device);
+
+        /* We have initialized this device. */
+        device->flags &= (uint8_t)(~ETH_FLAG_INIT);
+    }
+
     /* Check if we have an interrupt to process. */
     if (device->flags & ETH_FLAG_INT)
     {
@@ -247,19 +304,13 @@ static void ethernet_process(void *data)
         device->flags &= (uint8_t)(~ETH_FLAG_TX);
     }
 
-    /* Check if we need to do device initialization. */
-    if (device->flags & ETH_FLAG_INIT)
+    /* If we don't have any more event to process. */
+    if ((device->flags & (ETH_FLAG_INIT | ETH_FLAG_INT |ETH_FLAG_TX)) == 0)
     {
-        /* Initialize this device. */
-        device->initialize(device);
-
-        /* We have initialized this device. */
-        device->flags &= (uint8_t)(~ETH_FLAG_INIT);
+        /* Just clear the data available flag as we don't have any other event to
+         * process for this device. */
+        fd_data_flushed((FD)device);
     }
-
-    /* Just clear the data available flag as we don't have any other event to
-     * process for this device. */
-    fd_data_flushed((FD)device);
 
     /* Release lock for this device. */
     fd_release_lock((FD)device);
