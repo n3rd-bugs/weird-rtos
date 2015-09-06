@@ -19,6 +19,7 @@
 
 /* Internal function prototypes. */
 static void enc28j60_initialize(void *);
+static void enc28j60_wdt(void *);
 static void enc28j60_interrupt(void *);
 static void enc28j60_handle_rx_error(ENC28J60 *);
 static int32_t enc28j60_tx_fifo_init(ENC28J60 *);
@@ -70,7 +71,7 @@ void enc28j60_init(ENC28J60 *device)
     }
 
     /* Register this ethernet device. */
-    ethernet_regsiter(&device->ethernet_device, &enc28j60_initialize, &enc28j60_transmit_packet, &enc28j60_interrupt);
+    ethernet_regsiter(&device->ethernet_device, &enc28j60_initialize, &enc28j60_transmit_packet, &enc28j60_interrupt, &enc28j60_wdt);
 
 #ifdef NET_ARP
     /* Set ARP data for this ethernet device. */
@@ -224,6 +225,24 @@ static void enc28j60_initialize(void *data)
 } /* enc28j60_initialize */
 
 /*
+ * enc28j60_wdt
+ * @data: ENC28J60 device instance for which an watch dog interrupt was
+ *  triggered.
+ * This function will process a target failure condition.
+ */
+static void enc28j60_wdt(void *data)
+{
+    ENC28J60 *device = (ENC28J60 *)data;
+
+    /* Un-block TX as last frame was not sent. */
+    device->flags &= (uint8_t)(~(ENC28J60_IN_TX));
+
+    /* Process any blocked frames still to be sent. */
+    device->ethernet_device.flags |= ETH_FLAG_TX;
+
+} /* enc28j60_wdt */
+
+/*
  * enc28j60_interrupt
  * @data: ENC28J60 device instance for which an interrupt is needed to be
  *  handled.
@@ -282,6 +301,9 @@ static void enc28j60_interrupt(void *data)
             /* In case of TX complete or TX error unblock the TX. */
             if ((value & ENC28J60_EIR_TXIF) || (value & ENC28J60_EIR_TXERIF))
             {
+                /* Disable watch dog interrupt. */
+                ethernet_wdt_disable(&device->ethernet_device);
+
                 /* Stop the TX. */
                 status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRTS, NULL, 0);
 
@@ -291,7 +313,11 @@ static void enc28j60_interrupt(void *data)
 
                 /* Set event that will unblock any tasks waiting for it. */
                 fd_data_available(fd);
+            }
 
+            /* If a packet was successfully transmitted. */
+            if (value & ENC28J60_EIR_TXIF)
+            {
                 /* Clear the TX complete interrupt. */
                 status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_TXIF, NULL, 0);
             }
@@ -521,6 +547,9 @@ static void enc28j60_link_changed(ENC28J60 *device)
         {
             /* Set link-up for this device. */
             net_device_link_up(fd);
+
+            /* Process any frames needed to be sent. */
+            device->ethernet_device.flags |= ETH_FLAG_TX;
         }
     }
     else
@@ -724,6 +753,9 @@ static int32_t enc28j60_transmit_packet(void *data, FS_BUFFER *buffer)
         {
             /* We are now transmitting a frame. */
             device->flags |= ENC28J60_IN_TX;
+
+            /* Enable watch dog interrupt. */
+            ethernet_wdt_enable(&device->ethernet_device, ENC28J60_WDT_TIMEOUT);
         }
     }
     else

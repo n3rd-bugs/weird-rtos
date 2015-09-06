@@ -35,6 +35,9 @@
 /* Error code definitions. */
 #define ENC28J60_SPI_ERROR          -11000
 
+/* ENC28J60 watch dog configuration. */
+#define ENC28J60_WDT_TIMEOUT        (OS_TICKS_PER_SEC)
+
 /* ENC28J60 device configuration. */
 #define ENC28J60_REV_ID             (0x06)
 
