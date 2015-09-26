@@ -71,11 +71,12 @@ void enc28j60_atmega644p_handle_interrupt()
  */
 void enc28j60_atmega644p_enable_interrupt(ENC28J60 *device)
 {
-    /* For now unused. */
-    UNUSED_PARAM(device);
-
-    /* Enable INT0 to process enc28j60 device interrupts. */
-    EIMSK |= (1 << 0);
+    /* If we really want to enable interrupt for the device. */
+    if (device->flags & ENC28J60_ENABLE_IRQ)
+    {
+        /* Enable INT0 to process enc28j60 device interrupts. */
+        EIMSK |= (1 << 0);
+    }
 
 } /* enc28j60_atmega644p_enable_interrupt */
 
