@@ -22,7 +22,7 @@ volatile uint32_t sys_interrupt_level = TRUE;
 /* Local variable definitions. */
 /* If we have just did a forced tick. */
 static volatile uint8_t force_tick = FALSE;
-static TASK *next_task;
+static volatile TASK *next_task = NULL;
 
 /* Current task pointer */
 extern TASK *current_task;
@@ -70,7 +70,10 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
         current_task->flags &= (uint8_t)~(TASK_YIELD);
 
         /* Get and set the task that should run next. */
-        set_current_task(next_task);
+        set_current_task((TASK *)next_task);
+
+        /* We have scheduled the required task. */
+        next_task = NULL;
 
         /* We have processed a forced tick. */
         force_tick = FALSE;
@@ -157,6 +160,17 @@ void control_to_system()
 {
     uint16_t timer_value;
 
+    /* If we have already scheduled a context switch. */
+    if (next_task != NULL)
+    {
+        /* If this task has a scheduler defined. */
+        if (next_task->scheduler != NULL)
+        {
+            /* Re-enqueue/schedule this task in the scheduler. */
+            ((SCHEDULER *)next_task->scheduler)->yield((TASK *)next_task, YIELD_SYSTEM);
+        }
+    }
+
     /* If we do have a task to switch. */
     if (current_task != NULL)
     {
@@ -190,6 +204,11 @@ void control_to_system()
 
             /* Enable interrupts. */
             ENABLE_INTERRUPTS();
+        }
+        else
+        {
+            /* We are not scheduling a new task. */
+            next_task = NULL;
         }
     }
 
