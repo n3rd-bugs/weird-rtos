@@ -26,6 +26,10 @@
 #define SEMAPHORE_PRIORITY  0x01
 #define SEMAPHORE_IRQ       0x02
 
+/* Semaphore IRQ lock API. */
+typedef void SEM_IRQ_LOCK (void *data);
+typedef void SEM_IRQ_UNLOCK (void *data);
+
 /* Semaphore resume parameter. */
 typedef struct _semaphore_param
 {
@@ -40,6 +44,11 @@ typedef struct _semaphore
 
     /* Current owner of this semaphore if any. */
     TASK        *owner;
+
+    /* IRQ manipulation APIs. */
+    SEM_IRQ_LOCK    *irq_lock;
+    SEM_IRQ_UNLOCK  *irq_unlock;
+    void        *irq_data;
 
     /* If semaphore is IRQ accessible this will store the IRQ status when this
      * semaphore was acquired. */
@@ -62,6 +71,7 @@ typedef struct _semaphore
 /* Function prototypes. */
 void semaphore_create(SEMAPHORE *, uint8_t, uint8_t, uint8_t);
 void semaphore_update(SEMAPHORE *, uint8_t, uint8_t, uint8_t);
+void semaphore_set_irq_data(SEMAPHORE *, void *, SEM_IRQ_LOCK *, SEM_IRQ_UNLOCK *);
 void semaphore_destroy(SEMAPHORE *);
 int32_t semaphore_obtain(SEMAPHORE *, uint32_t);
 void semaphore_release(SEMAPHORE *);

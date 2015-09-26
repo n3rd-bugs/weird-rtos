@@ -88,6 +88,37 @@ void semaphore_update(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
 } /* semaphore_update */
 
 /*
+ * semaphore_set_irq_data
+ * @semaphore: Semaphore for which IRQ lock/unlock data is needed to be updated.
+ * @data: Data that will passed to IRQ lock/unlock APIs.
+ * @lock: Function that will be called to lock interrupts.
+ * @unlock: Function that will be called to unlock interrupts.
+ * This routine will set IRQ manipulation APIs for a semaphore, this is
+ * possible if a semaphore is required an access from an ISR, rather disabling
+ * global IRQ'a we can lock only the required IRQ.
+ */
+void semaphore_set_irq_data(SEMAPHORE *semaphore, void *data, SEM_IRQ_LOCK *lock, SEM_IRQ_UNLOCK *unlock)
+{
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
+
+    /* Semaphore must not have been obtained. */
+    OS_ASSERT(semaphore->count != semaphore->max_count);
+    OS_ASSERT((semaphore->type & SEMAPHORE_IRQ) == 0)
+
+    /* Set semaphore IRQ data. */
+    semaphore->irq_lock = lock;
+    semaphore->irq_unlock = unlock;
+    semaphore->irq_data = data;
+
+    /* Restore the IRQ interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
+} /* semaphore_update */
+
+/*
  * semaphore_destroy
  * @semaphore: Semaphore control block to be destroyed.
  * This routine destroy a semaphore. If any of the tasks are waiting on this
@@ -265,18 +296,33 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         /* If semaphore was successfully obtained. */
         if (status == SUCCESS)
         {
-            /* If we are in a task. */
-            if (tcb != NULL)
+            /* Check if we have IRQ lock registered for this semaphore. */
+            if (semaphore->irq_lock != NULL)
             {
-                /* Should never happen. */
-                OS_ASSERT(tcb->irq_lock_count == SCHEDULER_MAX_IRQ_LOCK);
+                /* Lock the required interrupt. */
+                semaphore->irq_lock(semaphore->irq_data);
 
-                /* Increment the IRQ lock count. */
-                tcb->irq_lock_count++;
+                /* Restore old interrupt level. */
+                SET_INTERRUPT_LEVEL(interrupt_level);
+
+                /* Enable scheduling. */
+                scheduler_unlock();
             }
+            else
+            {
+                /* If we are in a task. */
+                if (tcb != NULL)
+                {
+                    /* Should never happen. */
+                    OS_ASSERT(tcb->irq_lock_count == SCHEDULER_MAX_IRQ_LOCK);
 
-            /* Save the IRQ interrupt level and scheduler state. */
-            semaphore->irq_status = interrupt_level;
+                    /* Increment the IRQ lock count. */
+                    tcb->irq_lock_count++;
+                }
+
+                /* Save the IRQ interrupt level and scheduler state. */
+                semaphore->irq_status = interrupt_level;
+            }
         }
         else
         {
@@ -308,7 +354,7 @@ void semaphore_release(SEMAPHORE *semaphore)
     TASK *tcb = get_current_task();
 
     /* If this is not IRQ accessible semaphore. */
-    if (!(semaphore->type & SEMAPHORE_IRQ))
+    if ((!(semaphore->type & SEMAPHORE_IRQ)) || (semaphore->irq_unlock != NULL))
     {
         /* Lock the scheduler. */
         scheduler_lock();
@@ -337,21 +383,30 @@ void semaphore_release(SEMAPHORE *semaphore)
     /* If this is IRQ accessible semaphore. */
     if (semaphore->type & SEMAPHORE_IRQ)
     {
-        /* If we have a task. */
-        if (tcb != NULL)
+        /* Check if we have IRQ unlock registered for this semaphore. */
+        if (semaphore->irq_unlock != NULL)
         {
-            /* Should never happen. */
-            OS_ASSERT(tcb->irq_lock_count == 0);
-
-            /* Decrement the IRQ lock count. */
-            tcb->irq_lock_count--;
+            /* Unlock the required interrupt. */
+            semaphore->irq_unlock(semaphore->irq_data);
         }
-
-        /* If we are not suspending. */
-        if ((tcb == NULL) || ((tcb->status != TASK_WILL_SUSPENDED) && (tcb->irq_lock_count == 0)))
+        else
         {
-            /* Restore the IRQ interrupt level. */
-            SET_INTERRUPT_LEVEL(semaphore->irq_status);
+            /* If we have a task. */
+            if (tcb != NULL)
+            {
+                /* Should never happen. */
+                OS_ASSERT(tcb->irq_lock_count == 0);
+
+                /* Decrement the IRQ lock count. */
+                tcb->irq_lock_count--;
+            }
+
+            /* If we are not suspending. */
+            if ((tcb == NULL) || ((tcb->status != TASK_WILL_SUSPENDED) && (tcb->irq_lock_count == 0)))
+            {
+                /* Restore the IRQ interrupt level. */
+                SET_INTERRUPT_LEVEL(semaphore->irq_status);
+            }
         }
     }
 
