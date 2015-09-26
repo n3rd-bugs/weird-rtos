@@ -100,11 +100,12 @@ void enc28j60_stm32f407_handle_interrupt()
  */
 void enc28j60_stm32f407_enable_interrupt(ENC28J60 *device)
 {
-    /* For now unused. */
-    UNUSED_PARAM(device);
-
-    /* Enable the EXT2 IRQ channel. */
-    NVIC->ISER[EXTI2_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI2_IRQn & (uint8_t)0x1F);
+    /* If we need to enable interrupts for this device. */
+    if (device->flags & ENC28J60_ENABLE_IRQ)
+    {
+        /* Enable the EXT2 IRQ channel. */
+        NVIC->ISER[EXTI2_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI2_IRQn & (uint8_t)0x1F);
+    }
 
 } /* enc28j60_stm32f407_enable_interrupt */
 
