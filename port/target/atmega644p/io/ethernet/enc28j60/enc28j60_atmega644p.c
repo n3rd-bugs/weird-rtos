@@ -56,6 +56,7 @@ void enc28j60_atmega644p_init()
 void enc28j60_atmega644p_handle_interrupt()
 {
     /* Disable interrupt until we process it. */
+    enc28j60.flags &= (uint8_t)~(ENC28J60_ENABLE_IRQ);
     ENC28J60_DISABLE_INT(&enc28j60);
 
     /* Handle interrupt for this device. */
