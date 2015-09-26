@@ -73,6 +73,12 @@ void enc28j60_init(ENC28J60 *device)
     /* Register this ethernet device. */
     ethernet_regsiter(&device->ethernet_device, &enc28j60_initialize, &enc28j60_transmit_packet, &enc28j60_interrupt, &enc28j60_wdt);
 
+    /* Rather locking the global interrupts lock only the ethernet interrupts. */
+    semaphore_set_irq_data(&device->ethernet_device.lock, device, (SEM_IRQ_LOCK *)&ENC28J60_DISABLE_INT, (SEM_IRQ_UNLOCK *)&ENC28J60_ENABLE_INT);
+
+    /* Disable enc28j60 interrupts. */
+    device->flags &= (uint8_t)~(ENC28J60_ENABLE_IRQ);
+
 #ifdef NET_ARP
     /* Set ARP data for this ethernet device. */
     arp_set_data(fd, device->arp_entries, ENC28J60_NUM_ARP);
@@ -218,7 +224,7 @@ static void enc28j60_initialize(void *data)
         if (status == SUCCESS)
         {
             /* Enable enc28j60 interrupts. */
-            ENC28J60_ENABLE_INT(device);
+            device->flags |= ENC28J60_ENABLE_IRQ;
         }
     }
 
@@ -343,7 +349,7 @@ static void enc28j60_interrupt(void *data)
         }
 
         /* Enable enc28j60 interrupts. */
-        ENC28J60_ENABLE_INT(device);
+        device->flags |= ENC28J60_ENABLE_IRQ;
 
         /* Enable interrupts. */
         status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0);
@@ -352,8 +358,8 @@ static void enc28j60_interrupt(void *data)
     /* If interrupt was not processed successfully. */
     if (status != SUCCESS)
     {
-        /* Disable interrupts. */
-        ENC28J60_DISABLE_INT(device);
+        /* Disable enc28j60 interrupts. */
+        device->flags &= (uint8_t)~(ENC28J60_ENABLE_IRQ);
 
         /* Keep executing this interrupt until we have successfully processed
          * the interrupt. */
