@@ -120,6 +120,10 @@ static void enc28j60_initialize(void *data)
         /* Read the value of ESTAT. */
         status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_ESTAT, 0xFF, &value, 1);
 
+#if ENC28J60_DEBUG
+        printf("enc28j60_initialize ESTAT %d\r\n", value);
+#endif
+
     } while ((status == SUCCESS) && ((value & ENC28J60_ESTAT_CLKRDY) == 0));
 
     if (status == SUCCESS)
@@ -135,6 +139,10 @@ static void enc28j60_initialize(void *data)
 
         /* Read the revision number. */
         status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EREVID, 0xFF, &value, 1);
+
+#if ENC28J60_DEBUG
+        printf("enc28j60_initialize REV_ID %d\r\n", value);
+#endif
     }
 
     /* If we have a valid revision ID. */
@@ -240,6 +248,10 @@ static void enc28j60_wdt(void *data)
 {
     ENC28J60 *device = (ENC28J60 *)data;
 
+#if ENC28J60_DEBUG
+    printf("enc28j60_wdt: forcefully unblocking TX.\r\n");
+#endif
+
     /* Un-block TX as last frame was not sent. */
     device->flags &= (uint8_t)(~(ENC28J60_IN_TX));
 
@@ -268,6 +280,10 @@ static void enc28j60_interrupt(void *data)
     {
         /* Get the interrupt status. */
         status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EIR, 0xFF, &value, 1);
+
+#if ENC28J60_DEBUG
+    printf("enc28j60_interrupt: EIR 0x%d.\r\n", value);
+#endif
 
         if (status == SUCCESS)
         {
