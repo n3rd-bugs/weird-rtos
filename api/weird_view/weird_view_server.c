@@ -220,8 +220,9 @@ static void weird_view_server_process(void *data)
                                 switch (plugin->type)
                                 {
 
-                                /* Data was requested for log plugin. */
+                                /* Data was requested for log or wave plugin. */
                                 case WV_PLUGIN_LOG:
+                                case WV_PLUGIN_WAVE:
 
                                     /* Fill this buffer with the required data. */
                                     received = ((WV_GET_LOG_DATA *)plugin->data)(id, rx_buffer);

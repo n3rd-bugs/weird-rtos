@@ -32,6 +32,7 @@
 #define WV_PLUGIN_LOG           0x00
 #define WV_PLUGIN_SWITCH        0x01
 #define WV_PLUGIN_ANALOG        0x02
+#define WV_PLUGIN_WAVE          0x03
 
 /* Weird view log plugin definitions. */
 #define WV_PLUGIN_LOG_UPDATE    0x00
