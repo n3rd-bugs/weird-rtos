@@ -29,6 +29,7 @@
 /* Device IO. */
 //#define CONFIG_USB
 //#define CONFIG_SPI
+//#define CONFIG_ADC
 //#define CONFIG_PPP
 //#define CONFIG_ETHERNET
 
