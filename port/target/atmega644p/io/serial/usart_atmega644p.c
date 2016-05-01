@@ -16,6 +16,8 @@
 #define BAUD        BAUD_RATE
 #define BAUD_TOL    10
 #include <util/setbaud.h>
+#include <fs.h>
+#include <console.h>
 
 #ifdef FS_CONSOLE
 /* Debug file descriptor. */
