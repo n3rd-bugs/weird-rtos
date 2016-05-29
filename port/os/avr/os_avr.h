@@ -18,6 +18,9 @@
 #include <tasks.h>
 
 /* AVR specific configurations. */
+#ifndef F_CPU
+#define F_CPU 20000000
+#endif
 #define OSC_FREQ            F_CPU
 #define PCLK_FREQ           OSC_FREQ
 #define SYS_CLK_DIV         1
@@ -59,6 +62,8 @@ extern volatile uint32_t sys_interrupt_level;
 
 #define EXIT_CRITICAL()     asm volatile ( "pop     __tmp_reg__" :: );              \
                             asm volatile ( "out     __SREG__, __tmp_reg__" :: )
+
+#define WDT_RESET()         asm volatile ( "wdr" :: );
 
 /* This macro saves a function's context on the stack. */
 #define SAVE_CONTEXT()                                      \
