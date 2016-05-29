@@ -3,7 +3,6 @@ C Includes:
 "${workspace_loc:/${ProjName}/rtos/os}"
 "${workspace_loc:/${ProjName}/rtos/utils}"
 "${workspace_loc:/${ProjName}/rtos/mem}"
-"${workspace_loc:/${ProjName}/rtos/console}"
 "${workspace_loc:/${ProjName}/rtos/fs}"
 "${workspace_loc:/${ProjName}/rtos/net}"
 "${workspace_loc:/${ProjName}/rtos/io/adc}"
