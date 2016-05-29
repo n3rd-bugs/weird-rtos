@@ -21,7 +21,7 @@ ADC_DATA_CALLBACK *adc_callback = NULL;
 
 /*
  * ISR(TIMER0_COMPA_vect, ISR_BLOCK)
- * This is ADC interrupt that will be called when an ADC interrupt is complete.
+ * This is stubbed TIMER0 ISR routine.
  */
 ISR(TIMER0_COMPA_vect, ISR_BLOCK)
 {
@@ -91,7 +91,7 @@ void adc_atmega644_channel_select(uint32_t channel)
  */
 void adc_atmega644_channel_unselect(uint32_t channel)
 {
-    /* Enable digital input on the required channel. */
+    /* Disable digital input on the required channel. */
     DIDR0 &= (uint8_t)(~(1 << channel));
 
 } /* adc_atmega644_channel_unselect */
