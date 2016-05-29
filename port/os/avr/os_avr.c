@@ -187,19 +187,16 @@ void control_to_system()
             force_tick = TRUE;
 
             /* Trigger a forced timer interrupt. */
-            OCR1A = (TCNT1 + 1);
+            TCNT1 = (OCR1A - 1);
 
             /* Wait for timer interrupt to trigger. */
             while ((TIFR1 & 0x02) == 0);
 
-            /* Reset the compare value. */
-            OCR1A = (((SYS_FREQ / (OS_TICKS_PER_SEC * 64)) - 1) & 0xFFFF);
-
             /* If the timer tick will not go over the compare value. */
-            if ((timer_value + 1) < OCR1A)
+            if (timer_value < OCR1A)
             {
                 /* Restore the timer count. */
-                TCNT1 = (timer_value + 1);
+                TCNT1 = timer_value;
             }
 
             /* Enable interrupts. */
