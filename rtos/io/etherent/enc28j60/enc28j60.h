@@ -34,12 +34,17 @@
 
 /* Error code definitions. */
 #define ENC28J60_SPI_ERROR          -11000
+#define ENC28J60_DISCONNECTED       -11001
 
 /* Debug configuration. */
 #define ENC28J60_DEBUG              FALSE
 
 /* ENC28J60 watch dog configuration. */
-#define ENC28J60_WDT_TIMEOUT        (OS_TICKS_PER_SEC)
+#define ENC28J60_WDT_TIMEOUT        (OS_TICKS_PER_SEC / 10)
+
+/* ENC28J60 CLKRDY delay configuration. */
+#define ENC28J60_CLKRDY_TIMEOUT     (OS_TICKS_PER_SEC / 10)
+#define ENC28J60_CLKRDY_DELAY       (OS_TICKS_PER_SEC / 10)
 
 /* ENC28J60 device configuration. */
 #define ENC28J60_REV_ID             (0x06)

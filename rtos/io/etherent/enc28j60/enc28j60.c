@@ -110,6 +110,7 @@ static void enc28j60_initialize(void *data)
     uint8_t value;
     FD fd = (FD)&device->ethernet_device;
     int32_t status;
+    uint32_t max_retry = ENC28J60_CLKRDY_TIMEOUT / ENC28J60_CLKRDY_DELAY;
 
     /* Reset this device. */
     ENC28J60_RESET(device);
@@ -124,7 +125,23 @@ static void enc28j60_initialize(void *data)
         printf("enc28j60_initialize ESTAT %d\r\n", value);
 #endif
 
-    } while ((status == SUCCESS) && ((value & ENC28J60_ESTAT_CLKRDY) == 0));
+        /* If clock is still not ready. */
+        if ((value & ENC28J60_ESTAT_CLKRDY) == 0)
+        {
+            sleep_ms(ENC28J60_CLKRDY_DELAY);
+        }
+        
+        /* Decrement the number of retries. */
+        max_retry --;
+
+    } while ((status == SUCCESS) && (max_retry) && ((value & ENC28J60_ESTAT_CLKRDY) == 0));
+    
+    /* If we timed out while waiting for clock to enable. */
+    if (!max_retry)
+    {
+        /* Device must not have been connected. */
+        status = ENC28J60_DISCONNECTED;
+    }
 
     if (status == SUCCESS)
     {
