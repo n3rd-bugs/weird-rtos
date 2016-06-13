@@ -145,6 +145,7 @@ void sleep_remove_from_list(TASK *tcb)
 void sleep(uint32_t ticks)
 {
     TASK *tcb;
+    uint32_t interrupt_level;
 
     /* Lock the scheduler. */
     scheduler_lock();
@@ -158,8 +159,15 @@ void sleep(uint32_t ticks)
     /* IRQ must not be locked. */
     OS_ASSERT(tcb->irq_lock_count != 0);
 
+    /* Disable interrupts. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+    DISABLE_INTERRUPTS();
+
     /* Add current task to the sleep list. */
     sleep_add_to_list(tcb, ticks);
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Task is being suspended. */
     tcb->status = TASK_SUSPENDED;

@@ -422,6 +422,9 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     /* Check if we need to suspend on this condition. */
     while (suspend_do_suspend(condition, suspend, num_conditions, num))
     {
+        /* Disable global interrupts. */
+        DISABLE_INTERRUPTS();
+
 #ifdef CONFIG_SLEEP
         /* Check if we need to wait for a finite time. */
         if (timeout != (uint32_t)(MAX_WAIT))
@@ -441,9 +444,6 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         /* Task is going to suspended. This will release the lock without
          * enabling interrupts. */
         tcb->status = TASK_WILL_SUSPENDED;
-
-        /* Disable global interrupts. */
-        DISABLE_INTERRUPTS();
 
         /* Unlock all the conditions so they can be resumed. */
         suspend_unlock_condition(condition, num_conditions, NULL);
