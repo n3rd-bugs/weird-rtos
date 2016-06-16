@@ -166,15 +166,15 @@ void sleep(uint32_t ticks)
     /* Add current task to the sleep list. */
     sleep_add_to_list(tcb, ticks);
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
     /* Task is being suspended. */
     tcb->status = TASK_SUSPENDED;
 
     /* Return control to the system.
      * We will resume from here when our required delay has been achieved. */
     task_waiting();
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Enable scheduling. */
     scheduler_unlock();
