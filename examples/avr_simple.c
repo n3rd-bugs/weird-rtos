@@ -27,9 +27,9 @@ uint8_t stack_4[128];
 TASK    task_cb_4;
 uint8_t stack_5[320];
 TASK    task_cb_5;
-uint8_t stack_6[128];
+uint8_t stack_6[192];
 TASK    task_cb_6;
-uint8_t stack_7[128];
+uint8_t stack_7[192];
 TASK    task_cb_7;
 
 SEMAPHORE semaphore;
@@ -90,9 +90,9 @@ void semaphore_task(void *argv)
     {
         semaphore_obtain(&semaphore, (-1));
         PORTB |= (1 << (uint16_t)argv);
-        sleep(50);
+        sleep(10);
         PORTB &= ~(1 << (uint16_t)argv);
-        sleep(50);
+        sleep(10);
         semaphore_release(&semaphore);
 
         task_yield();
@@ -118,14 +118,14 @@ int main(void)
     task_create(&task_cb_3, "TSK_3", stack_3, 128, &led_task, (void *)0x05, TASK_NO_RETURN);
     task_create(&task_cb_4, "TSK_4", stack_4, 128, &led_task, (void *)0x04, TASK_NO_RETURN);
     task_create(&task_cb_5, "TSK_5", stack_5, 320, &print_task, (void *)0x00, TASK_NO_RETURN);
-    task_create(&task_cb_6, "TSK_6", stack_6, 128, &semaphore_task, (void *)0x02, TASK_NO_RETURN);
-    task_create(&task_cb_7, "TSK_7", stack_7, 128, &semaphore_task, (void *)0x03, TASK_NO_RETURN);
+    task_create(&task_cb_6, "TSK_6", stack_6, 192, &semaphore_task, (void *)0x02, TASK_NO_RETURN);
+    task_create(&task_cb_7, "TSK_7", stack_7, 192, &semaphore_task, (void *)0x03, TASK_NO_RETURN);
 
     scheduler_task_add(&task_cb_1, TASK_APERIODIC, 2, 0);
-    scheduler_task_add(&task_cb_2, TASK_PERIODIC, 1, OS_TICKS_PER_SEC/2);
+    scheduler_task_add(&task_cb_2, TASK_PERIODIC, 1, OS_TICKS_PER_SEC/8);
     scheduler_task_add(&task_cb_3, TASK_APERIODIC, 2, 0);
     scheduler_task_add(&task_cb_4, TASK_APERIODIC, 2, 0);
-    scheduler_task_add(&task_cb_5, TASK_PERIODIC, 2, OS_TICKS_PER_SEC);
+    scheduler_task_add(&task_cb_5, TASK_PERIODIC, 2, OS_TICKS_PER_SEC/4);
     scheduler_task_add(&task_cb_6, TASK_APERIODIC, 2, 0);
     scheduler_task_add(&task_cb_7, TASK_APERIODIC, 2, 0);
 
