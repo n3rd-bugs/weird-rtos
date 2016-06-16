@@ -180,6 +180,7 @@ void control_to_system()
         /* If we really need to schedule a context switch. */
         if (next_task != current_task)
         {
+            /* TODO: This causes clock screw. */
             /* Save current timer tick. */
             timer_value = TCNT1;
 
@@ -189,8 +190,15 @@ void control_to_system()
             /* Trigger a forced timer interrupt. */
             TCNT1 = (OCR1A - 1);
 
+            /* Updated the timer pre-scaler to trigger the compare
+             * quickly. */
+            TCCR1B =  0x01 | 0x08;
+
             /* Wait for timer interrupt to trigger. */
             while ((TIFR1 & 0x02) == 0);
+
+            /* Revert the timer pre-scaler. */
+            TCCR1B =  0x03 | 0x08;
 
             /* If the timer tick will not go over the compare value. */
             if (timer_value < OCR1A)
