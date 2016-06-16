@@ -28,6 +28,15 @@ static TASK __idle_task;
 static uint8_t __idle_task_stack[128];
 static void __idle_task_entry(void *argv);
 
+/* Counter to calculate the CPU usage. */
+volatile uint32_t __idle_counter = 0;
+
+/* Holds the current count value for a free tick. */
+uint32_t __idle_count_per_tick = 0;
+
+/* Idle count for this interval. */
+uint32_t __idle_count = 0;
+
 /*
  * __idle_task_entry
  * @argv: Unused parameter.
@@ -41,7 +50,7 @@ static void __idle_task_entry(void *argv)
 
     while(1)
     {
-        ;
+        __idle_counter++;
     }
 }
 
