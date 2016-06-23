@@ -29,26 +29,8 @@ uint64_t current_tick = 0;
  */
 void os_process_system_tick()
 {
-    extern uint32_t __idle_counter;
-    extern uint32_t __idle_count_per_tick;
-    extern uint32_t __idle_count;
-
     /* Increment system clock. */
     current_tick ++;
-
-    /* If we have a smaller value. */
-    if (__idle_count_per_tick < __idle_counter)
-    {
-        /* Save the tick counter, probably this time 
-         * we were 100% free. */
-        __idle_count_per_tick = __idle_counter;
-    }
-
-    /* Calculate the free for this cycle. */
-    __idle_count += __idle_counter;
-
-    /* Reset the idle counter. */
-    __idle_counter = 0;
 
 } /* os_process_system_tick */
 
