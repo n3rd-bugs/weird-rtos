@@ -544,10 +544,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
 void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 {
     SUSPEND *suspend;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable interrupts. */
-    DISABLE_INTERRUPTS();
+    uint32_t interrupt_level;
 
     /* If caller is not in locked state. */
     if ((locked == FALSE) && (condition->lock))
@@ -555,6 +552,12 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
         /* Lock this condition. */
         condition->lock(condition->data);
     }
+
+    /* Get the interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Resume all the tasks waiting on this condition. */
     do
@@ -607,14 +610,14 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 
     } while (suspend != NULL);
 
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
     /* If caller was not in locked state. */
     if ((locked == FALSE) && (condition->unlock))
     {
         /* Unlock this condition. */
         condition->unlock(condition->data);
     }
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* resume_condition */
