@@ -80,14 +80,14 @@ int32_t usart_atmega644p_puts(void *priv_data, uint8_t *buf, int32_t nbytes)
 int32_t uart_atmega644p_printf(char *format, ...)
 {
     int32_t n = 0;
-    uint8_t buf[100];
+    uint8_t buf[64];
     va_list vl;
 
     /* Arguments start from the format. */
     va_start(vl, format);
 
     /* Process the given string and save the result in a temporary buffer. */
-    n = vsnprintf((char *)buf, 100, format, vl);
+    n = vsnprintf((char *)buf, 64, format, vl);
 
 #ifdef FS_CONSOLE
     /* Assert if debug FD is not yet initialized. */
