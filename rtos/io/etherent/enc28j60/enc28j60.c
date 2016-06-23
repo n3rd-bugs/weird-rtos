@@ -130,7 +130,7 @@ static void enc28j60_initialize(void *data)
         {
             sleep_ms(ENC28J60_CLKRDY_DELAY);
         }
-        
+
         /* Decrement the number of retries. */
         max_retry --;
 

@@ -44,7 +44,7 @@
 
 /* ENC28J60 CLKRDY delay configuration. */
 #define ENC28J60_CLKRDY_TIMEOUT     (100)
-#define ENC28J60_CLKRDY_DELAY       (10)
+#define ENC28J60_CLKRDY_DELAY       (20)
 
 /* ENC28J60 device configuration. */
 #define ENC28J60_REV_ID             (0x06)
