@@ -55,11 +55,18 @@
 
 /* ISR routines. */
 extern TASK *return_task;
-#define OS_ISR_ENTER();             return_task = get_current_task();           \
+#ifndef CPU_ISR_ENTER   
+#define CPU_ISR_ENTER()
+#endif
+
+#define OS_ISR_ENTER();                                                         \
+                                    CPU_ISR_ENTER();                            \
+                                    return_task = get_current_task();           \
                                     set_current_task(NULL);
 
 #define OS_ISR_EXIT();              set_current_task(return_task);              \
-                                    return_task = NULL;
+                                    return_task = NULL;                         \
+                                    CPU_ISR_EXIT();
 
 /* Public function prototypes. */
 void os_run();
