@@ -25,9 +25,15 @@
 #define PCLK_FREQ           OSC_FREQ
 #define SYS_CLK_DIV         1
 #define SYS_FREQ            (OSC_FREQ / SYS_CLK_DIV)
+#define AVR_SYS_STACK_SIZE  256
+#define AVR_HARD_RESET      TRUE
 
 /* System interrupt level. */
 extern volatile uint32_t sys_interrupt_level;
+
+/* System stack definitions. */
+extern uint8_t avr_system_stack[AVR_SYS_STACK_SIZE];
+extern uint8_t *avr_system_stack_pointer;
 
 /* Macros to manipulate interrupts. */
 #define ENABLE_INTERRUPTS()             {                                           \
@@ -64,6 +70,19 @@ extern volatile uint32_t sys_interrupt_level;
                             asm volatile ( "out     __SREG__, __tmp_reg__" :: )
 
 #define WDT_RESET()         asm volatile ( "wdr" :: );
+
+#define CPU_ISR_ENTER()     SAVE_CONTEXT();                             \
+                            LOAD_SYSTEM_STACK();
+
+#define CPU_ISR_EXIT()      RESTORE_CONTEXT(); 
+
+/* Load system stack. */
+#define LOAD_SYSTEM_STACK()                                             \
+    avr_system_stack_pointer = (avr_system_stack + AVR_SYS_STACK_SIZE); \
+    asm volatile("lds	r28,        avr_system_stack_pointer");         \
+    asm volatile("lds	r29,        avr_system_stack_pointer + 1");     \
+    asm volatile("out	__SP_L__,   r28");                              \
+    asm volatile("out	__SP_H__,   r29");
 
 /* This macro saves a function's context on the stack. */
 #define SAVE_CONTEXT()                                      \
@@ -110,9 +129,9 @@ extern volatile uint32_t sys_interrupt_level;
                     "ldi    r18, %[tos_offset]      \n\t"   \
                     "add    r26, r18                \n\t"   \
                     "adc    r27,__zero_reg__        \n\t"   \
-                    "in     r0, 0x3d                \n\t"   \
+                    "in     r0, __SP_L__            \n\t"   \
                     "st     x+, r0                  \n\t"   \
-                    "in     r0, 0x3e                \n\t"   \
+                    "in     r0, __SP_H__            \n\t"   \
                     "st     x+, r0                  \n\t"   \
                     :: [tos_offset] "M" (OFFSETOF(TASK, tos))    \
                   );

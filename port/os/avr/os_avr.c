@@ -11,6 +11,7 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <avr/interrupt.h>
+#include <avr/wdt.h>
 #include <os.h>
 #include <os_avr.h>
 
@@ -27,6 +28,36 @@ static volatile TASK *next_task = NULL;
 /* Current task pointer */
 extern TASK *current_task;
 
+/* AVR system stack. */
+uint8_t avr_system_stack[AVR_SYS_STACK_SIZE];
+uint8_t *avr_system_stack_pointer;
+
+/*
+ * ISR(__vector_default)
+ * This function will stub out any rogue interrupts, and 
+ * will reset the system if triggered.
+ */
+ISR(__vector_default)
+{
+    /* Disable interrupts. */
+    DISABLE_INTERRUPTS();
+
+#if (AVR_HARD_RESET == TRUE)
+    /* Configure PC.7 as output. */
+    DDRC |= ((1 << 7));
+
+    /* Trigger a reset by discharging reset capacitor. */
+    PORTC &= (uint8_t)(~(1 << 7));
+#else
+    /* Trigger a soft reset using watch dog timer. */
+    wdt_enable(WDTO_15MS);
+#endif
+
+    /* We should never return from this function. */
+    while(1) ;
+
+} /* ISR(__vector_default) */
+
 /*
  * ISR(TIMER1_COMPA_vect, ISR_NAKED)
  * This is timer interrupt that will be called at each system tick.
@@ -36,6 +67,9 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
     /* Save the context on the current task's stack. */
     /* This will also disable global interrupts. */
     SAVE_CONTEXT();
+
+    /* Load system stack. */
+    LOAD_SYSTEM_STACK();
 
     /* If this was not a forced tick. */
     if (force_tick == FALSE)
@@ -152,6 +186,22 @@ void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
     (tcb->tos) -= 0x06;                             /* Push R26-R31 on the stack. */
 
 } /* os_stack_init */
+
+/*
+ * avr_stack_init
+ * This function initializes system stack pointer.
+ */
+void avr_stack_init(void) __attribute__((naked)) __attribute__((section(".init3")));
+void avr_stack_init(void)
+{
+    /* Disable watch dog timer. */
+    MCUSR = 0;
+    wdt_disable();
+
+    /* Set the stack pointer to the end of the system stack. */
+    LOAD_SYSTEM_STACK();
+
+} /*  avr_stack_init */
 
 /*
  * control_to_system
