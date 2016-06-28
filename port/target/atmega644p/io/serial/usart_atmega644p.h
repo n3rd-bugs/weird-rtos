@@ -29,7 +29,7 @@
 
 /* Function prototypes. */
 int32_t usart_atmega644p_puts(void *, uint8_t *, int32_t);
-int32_t uart_atmega644p_printf(char *, ...);
+int32_t uart_atmega644p_printf(const char *, ...);
 void usart_atmega644p_init();
 
 #endif /* _USART_ATMEGA664P_H_ */

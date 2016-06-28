@@ -77,10 +77,10 @@ int32_t usart_atmega644p_puts(void *priv_data, uint8_t *buf, int32_t nbytes)
  * @format: Formated string to be printed on USART.
  * This function prints a formated string on the USART.
  */
-int32_t uart_atmega644p_printf(char *format, ...)
+int32_t uart_atmega644p_printf(const char *format, ...)
 {
     int32_t n = 0;
-    uint8_t buf[64];
+    uint8_t buf[32];
     va_list vl;
 
     /* Arguments start from the format. */
