@@ -52,7 +52,7 @@ void util_print_sys_info()
 {
     /* Get the first task. */
     TASK *tcb = sch_task_list.head;
-    uint32_t stack_used;
+    uint32_t stack_free;
 
     /* Print current system tick. */
     printf("System tick: %lu\r\n", (uint32_t)current_system_tick());
@@ -64,15 +64,15 @@ void util_print_sys_info()
     while (tcb != NULL)
     {
         /* Calculate number of bytes still intact on the task's stack. */
-        stack_used = util_task_calc_free_stack(tcb);
+        stack_free = util_task_calc_free_stack(tcb);
 
         /* Print task information. */
         printf("%s\t(%d)\t%lu\t%lu\t%lu\t%li\t%lu%s\r\n",
                tcb->name,
                tcb->class,
                tcb->stack_size,
-               stack_used,
-               tcb->stack_size - stack_used,
+               stack_free,
+               tcb->stack_size - stack_free,
                tcb->status,
                (uint32_t)tcb->scheduled,
                (tcb == get_current_task()) ? "\t<Running>" : "");
@@ -95,7 +95,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 {
     /* Get the first task. */
     TASK *tcb = sch_task_list.head;
-    uint32_t stack_used;
+    uint32_t stack_free;
     char str[16];
     int32_t status;
 
@@ -123,7 +123,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
     while ((tcb != NULL) && (status == SUCCESS))
     {
         /* Calculate number of bytes still intact on the task's stack. */
-        stack_used = util_task_calc_free_stack(tcb);
+        stack_free = util_task_calc_free_stack(tcb);
 
         snprintf(str, sizeof(str), "%s\t", tcb->name);
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
@@ -142,13 +142,13 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "%lu\t", stack_used);
+            snprintf(str, sizeof(str), "%lu\t", stack_free);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "%lu\t", tcb->stack_size - stack_used);
+            snprintf(str, sizeof(str), "%lu\t", tcb->stack_size - stack_free);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
