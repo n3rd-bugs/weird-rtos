@@ -29,10 +29,10 @@ ISR(TIMER0_COMPA_vect, ISR_BLOCK)
 } /* ISR(TIMER0_COMPA_vect, ISR_BLOCK) */
 
 /*
- * ISR(ADC_vect, ISR_BLOCK)
+ * ISR(ADC_vect, ISR_NAKED)
  * This is ADC interrupt that will be called when an ADC interrupt is complete.
  */
-ISR(ADC_vect, ISR_BLOCK)
+ISR(ADC_vect, ISR_NAKED)
 {
     /* We have entered an ISR. */
     OS_ISR_ENTER();
@@ -47,7 +47,10 @@ ISR(ADC_vect, ISR_BLOCK)
     /* We are now exiting the ISR. */
     OS_ISR_EXIT();
 
-} /* ISR(ADC_vect, ISR_BLOCK) */
+    /* Return and enable global interrupts. */
+    RETURN_ENABLING_INTERRUPTS();
+
+} /* ISR(ADC_vect, ISR_NAKED) */
 
 /*
  * adc_atmega644_init
