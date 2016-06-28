@@ -25,7 +25,7 @@ static SCHEDULER_LIST scheduler_list;
 
 /* Definitions for idle task. */
 static TASK __idle_task;
-static uint8_t __idle_task_stack[128];
+static uint8_t __idle_task_stack[IDLE_TASK_STACK_SIZE];
 static void __idle_task_entry(void *argv);
 
 /*
@@ -96,7 +96,7 @@ void scheduler_init()
 #endif /* CONFIG_SLEEP */
 
     /* Initialize idle task's control block and stack. */
-    task_create(&__idle_task, "Idle", __idle_task_stack, 128, &__idle_task_entry, (void *)0x00, TASK_NO_RETURN);
+    task_create(&__idle_task, "Idle", __idle_task_stack, IDLE_TASK_STACK_SIZE, &__idle_task_entry, (void *)0x00, TASK_NO_RETURN);
     scheduler_task_add(&__idle_task, TASK_IDLE, 0, 0);
 } /* scheduler_init */
 
