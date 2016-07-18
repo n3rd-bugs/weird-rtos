@@ -55,8 +55,11 @@
 
 /* ISR routines. */
 extern TASK *return_task;
-#ifndef CPU_ISR_ENTER   
+#ifndef CPU_ISR_ENTER
 #define CPU_ISR_ENTER()
+#endif
+#ifndef CPU_ISR_EXIT
+#define CPU_ISR_EXIT()
 #endif
 
 #define OS_ISR_ENTER();                                                         \
