@@ -32,9 +32,12 @@ extern TASK *current_task;
 uint8_t avr_system_stack[AVR_SYS_STACK_SIZE];
 uint8_t *avr_system_stack_pointer;
 
+/* Flag to specify that we are in ISR context. */
+uint8_t avr_in_isr = FALSE;
+
 /*
  * ISR(__vector_default)
- * This function will stub out any rogue interrupts, and 
+ * This function will stub out any rogue interrupts, and
  * will reset the system if triggered.
  */
 ISR(__vector_default)
@@ -230,35 +233,46 @@ void control_to_system()
         /* If we really need to schedule a context switch. */
         if (next_task != current_task)
         {
-            /* TODO: This causes clock screw. */
-            /* Save current timer tick. */
-            timer_value = TCNT1;
-
-            /* This will be a forced interrupt. */
-            force_tick = TRUE;
-
-            /* Trigger a forced timer interrupt. */
-            TCNT1 = (OCR1A - 1);
-
-            /* Updated the timer pre-scaler to trigger the compare
-             * quickly. */
-            TCCR1B =  0x01 | 0x08;
-
-            /* Wait for timer interrupt to trigger. */
-            while ((TIFR1 & 0x02) == 0);
-
-            /* Revert the timer pre-scaler. */
-            TCCR1B =  0x03 | 0x08;
-
-            /* If the timer tick will not go over the compare value. */
-            if (timer_value < OCR1A)
+            /* If we are not in context of an interrupt. */
+            if (avr_in_isr == FALSE)
             {
-                /* Restore the timer count. */
-                TCNT1 = timer_value;
-            }
+                /* TODO: This causes clock screw. */
+                /* Save current timer tick. */
+                timer_value = TCNT1;
 
-            /* Enable interrupts. */
-            ENABLE_INTERRUPTS();
+                /* This will be a forced interrupt. */
+                force_tick = TRUE;
+
+                /* Trigger a forced timer interrupt. */
+                TCNT1 = (OCR1A - 1);
+
+                /* Updated the timer pre-scaler to trigger the compare
+                 * quickly. */
+                TCCR1B =  0x01 | 0x08;
+
+                /* Wait for timer interrupt to trigger. */
+                while ((TIFR1 & 0x02) == 0);
+
+                /* Revert the timer pre-scaler. */
+                TCCR1B =  0x03 | 0x08;
+
+                /* If the timer tick will not go over the compare value. */
+                if (timer_value < OCR1A)
+                {
+                    /* Restore the timer count. */
+                    TCNT1 = timer_value;
+                }
+
+                /* Enable interrupts. */
+                ENABLE_INTERRUPTS();
+            }
+            else
+            {
+                /* Context has already been saved, just switch to new
+                 * task here. */
+                set_current_task((TASK *)next_task);
+                next_task = NULL;
+            }
         }
         else
         {

@@ -35,6 +35,9 @@ extern volatile uint32_t sys_interrupt_level;
 extern uint8_t avr_system_stack[AVR_SYS_STACK_SIZE];
 extern uint8_t *avr_system_stack_pointer;
 
+/* Flag to specify that we are in ISR context. */
+extern uint8_t avr_in_isr;
+
 /* Macros to manipulate interrupts. */
 #define ENABLE_INTERRUPTS()             {                                           \
                                             sys_interrupt_level = 1;                \
@@ -71,10 +74,16 @@ extern uint8_t *avr_system_stack_pointer;
 
 #define WDT_RESET()         asm volatile ( "wdr" :: );
 
-#define CPU_ISR_ENTER()     SAVE_CONTEXT();                             \
-                            LOAD_SYSTEM_STACK();
+#define CPU_ISR_ENTER()     {                                           \
+                                SAVE_CONTEXT();                         \
+                                LOAD_SYSTEM_STACK();                    \
+                                avr_in_isr = TRUE;                      \
+                            }
 
-#define CPU_ISR_EXIT()      RESTORE_CONTEXT(); 
+#define CPU_ISR_EXIT()      {                                           \
+                                avr_in_isr = FALSE;                     \
+                                RESTORE_CONTEXT();                      \
+                            }
 
 /* Load system stack. */
 #define LOAD_SYSTEM_STACK()                                             \
