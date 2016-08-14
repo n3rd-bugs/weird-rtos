@@ -73,8 +73,10 @@ void enc28j60_init(ENC28J60 *device)
     /* Register this ethernet device. */
     ethernet_regsiter(&device->ethernet_device, &enc28j60_initialize, &enc28j60_transmit_packet, &enc28j60_interrupt, &enc28j60_wdt);
 
+#ifdef CONFIG_SEMAPHORE
     /* Rather locking the global interrupts lock only the ethernet interrupts. */
     semaphore_set_irq_data(&device->ethernet_device.lock, device, (SEM_IRQ_LOCK *)&ENC28J60_DISABLE_INT, (SEM_IRQ_UNLOCK *)&ENC28J60_ENABLE_INT);
+#endif
 
     /* Disable enc28j60 interrupts. */
     device->flags &= (uint8_t)~(ENC28J60_ENABLE_IRQ);
