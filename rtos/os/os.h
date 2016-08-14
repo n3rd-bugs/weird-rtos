@@ -77,7 +77,7 @@ void task_yield();
 
 /* External function prototypes. */
 void sleep(uint32_t);
-#define sleep_ms(ms)                sleep( ((uint32_t)ms * OS_TICKS_PER_SEC) / (1000) )
+#define sleep_ms(ms)                sleep( ((uint32_t)(ms) * OS_TICKS_PER_SEC) / (1000) )
 
 /* Internal functions should not be called from user applications. */
 void os_process_system_tick();
