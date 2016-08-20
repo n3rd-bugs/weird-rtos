@@ -498,7 +498,7 @@ static int32_t enc28j60_rx_fifo_init(ENC28J60 *device)
     if (status == SUCCESS)
     {
         /* Set RX data pointer at ERXRDPTL/ERXRDPTH. */
-        status = enc28j60_write_word(device, ENC28J60_ADDR_ERXRDPTL, ENC28J60_RX_PTR(ENC28J60_RX_START));
+        status = enc28j60_write_word(device, ENC28J60_ADDR_ERXRDPTL, (uint16_t)ENC28J60_RX_PTR((int32_t)ENC28J60_RX_START));
     }
 
     if (status == SUCCESS)
@@ -721,7 +721,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
         if (status == SUCCESS)
         {
             /* Set new RX data pointer at ERXRDPTL/ERXRDPTH. */
-            status = enc28j60_write_word(device, ENC28J60_ADDR_ERXRDPTL, (uint16_t)(ENC28J60_RX_PTR(next_ptr)));
+            status = enc28j60_write_word(device, ENC28J60_ADDR_ERXRDPTL, (uint16_t)(ENC28J60_RX_PTR((int32_t)next_ptr)));
         }
 
         if (status == SUCCESS)
