@@ -39,6 +39,10 @@ This list is needed to be updated whenever a new error code is added.
     NET_INVALID_FD          -1014
     ETH_TX_BLOCKED          -1100
     SPI_TIMEOUT             -1200
+    LCD_TIME_OUT            -1300
+    LCD_COLUMN_FULL         -1301
+    LCD_ROW_FULL            -1302
+    LCD_INTERNAL_ERROR      -1303
     ENC28J60_SPI_ERROR      -11000
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001
