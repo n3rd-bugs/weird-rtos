@@ -34,6 +34,8 @@
 
 /* Number of system ticks per second. */
 #define OS_TICKS_PER_SEC            (uint32_t)(100)
+#define MS_TO_TICK(a)               (((uint64_t)(a) * OS_TICKS_PER_SEC) / (1000))
+#define TICK_TO_MS(a)               (((uint64_t)(a) * 1000) / (OS_TICKS_PER_SEC))
 #define OS_TICK64_PER_SEC           (uint32_t)(1000000)
 
 /* Some useful macros. */
@@ -77,7 +79,7 @@ void task_yield();
 
 /* External function prototypes. */
 void sleep(uint32_t);
-#define sleep_ms(ms)                sleep( ((uint32_t)(ms) * OS_TICKS_PER_SEC) / (1000) )
+#define sleep_ms(ms)                sleep( MS_TO_TICK(ms) )
 
 /* Internal functions should not be called from user applications. */
 void os_process_system_tick();
