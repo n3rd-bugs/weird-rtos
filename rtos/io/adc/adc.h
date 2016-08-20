@@ -33,4 +33,4 @@ uint32_t adc_read_average(uint32_t);
 
 #endif /* CONFIG_ADC */
 
-#endif /* _ADC_TARGET_H_ */
+#endif /* _ADC_H_ */
