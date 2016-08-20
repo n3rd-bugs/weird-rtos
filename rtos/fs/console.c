@@ -20,6 +20,9 @@
 #include <sll.h>
 #include <console.h>
 
+/* Debug file descriptor. */
+FD debug_fd = NULL;
+
 /* Console data. */
 static CONSOLE_DATA console_data;
 

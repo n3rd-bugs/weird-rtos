@@ -20,8 +20,6 @@
 #include <console.h>
 
 #ifdef FS_CONSOLE
-/* Debug file descriptor. */
-static FD debug_fd = NULL;
 
 /* Console data. */
 static CONSOLE usart_1 =
@@ -52,7 +50,7 @@ int32_t usart_atmega644p_puts(void *priv_data, uint8_t *buf, int32_t nbytes)
     UNUSED_PARAM(priv_data);
 
     /* While we have some data to be printed. */
-    while(nbytes > 0)
+    while (nbytes > 0)
     {
         /* Wait for last byte to be sent. */
         loop_until_bit_is_set(UCSR0A, UDRE0);

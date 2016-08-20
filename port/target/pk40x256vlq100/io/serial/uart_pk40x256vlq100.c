@@ -17,9 +17,6 @@
 #include <stdarg.h>
 
 #ifdef FS_CONSOLE
-/* Debug file descriptor. */
-static FD debug_fd = NULL;
-
 /* Console data. */
 static CONSOLE uart_1 =
 {
