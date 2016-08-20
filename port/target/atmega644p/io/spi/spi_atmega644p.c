@@ -118,6 +118,9 @@ void spi_atmega644_init(SPI_DEVICE *device)
  */
 void spi_atmega644_slave_select(SPI_DEVICE *device)
 {
+    /* Remove some compiler warning. */
+    UNUSED_PARAM(device);
+
     /* Set SS low. */
     PORTB &= (uint8_t)~(1 << 4);
 
@@ -129,6 +132,9 @@ void spi_atmega644_slave_select(SPI_DEVICE *device)
  */
 void spi_atmega644_slave_unselect(SPI_DEVICE *device)
 {
+    /* Remove some compiler warning. */
+    UNUSED_PARAM(device);
+
     /* Set SS high. */
     PORTB |= (1 << 4);
 
