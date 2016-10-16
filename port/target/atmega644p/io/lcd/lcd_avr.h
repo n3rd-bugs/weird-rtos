@@ -23,47 +23,47 @@
 #define LCD_AVR_ROWS        (4)
 #define LCD_AVR_COLS        (16)
 
-/* Enable PIN configuration. */
-#define LCD_AVR_EN          (1)
-#define LCD_AVR_EN_PORT     (PORTC)
-#define LCD_AVR_EN_DDR      (DDRC)
-#define LCD_AVR_EN_PIN      (PINC)
-
-/* Read/write PIN configuration. */
-#define LCD_AVR_RW          (0)
-#define LCD_AVR_RW_PORT     (PORTC)
-#define LCD_AVR_RW_DDR      (DDRC)
-#define LCD_AVR_RW_PIN      (PINC)
-
 /* Register select PIN configuration. */
-#define LCD_AVR_RS          (7)
+#define LCD_AVR_RS          (5)
 #define LCD_AVR_RS_PORT     (PORTD)
 #define LCD_AVR_RS_DDR      (DDRD)
 #define LCD_AVR_RS_PIN      (PIND)
 
-/* DAT7 PIN configuration. */
-#define LCD_AVR_D7          (5)
-#define LCD_AVR_D7_PORT     (PORTD)
-#define LCD_AVR_D7_DDR      (DDRD)
-#define LCD_AVR_D7_PIN      (PIND)
+/* Read/write PIN configuration. */
+#define LCD_AVR_RW          (6)
+#define LCD_AVR_RW_PORT     (PORTD)
+#define LCD_AVR_RW_DDR      (DDRD)
+#define LCD_AVR_RW_PIN      (PIND)
 
-/* DAT6 PIN configuration. */
-#define LCD_AVR_D6          (6)
-#define LCD_AVR_D6_PORT     (PORTD)
-#define LCD_AVR_D6_DDR      (DDRD)
-#define LCD_AVR_D6_PIN      (PIND)
-
-/* DAT5 PIN configuration. */
-#define LCD_AVR_D5          (6)
-#define LCD_AVR_D5_PORT     (PORTC)
-#define LCD_AVR_D5_DDR      (DDRC)
-#define LCD_AVR_D5_PIN      (PINC)
+/* Enable PIN configuration. */
+#define LCD_AVR_EN          (6)
+#define LCD_AVR_EN_PORT     (PORTC)
+#define LCD_AVR_EN_DDR      (DDRC)
+#define LCD_AVR_EN_PIN      (PINC)
 
 /* DAT4 PIN configuration. */
 #define LCD_AVR_D4          (2)
 #define LCD_AVR_D4_PORT     (PORTC)
 #define LCD_AVR_D4_DDR      (DDRC)
 #define LCD_AVR_D4_PIN      (PINC)
+
+/* DAT5 PIN configuration. */
+#define LCD_AVR_D5          (1)
+#define LCD_AVR_D5_PORT     (PORTC)
+#define LCD_AVR_D5_DDR      (DDRC)
+#define LCD_AVR_D5_PIN      (PINC)
+
+/* DAT6 PIN configuration. */
+#define LCD_AVR_D6          (0)
+#define LCD_AVR_D6_PORT     (PORTC)
+#define LCD_AVR_D6_DDR      (DDRC)
+#define LCD_AVR_D6_PIN      (PINC)
+
+/* DAT7 PIN configuration. */
+#define LCD_AVR_D7          (7)
+#define LCD_AVR_D7_PORT     (PORTD)
+#define LCD_AVR_D7_DDR      (DDRD)
+#define LCD_AVR_D7_PIN      (PIND)
 
 /* Function prototypes. */
 void lcd_avr_init();
