@@ -24,8 +24,9 @@
 /* Used by console file system to initialize DEBUG console. */
 #define DEBUG_CONSOLE_INIT  usart_atmega644p_init
 
-/* Some configurations. */
-#define BAUD_RATE       115200
+/* Serial configurations. */
+#define BAUD_RATE           115200
+#define PRINTF_BUFFER_SIZE  32
 
 /* Function prototypes. */
 int32_t usart_atmega644p_puts(void *, uint8_t *, int32_t);
