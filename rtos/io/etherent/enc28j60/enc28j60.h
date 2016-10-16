@@ -46,6 +46,10 @@
 #define ENC28J60_CLKRDY_TIMEOUT     (100)
 #define ENC28J60_CLKRDY_DELAY       (20)
 
+/* Configure if we would want to keep read incoming packets if they become
+ * available. */
+#define ENC28J60_CONTINUE_READ      TRUE
+
 /* ENC28J60 device configuration. */
 #define ENC28J60_REV_ID             (0x06)
 

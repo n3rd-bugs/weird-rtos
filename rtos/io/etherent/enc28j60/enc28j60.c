@@ -732,6 +732,14 @@ static void enc28j60_receive_packet(ENC28J60 *device)
             /* Decrement the number of packets. */
             status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON2, ENC28J60_ECON2_PKTDEC, NULL, 0);
         }
+
+#if (ENC28J60_CONTINUE_READ == TRUE)
+        if (status == SUCCESS)
+        {
+            /* Again read the number of packets available to read. */
+            status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EPKTCNT, 0xFF, &num_packets, 1);
+        }
+#endif
     }
 
 } /* enc28j60_receive_packet */
