@@ -13,7 +13,7 @@
 #ifndef _SYS_INFO_H_
 #define _SYS_INFO_H_
 
-#include <config.h>
+#include <os.h>
 
 #ifdef CONFIG_TASK_STATS
 #ifdef CONFIG_FS
