@@ -45,9 +45,9 @@ void led_task_delayed(void *argv)
     while(1)
     {
         PORTD |= (1 << (uint16_t)argv);
-        sleep(5);
+        sleep_ticks(5);
         PORTD &= ~(1 << (uint16_t)argv);
-        sleep(5);
+        sleep_ticks(5);
     }
 }
 
@@ -90,9 +90,9 @@ void semaphore_task(void *argv)
     {
         semaphore_obtain(&semaphore, (-1));
         PORTB |= (1 << (uint16_t)argv);
-        sleep(10);
+        sleep_ticks(10);
         PORTB &= ~(1 << (uint16_t)argv);
-        sleep(10);
+        sleep_ticks(10);
         semaphore_release(&semaphore);
 
         task_yield();

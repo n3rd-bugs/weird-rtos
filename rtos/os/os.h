@@ -36,7 +36,8 @@
 #define OS_TICKS_PER_SEC            (uint32_t)(100)
 #define MS_TO_TICK(a)               (((uint64_t)(a) * OS_TICKS_PER_SEC) / (1000))
 #define TICK_TO_MS(a)               (((uint64_t)(a) * 1000) / (OS_TICKS_PER_SEC))
-#define OS_TICK64_PER_SEC           (uint32_t)(1000000)
+#define US_TO_HW_TICK(a)            (((uint64_t)(a) * OS_HW_TICKS_PER_SEC) / (1000000))
+#define HW_TICK_TO_US(a)            (((uint64_t)(a) * 1000000) / (OS_HW_TICKS_PER_SEC))
 
 /* Some useful macros. */
 #define OFFSETOF(type, field)       ((int) &(((type *) 0)->field))
@@ -78,8 +79,10 @@ void os_run();
 void task_yield();
 
 /* External function prototypes. */
-void sleep(uint32_t);
-#define sleep_ms(ms)                sleep( MS_TO_TICK(ms) )
+void sleep_ticks(uint32_t);
+void sleep_hw_ticks(uint64_t);
+#define sleep_ms(ms)                sleep_ticks(MS_TO_TICK((ms)))
+#define sleep_us(us)                sleep_hw_ticks(US_TO_HW_TICK((us)))
 
 /* Internal functions should not be called from user applications. */
 void os_process_system_tick();

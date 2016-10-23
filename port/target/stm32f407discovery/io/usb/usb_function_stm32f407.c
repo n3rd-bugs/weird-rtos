@@ -1076,7 +1076,7 @@ void usb_function_stm32f407_activate_remote_wakeup(USB_STM32F407_HANDLE *usb_dev
             dctl.b.rmtwkupsig = 1;
             OS_MASK_REG32(&usb_device->regs.DREGS->DCTL, 0, dctl.d32);
 
-            sleep(10);
+            sleep_ticks(10);
 
             OS_MASK_REG32(&usb_device->regs.DREGS->DCTL, dctl.d32, 0);
         }

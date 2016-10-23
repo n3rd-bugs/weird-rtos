@@ -137,12 +137,12 @@ void sleep_remove_from_list(TASK *tcb)
 } /* sleep_remove_from_list */
 
 /*
- * sleep
+ * sleep_ticks
  * @ticks: Number of ticks for which this task is needed to sleep.
  * This function sleeps/suspends the current task for the given number of system
  * ticks.
  */
-void sleep(uint32_t ticks)
+void sleep_ticks(uint32_t ticks)
 {
     TASK *tcb;
     uint32_t interrupt_level;
@@ -179,7 +179,28 @@ void sleep(uint32_t ticks)
     /* Enable scheduling. */
     scheduler_unlock();
 
-} /* sleep */
+} /* sleep_ticks */
+
+
+/*
+ * sleep_hw_ticks
+ * @ticks: Number of hardware ticks for which this task is needed to sleep.
+ * This function will busy sleep the current task execution for given number
+ * of hardware ticks.
+ */
+void sleep_hw_ticks(uint64_t ticks)
+{
+    uint64_t hw_tick;
+
+    /* Wait before reading back from the LCD. */
+    hw_tick = current_hardware_tick();
+    while ((current_hardware_tick() - hw_tick) < ticks)
+    {
+        /* Yield current task to execute any high priority task. */
+        task_yield();
+    }
+
+} /* sleep_hw_ticks */
 
 /* This defines members for sleep scheduling class. */
 SCHEDULER sleep_scheduler =
