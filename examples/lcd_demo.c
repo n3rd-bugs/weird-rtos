@@ -32,21 +32,29 @@ void lcd_demo_entry(void *argv);
  */
 void lcd_demo_entry(void *argv)
 {
-    uint32_t i = 0;
+    uint64_t systick;
 
     /* Initialize LCD. */
     lcd_init();
+
+    /* Move to next 500ms boundary. */
+    sleep_ms(500 - (TICK_TO_MS(current_system_tick()) % 500));
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(argv);
 
     while(1)
     {
-        /* Print "Hello World". */
-        printf("\fHello World\r\n%d", i++);
+        /* Save current system tick. */
+        systick = current_system_tick();
 
-        /* Sleep for sometime. */
-        sleep_ms(100);
+        /* Print "Hello World" with current system tick. */
+        printf("\f\1\tWeird RTOS\r\n\tLCD Demo\r\n");
+        printf("SysTick\t: %lu", (uint32_t)systick);
+        printf("\r\nStack\t\t: %lu", get_current_task()->stack_size - (uint32_t)util_task_calc_free_stack(get_current_task()));
+
+        /* Sleep for 500ms. */
+        sleep_ms(500 - TICK_TO_MS(current_system_tick() - systick));
     }
 }
 
