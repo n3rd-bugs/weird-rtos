@@ -132,7 +132,7 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 uint64_t current_hardware_tick()
 {
     /* Return hardware system tick. */
-    return ((current_system_tick() << 16) + TCNT1);
+    return ((current_system_tick() * OCR1A) + TCNT1);
 
 } /* current_hardware_tick */
 

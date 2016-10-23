@@ -22,11 +22,12 @@
 #define F_CPU 20000000
 #endif
 #define OSC_FREQ            F_CPU
-#define PCLK_FREQ           OSC_FREQ
 #define SYS_CLK_DIV         1
 #define SYS_FREQ            (OSC_FREQ / SYS_CLK_DIV)
+#define PCLK_FREQ           SYS_FREQ
 #define AVR_SYS_STACK_SIZE  256
 #define AVR_HARD_RESET      TRUE
+#define OS_HW_TICKS_PER_SEC (PCLK_FREQ / 64)
 
 /* System interrupt level. */
 extern volatile uint32_t sys_interrupt_level;
@@ -207,7 +208,7 @@ extern uint8_t avr_in_isr;
 #define RETURN_ENABLING_INTERRUPTS()    asm volatile ( "reti" )
 #define RETURN_FUNCTION()               asm volatile ( "ret" )
 
-#define TOS_SET(tos, sp, size)      (tos = (sp + (size-1)))
+#define TOS_SET(tos, sp, size)          (tos = (sp + (size-1)))
 
 /* Function prototypes. */
 void system_tick_Init();
