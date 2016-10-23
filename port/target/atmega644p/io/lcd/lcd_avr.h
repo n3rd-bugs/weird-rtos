@@ -21,7 +21,7 @@
 /* LCD configuration for AVR. */
 /* Number of rows and columns on this LCD. */
 #define LCD_AVR_ROWS        (4)
-#define LCD_AVR_COLS        (16)
+#define LCD_AVR_COLS        (20)
 
 /* Register select PIN configuration. */
 #define LCD_AVR_RS          (5)

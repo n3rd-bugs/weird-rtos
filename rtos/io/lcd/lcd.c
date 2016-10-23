@@ -45,10 +45,12 @@ void lcd_register(LCD *lcd)
     /* Initialize LCD. */
     LCD_TGT_CLR_RS(lcd);
     LCD_TGT_SET_RW(lcd);
-    LCD_TGT_CLR_RW(lcd);
+    LCD_TGT_CLR_EN(lcd);
 
+#if (LCD_INIT_DELAY > 0)
     /* Need to wait at least 15ms on power up. */
-    sleep_ms(15);
+    sleep_ms(LCD_INIT_DELAY);
+#endif
 
     /* Send first 0x3. */
     lcd_send_nibble(lcd, 0x3);
@@ -95,17 +97,32 @@ void lcd_register(LCD *lcd)
 
     if (status == SUCCESS)
     {
-        lcd_write_register(lcd, FALSE, 0x0C);
+        status = lcd_write_register(lcd, FALSE, 0x28);
     }
 
     if (status == SUCCESS)
     {
-        lcd_write_register(lcd, FALSE, 0x01);
+        status = lcd_write_register(lcd, FALSE, 0x08);
     }
 
     if (status == SUCCESS)
     {
-        lcd_write_register(lcd, FALSE, 0x06);
+        status = lcd_write_register(lcd, FALSE, 0x01);
+
+#if (LCD_CLEAR_DELAY > 0)
+        /* Wait for sometime before writing any more data. */
+        sleep_ms(LCD_CLEAR_DELAY);
+#endif
+    }
+
+    if (status == SUCCESS)
+    {
+        status = lcd_write_register(lcd, FALSE, 0x06);
+    }
+
+    if (status == SUCCESS)
+    {
+        status = lcd_write_register(lcd, FALSE, 0x0C);
     }
 
     if (status == SUCCESS)
@@ -150,7 +167,7 @@ int32_t lcd_wait_8bit(LCD *lcd)
     sys_time = current_system_tick();
 
     /* Read the first 4 bit and wait for the busy bit. */
-    while ((sys_time - current_system_tick()) < (MS_TO_TICK(LCD_BUSY_TIMEOUT)) &&
+    while ((current_system_tick() - sys_time) < (MS_TO_TICK(LCD_BUSY_TIMEOUT)) &&
            (LCD_TGT_READ_DAT(lcd) & (1 << 3)))
     {
         LCD_TGT_CLR_EN(lcd);
@@ -159,12 +176,13 @@ int32_t lcd_wait_8bit(LCD *lcd)
     }
 
     /* If we timed out waiting for the LCD. */
-    if ((sys_time - current_system_tick()) > (MS_TO_TICK(LCD_BUSY_TIMEOUT)))
+    if (LCD_TGT_READ_DAT(lcd) & (1 << 3))
     {
         /* Return error to the caller. */
         status = LCD_TIME_OUT;
     }
 
+    /* Clear the enable pin. */
     LCD_TGT_CLR_EN(lcd);
 
     /* Return status to the caller. */
@@ -209,7 +227,7 @@ int32_t lcd_write_register(LCD *lcd, uint8_t rs, uint8_t byte)
     int32_t status = SUCCESS;
 
     /* Wait for LCD. */
-    while ((sys_time - current_system_tick()) < (MS_TO_TICK(LCD_BUSY_TIMEOUT)) &&
+    while ((current_system_tick() - sys_time) < (MS_TO_TICK(LCD_BUSY_TIMEOUT)) &&
            (cmd_byte & (1 << 7)))
     {
         /* Read command register. */
@@ -224,7 +242,7 @@ int32_t lcd_write_register(LCD *lcd, uint8_t rs, uint8_t byte)
     }
 
     /* If we did not timeout waiting for the LCD. */
-    if ((sys_time - current_system_tick()) < (MS_TO_TICK(LCD_BUSY_TIMEOUT)))
+    if ((cmd_byte & (1 << 7)) == 0)
     {
         /* Select required register. */
         if (rs == TRUE)
@@ -292,6 +310,9 @@ int32_t lcd_read_register(LCD *lcd, uint8_t rs, uint8_t *byte)
     /* Enable the LCD data line. */
     LCD_TGT_SET_EN(lcd);
 
+    /* Wait before reading back from the LCD. */
+    sleep_us(LCD_READ_DELAY);
+
     /* Read first 4 bits. */
     ret_byte = LCD_TGT_READ_DAT(lcd) << 4;
 
@@ -300,6 +321,9 @@ int32_t lcd_read_register(LCD *lcd, uint8_t rs, uint8_t *byte)
 
     /* Enable the LCD data line. */
     LCD_TGT_SET_EN(lcd);
+
+    /* Wait before reading back from the LCD. */
+    sleep_us(LCD_READ_DELAY);
 
     /* Read last 4 bits. */
     ret_byte |= LCD_TGT_READ_DAT(lcd);
@@ -314,6 +338,43 @@ int32_t lcd_read_register(LCD *lcd, uint8_t rs, uint8_t *byte)
     return (0);
 
 } /* lcd_read_register */
+
+/*
+ * lcd_create_custom_char
+ * @lcd: LCD driver for which a custom character is needed to be written.
+ * @index: Custom character index.
+ * @bitmap: Character bitmap array.
+ * This function creates/overwrites an custom character on the given LCD.
+ */
+int32_t lcd_create_custom_char(LCD *lcd, uint8_t index, uint8_t *bitmap)
+{
+    int32_t status;
+    uint8_t i;
+    uint8_t ddram_addr;
+
+    /* Get the DDRAM address. */
+    status = lcd_read_register(lcd, FALSE, &ddram_addr);
+
+    if (status == SUCCESS)
+    {
+        /* Move to required index in the CGRAM. */
+        status = lcd_write_register(lcd, FALSE, 0x40 + (index << 3));
+
+        /* Write the bitmap of the character. */
+        for (i = 0; ((status == SUCCESS) && (i < 8)); i++)
+        {
+            /* Write the bitmap in the CGRAM. */
+            status = lcd_write_register(lcd, TRUE, bitmap[i]);
+        }
+
+        /* Revert to old DDRAM address. */
+        (void)lcd_write_register(lcd, FALSE, (ddram_addr | (1 << 7)));
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* lcd_create_custom_char */
 
 /*
  * lcd_write
@@ -352,6 +413,11 @@ int32_t lcd_write(void *priv_data, uint8_t *buf, int32_t nbytes)
                 /* Reset the cursor location. */
                 lcd->cur_column = lcd->cur_row = 0;
             }
+
+#if (LCD_CLEAR_DELAY > 0)
+            /* Wait for sometime before writing any more data. */
+            sleep_ms(LCD_CLEAR_DELAY);
+#endif
 
             break;
 
@@ -434,7 +500,7 @@ int32_t lcd_write(void *priv_data, uint8_t *buf, int32_t nbytes)
             if (status == SUCCESS)
             {
                 /* Update cursor location on the LCD. */
-                status = lcd_write_register(lcd, 0, address);
+                status = lcd_write_register(lcd, FALSE, address);
             }
 
             break;

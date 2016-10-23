@@ -30,8 +30,13 @@
 #define LCD_DEBUG
 
 /* LCD configurations */
-#define LCD_BUSY_TIMEOUT    (100)
+#define LCD_BUSY_TIMEOUT    (500)
 #define LCD_TAB_SIZE        (3)
+
+/* LCD delay configurations. */
+#define LCD_INIT_DELAY      (35)
+#define LCD_CLEAR_DELAY     (10)
+#define LCD_READ_DELAY      (5)
 
 /* LCD error code definitions. */
 #define LCD_TIME_OUT        -1300
@@ -69,6 +74,7 @@ void lcd_send_nibble(LCD *, uint8_t);
 int32_t lcd_write_register(LCD *, uint8_t, uint8_t);
 int32_t lcd_read_register(LCD *, uint8_t, uint8_t *);
 int32_t lcd_is_busy(LCD *);
+int32_t lcd_create_custom_char(LCD *, uint8_t, uint8_t *);
 int32_t lcd_write(void *, uint8_t *, int32_t);
 
 #endif /* CONFIG_LCD */
