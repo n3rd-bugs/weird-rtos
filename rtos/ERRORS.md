@@ -9,6 +9,7 @@ This list is needed to be updated whenever a new error code is added.
     FS_NODE_DELETED         -800
     FS_BUFFER_NO_SPACE      -801
     FS_INVALID_BUFFER_TYPE  -802
+    FS_INVALID_COMMAND      -803
     PPP_INVALID_HEADER      -900
     PPP_NOT_SUPPORTED       -901
     PPP_VALUE_NOT_VALID     -902
@@ -39,10 +40,10 @@ This list is needed to be updated whenever a new error code is added.
     NET_INVALID_FD          -1014
     ETH_TX_BLOCKED          -1100
     SPI_TIMEOUT             -1200
-    LCD_TIME_OUT            -1300
-    LCD_COLUMN_FULL         -1301
-    LCD_ROW_FULL            -1302
-    LCD_INTERNAL_ERROR      -1303
+    LCD_AN_TIME_OUT         -1300
+    LCD_AN_COLUMN_FULL      -1301
+    LCD_AN_ROW_FULL         -1302
+    LCD_AN_INTERNAL_ERROR   -1303
     ENC28J60_SPI_ERROR      -11000
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001

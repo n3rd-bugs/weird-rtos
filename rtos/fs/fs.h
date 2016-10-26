@@ -27,6 +27,7 @@
 #define FS_NODE_DELETED         -800
 #define FS_BUFFER_NO_SPACE      -801
 #define FS_INVALID_BUFFER_TYPE  -802
+#define FS_INVALID_COMMAND      -803
 
 /* File descriptor definitions. */
 typedef void *FD;
