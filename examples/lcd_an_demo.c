@@ -1,5 +1,5 @@
 /*
- * lcd_demo.c
+ * lcd_an_demo.c
  *
  * Copyright (c) 2016 Usama Masood <mirzaon@gmail.com>
  *
@@ -33,10 +33,8 @@ void lcd_demo_entry(void *argv);
 void lcd_demo_entry(void *argv)
 {
     uint64_t systick;
-#ifdef LCD_AN_DEBUG
     extern FD lcd_an_fd;
     LCD_AN_IOCTL_DATA ioctl_data;
-#endif
 
     /* Initialize alphanumeric LCD. */
     lcd_an_init();
