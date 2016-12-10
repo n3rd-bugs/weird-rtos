@@ -39,7 +39,7 @@ struct _task
 #ifdef CONFIG_SLEEP
     /* The system tick at which this task is needed to be rescheduled. */
     uint64_t    tick_sleep;
-#endif
+#endif /* CONFIG_SLEEP */
 
 #ifdef CONFIG_TASK_STATS
     /* Number of times this task was scheduled. */
@@ -58,12 +58,15 @@ struct _task
 #ifdef CONFIG_SLEEP
     /* Link list member for sleeping tasks. */
     TASK        *next_sleep;
-#endif
+#endif /* CONFIG_SLEEP */
 
 #ifdef CONFIG_TASK_STATS
     /* Global task list member. */
     TASK        *next_global;
 #endif /* CONFIG_TASK_STATS */
+
+    /* Wait conditions for this task. */
+    void        **wait_condition;
 
     /* This holds current stack pointer of this task. */
     uint8_t     *tos;
@@ -83,8 +86,10 @@ struct _task
 
     /* This defines task priority. */
     uint32_t    priority;
-
 #endif /* CONFIG_TASK_STATS */
+
+    /* Number of wait conditions on which this task is waiting. */
+    uint32_t    num_conditions;
 
     /* Current task status. */
     int32_t     status;
@@ -92,7 +97,6 @@ struct _task
 #ifdef CONFIG_TASK_STATS
     /* Task stack size. */
     uint32_t    stack_size;
-
 #endif /* CONFIG_TASK_STATS */
 
     /* Task scheduler class identifier. */
@@ -106,8 +110,8 @@ struct _task
 
     /* Lock count, how much nested IRQ locks have we acquired. */
     uint8_t     irq_lock_count;
-#ifdef CONFIG_SLEEP
 
+#ifndef CONFIG_SLEEP
     /* Padding variable (needs to be 64-bit aligned). */
     uint8_t     pad2[4];
 #endif

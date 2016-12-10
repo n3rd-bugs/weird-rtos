@@ -56,16 +56,44 @@ static uint8_t sleep_task_sort(void *node, void *task)
 static TASK *sleep_process_system_tick(void)
 {
     TASK *tcb = NULL;
+    TASK *tcb_break = NULL;
 
-    /* Check if we need to schedule a sleeping task. */
-    if ( (sleep_scheduler.ready_tasks.head != NULL) &&
-         (current_system_tick() >= sleep_scheduler.ready_tasks.head->tick_sleep) )
+    for (;;)
     {
-        /* Schedule this sleeping task. */
-        tcb = (TASK *)sll_pop(&sleep_scheduler.ready_tasks, OFFSETOF(TASK, next_sleep));
+        /* Check if we need to schedule a sleeping task. */
+        if ( (sleep_scheduler.ready_tasks.head != tcb_break) &&
+             (current_system_tick() >= sleep_scheduler.ready_tasks.head->tick_sleep) )
+        {
+            /* Schedule this sleeping task. */
+            tcb = (TASK *)sll_pop(&sleep_scheduler.ready_tasks, OFFSETOF(TASK, next_sleep));
 
-        /* Task is being resumed from sleep. */
-        tcb->status = TASK_RESUME_SLEEP;
+            /* Task is already resumed. */
+            if (tcb->status != TASK_SUSPENDED)
+            {
+                /* Lets not get this task out of sleep any time soon. */
+                tcb->tick_sleep = MAX_WAIT;
+
+                /* Put back this task on the scheduler list. */
+                /* We will remove it from this list when we will resume. */
+                sll_push(&sleep_scheduler.ready_tasks, tcb, OFFSETOF(TASK, next_sleep));
+
+                /* Save the task at which we will need to break the search. */
+                tcb_break = tcb;
+
+                /* This is not the task we need. */
+                tcb = NULL;
+
+                /* Check if we can resume the next task. */
+                continue;
+            }
+            else
+            {
+                /* Task is being resumed from sleep. */
+                tcb->status = TASK_RESUME_SLEEP;
+            }
+        }
+
+        break;
     }
 
     /* Return the task that is needed to be scheduled. */

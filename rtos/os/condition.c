@@ -28,6 +28,7 @@ static void suspend_condition_add_task(CONDITION **, SUSPEND **, uint32_t, TASK 
 static void suspend_condition_remove_all(CONDITION **, SUSPEND **, uint32_t);
 static void suspend_condition_remove(CONDITION **, SUSPEND **, uint32_t, CONDITION *, uint32_t *);
 static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint32_t, uint32_t *);
+static uint8_t suspend_is_task_waiting(TASK *, CONDITION *);
 #ifdef CONFIG_SLEEP
 static uint32_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
 #endif
@@ -91,8 +92,10 @@ static uint8_t suspend_priority_sort(void *node, void *new)
  */
 static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
 {
+    uint32_t n;
+
     /* Unlock all conditions. */
-    while (num)
+    for (n = 0; n < num; n++)
     {
         /* If we can unlock this condition. */
         if (((!resume_condition) || (resume_condition != (*condition))) && ((*condition)->unlock))
@@ -103,9 +106,6 @@ static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDIT
 
         /* Pick next condition. */
         condition++;
-
-        /* This is now processed. */
-        num--;
     }
 
 } /* suspend_unlock_condition */
@@ -155,8 +155,10 @@ static void suspend_lock_condition(CONDITION **condition, uint32_t num, CONDITIO
  */
 static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend, uint32_t num, TASK *tcb)
 {
+    uint32_t n;
+
     /* For all conditions add this task. */
-    while (num)
+    for (n = 0; n < num; n++)
     {
         /* Add this task on the suspend data. */
         (*suspend)->task = tcb;
@@ -177,9 +179,6 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
         /* Pick next condition. */
         condition++;
         suspend++;
-
-        /* This is now processed. */
-        num--;
     }
 
 } /* suspend_condition_add_task */
@@ -193,8 +192,10 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
  */
 static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspend, uint32_t num)
 {
+    uint32_t n;
+
     /* For all conditions remove respective conditions. */
-    while (num > 0)
+    for (n = 0; n < num; n++)
     {
         /* Remove this suspend from the suspend list. */
         OS_ASSERT(sll_remove(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next)) != *suspend);
@@ -202,9 +203,6 @@ static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspen
         /* Pick next condition. */
         condition++;
         suspend++;
-
-        /* This is now processed. */
-        num--;
     }
 
 } /* suspend_condition_remove_all */
@@ -292,6 +290,39 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
 
 } /* suspend_do_suspend */
 
+/*
+ * suspend_is_task_waiting
+ * @check_condition: Condition for which we need to check if this task is
+ *  waiting on.
+ * @return: TRUE if this task is waiting on the given condition,
+ *  FALSE will be returned if this task is not waiting on the given
+ *  condition.
+ * This function will check and return if the given task is suspended on the
+ * given condition.
+ */
+static uint8_t suspend_is_task_waiting(TASK *task, CONDITION *check_condition)
+{
+    uint8_t waiting = FALSE;
+    uint32_t n;
+
+    /* Check the task list. */
+    for (n = 0; n < task->num_conditions; n++)
+    {
+        /* If task is waiting on this condition. */
+        if (task->wait_condition[n] == check_condition)
+        {
+            /* We are waiting on this condition. */
+            waiting = TRUE;
+
+            break;
+        }
+    }
+
+    /* Return if the task is waiting on given condition. */
+    return (waiting);
+
+} /* suspend_is_task_waiting */
+
 #ifdef CONFIG_SLEEP
 /*
  * suspend_timeout_get_min
@@ -377,8 +408,10 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
 {
     TASK *tcb = get_current_task();
     int32_t status = SUCCESS, task_status = TASK_RESUME;
-    uint32_t num_conditions = *num, timeout, timeout_index;
+    volatile uint32_t num_conditions = *num;
+    uint32_t timeout, timeout_index;
     CONDITION *resume_condition = NULL;
+    uint32_t interrupt_level;
 
 #ifndef CONFIG_SLEEP
     /* Remove some compiler warning. */
@@ -423,6 +456,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     while (suspend_do_suspend(condition, suspend, num_conditions, num))
     {
         /* Disable global interrupts. */
+        interrupt_level = GET_INTERRUPT_LEVEL();
         DISABLE_INTERRUPTS();
 
 #ifdef CONFIG_SLEEP
@@ -453,6 +487,8 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
 
         /* Task is being suspended. */
         tcb->status = TASK_SUSPENDED;
+        tcb->wait_condition = (void**)condition;
+        tcb->num_conditions = num_conditions;
 
         /* Wait for either being resumed by some data or timeout. */
         task_waiting();
@@ -460,6 +496,10 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         /* Save task status and the condition from which we are resumed. */
         task_status = tcb->status;
         resume_condition = tcb->suspend_data;
+
+        /* Restore old interrupt level so that we obtain the locks while
+         * interrupts are enabled. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
 
         /* If we resumed normally or got timed out. */
         if ((task_status == TASK_RESUME_SLEEP) || (task_status == TASK_RESUME))
@@ -545,6 +585,7 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 {
     SUSPEND *suspend;
     uint32_t interrupt_level;
+    SUSPEND_LIST tmp_list = {NULL, NULL};
 
     /* If caller is not in locked state. */
     if ((locked == FALSE) && (condition->lock))
@@ -552,6 +593,9 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
         /* Lock this condition. */
         condition->lock(condition->data);
     }
+
+    /* Disable preemption. */
+    scheduler_lock();
 
     /* Get the interrupt level. */
     interrupt_level = GET_INTERRUPT_LEVEL();
@@ -574,44 +618,73 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 
         else
         {
-            /* Get the first task that can be executed. */
+            /* Get a task that can be executed. */
             suspend = (SUSPEND *)sll_pop(&condition->suspend_list, OFFSETOF(SUSPEND, next));
         }
 
-        /* If we have a task, and we need to resume it. */
-        if ((suspend) && (suspend->task->status == TASK_SUSPENDED))
+        /* If we have a task. */
+        if (suspend)
         {
+            /* If task is actually suspended on this condition. */
+            if ((suspend->task->status == TASK_SUSPENDED) && (suspend_is_task_waiting(suspend->task, condition) == TRUE))
+            {
 #ifdef CONFIG_SLEEP
-            /* Remove this task from sleeping tasks. */
-            sleep_remove_from_list(suspend->task);
+                /* Remove this task from sleeping tasks. */
+                sleep_remove_from_list(suspend->task);
 #endif /* CONFIG_SLEEP */
 
-            /* Try to reschedule this task. */
-            ((SCHEDULER *)(suspend->task->scheduler))->yield(suspend->task, YIELD_SYSTEM);
+                /* Try to reschedule this task. */
+                ((SCHEDULER *)(suspend->task->scheduler))->yield(suspend->task, YIELD_SYSTEM);
 
-            /* If do have resume data. */
-            if (resume != NULL)
-            {
-                /* Set the task status as required by resume. */
-                suspend->task->status = resume->status;
+                /* If do have resume data. */
+                if (resume != NULL)
+                {
+                    /* Set the task status as required by resume. */
+                    suspend->task->status = resume->status;
+                }
+                else
+                {
+                    /* Update task status to be resumed normally. */
+                    suspend->task->status = TASK_RESUME;
+                }
+
+                /* Save the condition for which this task is resuming. */
+                suspend->task->suspend_data = condition;
+
+                /* Try to yield the current task. */
+                task_yield();
             }
             else
             {
-                /* Update task status to be resumed normally. */
-                suspend->task->status = TASK_RESUME;
+                /* Save this task in our temporary list, we will put it back on
+                 * the list later. */
+                sll_push(&tmp_list, suspend, OFFSETOF(SUSPEND, next));
             }
+        }
 
-            /* Save the condition for which this task is resuming. */
-            suspend->task->suspend_data = condition;
+    } while (suspend != NULL);
 
-            /* Try to yield the current task. */
-            task_yield();
+    /* Put any tasks back on the suspend list if any. */
+    do
+    {
+        /* Get a task we need to put back on the suspend list. */
+        suspend = (SUSPEND *)sll_pop(&tmp_list, OFFSETOF(SUSPEND, next));
+
+        /* If we do have a task. */
+        if (suspend != NULL)
+        {
+            /* Push this task back on the suspend list we will remove it when
+             * we will resume. */
+            sll_push(&condition->suspend_list, suspend, OFFSETOF(SUSPEND, next));
         }
 
     } while (suspend != NULL);
 
     /* Restore old interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);
+
+    /* Enable preemption. */
+    scheduler_unlock();
 
     /* If caller was not in locked state. */
     if ((locked == FALSE) && (condition->unlock))
