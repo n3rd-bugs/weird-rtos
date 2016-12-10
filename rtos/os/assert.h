@@ -17,30 +17,49 @@
 #include <os.h>
 
 /* Assert configuration. */
-#define ASSERT_NONE
+//#define ASSERT_NONE
 #define ASSERT_FILE_INFO
 
 /* Error handling. */
 #ifdef ASSERT_NONE
-#define OS_ASSERT(raise)    ((void)(raise));
+#define OS_ASSERT(raise)                    ((void)(raise));
+#define OS_ASSERT_INFO(raise, file, line)   ((void)(raise)); ((void)(file)); ((void)(line));
 #else
 #ifdef ASSERT_FILE_INFO
-#define OS_ASSERT(raise)    {                                               \
-                                if ((raise) != FALSE)                       \
-                                {                                           \
-                                    system_assert((raise),                  \
-                                                  __FILE__, __LINE__,       \
-                                                  get_current_task());      \
-                                }                                           \
-                            }
+#define OS_ASSERT(raise)        {                                               \
+                                    if ((raise) != FALSE)                       \
+                                    {                                           \
+                                        system_assert((raise),                  \
+                                                      __FILE__, __LINE__,       \
+                                                      get_current_task());      \
+                                    }                                           \
+                                }
+#define OS_ASSERT_INFO(raise, file, line)                                       \
+                                {                                               \
+                                    if ((raise) != FALSE)                       \
+                                    {                                           \
+                                        system_assert((raise),                  \
+                                                      file, line,               \
+                                                      get_current_task());      \
+                                    }                                           \
+                                }
 #else
-#define OS_ASSERT(raise)    {                                               \
-                                if ((raise) != FALSE)                       \
-                                {                                           \
-                                    system_assert((raise), "", 0,           \
-                                                  get_current_task());      \
-                                }                                           \
-                            }
+#define OS_ASSERT(raise)        {                                               \
+                                    if ((raise) != FALSE)                       \
+                                    {                                           \
+                                        system_assert((raise), "", 0,           \
+                                                      get_current_task());      \
+                                    }                                           \
+                                }
+#define OS_ASSERT_INFO(raise, file, line)                                       \
+                                {                                               \
+                                    if ((raise) != FALSE)                       \
+                                    {                                           \
+                                        system_assert((raise),                  \
+                                                      "", 0,                    \
+                                                      get_current_task());      \
+                                    }                                           \
+                                }
 #endif /* ASSERT_FILE_INFO */
 #endif /* ASSERT_NONE */
 
