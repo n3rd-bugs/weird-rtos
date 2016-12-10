@@ -21,7 +21,7 @@
 extern FD debug_fd;
 
 /* Console file system. */
- typedef struct _console
+typedef struct _console
 {
     /* For now it only has FS data. */
     FS      fs;

@@ -57,15 +57,19 @@ struct _suspend
                              * condition. */
 };
 
+/* Link list of suspend. */
+typedef struct _suspend_list
+{
+    /* Link-list of the suspend on this condition. */
+    SUSPEND     *head;
+    SUSPEND     *tail;
+} SUSPEND_LIST;
+
 /* Condition data. */
 typedef struct _condition
 {
-    struct _condition_suspend_list
-    {
-        /* Link-list of the suspend on this condition. */
-        SUSPEND     *head;
-        SUSPEND     *tail;
-    } suspend_list;
+    /* Link-list of the suspend on this condition. */
+    SUSPEND_LIST        suspend_list;
 
     /* Function that will be called to get lock for condition. */
     CONDITION_LOCK      *lock;
@@ -75,10 +79,10 @@ typedef struct _condition
 
     /* Private data that will be passed to the lock, unlock and suspend check
      * APIs.  */
-    void        *data;
+    void                *data;
 
     /* Condition flags. */
-    uint32_t    flags;
+    uint32_t            flags;
 
 } CONDITION;
 
