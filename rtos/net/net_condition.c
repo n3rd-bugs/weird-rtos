@@ -89,11 +89,6 @@ void net_condition_updated()
  */
 void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PROCESS *process, void *data)
 {
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
-
     /* Should never happen. */
     OS_ASSERT(net_condition_data.num == NET_COND_NUM_TOTAL);
 
@@ -105,9 +100,6 @@ void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PRO
 
     /* Increase the number of conditions. */
     net_condition_data.num++;
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Networking condition data has been updated. */
     net_condition_updated();
@@ -152,18 +144,10 @@ static int32_t net_condition_get_index(NET_CONDITION *net_cond, CONDITION *condt
 void net_condition_remove(CONDITION *condition)
 {
     int32_t index;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
     TASK *tcb = get_current_task();
 
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
-
     /* If this is not the networking task. */
-    if ((tcb) && (tcb != &net_condition_tcb))
-    {
-        /* For now this is not supported. */
-        OS_ASSERT(TRUE);
-    }
+    OS_ASSERT(((!tcb) || (tcb != &net_condition_tcb)));
 
     /* Validate that we do have a condition on which we are listening. */
     OS_ASSERT(net_condition_data.num <= 0);
@@ -194,9 +178,6 @@ void net_condition_remove(CONDITION *condition)
     /* Decrement the number of conditions. */
     net_condition_data.num = (uint32_t)(net_condition_data.num - 1);
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
 } /* net_condition_remove */
 
 /*
@@ -209,7 +190,7 @@ static void net_condition_task_entry(void *argv)
     NET_CONDITION *net_cond = (NET_CONDITION *)argv;
     NET_CONDITION_PROCESS *process;
     void *data;
-    uint32_t interrupt_level, num_condition;
+    uint32_t num_condition;
     int32_t status;
 
     /* Should never happen. */
@@ -218,11 +199,6 @@ static void net_condition_task_entry(void *argv)
     /* This function should never return. */
     for (;;)
     {
-        /* Disable global interrupts. */
-        /* This is required to protect the condition list. */
-        interrupt_level = GET_INTERRUPT_LEVEL();
-        DISABLE_INTERRUPTS();
-
         /* Suspend until we have a condition to process. */
         num_condition = net_cond->num;
         status = suspend_condition(net_cond->condition, net_cond->suspend, &num_condition, FALSE);
@@ -239,11 +215,6 @@ static void net_condition_task_entry(void *argv)
             /* We don't have a valid condition to process. */
             process = data = NULL;
         }
-
-        /* We have no need to protect the networking conditions. */
-
-        /* Restore old interrupt level. */
-        SET_INTERRUPT_LEVEL(interrupt_level);
 
         /* If we have a valid condition to process. */
         if (process != NULL)
