@@ -258,7 +258,7 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     if (semaphore->count == 0)
     {
         /* Should never happen. */
-        OS_ASSERT(semaphore->type & SEMAPHORE_IRQ);
+        OS_ASSERT((semaphore->type & SEMAPHORE_IRQ) && (semaphore->irq_lock == NULL));
 
         /* Check if we need to wait for semaphore to be free. */
         if ((wait > 0) && (tcb != NULL))
@@ -266,8 +266,12 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
             /* Initialize suspend condition for this semaphore. */
             semaphore_condition_get(semaphore, &condition, suspend_ptr, wait);
 
-            /* Start waiting on this semaphore. */
-            status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
+            /* While we cannot get the lock. */
+            while ((status == SUCCESS) && (semaphore->count == 0))
+            {
+                /* Start waiting on this semaphore. */
+                status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
+            }
         }
 
         /* We are not waiting for this semaphore to be free. */
