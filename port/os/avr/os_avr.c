@@ -268,8 +268,12 @@ void control_to_system()
                     TCNT1 = timer_value;
                 }
 
-                /* Enable interrupts. */
-                ENABLE_INTERRUPTS();
+                /* If current task has not locked the IRQs. */
+                if (current_task->irq_lock_count == 0)
+                {
+                    /* Enable interrupts. */
+                    ENABLE_INTERRUPTS();
+                }
             }
             else
             {
