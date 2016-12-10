@@ -120,7 +120,7 @@ uint8_t *ethernet_random_mac(ETH_DEVICE *);
 uint8_t *ethernet_get_mac_address(FD);
 void ethernet_wdt_enable(ETH_DEVICE *, uint32_t);
 void ethernet_wdt_disable(ETH_DEVICE *);
-void ethernet_interrupt(ETH_DEVICE *);
+int32_t ethernet_interrupt(ETH_DEVICE *);
 int32_t ethernet_buffer_receive(FS_BUFFER *);
 
 #endif /* CONFIG_ETHERNET */
