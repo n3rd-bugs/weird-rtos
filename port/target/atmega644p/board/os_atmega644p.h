@@ -13,6 +13,10 @@
 #ifndef OS_ATMEGA644P_H
 #define OS_ATMEGA644P_H
 
+#ifdef CONFIG_BOOTLOAD
+#include <bootload_atmega644p.h>
+#endif
+
 #include <usart_atmega644p.h>
 
 /* Any other configuration is being managed by Eclipse plugin for avr-gcc. */

@@ -201,6 +201,11 @@ void avr_stack_init(void)
     MCUSR = 0;
     wdt_disable();
 
+#ifdef CONFIG_BOOTLOAD
+    /* Perform boot load operation. */
+    BOOTLOAD();
+#endif
+
     /* Set the stack pointer to the end of the system stack. */
     LOAD_SYSTEM_STACK();
 
