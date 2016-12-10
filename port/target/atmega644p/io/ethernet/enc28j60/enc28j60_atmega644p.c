@@ -14,6 +14,7 @@
 #include <ethernet.h>
 
 #ifdef ETHERNET_ENC28J60
+#include <avr/boot.h>
 #include <enc28j60.h>
 #include <enc28j60_atmega644p.h>
 #include <string.h>
@@ -122,5 +123,34 @@ void enc28j60_atmega644p_reset(ENC28J60 *device)
     PORTD |= (1 << 4);
 
 } /* enc28j60_atmega644p_reset */
+
+/*
+ * enc28j60_atmega644p_get_mac
+ * @device: Ethernet device instance for which MAC address is needed to
+ *  be assigned.
+ * @return: Returns the start of random MAC address generated.
+ * This function will generate a MAC address using the device serial.
+ */
+uint8_t *enc28j60_atmega644p_get_mac(ETH_DEVICE *device)
+{
+    /* Assign a MAC address using the device serial. */
+    device->mac[0] = boot_signature_byte_get(0x000F);
+    device->mac[1] = boot_signature_byte_get(0x000E);
+    device->mac[2] = boot_signature_byte_get(0x0011);
+    device->mac[3] = boot_signature_byte_get(0x0010);
+    device->mac[4] = boot_signature_byte_get(0x0013);
+    device->mac[5] = boot_signature_byte_get(0x0012);
+    device->mac[6] = boot_signature_byte_get(0x0015);
+    device->mac[7] = boot_signature_byte_get(0x0016);
+    device->mac[7] ^= boot_signature_byte_get(0x0017);
+
+    /* Set the OUI bit and reset the multicast bit. */
+    device->mac[0] |= ETH_MAC_OUI;
+    device->mac[0] &= ((uint8_t)~(ETH_MAC_MULTICAST));
+
+    /* Return the generated MAC address. */
+    return (device->mac);
+
+} /* enc28j60_atmega644p_get_mac */
 
 #endif /* ETHERNET_ENC28J60 */

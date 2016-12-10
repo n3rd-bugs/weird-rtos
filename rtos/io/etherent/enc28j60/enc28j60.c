@@ -127,11 +127,17 @@ static void enc28j60_initialize(void *data)
         printf("enc28j60_initialize ESTAT %d\r\n", value);
 #endif
 
+        /* Release lock for this device. */
+        fd_release_lock(fd);
+
         /* If clock is still not ready. */
         if ((value & ENC28J60_ESTAT_CLKRDY) == 0)
         {
             sleep_ms(ENC28J60_CLKRDY_DELAY);
         }
+
+        /* Acquire lock for this device. */
+        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
         /* Decrement the number of retries. */
         max_retry --;
@@ -210,8 +216,13 @@ static void enc28j60_initialize(void *data)
 
         if (status == SUCCESS)
         {
+#ifdef ENC28J60_GET_MAC
+            /* Set device specific MAC address. */
+            enc28j60_set_mac_address(device, ENC28J60_GET_MAC(&device->ethernet_device));
+#else
             /* Generate a random MAC address and assign it to the device. */
             enc28j60_set_mac_address(device, ethernet_random_mac(&device->ethernet_device));
+#endif
 
             /* Enable full-duplex mode on PHY. */
             status = enc28j60_write_phy(device, ENC28J60_ADDR_PHCON1, ENC28J60_PHCON1_PDPXMD);
