@@ -34,8 +34,8 @@ void spi_atmega644_init(SPI_DEVICE *device)
      * 16       0       1       0
      * 32       1       0       1
      * 64       1       0       0
-     * 128      1       1       0
-     * 64       1       1       1
+     * 128      1       1       1
+     * 64       1       1       0
      */
 
     /* Calculate the required baudrate prescaler. */

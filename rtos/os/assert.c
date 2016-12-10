@@ -35,7 +35,7 @@ void system_assert(int32_t code, char *file, uint32_t line, TASK *task)
 
 #ifdef ASSERT_FILE_INFO
     /* Print file information. */
-    printf("%s:%d\r\n", file, line);
+    printf("%s:%ld\r\n", file, line);
 #endif
 
 #ifdef CONFIG_TASK_STATS

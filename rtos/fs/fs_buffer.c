@@ -683,7 +683,7 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
     }
 
 #ifdef FS_BUFFER_DEBUG
-    /* Validate this buffer lists for this file descriptors. */
+    /* Validate the buffer lists for this file descriptors. */
     OS_ASSERT((int32_t)sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
     OS_ASSERT((int32_t)sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
     OS_ASSERT((int32_t)sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
@@ -875,7 +875,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
     }
 
 #ifdef FS_BUFFER_DEBUG
-    /* Validate this buffer lists for this file descriptors. */
+    /* Validate the buffer lists for this file descriptors. */
     OS_ASSERT((int32_t)sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
     OS_ASSERT((int32_t)sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
     OS_ASSERT((int32_t)sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);

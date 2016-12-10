@@ -312,7 +312,7 @@ static void enc28j60_interrupt(void *data)
         status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EIR, 0xFF, &value, 1);
 
 #if ENC28J60_DEBUG
-    printf("enc28j60_interrupt: EIR 0x%d.\r\n", value);
+        printf("enc28j60_interrupt: EIR 0x%d.\r\n", value);
 #endif
 
         if (status == SUCCESS)
