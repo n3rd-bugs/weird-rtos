@@ -14,6 +14,7 @@
 #include <avr/wdt.h>
 #include <os.h>
 #include <os_avr.h>
+#include <string.h>
 
 /* Global interrupt level. */
 /* TRUE: Interrupt Enabled
@@ -29,8 +30,8 @@ static volatile TASK *next_task = NULL;
 extern TASK *current_task;
 
 /* AVR system stack. */
-uint8_t avr_system_stack[AVR_SYS_STACK_SIZE];
-uint8_t *avr_system_stack_pointer;
+uint8_t system_stack[SYS_STACK_SIZE];
+uint8_t *system_stack_pointer;
 
 /* Flag to specify that we are in ISR context. */
 uint8_t avr_in_isr = FALSE;
@@ -206,10 +207,35 @@ void avr_stack_init(void)
     BOOTLOAD();
 #endif
 
+    /* Load a predefined pattern on the system stack. */
+    memset(system_stack, CONFIG_STACK_PATTERN, SYS_STACK_SIZE);
+
     /* Set the stack pointer to the end of the system stack. */
     LOAD_SYSTEM_STACK();
 
-} /*  avr_stack_init */
+} /* avr_stack_init */
+
+#ifdef CONFIG_TASK_STATS
+/*
+ * avr_sys_stack_fill
+ * This function will load a predefined pattern on the system stack.
+ */
+void avr_sys_stack_fill(void) __attribute__((naked)) __attribute__((section(".init8")));
+void avr_sys_stack_fill(void)
+{
+    uint32_t i = 0;
+
+    /* Load a predefined pattern on the system stack until we hit the
+     * stack pointer. */
+    while ((uint8_t *)SP > &system_stack[i])
+    {
+        /* Load a predefined pattern. */
+        system_stack[i] = CONFIG_STACK_PATTERN;
+        i++;
+    }
+
+} /* avr_sys_stack_fill */
+#endif /* CONFIG_TASK_STATS */
 
 /*
  * control_to_system

@@ -25,7 +25,7 @@
 #define SYS_CLK_DIV         1
 #define SYS_FREQ            (OSC_FREQ / SYS_CLK_DIV)
 #define PCLK_FREQ           SYS_FREQ
-#define AVR_SYS_STACK_SIZE  256
+#define SYS_STACK_SIZE      256
 #define AVR_HARD_RESET      TRUE
 #define OS_HW_TICKS_PER_SEC (PCLK_FREQ / 64)
 
@@ -33,8 +33,8 @@
 extern volatile uint32_t sys_interrupt_level;
 
 /* System stack definitions. */
-extern uint8_t avr_system_stack[AVR_SYS_STACK_SIZE];
-extern uint8_t *avr_system_stack_pointer;
+extern uint8_t system_stack[SYS_STACK_SIZE];
+extern uint8_t *system_stack_pointer;
 
 /* Flag to specify that we are in ISR context. */
 extern uint8_t avr_in_isr;
@@ -88,9 +88,9 @@ extern uint8_t avr_in_isr;
 
 /* Load system stack. */
 #define LOAD_SYSTEM_STACK()                                             \
-    avr_system_stack_pointer = (avr_system_stack + AVR_SYS_STACK_SIZE); \
-    asm volatile("lds	r28,        avr_system_stack_pointer");         \
-    asm volatile("lds	r29,        avr_system_stack_pointer + 1");     \
+    system_stack_pointer = (system_stack + SYS_STACK_SIZE);             \
+    asm volatile("lds	r28,        system_stack_pointer");             \
+    asm volatile("lds	r29,        system_stack_pointer + 1");         \
     asm volatile("out	__SP_L__,   r28");                              \
     asm volatile("out	__SP_H__,   r29");
 
