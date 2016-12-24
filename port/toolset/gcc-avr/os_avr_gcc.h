@@ -16,11 +16,14 @@
 #ifndef OS_AVR_GCC_H
 #define OS_AVR_GCC_H
 
-#define STACK_LESS          __attribute__ (( naked ))
+#define STACK_LESS          __attribute__ ((naked))
+#define NOINLINE            __attribute__ ((noinline))
 
 #define ISR_FUN             void __attribute__ ((interrupt))
 #define NAKED_ISR_FUN       void __attribute__ ((interrupt, naked))
 #define NAKED_FUN           void __attribute__ ((naked))
+
+#define NOOPTIMIZATION      __attribute__((optimize("O0")))
 
 #define OS_LITTLE_ENDIAN
 
