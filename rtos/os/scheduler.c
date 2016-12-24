@@ -108,9 +108,9 @@ void scheduler_init()
  */
 TASK *scheduler_get_next_task()
 {
-    SCHEDULER   *scheduler = scheduler_list.head;
-    SCHEDULER   *scheduler_hp = scheduler;
-    TASK        *tcb = NULL, *tcb_hp = NULL;
+    SCHEDULER *scheduler = scheduler_list.head;
+    SCHEDULER *scheduler_hp = scheduler;
+    TASK *tcb = NULL, *tcb_hp = NULL;
 
     /* Try to get a new task to run from registered schedulers. */
     while (scheduler != NULL)
