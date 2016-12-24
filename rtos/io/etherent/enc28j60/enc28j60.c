@@ -407,10 +407,16 @@ static void enc28j60_interrupt(void *data)
         /* Disable enc28j60 interrupts. */
         device->flags &= (uint8_t)~(ENC28J60_ENABLE_IRQ);
 
+        /* Release lock for this device. */
+        fd_release_lock(fd);
+
         /* Keep executing this interrupt until we have successfully processed
          * the interrupt. */
         /* This will help recover from a SPI error. */
         ethernet_interrupt(&device->ethernet_device);
+
+        /* Acquire lock for this device. */
+        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
     }
 
 } /* enc28j60_interrupt */
