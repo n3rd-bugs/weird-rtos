@@ -53,7 +53,10 @@ int32_t usart_atmega644p_puts(void *priv_data, uint8_t *buf, int32_t nbytes)
     while (nbytes > 0)
     {
         /* Wait for last byte to be sent. */
-        loop_until_bit_is_set(UCSR0A, UDRE0);
+        while ((UCSR0A & (1 << UDRE0)) == 0)
+        {
+            task_yield();
+        }
 
         /* Add this byte. */
         UDR0 = (*buf);

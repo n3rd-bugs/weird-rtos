@@ -113,6 +113,7 @@ void bootload_atmega644p()
         /* Disable interrupts. */
         DISABLE_INTERRUPTS();
 
+        /* Switch to boot loader vector table. */
         MCUCR = (1 << IVCE);
         MCUCR = (1 << IVSEL);
 
@@ -547,7 +548,7 @@ void stk500_empty_reply()
 void bootload_atmega644p_putc(volatile uint8_t byte)
 {
     /* Wait for last byte to be sent. */
-    loop_until_bit_is_set(UCSR0A, UDRE0);
+    while ((UCSR0A & (1 << UDRE0)) == 0) ;
 
     /* Put a byte on the serial. */
     UDR0 = byte;
@@ -563,7 +564,7 @@ uint8_t bootload_atmega644p_getc()
     volatile uint8_t byte;
 
     /* Wait for some data to become available. */
-    loop_until_bit_is_set(UCSR0A, RXC0);
+    while ((UCSR0A & (1 << RXC0)) == 0);
 
     /* Read the incoming byte. */
     byte = UDR0;
