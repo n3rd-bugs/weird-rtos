@@ -44,6 +44,27 @@ uint32_t util_task_calc_free_stack(TASK *tcb)
 
 } /* util_task_calc_free_stack */
 
+#ifdef SYS_STACK_SIZE
+/*
+ * util_system_calc_free_stack
+ * This function returns the number of bytes used on the system stack.
+ */
+uint32_t util_system_calc_free_stack()
+{
+    uint32_t free = 0;
+
+    /* Calculate the number of bytes intact on the system stack. */
+    while (system_stack[free] == CONFIG_STACK_PATTERN)
+    {
+        free ++;
+    }
+
+    /* Return number of free bytes on the stack. */
+    return (free);
+
+} /* util_system_calc_free_stack */
+#endif
+
 /*
  * util_print_sys_info
  * This function prints generalized information about the operating system.
@@ -80,6 +101,17 @@ void util_print_sys_info()
         /* Get the next task. */
         tcb = tcb->next_global;
     }
+
+#ifdef SYS_STACK_SIZE
+    /* Get number of bytes free on the system stack. */
+    stack_free = util_system_calc_free_stack();
+
+    /* Print system stack information. */
+    printf("SYSTEM\t-\t%lu\t%lu\t%lu\t-\t-\r\n",
+           (uint32_t)SYS_STACK_SIZE,
+           stack_free,
+           SYS_STACK_SIZE - stack_free);
+#endif
 
 } /* util_print_sys_info */
 
@@ -167,6 +199,44 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
         /* Get the next task. */
         tcb = tcb->next_global;
     }
+
+#ifdef SYS_STACK_SIZE
+    /* Get number of bytes free on the system stack. */
+    stack_free = util_system_calc_free_stack(tcb);
+
+    snprintf(str, sizeof(str), "SYSTEM\t");
+    status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+
+    if (status == SUCCESS)
+    {
+        snprintf(str, sizeof(str), "-\t");
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+    }
+
+    if (status == SUCCESS)
+    {
+        snprintf(str, sizeof(str), "%lu\t", (uint32_t)SYS_STACK_SIZE);
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+    }
+
+    if (status == SUCCESS)
+    {
+        snprintf(str, sizeof(str), "%lu\t", stack_free);
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+    }
+
+    if (status == SUCCESS)
+    {
+        snprintf(str, sizeof(str), "%lu\t", SYS_STACK_SIZE - stack_free);
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+    }
+
+    if (status == SUCCESS)
+    {
+        snprintf(str, sizeof(str), "-\t-\r\n");
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+    }
+#endif
 
     /* Return status to the caller. */
     return (status);
