@@ -21,7 +21,7 @@
 #include <console.h>
 
 /* UDP stack configuration. */
-//#define UDP_CSUM
+#define UDP_CSUM
 
 /* UDP header definitions. */
 #define UDP_HRD_LENGTH              (8)
