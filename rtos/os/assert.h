@@ -31,7 +31,7 @@
                                     {                                           \
                                         system_assert((raise),                  \
                                                       __FILE__, __LINE__,       \
-                                                      get_current_task());      \
+                                                      NULL);                    \
                                     }                                           \
                                 }
 #define OS_ASSERT_INFO(raise, file, line)                                       \
@@ -40,7 +40,7 @@
                                     {                                           \
                                         system_assert((raise),                  \
                                                       file, line,               \
-                                                      get_current_task());      \
+                                                      NULL);                    \
                                     }                                           \
                                 }
 #else
@@ -48,7 +48,7 @@
                                     if ((raise) != FALSE)                       \
                                     {                                           \
                                         system_assert((raise), "", 0,           \
-                                                      get_current_task());      \
+                                                      NULL);                    \
                                     }                                           \
                                 }
 #define OS_ASSERT_INFO(raise, file, line)                                       \
@@ -57,7 +57,7 @@
                                     {                                           \
                                         system_assert((raise),                  \
                                                       "", 0,                    \
-                                                      get_current_task());      \
+                                                      NULL);                    \
                                     }                                           \
                                 }
 #endif /* ASSERT_FILE_INFO */
