@@ -686,7 +686,7 @@ static void ipv4_fragment_expired(void *data)
                 /* Save the file descriptor on which data was received. */
                 buffer_fd = net_device->ipv4.fargment.list[n].buffer_list.head->fd;
 
-                /* Obtain lock for the file descriptor on which this semaphore was
+                /* Obtain lock for the file descriptor on which this buffer was
                  * received. */
                 OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
