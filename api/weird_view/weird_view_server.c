@@ -67,8 +67,8 @@ void weird_view_server_init(WEIRD_VIEW_SERVER *weird_view, SOCKET_ADDRESS *socke
  */
 static WEIRD_VIEW_PLUGIN *weird_view_get_plugin(WEIRD_VIEW_SERVER *weird_server, uint16_t id)
 {
-    WEIRD_VIEW_PLUGIN   *plugin = NULL;
-    uint32_t            i;
+    WEIRD_VIEW_PLUGIN *plugin = NULL;
+    uint32_t i;
 
     /* Search for a required plugin. */
     for (i = 0; i < weird_server->num_plugin; i++)
@@ -96,14 +96,15 @@ static WEIRD_VIEW_PLUGIN *weird_view_get_plugin(WEIRD_VIEW_SERVER *weird_server,
  */
 static void weird_view_server_process(void *data)
 {
-    WEIRD_VIEW_SERVER   *weird_view = (WEIRD_VIEW_SERVER *)data;
-    WEIRD_VIEW_PLUGIN   *plugin;
-    FS_BUFFER           *rx_buffer;
-    SOCKET_ADDRESS      socket_address;
-    uint32_t            command, i, value, value_div, disp_max;
-    int32_t             received;
-    uint16_t            id;
-    uint8_t             state;
+    WEIRD_VIEW_SERVER *weird_view = (WEIRD_VIEW_SERVER *)data;
+    WEIRD_VIEW_PLUGIN *plugin;
+    FS_BUFFER *rx_buffer;
+    FD buffer_fd;
+    SOCKET_ADDRESS socket_address;
+    uint32_t command, i, value, value_div, disp_max;
+    int32_t received;
+    uint16_t id;
+    uint8_t state;
 
     /* Receive incoming data from the UDP port. */
     received = fs_read(&weird_view->port, (uint8_t *)&rx_buffer, sizeof(FS_BUFFER));
