@@ -92,10 +92,8 @@ static uint8_t suspend_priority_sort(void *node, void *new)
  */
 static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
 {
-    uint32_t n;
-
     /* Unlock all conditions. */
-    for (n = 0; n < num; n++)
+    while (num)
     {
         /* If we can unlock this condition. */
         if (((!resume_condition) || (resume_condition != (*condition))) && ((*condition)->unlock))
@@ -106,6 +104,7 @@ static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDIT
 
         /* Pick next condition. */
         condition++;
+        num--;
     }
 
 } /* suspend_unlock_condition */
@@ -155,10 +154,8 @@ static void suspend_lock_condition(CONDITION **condition, uint32_t num, CONDITIO
  */
 static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend, uint32_t num, TASK *tcb)
 {
-    uint32_t n;
-
     /* For all conditions add this task. */
-    for (n = 0; n < num; n++)
+    while (num)
     {
         /* Add this task on the suspend data. */
         (*suspend)->task = tcb;
@@ -179,6 +176,7 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
         /* Pick next condition. */
         condition++;
         suspend++;
+        num--;
     }
 
 } /* suspend_condition_add_task */
@@ -192,10 +190,8 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
  */
 static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspend, uint32_t num)
 {
-    uint32_t n;
-
     /* For all conditions remove respective conditions. */
-    for (n = 0; n < num; n++)
+    while (num)
     {
         /* Remove this suspend from the suspend list. */
         OS_ASSERT(sll_remove(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next)) != *suspend);
@@ -203,6 +199,7 @@ static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspen
         /* Pick next condition. */
         condition++;
         suspend++;
+        num--;
     }
 
 } /* suspend_condition_remove_all */
