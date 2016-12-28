@@ -586,8 +586,10 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
 void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 {
     SUSPEND *suspend;
-    uint32_t interrupt_level;
     SUSPEND_LIST tmp_list = {NULL, NULL};
+
+    /* Disable preemption. */
+    scheduler_lock();
 
     /* If caller is not in locked state. */
     if ((locked == FALSE) && (condition->lock))
@@ -595,15 +597,6 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
         /* Lock this condition. */
         condition->lock(condition->data);
     }
-
-    /* Disable preemption. */
-    scheduler_lock();
-
-    /* Get the interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable interrupts. */
-    DISABLE_INTERRUPTS();
 
     /* Resume all the tasks waiting on this condition. */
     do
@@ -681,12 +674,6 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
         }
 
     } while (suspend != NULL);
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
-    /* Enable preemption. */
-    scheduler_unlock();
 
     /* If caller was not in locked state. */
     if ((locked == FALSE) && (condition->unlock))
