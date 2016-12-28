@@ -24,6 +24,9 @@
 #define CONDITION_LOCK_NO_SUSPEND       0x01
 #define CONDITION_PING                  0x02
 
+/* Helper macros. */
+#define CONDITION_INVALID               ((uint32_t)-1)
+
 /* User call back to check if this task satisfy the criteria. */
 typedef uint8_t CONDITION_DO_RESUME (void *, void *);
 typedef uint8_t CONDITION_DO_SUSPEND (void *, void *);
