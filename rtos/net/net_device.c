@@ -177,7 +177,7 @@ int32_t net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
         OS_ASSERT(fs_write(net_buff_fd, (uint8_t *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
 
         /* Again obtain lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(buffer->fd));
+        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
     }
 
     /* Return status to the caller. */
