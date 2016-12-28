@@ -13,6 +13,7 @@
 #include <sll.h>
 #include <os.h>
 
+#ifndef SLL_INLINE
 /*
  * sll_push
  * @list: List that is needed to be updated.
@@ -461,3 +462,5 @@ uint8_t sll_in_list(void *list, void *node, int offset)
     return (in_list);
 
 } /* sll_in_list */
+
+#endif /* SLL_INLINE */
