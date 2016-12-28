@@ -99,7 +99,6 @@ static void weird_view_server_process(void *data)
     WEIRD_VIEW_SERVER *weird_view = (WEIRD_VIEW_SERVER *)data;
     WEIRD_VIEW_PLUGIN *plugin;
     FS_BUFFER *rx_buffer;
-    FD buffer_fd;
     SOCKET_ADDRESS socket_address;
     uint32_t command, i, value, value_div, disp_max;
     int32_t received;
