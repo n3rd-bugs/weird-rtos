@@ -241,7 +241,7 @@ static void net_dhcp_client_process(void *data)
 {
     uint32_t xid, cli_addr, your_addr, serv_addr, dhcp_serv_addr, lease_time;
     FS_BUFFER *buffer;
-    FD udp_fd = (FD)data, net_fd;
+    FD udp_fd = (FD)data, buffer_fd;
     NET_DEV *net_device;
     DHCP_CLIENT_DEVICE *client_data;
     int32_t status;
@@ -252,16 +252,16 @@ static void net_dhcp_client_process(void *data)
     {
         /* The networking device file descriptor is same as the one from which
          * this buffer was received. */
-        net_fd = buffer->fd;
+        buffer_fd = buffer->fd;
 
         /* Acquire lock for networking file descriptor. */
-        OS_ASSERT(fd_get_lock(net_fd) != SUCCESS);
+        OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Initialize client data. */
         client_data = NULL;
 
         /* Get the networking device for this packet. */
-        net_device = net_device_get_fd(net_fd);
+        net_device = net_device_get_fd(buffer_fd);
 
         /* If we have a networking device and DHCP client data for this device. */
         if ((net_device != NULL) && ((client_data = net_device->ipv4.dhcp_client) != NULL))
@@ -271,7 +271,7 @@ static void net_dhcp_client_process(void *data)
 
             /* Verify the transaction ID and hardware addresses match with the
              * DHCP client. */
-            if ((xid != client_data->xid) || (memcmp(ethernet_get_mac_address(net_fd), hw_addr, ETH_ADDR_LEN) != 0))
+            if ((xid != client_data->xid) || (memcmp(ethernet_get_mac_address(buffer_fd), hw_addr, ETH_ADDR_LEN) != 0))
             {
                 /* We are not the intended destination. */
                 status = NET_NO_ACTION;
@@ -411,13 +411,13 @@ static void net_dhcp_client_process(void *data)
                         client_data->lease_time = lease_time;
 
                         /* Release lock for networking file descriptor. */
-                        fd_release_lock(net_fd);
+                        fd_release_lock(buffer_fd);
 
                         /* We can now use this IP address. */
-                        ipv4_set_device_address(net_fd, client_data->client_ip);
+                        ipv4_set_device_address(buffer_fd, client_data->client_ip);
 
                         /* Acquire lock for networking file descriptor. */
-                        OS_ASSERT(fd_get_lock(net_fd) != SUCCESS);
+                        OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
                         /* We have a lease, we will try to renew it when it
                          * expires. */
@@ -440,10 +440,10 @@ static void net_dhcp_client_process(void *data)
         }
 
         /* Free the received buffer. */
-        fs_buffer_add(net_fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add(buffer_fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
         /* Release lock for networking file descriptor. */
-        fd_release_lock(net_fd);
+        fd_release_lock(buffer_fd);
     }
 
 } /* net_dhcp_client_process */
