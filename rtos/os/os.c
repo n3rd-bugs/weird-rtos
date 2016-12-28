@@ -109,32 +109,6 @@ void task_yield()
 } /* task_yield */
 
 /*
- * task_waiting
- * This called when the current task is waiting for a resource and is needed
- * to be removed from the parent scheduling class, and will be rescheduled by
- * the resource manager. If required user can keep the interrupts disabled when
- * jumping into this function. Interrupts will be enabled when control is
- * needed to be returned to the system.
- */
-void task_waiting()
-{
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable interrupts. */
-    DISABLE_INTERRUPTS();
-
-    /* We will not re-enqueue this task as it is suspended and only the
-     * suspending component can resume this task. */
-
-    /* Give control back to system and enable interrupts. */
-    CONTROL_TO_SYSTEM();
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
-} /* task_waiting */
-
-/*
  * set_current_task
  * @tcb: The task control block that is needed to be set as current task.
  * This function is called when we need to set current task, usually required

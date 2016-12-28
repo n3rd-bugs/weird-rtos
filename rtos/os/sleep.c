@@ -199,7 +199,7 @@ void sleep_ticks(uint32_t ticks)
 
     /* Return control to the system.
      * We will resume from here when our required delay has been achieved. */
-    task_waiting();
+    CONTROL_TO_SYSTEM();
 
     /* Restore old interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);

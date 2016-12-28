@@ -86,7 +86,6 @@ void sleep_hw_ticks(uint64_t);
 
 /* Internal functions should not be called from user applications. */
 void os_process_system_tick();
-void task_waiting();
 
 void set_current_task(TASK *);
 TASK *get_current_task();

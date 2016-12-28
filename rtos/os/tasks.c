@@ -135,8 +135,11 @@ static void task_entry_return(void *argv)
         /* Unlock the scheduler. */
         scheduler_unlock();
 
+        /* Lock the interrupts. */
+        DISABLE_INTERRUPTS();
+
         /* Task is now the property of the initializer. */
-        task_waiting();
+        CONTROL_TO_SYSTEM();
     }
 
 } /* task_entry_return. */
