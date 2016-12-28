@@ -24,7 +24,7 @@
 
 /* Global TCP data. */
 TCP_DATA tcp_data;
-volatile uint32_t tcp_iss;
+static volatile uint32_t tcp_iss;
 
 /* Internal function prototypes. */
 static void tcp_port_initialize(TCP_PORT *);
@@ -757,6 +757,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
     int32_t status = SUCCESS;
     FD buffer_fd;
     uint8_t opt_size = 0, opt_flags;
+    uint16_t csum;
 
     /* Get the local networking interface descriptor. */
     net_device = ipv4_get_source_device(socket_address->local_ip);
@@ -819,6 +820,20 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
 
                 /* Add TCP header with ACK and SYN flag. */
                 status = tcp_header_add(buffer, socket_address, seq_num, ack_num, flags, wnd_size, opt_size, 0);
+            }
+
+            /* If TCP header was successfully added. */
+            if (status == SUCCESS)
+            {
+                /* Calculate checksum for TCP header. */
+                status = net_pseudo_csum_calculate(buffer, socket_address->local_ip, socket_address->foreign_ip, IP_PROTO_TCP, (uint16_t)buffer->total_length, 0, flags, &csum);
+
+                /* If checksum was successfully calculated. */
+                if (status == SUCCESS)
+                {
+                    /* Push the TCP checksum on the buffer. */
+                    status = fs_buffer_push_offset(buffer, &csum, 2, TCP_HRD_CSUM_OFFSET, (flags | FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+                }
             }
 
             if (status == SUCCESS)
@@ -1260,7 +1275,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
     if (ret_size > 0)
     {
         /* Get lock for the buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(fs_buffer->fd));
+        OS_ASSERT(fd_get_lock(fs_buffer->fd) != SUCCESS);
 
         /* If we need to copy more data. */
         if (size > (int32_t)fs_buffer->total_length)
@@ -1298,7 +1313,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
                 port->rx_buffer.buffer = fs_buffer;
             }
 
-            /* Data is still avaialble on this socket. */
+            /* Data is still available on this socket. */
             fd_data_available(fd);
         }
 
@@ -2151,7 +2166,6 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 int32_t tcp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint32_t seq_num, uint32_t ack_num, uint16_t tcp_flags, uint16_t wnd_size, uint32_t opt_len, uint8_t flags)
 {
     int32_t status = SUCCESS;
-    uint16_t csum;
     HDR_GEN_MACHINE hdr_machine;
     HEADER tcp_hdr[] =
     {
@@ -2172,20 +2186,6 @@ int32_t tcp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint32
 
     /* Push the TCP header on the buffer. */
     status = header_generate(&hdr_machine, tcp_hdr, sizeof(tcp_hdr)/sizeof(HEADER), buffer);
-
-    /* If TCP header was successfully added. */
-    if (status == SUCCESS)
-    {
-        /* Calculate checksum for TCP header. */
-        status = net_pseudo_csum_calculate(buffer, socket_address->local_ip, socket_address->foreign_ip, IP_PROTO_TCP, (uint16_t)buffer->total_length, 0, flags, &csum);
-
-        /* If checksum was successfully calculated. */
-        if (status == SUCCESS)
-        {
-            /* Push the TCP checksum on the buffer. */
-            status = fs_buffer_push_offset(buffer, &csum, 2, TCP_HRD_CSUM_OFFSET, (flags | FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
-        }
-    }
 
     /* Return status to the caller. */
     return (status);
