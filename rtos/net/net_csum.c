@@ -46,11 +46,11 @@ int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t d
         {&dst_ip,           4, (FS_BUFFER_PACKED | flags) },    /* Destination address. */
         {(uint8_t []){0},   1, flags },                         /* Zero. */
         {&protocol,         1, flags },                         /* Protocol. */
-        {&length,           2, (FS_BUFFER_PACKED |flags) },     /* Packet length. */
+        {&length,           2, (FS_BUFFER_PACKED | flags) },    /* Packet length. */
     };
 
     /* Allocate a buffer and initialize a pseudo header. */
-    csum_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+    csum_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, flags);
 
     /* If we have to buffer to compute checksum. */
     if (csum_buffer != NULL)
