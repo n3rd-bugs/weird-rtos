@@ -306,7 +306,7 @@ static uint8_t suspend_is_task_waiting(TASK *task, CONDITION *check_condition)
     for (n = 0; n < task->num_conditions; n++)
     {
         /* If task is waiting on this condition. */
-        if (task->wait_condition[n] == check_condition)
+        if (((CONDITION **)task->suspend_data)[n] == check_condition)
         {
             /* We are waiting on this condition. */
             waiting = TRUE;
@@ -404,17 +404,17 @@ static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
 int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *num, uint8_t locked)
 {
     uint32_t timeout, timeout_index, interrupt_level, num_conditions, return_num;
-    int32_t status = SUCCESS, task_status;
+    int32_t status = SUCCESS, task_status = TASK_RESUME;
     CONDITION *resume_condition = NULL;
-    TASK *tcb;
+    TASK *tcb = get_current_task();
+
+    /* Current task should not be null. */
+    OS_ASSERT(tcb == NULL);
 
 #ifndef CONFIG_SLEEP
     /* Remove some compiler warning. */
     UNUSED_PARAM(timeout);
 #endif
-
-    /* Disable preemption. */
-    scheduler_lock();
 
     /* If more than one condition was given. */
     if (num != NULL)
@@ -435,15 +435,6 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         suspend_lock_condition(condition, num_conditions, NULL);
     }
 
-    /* Save the current thread pointer. */
-    tcb = get_current_task();
-
-    /* Current task should not be null. */
-    OS_ASSERT(tcb == NULL);
-
-    /* Initialize task status; */
-    task_status = TASK_RESUME;
-
     /* Calculate the minimum timeout we need to wait for the conditions. */
     timeout = suspend_timeout_get_min(suspend, num_conditions, &timeout_index);
 
@@ -456,6 +447,12 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     /* Check if we need to suspend on this condition. */
     while (suspend_do_suspend(condition, suspend, num_conditions, &return_num))
     {
+        /* Add this task on all the conditions. */
+        suspend_condition_add_task(condition, suspend, num_conditions, tcb);
+
+        /* Disable preemption. */
+        scheduler_lock();
+
 #ifdef CONFIG_SLEEP
         /* Check if we need to wait for a finite time. */
         if (timeout != (uint32_t)(MAX_WAIT))
@@ -466,20 +463,14 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         }
 #endif /* CONFIG_SLEEP */
 
-        /* Add this task on all the conditions. */
-        suspend_condition_add_task(condition, suspend, num_conditions, tcb);
-
-        /* Assign the suspension data to the task. */
-        tcb->suspend_data = (void *)suspend;
-
-        /* Task is going to suspended. This will release the lock without
-         * enabling interrupts. */
-        tcb->status = TASK_WILL_SUSPENDED;
-
         /* Disable global interrupts, need to do this to protect against any
          * IRQ locks. */
         interrupt_level = GET_INTERRUPT_LEVEL();
         DISABLE_INTERRUPTS();
+
+        /* Task is going to suspended. This will release the lock without
+         * enabling interrupts. */
+        tcb->status = TASK_WILL_SUSPENDED;
 
         /* Unlock all the conditions so they can be resumed. */
         suspend_unlock_condition(condition, num_conditions, NULL);
@@ -489,18 +480,23 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
 
         /* Task is being suspended. */
         tcb->status = TASK_SUSPENDED;
-        tcb->wait_condition = (void**)condition;
+
+        /* Assign the suspension data to the task. */
         tcb->num_conditions = num_conditions;
+        tcb->suspend_data = (void *)condition;
 
         /* Wait for either being resumed by some data or timeout. */
         CONTROL_TO_SYSTEM();
+
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
 
         /* Save task status and the condition from which we are resumed. */
         task_status = tcb->status;
         resume_condition = tcb->suspend_data;
 
-        /* Restore old interrupt level. */
-        SET_INTERRUPT_LEVEL(interrupt_level);
+        /* Enable preemption. */
+        scheduler_unlock();
 
         /* Lock all conditions, if we did not resume normally or timeout
          * don't lock the one for which we resumed as we did not lock it.  */
@@ -555,9 +551,6 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         suspend_unlock_condition(condition, num_conditions, ((task_status != TASK_RESUME) && (task_status != TASK_RESUME_SLEEP)) ? resume_condition : NULL);
     }
 
-    /* Enable preemption. */
-    scheduler_unlock();
-
     /* If we need to return the condition from which we resumed. */
     if (*num != NULL)
     {
@@ -584,9 +577,6 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 {
     SUSPEND *suspend;
     SUSPEND_LIST tmp_list = {NULL, NULL};
-
-    /* Disable preemption. */
-    scheduler_lock();
 
     /* If caller is not in locked state. */
     if ((locked == FALSE) && (condition->lock))
@@ -617,6 +607,9 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
         /* If we have a task. */
         if (suspend)
         {
+            /* Disable preemption as we are accessing task data structure. */
+            scheduler_lock();
+
             /* If task is actually suspended on this condition. */
             if ((suspend->task->status == TASK_SUSPENDED) && (suspend_is_task_waiting(suspend->task, condition) == TRUE))
             {
@@ -652,6 +645,9 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
                  * the list later. */
                 sll_push(&tmp_list, suspend, OFFSETOF(SUSPEND, next));
             }
+
+            /* Enable preemption. */
+            scheduler_unlock();
         }
 
     } while (suspend != NULL);
@@ -678,8 +674,5 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
         /* Unlock this condition. */
         condition->unlock(condition->data);
     }
-
-    /* Enable preemption. */
-    scheduler_unlock();
 
 } /* resume_condition */
