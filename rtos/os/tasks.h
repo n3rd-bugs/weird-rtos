@@ -65,9 +65,6 @@ struct _task
     TASK        *next_global;
 #endif /* CONFIG_TASK_STATS */
 
-    /* Wait conditions for this task. */
-    void        **wait_condition;
-
     /* This holds current stack pointer of this task. */
     uint8_t     *tos;
 
