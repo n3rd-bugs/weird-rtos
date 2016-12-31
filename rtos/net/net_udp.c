@@ -528,7 +528,7 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
     {
         /* Get lock for the file descriptor associated with this networking
          * device. */
-        OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+        OS_ASSERT(fd_get_lock(fs_buffer->fd) != SUCCESS);
 
         /* Add UDP header on the buffer. */
         status = udp_header_add(fs_buffer, &socket_address, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
@@ -538,7 +538,7 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
         if (status == SUCCESS)
         {
             /* Calculate the UDP checksum. */
-            status = net_pseudo_csum_calculate(fs_buffer, sock_addr.local_ip, sock_addr.foreign_ip, IP_PROTO_UDP, fs_buffer->total_length, 0, flags, &csum);
+            status = net_pseudo_csum_calculate(fs_buffer, socket_address.local_ip, socket_address.foreign_ip, IP_PROTO_UDP, fs_buffer->total_length, 0, flags, &csum);
 
             /* If checksum was successfully calculated. */
             if (status == SUCCESS)
@@ -586,7 +586,7 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
 
         /* Release lock for the file descriptor associated with this networking
          * device. */
-        fd_release_lock(buffer_fd);
+        fd_release_lock(fs_buffer->fd);
     }
     else
     {
