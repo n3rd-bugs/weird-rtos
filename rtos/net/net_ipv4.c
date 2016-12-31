@@ -206,16 +206,15 @@ uint8_t ipv4_sreach_device(void *node, void *param)
 NET_DEV *ipv4_get_source_device(uint32_t address)
 {
     NET_DEV *ret_device;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
+    /* Disable preemption. */
+    scheduler_lock();
 
     /* Search for the required device. */
     ret_device = sll_search(&net_dev_data.devices, NULL, &ipv4_sreach_device, &address, OFFSETOF(NET_DEV, next));
 
-    /* Restore the IRQ interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 
     /* Return the resolved device for the given IP address. */
     return (ret_device);

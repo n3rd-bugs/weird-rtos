@@ -131,6 +131,8 @@ TASK *scheduler_get_next_task()
                  ( (tcb->priority == tcb_hp->priority) &&
                    (scheduler->priority < scheduler_hp->priority) ) )
             {
+                /* If we have an old task that we want to return to the
+                 * scheduler. */
                 if (tcb_hp != NULL)
                 {
                     /* Return the previously dequeued task to the scheduler. */
@@ -140,6 +142,7 @@ TASK *scheduler_get_next_task()
                 /* Run this task if possible. */
                 tcb_hp = tcb;
 
+                /* Save the scheduler for this task. */
                 scheduler_hp = scheduler;
             }
             else
@@ -183,11 +186,9 @@ TASK *scheduler_get_next_task()
 void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t param)
 {
     SCHEDULER *scheduler;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
-    /* This function call be called from a task without any locks so disable
-     * interrupts. */
-    DISABLE_INTERRUPTS();
+    /* Lock the scheduler. */
+    scheduler_lock();
 
     /* Get the first scheduler from the scheduler list. */
     scheduler = scheduler_list.head;
@@ -195,6 +196,7 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
     /* Try to find the scheduler for which this task is being added. */
     while (scheduler != NULL)
     {
+        /* If this is the required scheduler class. */
         if (scheduler->class == class)
         {
             /* Update the task control block. */
@@ -222,8 +224,8 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
     sll_append(&sch_task_list, tcb, OFFSETOF(TASK, next_global));
 #endif /* CONFIG_TASK_STATS */
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 
 } /* scheduler_task_add */
 
@@ -236,11 +238,9 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
 void scheduler_task_remove(TASK *tcb)
 {
     SCHEDULER *scheduler;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
-    /* This function call be called from a task without any locks so disable
-     * interrupts. */
-    DISABLE_INTERRUPTS();
+    /* Lock the scheduler. */
+    scheduler_lock();
 
     /* Get the scheduler from the task control block. */
     scheduler = tcb->scheduler;
@@ -252,15 +252,15 @@ void scheduler_task_remove(TASK *tcb)
     OS_ASSERT(tcb->status != TASK_FINISHED);
 
     /* Clear the task scheduler. */
-    tcb->scheduler          = NULL;
+    tcb->scheduler = NULL;
 
 #ifdef CONFIG_TASK_STATS
     /* Remove this task from global task list. */
     sll_remove(&sch_task_list, tcb, OFFSETOF(TASK, next_global));
 #endif /* CONFIG_TASK_STATS */
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 
 } /* scheduler_task_remove */
 

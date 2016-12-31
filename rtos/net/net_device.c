@@ -48,7 +48,6 @@ void net_devices_init()
 void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
 {
     CONDITION *condition;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Will only work with buffered file descriptors. */
     OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
@@ -59,8 +58,8 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     /* Save the transmit function. */
     net_device->tx = tx;
 
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
+    /* Lock the scheduler. */
+    scheduler_lock();
 
     /* Add this device on the global device list. */
     sll_append(&net_dev_data.devices, net_device, OFFSETOF(NET_DEV, next));
@@ -70,8 +69,8 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     ipv4_device_initialize(net_device);
 #endif
 
-    /* Restore the IRQ interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 
     /* Get the condition data for this file descriptor. */
     fs_condition_get(fd, &condition, &net_device->suspend, &net_device->fs_param, FS_BLOCK_READ);
@@ -92,10 +91,9 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
 NET_DEV *net_device_get_fd(FD fd)
 {
     NET_DEV *ret_device;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
 
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
+    /* Disable preemption. */
+    scheduler_lock();
 
     /* Pick the device list head. */
     ret_device = net_dev_data.devices.head;
@@ -107,8 +105,8 @@ NET_DEV *net_device_get_fd(FD fd)
         ret_device = ret_device->next;
     }
 
-    /* Restore the IRQ interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
+    /* Enable scheduling. */
+    scheduler_unlock();
 
     /* Return the required device. */
     return (ret_device);

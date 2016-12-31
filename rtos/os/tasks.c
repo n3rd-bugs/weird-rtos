@@ -31,12 +31,7 @@ static void task_entry_return(void *);
  */
 void task_create(TASK *tcb, char *name, uint8_t *stack, uint32_t stack_size, TASK_ENTRY *entry, void *argv, uint8_t flags)
 {
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* This can be called from interrupt so disable interrupts here. */
     /* Clear the task structure. */
-    DISABLE_INTERRUPTS();
-
     memset(tcb, 0, sizeof(TASK));
 
 #ifdef CONFIG_TASK_STATS
@@ -78,9 +73,6 @@ void task_create(TASK *tcb, char *name, uint8_t *stack, uint32_t stack_size, TAS
         os_stack_init(tcb, &task_entry_return, argv);
     }
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
 } /* task_create */
 
 /*
@@ -121,22 +113,17 @@ static void task_entry_return(void *argv)
     while (TRUE)
     {
         /* When entering run this task. */
-        tcb->entry(argv);
+        get_current_task()->entry(argv);
 
         /* The task will be resumed by the application using scheduler_task_add,
          * that may also change the class of this task. */
 
-        /* Lock the scheduler. */
-        scheduler_lock();
+        /* Lock the interrupts we will enable them again when transferring
+         * control to system. */
+        DISABLE_INTERRUPTS();
 
         /* Update the task status that it is now finished. */
         tcb->status = TASK_FINISHED;
-
-        /* Unlock the scheduler. */
-        scheduler_unlock();
-
-        /* Lock the interrupts. */
-        DISABLE_INTERRUPTS();
 
         /* Task is now the property of the initializer. */
         CONTROL_TO_SYSTEM();

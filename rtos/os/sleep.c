@@ -175,9 +175,6 @@ void sleep_ticks(uint32_t ticks)
     TASK *tcb;
     uint32_t interrupt_level;
 
-    /* Lock the scheduler. */
-    scheduler_lock();
-
     /* Save the current task pointer. */
     tcb = get_current_task();
 
@@ -187,12 +184,15 @@ void sleep_ticks(uint32_t ticks)
     /* IRQ must not be locked. */
     OS_ASSERT(tcb->irq_lock_count != 0);
 
-    /* Disable interrupts. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-    DISABLE_INTERRUPTS();
+    /* Lock the scheduler. */
+    scheduler_lock();
 
     /* Add current task to the sleep list. */
     sleep_add_to_list(tcb, ticks);
+
+    /* Disable interrupts. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+    DISABLE_INTERRUPTS();
 
     /* Task is being suspended. */
     tcb->status = TASK_SUSPENDED;
@@ -208,7 +208,6 @@ void sleep_ticks(uint32_t ticks)
     scheduler_unlock();
 
 } /* sleep_ticks */
-
 
 /*
  * sleep_hw_ticks
