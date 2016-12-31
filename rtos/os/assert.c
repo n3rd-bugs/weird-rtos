@@ -26,9 +26,11 @@ void system_assert(int32_t code, char *file, uint32_t line, TASK *task)
 {
     /* Remove some compiler warnings. */
     UNUSED_PARAM(code);
+    UNUSED_PARAM(task);
+#ifndef ASSERT_FILE_INFO
     UNUSED_PARAM(file);
     UNUSED_PARAM(line);
-    UNUSED_PARAM(task);
+#endif
 
     /* Disable system interrupts. */
     DISABLE_INTERRUPTS();
