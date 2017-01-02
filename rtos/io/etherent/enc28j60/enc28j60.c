@@ -78,8 +78,8 @@ void enc28j60_init(ENC28J60 *device)
     semaphore_set_irq_data(&device->ethernet_device.lock, device, (SEM_IRQ_LOCK *)&ENC28J60_DISABLE_INT, (SEM_IRQ_UNLOCK *)&ENC28J60_ENABLE_INT);
 #endif
 
-    /* Disable enc28j60 interrupts. */
-    device->flags &= (uint8_t)~(ENC28J60_ENABLE_IRQ);
+    /* Clear device flags. */
+    device->flags = 0;
 
 #ifdef NET_ARP
     /* Set ARP data for this ethernet device. */
@@ -279,14 +279,15 @@ static void enc28j60_wdt(void *data)
     ENC28J60 *device = (ENC28J60 *)data;
 
 #if ENC28J60_DEBUG
-    printf("enc28j60_wdt: forcefully unblocking TX.\r\n");
+    printf("enc28j60_wdt: target halted, trying rest to recover.\r\n");
 #endif
 
-    /* Un-block TX as last frame was not sent. */
-    device->flags &= (uint8_t)(~(ENC28J60_IN_TX));
+    /* Clear device flags. */
+    device->flags = 0;
 
-    /* Process any blocked frames still to be sent. */
-    device->ethernet_device.flags |= ETH_FLAG_TX;
+    /* Reset the hardware to recover from this state. */
+    device->ethernet_device.flags = ETH_FLAG_INIT;
+    fd_data_available((FD)data);
 
 } /* enc28j60_wdt */
 
@@ -408,19 +409,15 @@ static void enc28j60_interrupt(void *data)
     }
     else
     {
-        /* Disable enc28j60 interrupts. */
-        device->flags &= (uint8_t)~(ENC28J60_ENABLE_IRQ);
+        /* Disable interrupts. */
+        enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0);
 
-        /* Release lock for this device. */
-        fd_release_lock(fd);
+        /* Clear device flags. */
+        device->flags = 0;
 
-        /* Keep executing this interrupt until we have successfully processed
-         * the interrupt. */
-        /* This will help recover from a SPI error. */
-        ethernet_interrupt(&device->ethernet_device);
-
-        /* Acquire lock for this device. */
-        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+        /* Reset the hardware to recover from this state. */
+        device->ethernet_device.flags = ETH_FLAG_INIT;
+        fd_data_available((FD)data);
     }
 
 } /* enc28j60_interrupt */
