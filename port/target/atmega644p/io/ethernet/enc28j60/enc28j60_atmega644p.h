@@ -26,6 +26,7 @@ void enc28j60_atmega644p_init();
 void enc28j60_atmega644p_handle_interrupt();
 void enc28j60_atmega644p_enable_interrupt(ENC28J60 *);
 void enc28j60_atmega644p_disable_interrupt(ENC28J60 *);
+uint8_t enc28j60_atmega644p_interrupt_pin(ENC28J60 *);
 void enc28j60_atmega644p_reset(ENC28J60 *);
 uint8_t *enc28j60_atmega644p_get_mac(ETH_DEVICE *);
 

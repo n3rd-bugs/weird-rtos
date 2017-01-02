@@ -23,6 +23,7 @@
 /* Hook-up enc28j60 driver. */
 #define ENC28J60_ENABLE_INT     enc28j60_atmega644p_enable_interrupt
 #define ENC28J60_DISABLE_INT    enc28j60_atmega644p_disable_interrupt
+#define ENC28J60_INTERRUPT_PIN  enc28j60_atmega644p_interrupt_pin
 #define ENC28J60_RESET          enc28j60_atmega644p_reset
 #define ENC28J60_GET_MAC        enc28j60_atmega644p_get_mac
 

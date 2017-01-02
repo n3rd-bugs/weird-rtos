@@ -299,110 +299,114 @@ static void enc28j60_wdt(void *data)
 static void enc28j60_interrupt(void *data)
 {
     ENC28J60 *device = (ENC28J60 *)data;
-    int32_t status;
+    int32_t status = SUCCESS;
     FD fd = (FD)data;
     uint8_t value;
 
-    /* Disable interrupts. */
-    status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0);
-
-    if (status == SUCCESS)
+    /* While INT pin is asserted. */
+    while ((status == SUCCESS) && (ENC28J60_INTERRUPT_PIN(device) == FALSE))
     {
-        /* Get the interrupt status. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EIR, 0xFF, &value, 1);
-
-#if ENC28J60_DEBUG
-        printf("enc28j60_interrupt: EIR 0x%d.\r\n", value);
-#endif
+        /* Disable interrupts. */
+        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0);
 
         if (status == SUCCESS)
         {
-            /* If link status has been changed. */
-            if (value & ENC28J60_EIR_LINKIF)
-            {
-                /* Handle the link status change event. */
-                enc28j60_link_changed(device);
+            /* Get the interrupt status. */
+            status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EIR, 0xFF, &value, 1);
 
-                /* Clear the link status changed interrupt. */
-                enc28j60_read_phy(device, ENC28J60_ADDR_PHIR, NULL);
-            }
+#if ENC28J60_DEBUG
+            printf("enc28j60_interrupt: EIR 0x%d.\r\n", value);
+#endif
 
-            /* ERRATA: The Receive Packet Pending Interrupt Flag (EIR.PKTIF) does not
-             * reliably/accurately report the status of pending packets. */
-            /* Solution: In the Interrupt Service Routine, if it is unknown if a packet
-             * is pending and the source of the interrupt is unknown, switch to Bank 1
-             * and check the value in EPKTCNT. */
-            /* If a packet was received or an RX error was detected or source of
-             * interrupt is unknown. */
-            if ((value & ENC28J60_EIR_PKTIF) || (value & ENC28J60_EIR_RXERIF) || (value == 0x00))
+            /* While we have an interrupt to process. */
+            if (status == SUCCESS)
             {
+                /* If link status has been changed. */
+                if (value & ENC28J60_EIR_LINKIF)
+                {
+                    /* Handle the link status change event. */
+                    enc28j60_link_changed(device);
+
+                    /* Clear the link status changed interrupt. */
+                    enc28j60_read_phy(device, ENC28J60_ADDR_PHIR, NULL);
+                }
+
+                /* ERRATA: The Receive Packet Pending Interrupt Flag (EIR.PKTIF) does not
+                 * reliably/accurately report the status of pending packets. */
+                /* Solution: In the Interrupt Service Routine, if it is unknown if a packet
+                 * is pending and the source of the interrupt is unknown, switch to Bank 1
+                 * and check the value in EPKTCNT. */
+                /* If a packet was received or an RX error was detected or source of
+                 * interrupt is unknown. */
                 /* Receive packets from the hardware. */
                 enc28j60_receive_packet(device);
-            }
 
-            /* If an RX error was detected. */
-            if (value & ENC28J60_EIR_RXERIF)
-            {
-                /* Handle RX error. */
-                enc28j60_handle_rx_error(device);
-
-                /* Clear the RX error interrupt. */
-                status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_RXERIF, NULL, 0);
-            }
-
-            /* In case of TX complete or TX error unblock the TX. */
-            if ((value & ENC28J60_EIR_TXIF) || (value & ENC28J60_EIR_TXERIF))
-            {
-                /* Disable watch dog interrupt. */
-                ethernet_wdt_disable(&device->ethernet_device);
-
-                /* Stop the TX. */
-                status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRTS, NULL, 0);
-
-                /* A packet was successfully transmitted, un-block the TX. */
-                device->ethernet_device.flags |= ETH_FLAG_TX;
-                device->flags &= (uint8_t)(~(ENC28J60_IN_TX));
-
-                /* Set event that will unblock any tasks waiting for it. */
-                fd_data_available(fd);
-            }
-
-            /* If a packet was successfully transmitted. */
-            if (value & ENC28J60_EIR_TXIF)
-            {
-                /* Clear the TX complete interrupt. */
-                status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_TXIF, NULL, 0);
-            }
-
-            /* If a transmit error was detected. */
-            if (value & ENC28J60_EIR_TXERIF)
-            {
-                /* Initialize TX FIFO. */
-                status = enc28j60_tx_fifo_init(device);
-
-                if (status == SUCCESS)
+                /* If an RX error was detected. */
+                if (value & ENC28J60_EIR_RXERIF)
                 {
-                    /* Retransmit the old buffer. */
-                    status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRTS, NULL, 0);
+                    /* Handle RX error. */
+                    enc28j60_handle_rx_error(device);
+
+                    /* Clear the RX error interrupt. */
+                    status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_RXERIF, NULL, 0);
                 }
 
-                if (status == SUCCESS)
+                /* In case of TX complete or TX error unblock the TX. */
+                if ((value & ENC28J60_EIR_TXIF) || (value & ENC28J60_EIR_TXERIF))
                 {
-                    /* Clear the TX error interrupt. */
-                    status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_TXERIF, NULL, 0);
+                    /* Disable watch dog interrupt. */
+                    ethernet_wdt_disable(&device->ethernet_device);
+
+                    /* Stop the TX. */
+                    status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRTS, NULL, 0);
+
+                    /* A packet was successfully transmitted, un-block the TX. */
+                    device->ethernet_device.flags |= ETH_FLAG_TX;
+                    device->flags &= (uint8_t)(~(ENC28J60_IN_TX));
+
+                    /* Set event that will unblock any tasks waiting for it. */
+                    fd_data_available(fd);
+                }
+
+                /* If a packet was successfully transmitted. */
+                if (value & ENC28J60_EIR_TXIF)
+                {
+                    /* Clear the TX complete interrupt. */
+                    status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_TXIF, NULL, 0);
+                }
+
+                /* If a transmit error was detected. */
+                if (value & ENC28J60_EIR_TXERIF)
+                {
+                    /* Initialize TX FIFO. */
+                    status = enc28j60_tx_fifo_init(device);
+
+                    if (status == SUCCESS)
+                    {
+                        /* Retransmit the old buffer. */
+                        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRTS, NULL, 0);
+                    }
+
+                    if (status == SUCCESS)
+                    {
+                        /* Clear the TX error interrupt. */
+                        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIR, ENC28J60_EIR_TXERIF, NULL, 0);
+                    }
                 }
             }
+
+            /* Enable interrupts. */
+            status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0);
         }
-
-        /* Enable enc28j60 interrupts. */
-        device->flags |= ENC28J60_ENABLE_IRQ;
-
-        /* Enable interrupts. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0);
     }
 
-    /* If interrupt was not processed successfully. */
-    if (status != SUCCESS)
+    /* If interrupt was processed successfully. */
+    if (status == SUCCESS)
+    {
+        /* Enable enc28j60 interrupts. */
+        device->flags |= ENC28J60_ENABLE_IRQ;
+    }
+    else
     {
         /* Disable enc28j60 interrupts. */
         device->flags &= (uint8_t)~(ENC28J60_ENABLE_IRQ);

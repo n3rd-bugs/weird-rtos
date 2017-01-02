@@ -99,6 +99,22 @@ void enc28j60_atmega644p_disable_interrupt(ENC28J60 *device)
 } /* enc28j60_atmega644p_disable_interrupt */
 
 /*
+ * enc28j60_atmega644p_interrupt_pin
+ * device: ENC28J60 device instance for which we need to query the status of
+ * interrupt pin.
+ * This function will return the status of interrupt pin.
+ */
+uint8_t enc28j60_atmega644p_interrupt_pin(ENC28J60 *device)
+{
+    /* For now unused. */
+    UNUSED_PARAM(device);
+
+    /* Return if interrupt pin is high. */
+    return ((PIND & (1 << 2)) != FALSE);
+
+} /* enc28j60_atmega644p_interrupt_pin */
+
+/*
  * enc28j60_atmega644p_reset
  * device: ENC28J60 device needed to be reset.
  * This function will reset the target enc28j60 device.
