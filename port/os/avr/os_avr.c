@@ -96,9 +96,6 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
     /* Restore the previous task's context. */
     RESTORE_CONTEXT();
 
-    /* Return from this function. */
-    RETURN_ENABLING_INTERRUPTS();
-
 } /* ISR(TIMER1_COMPA_vect, ISR_NAKED) */
 
 /*
@@ -247,9 +244,6 @@ NAKED_FUN control_to_system()
     {
         /* Restore the previous task's context. */
         RESTORE_CONTEXT();
-
-        /* Return from this function. */
-        RETURN_FUNCTION();
     }
     else
     {

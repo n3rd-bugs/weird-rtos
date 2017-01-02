@@ -38,9 +38,6 @@ ISR(INT0_vect, ISR_NAKED)
     /* We are now exiting the ISR. */
     OS_ISR_EXIT();
 
-    /* Return and enable global interrupts. */
-    RETURN_ENABLING_INTERRUPTS();
-
 } /* ISR(INT0_vect, ISR_NAKED) */
 
 /*

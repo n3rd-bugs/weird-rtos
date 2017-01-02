@@ -152,6 +152,7 @@ extern uint8_t avr_in_isr;
  * setting interrupt bit. */
 #define SAVE_CONTEXT_ISR()                                  \
     asm volatile (                                          \
+                    "cli                            \n\t"   \
                     "push   r16                     \n\t"   \
                     "in     r16, __SREG__           \n\t"   \
                     "sbr    r16, 128                \n\t"   \
@@ -249,9 +250,16 @@ extern uint8_t avr_in_isr;
                     "pop    r3                      \n\t"   \
                     "pop    r2                      \n\t"   \
                     "pop    r1                      \n\t"   \
-                    "pop    r16                      \n\t"  \
+                    "pop    r16                     \n\t"   \
+                    "sbrs   r16, 7                  \n\t"   \
+                    "rjmp   .+8                     \n\t"   \
+                    "cbr    r16, 128                \n\t"   \
                     "out    __SREG__,r16            \n\t"   \
-                    "pop    r16                      \n\t"  \
+                    "pop    r16                     \n\t"   \
+                    "reti                           \n\t"   \
+                    "out    __SREG__,r16            \n\t"   \
+                    "pop    r16                     \n\t"   \
+                    "ret                            \n\t"   \
                     :: [tos_offset] "M" (OFFSETOF(TASK, tos))    \
                  );
 
@@ -332,7 +340,6 @@ extern uint8_t avr_in_isr;
 /* This macro is responsible for switching context for time. */
 #define RESTORE_CONTEXT_FIRST()         {                                   \
                                             RESTORE_CONTEXT();              \
-                                            RETURN_ENABLING_INTERRUPTS();   \
                                         }
 
 #define CONTROL_TO_SYSTEM()             control_to_system()
