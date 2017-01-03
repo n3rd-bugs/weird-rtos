@@ -157,14 +157,23 @@ void lcd_an_register(LCD_AN *lcd)
  */
 int32_t lcd_an_wait_8bit(LCD_AN *lcd)
 {
+#if (LCD_AN_8_BIT_DELAY == 0)
     uint64_t sys_time;
+#endif
     int32_t status = SUCCESS;
 
-    /* Wait for LCD to process the command in 8 bit mode. */
+#if (LCD_AN_8_BIT_DELAY > 0)
+    UNUSED_PARAM(lcd);
+
+    /* Rather waiting on status bit just busy wait here. */
+    sleep_ms(LCD_AN_8_BIT_DELAY);
+#else
+
+    /* Read the command register. */
     LCD_AN_TGT_SET_RW(lcd);
     LCD_AN_TGT_SET_EN(lcd);
 
-    /* Read initial timeout. */
+    /* Save current system time. */
     sys_time = current_system_tick();
 
     /* Read the first 4 bit and wait for the busy bit. */
@@ -185,6 +194,7 @@ int32_t lcd_an_wait_8bit(LCD_AN *lcd)
 
     /* Clear the enable pin. */
     LCD_AN_TGT_CLR_EN(lcd);
+#endif
 
     /* Return status to the caller. */
     return (status);

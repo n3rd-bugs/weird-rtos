@@ -32,9 +32,10 @@
 /* Alphanumeric LCD configurations */
 #define LCD_AN_BUSY_TIMEOUT     (500)
 #define LCD_AN_TAB_SIZE         (3)
+#define LCD_AN_8_BIT_DELAY      (10)
 
 /* LCD delay configurations. */
-#define LCD_AN_INIT_DELAY       (35)
+#define LCD_AN_INIT_DELAY       (15)
 #define LCD_AN_CLEAR_DELAY      (10)
 #define LCD_AN_READ_DELAY       (5)
 
