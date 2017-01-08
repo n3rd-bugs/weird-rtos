@@ -17,6 +17,7 @@
 #include <avr/boot.h>
 #include <enc28j60.h>
 #include <enc28j60_atmega644p.h>
+#include <net_csum.h>
 #include <string.h>
 
 /* ENC28J60 device instance. */
@@ -149,20 +150,17 @@ void enc28j60_atmega644p_reset(ENC28J60 *device)
  */
 uint8_t *enc28j60_atmega644p_get_mac(ETH_DEVICE *device)
 {
-    /* Assign a MAC address using the device serial. */
-    device->mac[0] = boot_signature_byte_get(0x000F);
-    device->mac[1] = boot_signature_byte_get(0x000E);
-    device->mac[2] = boot_signature_byte_get(0x0011);
-    device->mac[3] = boot_signature_byte_get(0x0010);
-    device->mac[4] = boot_signature_byte_get(0x0013);
-    device->mac[5] = boot_signature_byte_get(0x0012);
-    device->mac[6] = boot_signature_byte_get(0x0015);
-    device->mac[7] = boot_signature_byte_get(0x0016);
-    device->mac[7] ^= boot_signature_byte_get(0x0017);
+    /* Push ENC28j60 OUI bytes. */
+    device->mac[0] = ENC28J60_OUI_B0;
+    device->mac[1] = ENC28J60_OUI_B1;
+    device->mac[2] = ENC28J60_OUI_B2;
 
-    /* Set the OUI bit and reset the multicast bit. */
-    device->mac[0] |= ETH_MAC_OUI;
-    device->mac[0] &= ((uint8_t)~(ETH_MAC_MULTICAST));
+    /* Assign remaining MAC address using the device serial. */
+    device->mac[3] = NET_CSUM_BYTE(boot_signature_byte_get(0x000E), boot_signature_byte_get(0x000F));
+    device->mac[4] = NET_CSUM_BYTE(boot_signature_byte_get(0x0010), boot_signature_byte_get(0x0011));
+    device->mac[5] = NET_CSUM_BYTE(boot_signature_byte_get(0x0012), boot_signature_byte_get(0x0013));
+    device->mac[6] = NET_CSUM_BYTE(boot_signature_byte_get(0x0014), boot_signature_byte_get(0x0015));
+    device->mac[7] = NET_CSUM_BYTE(boot_signature_byte_get(0x0016), boot_signature_byte_get(0x0017));
 
     /* Return the generated MAC address. */
     return (device->mac);
