@@ -29,6 +29,9 @@
                                 a = (~(a) & 0xFFFF);                    \
                             }
 
+/* This will calculate 8-bit checksum. */
+#define NET_CSUM_BYTE(a, b) ((((uint16_t)(a) + (uint16_t)(b)) & (0xFF)) + ((((uint16_t)(a) + (uint16_t)(b))  >>  8) & (0xFF)))
+
 /* Function prototypes. */
 int32_t net_pseudo_csum_calculate(FS_BUFFER *, uint32_t, uint32_t, uint8_t, uint16_t, uint32_t, uint8_t, uint16_t *);
 uint16_t net_csum_calculate(FS_BUFFER *, int32_t, uint32_t);
