@@ -326,7 +326,7 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 
     /* If this is not an IRQ accessible semaphore or we locked specific
      * interrupt. */
-    if (((semaphore->type & SEMAPHORE_IRQ) == 0) || (semaphore->irq_lock != NULL))
+    if ((status != SUCCESS) || ((semaphore->type & SEMAPHORE_IRQ) == 0) || (semaphore->irq_lock != NULL))
     {
         /* Enable scheduling. */
         scheduler_unlock();
@@ -353,7 +353,7 @@ void semaphore_release(SEMAPHORE *semaphore)
 
     /* If this is not an IRQ accessible semaphore or we locked specific
      * interrupt. */
-    if ((!(semaphore->type & SEMAPHORE_IRQ)) || (semaphore->irq_unlock != NULL))
+    if (((semaphore->type & SEMAPHORE_IRQ) == 0) || (semaphore->irq_lock != NULL))
     {
         /* Lock the scheduler. */
         scheduler_lock();
