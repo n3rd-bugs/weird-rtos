@@ -224,6 +224,9 @@ NAKED_FUN control_to_system()
         /* Save the context on the current task's stack. */
         /* This will also disable global interrupts. */
         SAVE_CONTEXT();
+
+        /* Load system stack. */
+        LOAD_SYSTEM_STACK();
     }
     else
     {
