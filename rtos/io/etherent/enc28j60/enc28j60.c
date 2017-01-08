@@ -143,7 +143,7 @@ static void enc28j60_initialize(void *data)
         max_retry --;
 
     } while ((status == SUCCESS) && (max_retry) && ((value & ENC28J60_ESTAT_CLKRDY) == 0));
-    
+
     /* If we timed out while waiting for clock to enable. */
     if (!max_retry)
     {
@@ -379,6 +379,10 @@ static void enc28j60_interrupt(void *data)
                 /* If a transmit error was detected. */
                 if (value & ENC28J60_EIR_TXERIF)
                 {
+#if ENC28J60_DEBUG
+                    printf("enc28j60_interrupt: TX error detected.\r\n");
+#endif
+
                     /* Initialize TX FIFO. */
                     status = enc28j60_tx_fifo_init(device);
 
@@ -663,8 +667,8 @@ static void enc28j60_receive_packet(ENC28J60 *device)
             /* Save the packet status. */
             packet_status = (uint16_t)((receive_header[5] << 8) | receive_header[4]);
 
-            /* If packet was successfully received. */
-            if ((packet_status & ENC28J60_RX_RXOK) && (packet_length > ENC28J60_RX_CRC_LEN))
+            /* If a packet was successfully received. */
+            if ((packet_status & ENC28J60_RX_RXOK) && (packet_length > ENC28J60_RX_CRC_LEN) && (packet_length <= (net_device_get_mtu(fd) + ETH_HRD_SIZE)))
             {
                 /* Pull a buffer list from the file descriptor. */
                 buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
