@@ -99,6 +99,11 @@
 #define ENC28J60_RX_PTR(p)          ((((p - 1) < ENC28J60_RX_START) || ((p - 1) > ENC28J60_RX_END)) ? ENC28J60_RX_END : (p - 1))
 #define ENC28J60_RX_START_PTR(p)    (((p + ENC28J60_RX_HEAD_SIZE) > ENC28J60_RX_END) ? ((p + ENC28J60_RX_HEAD_SIZE) - (ENC28J60_RX_END - (ENC28J60_RX_START - 1))) : (p + ENC28J60_RX_HEAD_SIZE))
 
+/* MAC address definitions. */
+#define ENC28J60_OUI_B0             0x00
+#define ENC28J60_OUI_B1             0x04
+#define ENC28J60_OUI_B2             0xA3
+
 /* ENC28J60 device structure. */
 typedef struct _enc28j60_device
 {
