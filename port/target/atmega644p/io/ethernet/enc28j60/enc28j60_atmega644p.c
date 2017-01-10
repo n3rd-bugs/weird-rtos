@@ -156,11 +156,9 @@ uint8_t *enc28j60_atmega644p_get_mac(ETH_DEVICE *device)
     device->mac[2] = ENC28J60_OUI_B2;
 
     /* Assign remaining MAC address using the device serial. */
-    device->mac[3] = NET_CSUM_BYTE(boot_signature_byte_get(0x000E), boot_signature_byte_get(0x000F));
-    device->mac[4] = NET_CSUM_BYTE(boot_signature_byte_get(0x0010), boot_signature_byte_get(0x0011));
-    device->mac[5] = NET_CSUM_BYTE(boot_signature_byte_get(0x0012), boot_signature_byte_get(0x0013));
-    device->mac[6] = NET_CSUM_BYTE(boot_signature_byte_get(0x0014), boot_signature_byte_get(0x0015));
-    device->mac[7] = NET_CSUM_BYTE(boot_signature_byte_get(0x0016), boot_signature_byte_get(0x0017));
+    device->mac[3] = NET_CSUM_BYTE(NET_CSUM_BYTE(boot_signature_byte_get(0x000E), boot_signature_byte_get(0x000F)), boot_signature_byte_get(0x0010));
+    device->mac[4] = NET_CSUM_BYTE(NET_CSUM_BYTE(boot_signature_byte_get(0x0011), boot_signature_byte_get(0x0012)), boot_signature_byte_get(0x0013));
+    device->mac[5] = NET_CSUM_BYTE(NET_CSUM_BYTE(boot_signature_byte_get(0x0015), boot_signature_byte_get(0x0016)), boot_signature_byte_get(0x0017));
 
     /* Return the generated MAC address. */
     return (device->mac);
