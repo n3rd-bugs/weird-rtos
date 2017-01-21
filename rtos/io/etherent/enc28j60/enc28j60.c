@@ -75,7 +75,7 @@ void enc28j60_init(ENC28J60 *device)
 
 #ifdef CONFIG_SEMAPHORE
     /* Rather locking the global interrupts lock only the ethernet interrupts. */
-    semaphore_set_irq_data(&device->ethernet_device.lock, device, (SEM_IRQ_LOCK *)&ENC28J60_DISABLE_INT, (SEM_IRQ_UNLOCK *)&ENC28J60_ENABLE_INT);
+    semaphore_set_interrupt_data(&device->ethernet_device.lock, device, (SEM_INT_LOCK *)&ENC28J60_DISABLE_INT, (SEM_INT_UNLOCK *)&ENC28J60_ENABLE_INT);
 #endif
 
     /* Clear device flags. */
@@ -262,7 +262,7 @@ static void enc28j60_initialize(void *data)
         if (status == SUCCESS)
         {
             /* Enable enc28j60 interrupts. */
-            device->flags |= ENC28J60_ENABLE_IRQ;
+            device->flags |= ENC28J60_INT_ENABLE;
         }
     }
 
@@ -409,7 +409,7 @@ static void enc28j60_interrupt(void *data)
     if (status == SUCCESS)
     {
         /* Enable enc28j60 interrupts. */
-        device->flags |= ENC28J60_ENABLE_IRQ;
+        device->flags |= ENC28J60_INT_ENABLE;
     }
     else
     {

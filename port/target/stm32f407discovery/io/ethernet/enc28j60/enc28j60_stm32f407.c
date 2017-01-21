@@ -85,7 +85,7 @@ void enc28j60_stm32f407_init()
 void enc28j60_stm32f407_handle_interrupt()
 {
     /* Disable interrupt until we process it. */
-    enc28j60.flags &= (uint8_t)~(ENC28J60_ENABLE_IRQ);
+    enc28j60.flags &= (uint8_t)~(ENC28J60_INT_ENABLE);
     enc28j60_stm32f407_disable_interrupt(&enc28j60);
 
     /* Handle interrupt for this device. */
@@ -102,7 +102,7 @@ void enc28j60_stm32f407_handle_interrupt()
 void enc28j60_stm32f407_enable_interrupt(ENC28J60 *device)
 {
     /* If we need to enable interrupts for this device. */
-    if (device->flags & ENC28J60_ENABLE_IRQ)
+    if (device->flags & ENC28J60_INT_ENABLE)
     {
         /* Enable the EXT2 IRQ channel. */
         NVIC->ISER[EXTI2_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI2_IRQn & (uint8_t)0x1F);

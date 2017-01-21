@@ -26,7 +26,7 @@
 
 /* Serial configurations. */
 #define BAUD_RATE           115200
-#define PRINTF_BUFFER_SIZE  32
+#define PRINTF_BUFFER_SIZE  64
 
 /* Function prototypes. */
 int32_t usart_atmega644p_puts(void *, uint8_t *, int32_t);

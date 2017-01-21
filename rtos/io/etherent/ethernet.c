@@ -56,7 +56,7 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect this device. */
     memset(&device->lock, 0, sizeof(SEMAPHORE));
-    semaphore_create(&device->lock, 1, 1, (SEMAPHORE_PRIORITY | ((interrupt != NULL) ? SEMAPHORE_IRQ : 0)));
+    semaphore_create(&device->lock, 1, 1, (SEMAPHORE_PRIORITY | ((interrupt != NULL) ? SEMAPHORE_INT : 0)));
 #endif
 
     /* Initialize file system condition. */
@@ -181,11 +181,11 @@ static int32_t ethernet_lock(void *fd)
     return semaphore_obtain(&device->lock, MAX_WAIT);
 #else
 
-    /* If this is IRQ accessible. */
+    /* If this is ISR accessible. */
     if (device->interrupt != NULL)
     {
         /* Save interrupt status for this device. */
-        device->irq_status = GET_INTERRUPT_LEVEL();
+        device->int_status = GET_INTERRUPT_LEVEL();
 
         /* Disable global interrupts. */
         DISABLE_INTERRUPTS();
@@ -213,11 +213,11 @@ static void ethernet_unlock(void *fd)
     semaphore_release(&device->lock);
 #else
 
-    /* If this is IRQ accessible. */
+    /* If this is ISR accessible. */
     if (device->interrupt != NULL)
     {
         /* Restore old interrupt level. */
-        SET_INTERRUPT_LEVEL(device->irq_status);
+        SET_INTERRUPT_LEVEL(device->int_status);
     }
 
     /* Enable scheduling. */

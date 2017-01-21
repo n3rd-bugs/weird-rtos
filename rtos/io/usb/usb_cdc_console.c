@@ -48,10 +48,10 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
     console_register(&cdc_cons->console);
 
 #ifdef CONFIG_SEMAPHORE
-    /* This is IRQ accessible console. */
-    semaphore_update(&cdc_cons->console.lock, 1, 1, (SEMAPHORE_PRIORITY | SEMAPHORE_IRQ));
+    /* This is interrupt accessible console. */
+    semaphore_update(&cdc_cons->console.lock, 1, 1, (SEMAPHORE_PRIORITY | SEMAPHORE_INT));
 #else
-    /* For this console we require IRQ lock. */
+    /* For this console we require interrupt lock. */
     cdc_cons->console.fs.get_lock = &usb_cdc_console_lock;
     cdc_cons->console.fs.release_lock = &usb_cdc_console_unlock;
 #endif
@@ -110,7 +110,7 @@ static int32_t usb_cdc_console_lock(void *fd)
     CDC_CONSOLE *console = (CDC_CONSOLE *)fd;
 
     /* Save interrupt status for this console. */
-    console->irq_status = GET_INTERRUPT_LEVEL();
+    console->int_status = GET_INTERRUPT_LEVEL();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
@@ -133,7 +133,7 @@ static void usb_cdc_console_unlock(void *fd)
     CDC_CONSOLE *console = (CDC_CONSOLE *)fd;
 
     /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(console->irq_status);
+    SET_INTERRUPT_LEVEL(console->int_status);
 
     /* Enable scheduling. */
     scheduler_unlock();

@@ -181,8 +181,8 @@ void sleep_ticks(uint32_t ticks)
     /* Current task should not be null. */
     OS_ASSERT(tcb == NULL);
 
-    /* IRQ must not be locked. */
-    OS_ASSERT(tcb->irq_lock_count != 0);
+    /* Interrupts must not be locked. */
+    OS_ASSERT(tcb->interrupt_lock_count != 0);
 
     /* Lock the scheduler. */
     scheduler_lock();

@@ -87,8 +87,8 @@ typedef struct _eth_device
     /* Lock for this device instance. */
     SEMAPHORE   lock;
 #else
-    /* IRQ status. */
-    uint32_t    irq_status;
+    /* Interrupt status. */
+    uint32_t    int_status;
 #endif
 
 #ifdef NET_ARP

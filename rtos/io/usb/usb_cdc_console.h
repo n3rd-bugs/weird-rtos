@@ -58,7 +58,7 @@ typedef struct _cdc_console
 
 #ifndef CONFIG_SEMAPHORE
     /* Interrupt status used to protect this CDC console. */
-    uint32_t    irq_status;
+    uint32_t    int_status;
 #endif
 
 } CDC_CONSOLE;

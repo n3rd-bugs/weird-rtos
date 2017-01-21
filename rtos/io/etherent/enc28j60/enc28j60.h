@@ -55,10 +55,10 @@
 
 /* ENC28J60 device flag definitions. */
 #define ENC28J60_IN_TX              (0x01)
-#define ENC28J60_ENABLE_IRQ         (0x02)
+#define ENC28J60_INT_ENABLE         (0x02)
 
 /* Buffer configuration for a enc28j60 device. */
-#define ENC28J60_MAX_BUFFER_SIZE    (128)
+#define ENC28J60_MAX_BUFFER_SIZE    (256)
 #define ENC28J60_NUM_BUFFERS        (32)
 #define ENC28J60_NUM_BUFFER_LISTS   (24)
 #define ENC28J60_NUM_THR_BUFFER     (16)

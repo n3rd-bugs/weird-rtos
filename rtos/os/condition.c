@@ -464,7 +464,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
 #endif /* CONFIG_SLEEP */
 
         /* Disable global interrupts, need to do this to protect against any
-         * IRQ locks. */
+         * interrupt locks. */
         interrupt_level = GET_INTERRUPT_LEVEL();
         DISABLE_INTERRUPTS();
 
@@ -476,7 +476,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         suspend_unlock_condition(condition, num_conditions, NULL);
 
         /* Should never happen. */
-        OS_ASSERT(tcb->irq_lock_count > 0);
+        OS_ASSERT(tcb->interrupt_lock_count > 0);
 
         /* Task is being suspended. */
         tcb->status = TASK_SUSPENDED;

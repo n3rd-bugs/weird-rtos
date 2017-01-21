@@ -84,7 +84,7 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
     /* Add this device on the global instance list. */
     sll_append(&ppp_data.ppp, ppp, OFFSETOF(PPP, next));
 
-    /* Restore the IRQ interrupt level. */
+    /* Restore the interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Register networking device for this PPP instance. */
@@ -118,7 +118,7 @@ PPP *ppp_get_instance_fd(FD fd)
         ret_instance = ret_instance->next;
     }
 
-    /* Restore the IRQ interrupt level. */
+    /* Restore the interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Return the required device. */
