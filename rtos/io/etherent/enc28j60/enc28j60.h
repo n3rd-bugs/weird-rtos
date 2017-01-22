@@ -120,21 +120,6 @@ struct _enc28j60_device
     /* Ethernet device structure. */
     ETH_DEVICE  ethernet_device;
 
-#ifdef NET_ARP
-    /* ARP entry list. */
-    ARP_ENTRY   arp_entries[ENC28J60_NUM_ARP];
-#endif
-
-#ifdef DHCP_CLIENT
-    /* DHCP client data. */
-    DHCP_CLIENT_DEVICE  dhcp_client;
-#endif
-
-#ifdef IPV4_ENABLE_FRAG
-    /* IPv4 fragment list. */
-    IPV4_FRAGMENT   ipv4_fragments[ENC28J60_NUM_IPV4_FRAGS];
-#endif
-
     /* Device APIs. */
     ENC28J60_ENABLE_INT     *enable_interrupts;
     ENC28J60_DISABLE_INT    *disable_interrupts;
@@ -150,6 +135,21 @@ struct _enc28j60_device
     FS_BUFFER_ONE   fs_buffer[ENC28J60_NUM_BUFFERS];
     FS_BUFFER       fs_buffer_list[ENC28J60_NUM_BUFFER_LISTS];
 
+#ifdef NET_ARP
+    /* ARP entry list. */
+    ARP_ENTRY   arp_entries[ENC28J60_NUM_ARP];
+#endif
+
+#ifdef IPV4_ENABLE_FRAG
+    /* IPv4 fragment list. */
+    IPV4_FRAGMENT   ipv4_fragments[ENC28J60_NUM_IPV4_FRAGS];
+#endif
+
+#ifdef DHCP_CLIENT
+    /* DHCP client data. */
+    DHCP_CLIENT_DEVICE  dhcp_client;
+#endif
+
     /* SPI device structure. */
     SPI_DEVICE  spi;
 
@@ -161,9 +161,6 @@ struct _enc28j60_device
 
     /* Device flags. */
     uint8_t     flags;
-
-    /* Structure padding. */
-    uint8_t     pad[4];
 
 };
 

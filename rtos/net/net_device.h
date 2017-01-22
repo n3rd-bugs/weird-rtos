@@ -37,21 +37,16 @@ typedef NET_CONDITION_PROCESS NET_RX;
 /* Network device file descriptor. */
 struct _net_dev
 {
-#ifdef NET_IPV4
-    /* IPv4 device data. */
-    IPV4_DEVICE ipv4;
-#endif
-
-    /* Networking condition data that will be used to process events on this
-     * device. */
-    SUSPEND     suspend;
-    FS_PARAM    fs_param;
-
     /* Networking device list member. */
     NET_DEV     *next;
 
     /* File descriptor linked with this networking device. */
     FD          fd;
+
+    /* Networking condition data that will be used to process events on this
+     * device. */
+    FS_PARAM    fs_param;
+    SUSPEND     suspend;
 
     /* Transmit function that will be called to send a packet. */
     NET_TX      *tx;
@@ -61,6 +56,11 @@ struct _net_dev
 
     /* Flags to be maintained for this device. */
     uint32_t    flags;
+
+#ifdef NET_IPV4
+    /* IPv4 device data. */
+    IPV4_DEVICE ipv4;
+#endif
 };
 
 /* Network device global data. */

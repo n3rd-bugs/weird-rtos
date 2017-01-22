@@ -151,7 +151,7 @@ void fs_buffer_move(FS_BUFFER *dst_buffer, FS_BUFFER *src_buffer)
  *  FS_BUFFER_HEAD: If we need to add data on the head of existing data.
  * This function will move all the data from one buffer to the other buffer.
  */
-void fs_buffer_move_data(FS_BUFFER *dst, FS_BUFFER *src, uint16_t flags)
+void fs_buffer_move_data(FS_BUFFER *dst, FS_BUFFER *src, uint8_t flags)
 {
     /* Move all the data from the source buffer to the destination buffer. */
 
@@ -429,7 +429,7 @@ uint8_t fs_buffer_threshold_locked(FD fd)
  *  FS_BUFFER_HEAD: If we need to add this one buffer on the head.
  * This function will add a given one buffer to the given buffer.
  */
-void fs_buffer_add_one(FS_BUFFER *buffer, FS_BUFFER_ONE *one, uint16_t flag)
+void fs_buffer_add_one(FS_BUFFER *buffer, FS_BUFFER_ONE *one, uint8_t flag)
 {
     /* If we need to add this buffer on the head. */
     if (flag & FS_BUFFER_HEAD)
@@ -904,7 +904,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
  * This function will remove data from a buffer. If given will also copy the
  * data in the provided buffer.
  */
-int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint32_t offset, uint16_t flags)
+int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint32_t offset, uint8_t flags)
 {
     FS_BUFFER_ONE *one = NULL;
     int32_t status = SUCCESS;
@@ -1085,7 +1085,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
  *  file descriptor for new buffers.
  * This function will add data to the buffer.
  */
-int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint8_t offset, uint16_t flags)
+int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint8_t offset, uint8_t flags)
 {
     int32_t status = SUCCESS;
     FS_BUFFER_ONE *one = NULL;
@@ -1454,7 +1454,7 @@ int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *one, uint32_t size)
  * This function will remove data from a given buffer. If given will also copy
  * the data in the provided buffer.
  */
-int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *one, void *data, uint32_t size, uint32_t offset, uint16_t flags)
+int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *one, void *data, uint32_t size, uint32_t offset, uint8_t flags)
 {
     uint8_t *from;
     int32_t status = SUCCESS;
@@ -1539,7 +1539,7 @@ int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *one, void *data, uint32_t size,
  *  buffer.
  * This function will add data in the buffer.
  */
-int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, void *data, uint32_t size, uint32_t offset, uint16_t flags)
+int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, void *data, uint32_t size, uint32_t offset, uint8_t flags)
 {
     int32_t status = SUCCESS;
     uint8_t *to;

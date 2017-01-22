@@ -75,9 +75,6 @@ typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 /* IPv4 fragment structure. */
 typedef struct _ipv4_fragment
 {
-    /* The system tick at which this fragment will timeout. */
-    uint64_t    timeout;
-
     /* Networking buffer list for the buffers belong in this fragment. */
     struct _ipv4_fragment_buffer_list
     {
@@ -87,6 +84,9 @@ typedef struct _ipv4_fragment
 
     /* Source address from this fragment is being received. */
     uint32_t    sa;
+
+    /* The system tick at which this fragment will timeout. */
+    uint32_t    timeout;
 
     /* Packet ID for this fragment list. */
     uint16_t    id;
@@ -100,15 +100,15 @@ typedef struct _ipv4_fragment
 /* IPv4 fragment data. */
 typedef struct _ipv4_fragment_data
 {
-    /* Condition data for fragments. */
-    SUSPEND     suspend;
-    CONDITION   condition;
-
     /* IPv4 fragment list. */
     IPV4_FRAGMENT   *list;
 
     /* Number of fragments for this device. */
     uint32_t    num;
+
+    /* Condition data for fragments. */
+    CONDITION   condition;
+    SUSPEND     suspend;
 
 } IPV4_FRAGMENT_DATA;
 #endif /* IPV4_ENABLE_FRAG */
@@ -116,13 +116,13 @@ typedef struct _ipv4_fragment_data
 /* IPv4 device data. */
 typedef struct _ipv4_device
 {
+    /* IP address assigned to this interface. */
+    uint32_t    address;
+
 #ifdef IPV4_ENABLE_FRAG
     /* IPv4 fragments for this device. */
     IPV4_FRAGMENT_DATA  fargment;
 #endif
-
-    /* IP address assigned to this interface. */
-    uint32_t    address;
 
 #ifdef DHCP_CLIENT
     /* IPv4 DHCP client data. */

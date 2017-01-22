@@ -25,7 +25,7 @@
 #define FALSE                       (0)
 #define TRUE                        (1)
 #define PARTIAL                     (2)
-#define MAX_WAIT                    (uint64_t)(-1)
+#define MAX_WAIT                    (uint32_t)(-1)
 
 #ifdef NULL
 #undef NULL
@@ -79,7 +79,7 @@ void os_run();
 void task_yield();
 
 /* External function prototypes. */
-void sleep_ticks(uint64_t);
+void sleep_ticks(uint32_t);
 void sleep_hw_ticks(uint64_t);
 #define sleep_ms(ms)                sleep_ticks(MS_TO_TICK((ms)))
 #define sleep_us(us)                sleep_hw_ticks(US_TO_HW_TICK((us)))

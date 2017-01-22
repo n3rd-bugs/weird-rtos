@@ -170,7 +170,7 @@ void sleep_remove_from_list(TASK *tcb)
  * This function sleeps/suspends the current task for the given number of system
  * ticks.
  */
-void sleep_ticks(uint64_t ticks)
+void sleep_ticks(uint32_t ticks)
 {
     TASK *tcb;
     uint32_t interrupt_level;

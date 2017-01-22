@@ -54,12 +54,12 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     if (state == DHCP_CLI_LEASE_EXPIRE)
     {
         /* Wait until the lease expire and then trigger this state. */
-        client_data->suspend.timeout = current_system_tick() + (client_data->lease_time * OS_TICKS_PER_SEC);
+        client_data->suspend.timeout = (uint32_t)(current_system_tick() + (client_data->lease_time * OS_TICKS_PER_SEC));
     }
     else
     {
         /* Trigger this state now. */
-        client_data->suspend.timeout = current_system_tick();
+        client_data->suspend.timeout = (uint32_t)current_system_tick();
     }
 
     /* If we need to start a new transaction in next state. */

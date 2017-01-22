@@ -144,13 +144,13 @@ void semaphore_destroy(SEMAPHORE *semaphore)
  * @timeout: Time to wait on this semaphore.
  * This function will return condition for release of this semaphore.
  */
-void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEND *suspend, uint64_t timeout)
+void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEND *suspend, uint32_t timeout)
 {
     /* Initialize suspend criteria. */
     suspend->param = (void *)semaphore;
     suspend->flags = (semaphore->type & SEMAPHORE_PRIORITY ? SUSPEND_PRIORITY : 0);
     suspend->do_suspend = &semaphore_do_suspend;
-    suspend->timeout = timeout + current_system_tick();
+    suspend->timeout = timeout;
 
     /* Return the condition for this semaphore. */
     *condition = &semaphore->condition;
@@ -226,7 +226,7 @@ static uint8_t semaphore_do_resume(void *param_resume, void *param_suspend)
  * This function is called to acquire a semaphore. User can specify the number
  * of ticks to wait before returning an error.
  */
-int32_t semaphore_obtain(SEMAPHORE *semaphore, uint64_t wait)
+int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
     int32_t status = SUCCESS;

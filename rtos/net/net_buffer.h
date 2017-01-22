@@ -46,9 +46,6 @@ typedef struct _net_buffer_fs
     /* File system suspend parameter to be used to wait on this file descriptor. */
     FS_PARAM    fs_param;
 
-    /* Structure padding. */
-    uint8_t     pad[4];
-
 } NET_BUFFER_FS;
 
 /* Exported variables. */

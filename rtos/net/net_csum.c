@@ -34,7 +34,7 @@
  * This function will calculate pseudo checksum for the given packet and
  * protocol.
  */
-int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t dst_ip, uint8_t protocol, uint32_t length, uint32_t offset, uint16_t flags, uint16_t *csum)
+int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t dst_ip, uint8_t protocol, uint16_t length, uint32_t offset, uint8_t flags, uint16_t *csum)
 {
     int32_t status;
     uint32_t ret_csum;

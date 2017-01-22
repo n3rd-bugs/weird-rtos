@@ -78,9 +78,6 @@ struct _fs_connection_watcher
 typedef struct _fs FS;
 struct _fs
 {
-    /* This will hold the timeout if blocking mode is used. */
-    uint64_t    timeout;
-
     /* List next. */
     FS          *next;
 
@@ -140,8 +137,8 @@ struct _fs
     /* File system specific flags. */
     uint32_t    flags;
 
-    /* Structure padding */
-    uint8_t     pad[4];
+    /* This will hold the timeout if blocking mode is used. */
+    uint32_t    timeout;
 };
 
 /* This holds the resumption criteria for a task waiting on a FS. */

@@ -147,10 +147,10 @@ uint8_t *ethernet_get_mac_address(FD fd)
  * This function will enable watch dog timer for an ethernet device. Caller must
  * have lock for the required device and this function.
  */
-void ethernet_wdt_enable(ETH_DEVICE *device, uint64_t ticks)
+void ethernet_wdt_enable(ETH_DEVICE *device, uint32_t ticks)
 {
     /* Enable watch dog timer for this device. */
-    device->net_device.suspend.timeout = current_system_tick() + ticks;
+    device->net_device.suspend.timeout = (uint32_t)(current_system_tick() + ticks);
 
 } /* ethernet_wdt_enable */
 
