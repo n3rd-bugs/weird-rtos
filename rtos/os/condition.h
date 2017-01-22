@@ -47,6 +47,9 @@ typedef struct _resume
 typedef struct _suspend SUSPEND;
 struct _suspend
 {
+    uint64_t    timeout;    /* Tick at which we would want to process this
+                             * condition. */
+
     /* Suspend link list member. */
     SUSPEND     *next;
 
@@ -56,8 +59,7 @@ struct _suspend
     TASK        *task;      /* Task suspended on this. */
     void        *param;     /* User defined criteria for the tasks. */
     uint32_t    flags;      /* Suspend flags. */
-    uint32_t    timeout;    /* Number of ticks we need to suspend on this
-                             * condition. */
+    uint8_t     pad[4];     /* Structure padding. */
 };
 
 /* Link list of suspend. */

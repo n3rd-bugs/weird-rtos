@@ -101,8 +101,8 @@ typedef struct _tcp_oo_param
 typedef struct _tcp_rtx
 {
     /* Networking condition data for this TCP socket. */
-    CONDITION       condition;
     SUSPEND         suspend;
+    CONDITION       condition;
 
     /* Packet data, for now we only support retransmission of one segment at a
      * time. */
@@ -134,6 +134,9 @@ struct _tcp_port
     /* Console structure for this TCP port. */
     CONSOLE         console;
 
+    /* Retransmission data. */
+    TCP_RTX         rtx_data;
+
     /* TCP port list member. */
     TCP_PORT        *next;
 
@@ -162,9 +165,6 @@ struct _tcp_port
     SOCKET_ADDRESS  socket_address;
 
     /* These variables maintain the socket state and configurations. */
-
-    /* Retransmission data. */
-    TCP_RTX         rtx_data;
 
     /* Receive sequence numbers. */
     uint32_t        rcv_nxt;
@@ -199,6 +199,9 @@ struct _tcp_port
 
     /* Exponential back off value. */
     uint8_t         expboff;
+
+    /* Structure padding. */
+    uint8_t         pad[4];
 };
 
 /* TCP global data. */

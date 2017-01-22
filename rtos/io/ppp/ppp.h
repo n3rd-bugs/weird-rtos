@@ -85,11 +85,11 @@
 typedef struct _ppp PPP;
 struct _ppp
 {
-    /* PPP instance list member. */
-    PPP         *next;
-
     /* Networking device structure. */
     NET_DEV     net_device;
+
+    /* PPP instance list member. */
+    PPP         *next;
 
     /* File descriptor registered with PPP device. */
     FD          fd;

@@ -109,7 +109,7 @@ typedef struct _eth_device
     uint8_t     flags;
 
     /* Structure padding. */
-    uint8_t     pad[3];
+    uint8_t     pad[7];
 
 } ETH_DEVICE;
 
@@ -118,7 +118,7 @@ void ethernet_init();
 void ethernet_regsiter(ETH_DEVICE *, ETH_INIT *, ETH_TRANSMIT *, ETH_INTERRUPT *, ETH_WDT *);
 uint8_t *ethernet_random_mac(ETH_DEVICE *);
 uint8_t *ethernet_get_mac_address(FD);
-void ethernet_wdt_enable(ETH_DEVICE *, uint32_t);
+void ethernet_wdt_enable(ETH_DEVICE *, uint64_t);
 void ethernet_wdt_disable(ETH_DEVICE *);
 int32_t ethernet_interrupt(ETH_DEVICE *);
 int32_t ethernet_buffer_receive(FS_BUFFER *);

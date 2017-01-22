@@ -30,7 +30,7 @@ static void suspend_condition_remove(CONDITION **, SUSPEND **, uint32_t, CONDITI
 static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint32_t, uint32_t *);
 static uint8_t suspend_is_task_waiting(TASK *, CONDITION *);
 #ifdef CONFIG_SLEEP
-static uint32_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
+static uint64_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
 #endif
 
 /*
@@ -334,10 +334,10 @@ static uint8_t suspend_is_task_waiting(TASK *task, CONDITION *check_condition)
  * This routine will calculate the minimum number of times we need to wait on
  * the given conditions before returning a timeout.
  */
-static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
+static uint64_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
 {
-    uint32_t n, min_timeout = MAX_WAIT, this_timeout, min_index = 0;
-    uint32_t clock = (uint32_t)current_system_tick();
+    uint32_t n, min_index = 0;
+    uint64_t min_timeout = MAX_WAIT, this_timeout, clock = current_system_tick();
 
     /* For all conditions search the minimum timeout. */
     for (n = 0; n < num; n++)
@@ -403,7 +403,8 @@ static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
  */
 int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *num, uint8_t locked)
 {
-    uint32_t timeout, timeout_index, interrupt_level, num_conditions, return_num;
+    uint64_t timeout;
+    uint32_t timeout_index, interrupt_level, num_conditions, return_num;
     int32_t status = SUCCESS, task_status = TASK_RESUME;
     CONDITION *resume_condition = NULL;
     TASK *tcb = get_current_task();
@@ -455,7 +456,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
 
 #ifdef CONFIG_SLEEP
         /* Check if we need to wait for a finite time. */
-        if (timeout != (uint32_t)(MAX_WAIT))
+        if (timeout != MAX_WAIT)
         {
             /* Add the current task to the sleep list, if not available in
              * the allowed time the task will be resumed. */

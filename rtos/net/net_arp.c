@@ -295,7 +295,8 @@ static void arp_update_timers(FD fd)
 {
     /* Get ARP data for this device. */
     ARP_DATA *arp_data = arp_get_data(fd);
-    uint32_t i, next_timeout = MAX_WAIT;
+    uint64_t next_timeout = MAX_WAIT;
+    uint32_t i;
 
     /* Go though all the ARP entries in the device. */
     for (i = 0; i < arp_data->num_entries; i++)
@@ -378,7 +379,8 @@ static void arp_event(void *data)
 {
     FD fd = (FD)data;
     ARP_DATA *arp_data = arp_get_data(fd);
-    uint32_t i, clock = (uint32_t)current_system_tick();
+    uint64_t clock = current_system_tick();
+    uint32_t i;
     int32_t status;
 
     /* Acquire lock for this file descriptor. */
@@ -509,7 +511,7 @@ int32_t arp_resolve(FS_BUFFER *buffer, uint8_t *dst_addr)
                 {
                     /* This ARP entry is being used, try to update this entry again. */
                     entry->flags |= ARP_FLAG_IN_USE;
-                    entry->next_timeout = (uint32_t)current_system_tick() + ARP_UPDATE_TIME;
+                    entry->next_timeout = current_system_tick() + ARP_UPDATE_TIME;
 
                     /* Update ARP timers. */
                     arp_update_timers(buffer->fd);
@@ -526,7 +528,7 @@ int32_t arp_resolve(FS_BUFFER *buffer, uint8_t *dst_addr)
                     /* Initialize this ARP entry. */
                     entry->flags |= ARP_FLAG_VALID;
                     entry->ip = dst_ip;
-                    entry->next_timeout = (uint32_t)current_system_tick();
+                    entry->next_timeout = current_system_tick();
 
                     /* Update ARP timers. */
                     arp_update_timers(buffer->fd);

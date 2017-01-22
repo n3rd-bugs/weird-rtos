@@ -163,12 +163,12 @@ void fs_buffer_init(FS_BUFFER *, FD);
 void fs_buffer_one_init(FS_BUFFER_ONE *, void *, uint32_t);
 void fs_buffer_one_update(FS_BUFFER_ONE *, void *, uint32_t);
 void fs_buffer_move(FS_BUFFER *, FS_BUFFER *);
-void fs_buffer_move_data(FS_BUFFER *, FS_BUFFER *, uint8_t);
+void fs_buffer_move_data(FS_BUFFER *, FS_BUFFER *, uint16_t);
 int32_t fs_buffer_num_remaining(FD, uint32_t);
 void fs_buffer_condition_init(FD);
 void fs_buffer_condition_get(FD, CONDITION **, SUSPEND *, FS_BUFFER_PARAM *, int32_t, uint32_t);
 uint8_t fs_buffer_threshold_locked(FD);
-void fs_buffer_add_one(FS_BUFFER *, FS_BUFFER_ONE *, uint8_t);
+void fs_buffer_add_one(FS_BUFFER *, FS_BUFFER_ONE *, uint16_t);
 void fs_buffer_add_list(FS_BUFFER *, uint32_t, uint32_t);
 void fs_buffer_add_buffer_list(FS_BUFFER *, uint32_t, uint32_t);
 void fs_buffer_add(FD, void *, uint32_t, uint32_t);
@@ -177,17 +177,17 @@ void *fs_buffer_get_by_id(FD, uint32_t, uint32_t, uint32_t);
 
 /* File system buffer manipulation APIs. */
 #define fs_buffer_pull(b, d, l, f)      fs_buffer_pull_offset((b), (d), (l), 0, (f))
-int32_t fs_buffer_pull_offset(FS_BUFFER *, void *, uint32_t, uint32_t, uint8_t);
+int32_t fs_buffer_pull_offset(FS_BUFFER *, void *, uint32_t, uint32_t, uint16_t);
 #define fs_buffer_push(b, d, l, f)      fs_buffer_push_offset((b), (d), (l), 0, (f))
-int32_t fs_buffer_push_offset(FS_BUFFER *, void *, uint32_t, uint8_t, uint8_t);
+int32_t fs_buffer_push_offset(FS_BUFFER *, void *, uint32_t, uint8_t, uint16_t);
 int32_t fs_buffer_divide(FS_BUFFER *, uint32_t, uint32_t);
 
 /* File system one buffer manipulation APIs. */
 int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *, uint32_t);
 #define fs_buffer_one_pull(o, d, l, f)  fs_buffer_one_pull_offset((o), (d), (l), 0, (f))
-int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *, void *, uint32_t, uint32_t, uint8_t);
+int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *, void *, uint32_t, uint32_t, uint16_t);
 #define fs_buffer_one_push(o, d, l, f)  fs_buffer_one_push_offset((o), (d), (l), 0, (f))
-int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *, void *, uint32_t, uint32_t, uint8_t);
+int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *, void *, uint32_t, uint32_t, uint16_t);
 int32_t fs_buffer_one_divide(FD, FS_BUFFER_ONE *, FS_BUFFER_ONE **, uint32_t, uint32_t);
 
 /* Helper routines. */

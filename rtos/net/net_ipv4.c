@@ -639,7 +639,8 @@ void ipv4_fragment_set_data(FD fd, IPV4_FRAGMENT *fragments, uint32_t num)
  */
 static void ipv4_fragment_update_timer(NET_DEV *net_device)
 {
-    uint32_t n, next_timeout = MAX_WAIT;
+    uint64_t next_timeout = MAX_WAIT;
+    uint32_t n;
 
     /* Go though all the fragments in this device. */
     for (n = 0; n < net_device->ipv4.fargment.num; n++)
@@ -669,9 +670,10 @@ static void ipv4_fragment_update_timer(NET_DEV *net_device)
  */
 static void ipv4_fragment_expired(void *data)
 {
+    uint64_t clock = current_system_tick();
     NET_DEV *net_device = (NET_DEV *)data;
     FD buffer_fd;
-    uint32_t n, clock = (uint32_t)current_system_tick();
+    uint32_t n;
 
     /* Go though all the fragments in this device. */
     for (n = 0; n < net_device->ipv4.fargment.num; n++)
@@ -814,7 +816,7 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
                     net_device->ipv4.fargment.list[n].flags |= IPV4_FRAG_DROP;
 
                     /* Expire this fragment after drop timeout. */
-                    fragment->timeout = (uint32_t)(IPV4_FRAG_DROP_TIMEOUT + current_system_tick());
+                    fragment->timeout = IPV4_FRAG_DROP_TIMEOUT + current_system_tick();
                 }
             }
 
@@ -840,7 +842,7 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
                     fragment->sa = sa;
 
                     /* Save the timeout at which we will need to expire this fragment. */
-                    fragment->timeout = (uint32_t)(IPV4_FRAG_TIMEOUT + current_system_tick());
+                    fragment->timeout = IPV4_FRAG_TIMEOUT + current_system_tick();
 
                     /* Update fragment timer. */
                     ipv4_fragment_update_timer(net_device);
