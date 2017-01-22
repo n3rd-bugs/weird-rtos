@@ -34,24 +34,33 @@
 #define SPI_MSG_READ            0x01
 #define SPI_MSG_WRITE           0x02
 
-/* Week link SPI device structure. */
-typedef struct _spi_device  SPI_DEVICE;
-typedef struct _spi_msg     SPI_MSG;
+/* SPI structure definitions. */
+typedef struct _spi_device SPI_DEVICE;
+typedef struct _spi_msg SPI_MSG;
 
-/* Include SPI target configurations. */
-#include <spi_target.h>
+/* SPI device hooks. */
+typedef void (SPI_INIT)(SPI_DEVICE *);
+typedef void (SPI_SLAVE_SELECT)(SPI_DEVICE *);
+typedef void (SPI_SLAVE_UNSELECT)(SPI_DEVICE *);
+typedef int32_t (SPI_MESSAGE)(SPI_DEVICE *, SPI_MSG *);
 
 /* SPI device structure. */
 struct _spi_device
 {
     /* Target specific data. */
-    SPI_TGT_STRUCT  data;
+    void        *data;
+
+    /* SPI device hooks. */
+    SPI_INIT            *init;
+    SPI_SLAVE_SELECT    *slave_select;
+    SPI_SLAVE_UNSELECT  *slave_unselect;
+    SPI_MESSAGE         *msg;
 
     /* SPI configuration flags. */
-    uint32_t        cfg_flags;
+    uint32_t    cfg_flags;
 
     /* SPI baudrate configuration. */
-    uint32_t        baudrate;
+    uint32_t    baudrate;
 
 };
 

@@ -19,6 +19,7 @@
 #include <enc28j60_atmega644p.h>
 #include <net_csum.h>
 #include <string.h>
+#include <spi_atmega644p.h>
 
 /* ENC28J60 device instance. */
 static ENC28J60 enc28j60;
@@ -49,6 +50,12 @@ void enc28j60_atmega644p_init()
     enc28j60.interrupt_pin = &enc28j60_atmega644p_interrupt_pin;
     enc28j60.reset = &enc28j60_atmega644p_reset;
     enc28j60.get_mac = &enc28j60_atmega644p_get_mac;
+
+    /* Hook-up SPI for this device. */
+    enc28j60.spi.init = &spi_atmega644_init;
+    enc28j60.spi.slave_select = &spi_atmega644_slave_select;
+    enc28j60.spi.slave_unselect = &spi_atmega644_slave_unselect;
+    enc28j60.spi.msg = &spi_atmega644_message;
 
     /* Initialize name for this device. */
     enc28j60.ethernet_device.fs.name = "\\ethernet\\enc28j60";

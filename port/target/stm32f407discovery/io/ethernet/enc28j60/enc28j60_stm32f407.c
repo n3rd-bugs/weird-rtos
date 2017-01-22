@@ -17,9 +17,11 @@
 #include <enc28j60.h>
 #include <enc28j60_stm32f407.h>
 #include <string.h>
+#include <spi_stm32f407.h>
 
 /* ENC28J60 device instance. */
 static ENC28J60 enc28j60;
+static STM32F407_SPI enc28j60_spi;
 
 /*
  * enc28j60_stm32f407_init
@@ -27,11 +29,13 @@ static ENC28J60 enc28j60;
  */
 void enc28j60_stm32f407_init()
 {
-    /* Clear the enc28j60 device structure. */
+    /* Clear the enc28j60 device structures. */
     memset(&enc28j60, 0, sizeof(ENC28J60));
+    memset(&enc28j60_spi, 0, sizeof(STM32F407_SPI));
 
     /* Initialize SPI device data. */
-    enc28j60.spi.data.device_num = 1;
+    enc28j60_spi.device_num = 1;
+    enc28j60.spi.data = &enc28j60_spi;
 
     /* Enable GPIO A clock. */
     RCC->AHB1ENR |= 0x00000001;

@@ -27,11 +27,11 @@ void spi_stm32f407_init(SPI_DEVICE *device)
     uint8_t bit_count = 0;
 
     /* Select the required SPI register and initialize GPIO. */
-    switch (device->data.device_num)
+    switch (((STM32F407_SPI *)device->data)->device_num)
     {
     case 1:
         /* SPI1 device. */
-        device->data.reg = SPI1;
+        ((STM32F407_SPI *)device->data)->reg = SPI1;
 
         /* Enable AHB clock for SPI1. */
         RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
@@ -73,7 +73,7 @@ void spi_stm32f407_init(SPI_DEVICE *device)
 
     case 2:
         /* SPI2 device. */
-        device->data.reg = SPI2;
+        ((STM32F407_SPI *)device->data)->reg = SPI2;
 
         /* Enable AHB clock for SPI2. */
         RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
@@ -82,7 +82,7 @@ void spi_stm32f407_init(SPI_DEVICE *device)
 
     case 3:
         /* SPI3 device. */
-        device->data.reg = SPI3;
+        ((STM32F407_SPI *)device->data)->reg = SPI3;
 
         /* Enable AHB clock for SPI3. */
         RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
@@ -122,27 +122,27 @@ void spi_stm32f407_init(SPI_DEVICE *device)
     }
 
     /* Put the CR1 register value. */
-    device->data.reg->CR1 = ((uint32_t)((device->cfg_flags & SPI_CFG_1_WIRE) != 0) << STM32F407_SPI_CR1_BIDI_SHIFT) |
-                            ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) != 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F407_SPI_CR1_BIDIOE_SHIFT) |
-                            ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_CRC) != 0) << STM32F407_SPI_CR1_CRCEN_SHIFT) |
-                            ((uint32_t)((device->cfg_flags & SPI_CFG_MODE_16BIT) != 0) << STM32F407_SPI_CR1_DFF_SHIFT) |
-                            ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) == 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F407_SPI_CR1_RXONLY_SHIFT) |
-                            ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) << STM32F407_SPI_CR1_SMM_SHIFT) |
-                            ((uint32_t)(((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) && ((device->cfg_flags & SPI_CFG_MASTER) != 0)) << STM32F407_SPI_CR1_SSI_SHIFT) |
-                            ((uint32_t)((device->cfg_flags & SPI_CFG_LSB_FIRST) != 0) << STM32F407_SPI_CR1_LSB_SHIFT) |
-                            (baud_scale << STM32F407_SPI_CR1_BR_SHIFT) |
-                            ((uint32_t)((device->cfg_flags & SPI_CFG_MASTER) != 0) << STM32F407_SPI_CR1_MSTR_SHIFT) |
-                            ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_IDLE_HIGH) != 0) << STM32F407_SPI_CR1_CPOL_SHIFT) |
-                            ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_FIRST_DATA) == 0) << STM32F407_SPI_CR1_CPHA_SHIFT);
+    ((STM32F407_SPI *)device->data)->reg->CR1 = ((uint32_t)((device->cfg_flags & SPI_CFG_1_WIRE) != 0) << STM32F407_SPI_CR1_BIDI_SHIFT) |
+                                                ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) != 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F407_SPI_CR1_BIDIOE_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_CRC) != 0) << STM32F407_SPI_CR1_CRCEN_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_MODE_16BIT) != 0) << STM32F407_SPI_CR1_DFF_SHIFT) |
+                                                ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) == 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F407_SPI_CR1_RXONLY_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) << STM32F407_SPI_CR1_SMM_SHIFT) |
+                                                ((uint32_t)(((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) && ((device->cfg_flags & SPI_CFG_MASTER) != 0)) << STM32F407_SPI_CR1_SSI_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_LSB_FIRST) != 0) << STM32F407_SPI_CR1_LSB_SHIFT) |
+                                                (baud_scale << STM32F407_SPI_CR1_BR_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_MASTER) != 0) << STM32F407_SPI_CR1_MSTR_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_IDLE_HIGH) != 0) << STM32F407_SPI_CR1_CPOL_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_FIRST_DATA) == 0) << STM32F407_SPI_CR1_CPHA_SHIFT);
 
     /* Put the CR2 register value. */
-    device->data.reg->CR2 = (((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) != 0) << STM32F407_SPI_CR1_SSOE_SHIFT);
+    ((STM32F407_SPI *)device->data)->reg->CR2 = (((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) != 0) << STM32F407_SPI_CR1_SSOE_SHIFT);
 
     /* Disable the I2S mode. */
-    device->data.reg->I2SCFGR &= (uint32_t)(~(1 << STM32F407_SPI_I2SCFG_MOD_SHIFT));
+    ((STM32F407_SPI *)device->data)->reg->I2SCFGR &= (uint32_t)(~(1 << STM32F407_SPI_I2SCFG_MOD_SHIFT));
 
     /* Enable SPI device. */
-    device->data.reg->CR1 |= (1 << STM32F407_SPI_CR1_SPE_SHIFT);
+    ((STM32F407_SPI *)device->data)->reg->CR1 |= (1 << STM32F407_SPI_CR1_SPE_SHIFT);
 
 } /* spi_stm32f407_init */
 
@@ -152,7 +152,7 @@ void spi_stm32f407_init(SPI_DEVICE *device)
  */
 void spi_stm32f407_slave_select(SPI_DEVICE *device)
 {
-    switch (device->data.device_num)
+    switch (((STM32F407_SPI *)device->data)->device_num)
     {
     case 1:
         /* Reset the CS i.e. GPIOA.4. */
@@ -167,7 +167,7 @@ void spi_stm32f407_slave_select(SPI_DEVICE *device)
  */
 void spi_stm32f407_slave_unselect(SPI_DEVICE *device)
 {
-    switch (device->data.device_num)
+    switch (((STM32F407_SPI *)device->data)->device_num)
     {
     case 1:
         /* Set the CS i.e. GPIOA.4. */
@@ -193,13 +193,13 @@ int32_t spi_stm32f407_message(SPI_DEVICE *device, SPI_MSG *message)
     {
         /* Wait while TX buffer is not empty. */
         timeout = 0;
-        while (((device->data.reg->SR & STM32F407_SPI_SR_TXE) == 0) && (timeout++ < STM32F407_SPI_TIMEOUT));
+        while (((((STM32F407_SPI *)device->data)->reg->SR & STM32F407_SPI_SR_TXE) == 0) && (timeout++ < STM32F407_SPI_TIMEOUT));
 
         /* If we did not timeout for this request. */
         if (timeout < STM32F407_SPI_TIMEOUT)
         {
             /* Send a byte. */
-            device->data.reg->DR = message->buffer[bytes];
+            ((STM32F407_SPI *)device->data)->reg->DR = message->buffer[bytes];
         }
         else
         {
@@ -212,13 +212,13 @@ int32_t spi_stm32f407_message(SPI_DEVICE *device, SPI_MSG *message)
 
         /* Wait while we don't have any data to read. */
         timeout = 0;
-        while (((device->data.reg->SR & STM32F407_SPI_SR_RXNE) == 0) && (timeout++ < STM32F407_SPI_TIMEOUT));
+        while (((((STM32F407_SPI *)device->data)->reg->SR & STM32F407_SPI_SR_RXNE) == 0) && (timeout++ < STM32F407_SPI_TIMEOUT));
 
         /* If we did not timeout for this request. */
         if (timeout < STM32F407_SPI_TIMEOUT)
         {
             /* Save the data read from the device. */
-            byte = (uint8_t)device->data.reg->DR;
+            byte = (uint8_t)((STM32F407_SPI *)device->data)->reg->DR;
 
             /* Check if we are also reading. */
             if (message->flags & SPI_MSG_READ)

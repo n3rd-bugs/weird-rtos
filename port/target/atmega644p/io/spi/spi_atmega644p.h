@@ -35,13 +35,6 @@
 /* Maximum timeout to wait for SPI message to process. */
 #define ATMEGA644P_SPI_TIMEOUT      (100)
 
-/* ATMEGA644P SPI structure. */
-struct _atmega644p_spi
-{
-    /* SPI port. */
-    volatile uint8_t *port;
-};
-
 /* Function prototypes. */
 void spi_atmega644_init();
 void spi_atmega644_slave_select(SPI_DEVICE *);

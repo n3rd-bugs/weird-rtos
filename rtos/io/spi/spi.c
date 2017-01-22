@@ -22,7 +22,7 @@
 void spi_init(SPI_DEVICE *device)
 {
     /* Do target initialization for this device. */
-    SPI_TGT_INIT(device);
+    device->init(device);
 
 } /* spi_init */
 
@@ -39,13 +39,13 @@ int32_t spi_message(SPI_DEVICE *device, SPI_MSG *messages, uint32_t num_messages
     int32_t ret_bytes = 0, nbytes;
 
     /* Select slave for the device. */
-    SPI_TGT_SS(device);
+    device->slave_select(device);
 
     /* While we have a SPI message to send. */
     while (num_messages --)
     {
         /* Process this SPI message on the target. */
-        nbytes = SPI_TGT_MSG(device, messages);
+        nbytes = device->msg(device, messages);
 
         /* If this SPI message was successfully processed. */
         if (nbytes >= 0)
@@ -67,7 +67,7 @@ int32_t spi_message(SPI_DEVICE *device, SPI_MSG *messages, uint32_t num_messages
     }
 
     /* Un-select the SPI device. */
-    SPI_TGT_SUS(device);
+    device->slave_unselect(device);
 
     /* Return number of bytes written to and read from the SPI. */
     return (ret_bytes);
