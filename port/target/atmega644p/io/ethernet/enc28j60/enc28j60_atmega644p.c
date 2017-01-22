@@ -43,6 +43,13 @@ void enc28j60_atmega644p_init()
     EICRA &= (uint8_t)~(0x03 << 0);
     EICRA |= (0x02 << 0);
 
+    /* Initialize device APIs. */
+    enc28j60.enable_interrupts = &enc28j60_atmega644p_enable_interrupt;
+    enc28j60.disable_interrupts = &enc28j60_atmega644p_disable_interrupt;
+    enc28j60.interrupt_pin = &enc28j60_atmega644p_interrupt_pin;
+    enc28j60.reset = &enc28j60_atmega644p_reset;
+    enc28j60.get_mac = &enc28j60_atmega644p_get_mac;
+
     /* Initialize name for this device. */
     enc28j60.ethernet_device.fs.name = "\\ethernet\\enc28j60";
 
@@ -59,7 +66,7 @@ void enc28j60_atmega644p_handle_interrupt()
 {
     /* Disable interrupt until we process it. */
     enc28j60.flags &= (uint8_t)~(ENC28J60_INT_ENABLE);
-    ENC28J60_DISABLE_INT(&enc28j60);
+    enc28j60.disable_interrupts(&enc28j60);
 
     /* Handle interrupt for this device. */
     ethernet_interrupt(&enc28j60.ethernet_device);

@@ -104,11 +104,28 @@
 #define ENC28J60_OUI_B1             0x04
 #define ENC28J60_OUI_B2             0xA3
 
+/* ENC28J60 device structure definition. */
+typedef struct _enc28j60_device ENC28J60;
+
+/* BSP API's. */
+typedef void (ENC28J60_ENABLE_INT) (ENC28J60 *);
+typedef void (ENC28J60_DISABLE_INT) (ENC28J60 *);
+typedef uint8_t (ENC28J60_INTERRUPT_PIN) (ENC28J60 *);
+typedef void (ENC28J60_RESET) (ENC28J60 *);
+typedef uint8_t *(ENC28J60_GET_MAC) (ETH_DEVICE *);
+
 /* ENC28J60 device structure. */
-typedef struct _enc28j60_device
+struct _enc28j60_device
 {
     /* Ethernet device structure. */
     ETH_DEVICE  ethernet_device;
+
+    /* Device APIs. */
+    ENC28J60_ENABLE_INT     *enable_interrupts;
+    ENC28J60_DISABLE_INT    *disable_interrupts;
+    ENC28J60_INTERRUPT_PIN  *interrupt_pin;
+    ENC28J60_RESET          *reset;
+    ENC28J60_GET_MAC        *get_mac;
 
     /* Buffer used to manage data for this device. */
     uint8_t     buffer[ENC28J60_MAX_BUFFER_SIZE * ENC28J60_NUM_BUFFERS];
@@ -145,10 +162,7 @@ typedef struct _enc28j60_device
     /* Device flags. */
     uint8_t     flags;
 
-} ENC28J60;
-
-/* Include target configuration. */
-#include <enc28j60_target.h>
+};
 
 /* Function prototypes. */
 void enc28j60_init(ENC28J60 *);

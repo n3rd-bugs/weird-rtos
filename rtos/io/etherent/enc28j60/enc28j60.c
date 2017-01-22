@@ -75,7 +75,7 @@ void enc28j60_init(ENC28J60 *device)
 
 #ifdef CONFIG_SEMAPHORE
     /* Rather locking the global interrupts lock only the ethernet interrupts. */
-    semaphore_set_interrupt_data(&device->ethernet_device.lock, device, (SEM_INT_LOCK *)&ENC28J60_DISABLE_INT, (SEM_INT_UNLOCK *)&ENC28J60_ENABLE_INT);
+    semaphore_set_interrupt_data(&device->ethernet_device.lock, device, (SEM_INT_LOCK *)device->disable_interrupts, (SEM_INT_UNLOCK *)device->enable_interrupts);
 #endif
 
     /* Clear device flags. */
@@ -115,7 +115,7 @@ static void enc28j60_initialize(void *data)
     uint32_t max_retry = ENC28J60_CLKRDY_TIMEOUT / ENC28J60_CLKRDY_DELAY;
 
     /* Reset this device. */
-    ENC28J60_RESET(device);
+    device->reset(device);
 
     /* Wait for clock signal. */
     do
@@ -216,13 +216,17 @@ static void enc28j60_initialize(void *data)
 
         if (status == SUCCESS)
         {
-#ifdef ENC28J60_GET_MAC
-            /* Set device specific MAC address. */
-            enc28j60_set_mac_address(device, ENC28J60_GET_MAC(&device->ethernet_device));
-#else
-            /* Generate a random MAC address and assign it to the device. */
-            enc28j60_set_mac_address(device, ethernet_random_mac(&device->ethernet_device));
-#endif
+            /* If we can assign a unique MAC address. */
+            if (device->get_mac)
+            {
+                /* Set device specific MAC address. */
+                enc28j60_set_mac_address(device, device->get_mac(&device->ethernet_device));
+            }
+            else
+            {
+                /* Generate a random MAC address and assign it to the device. */
+                enc28j60_set_mac_address(device, ethernet_random_mac(&device->ethernet_device));
+            }
 
             /* Enable full-duplex mode on PHY. */
             status = enc28j60_write_phy(device, ENC28J60_ADDR_PHCON1, ENC28J60_PHCON1_PDPXMD);
@@ -305,7 +309,7 @@ static void enc28j60_interrupt(void *data)
     uint8_t value;
 
     /* While INT pin is asserted. */
-    while ((status == SUCCESS) && (ENC28J60_INTERRUPT_PIN(device) == FALSE))
+    while ((status == SUCCESS) && (device->interrupt_pin(device) == FALSE))
     {
         /* Disable interrupts. */
         status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0);
