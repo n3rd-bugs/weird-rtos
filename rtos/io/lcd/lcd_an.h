@@ -48,24 +48,46 @@
 /* LCD IOCTL commands. */
 #define LCD_AN_CUSTOM_CHAR     (1)
 
+/* LCD strcuture. */
+typedef struct _lcd_an LCD_AN;
+
+/* Target APIs. */
+typedef void (LCD_SET_EN)(LCD_AN *);
+typedef void (LCD_CLR_EN)(LCD_AN *);
+typedef void (LCD_SET_RS)(LCD_AN *);
+typedef void (LCD_CLR_RS)(LCD_AN *);
+typedef void (LCD_SET_RW)(LCD_AN *);
+typedef void (LCD_CLR_RW)(LCD_AN *);
+typedef void (LCD_PUT_DATA)(LCD_AN *, uint8_t);
+typedef uint8_t (LCD_READ_DATA)(LCD_AN *);
+
 /* Alphanumeric LCD driver data. */
-typedef struct _lcd_an
+struct _lcd_an
 {
     /* Console data for this driver. */
-    CONSOLE    console;
+    CONSOLE     console;
 
     /* Private data. */
-    void       *priv_data;
+    void        *priv_data;
+
+    /* Target hooks. */
+    LCD_SET_EN  *set_en;
+    LCD_CLR_EN  *clr_en;
+    LCD_SET_RS  *set_rs;
+    LCD_CLR_RS  *clr_rs;
+    LCD_SET_RW  *set_rw;
+    LCD_CLR_RW  *clr_rw;
+    LCD_PUT_DATA    *put_data;
+    LCD_READ_DATA   *read_data;
 
     /* Number of rows and column on the LCD. */
-    uint16_t   row;
-    uint16_t   column;
+    uint16_t    row;
+    uint16_t    column;
 
     /* Current location of cursor. */
-    uint16_t   cur_row;
-    uint16_t   cur_column;
-
-} LCD_AN;
+    uint16_t    cur_row;
+    uint16_t    cur_column;
+};
 
 /* Alphanumeric LCD ioctl data. */
 typedef struct _lcd_an_ioctl_data

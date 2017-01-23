@@ -29,6 +29,16 @@ static LCD_AN avr_lcd_an =
 
     .priv_data  = NULL,
 
+    /* Driver hooks. */
+    .set_en     = &lcd_an_avr_set_en,
+    .clr_en     = &lcd_an_avr_clr_en,
+    .set_rs     = &lcd_an_avr_set_rs,
+    .clr_rs     = &lcd_an_avr_clr_rs,
+    .set_rw     = &lcd_an_avr_set_rw,
+    .clr_rw     = &lcd_an_avr_clr_rw,
+    .put_data   = &lcd_an_avr_put_data,
+    .read_data  = &lcd_an_avr_read_data,
+
     .row        = LCD_AN_AVR_ROWS,
     .column     = LCD_AN_AVR_COLS,
 };

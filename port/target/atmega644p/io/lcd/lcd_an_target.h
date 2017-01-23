@@ -21,14 +21,6 @@
 
 /* Hook-up LCD OS stack. */
 #define LCD_AN_TGT_INIT()           lcd_an_avr_init()
-#define LCD_AN_TGT_SET_EN(lcd)      lcd_an_avr_set_en(lcd)
-#define LCD_AN_TGT_CLR_EN(lcd)      lcd_an_avr_clr_en(lcd)
-#define LCD_AN_TGT_SET_RS(lcd)      lcd_an_avr_set_rs(lcd)
-#define LCD_AN_TGT_CLR_RS(lcd)      lcd_an_avr_clr_rs(lcd)
-#define LCD_AN_TGT_SET_RW(lcd)      lcd_an_avr_set_rw(lcd)
-#define LCD_AN_TGT_CLR_RW(lcd)      lcd_an_avr_clr_rw(lcd)
-#define LCD_AN_TGT_PUT_DAT(lcd, a)  lcd_an_avr_put_data(lcd, a)
-#define LCD_AN_TGT_READ_DAT(lcd)    lcd_an_avr_read_data(lcd)
 
 #endif /* CONFIG_LCD_AN */
 

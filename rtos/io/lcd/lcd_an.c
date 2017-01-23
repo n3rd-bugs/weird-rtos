@@ -43,9 +43,9 @@ void lcd_an_register(LCD_AN *lcd)
     int32_t status = SUCCESS;
 
     /* Initialize LCD. */
-    LCD_AN_TGT_CLR_RS(lcd);
-    LCD_AN_TGT_SET_RW(lcd);
-    LCD_AN_TGT_CLR_EN(lcd);
+    lcd->clr_rs(lcd);
+    lcd->set_rw(lcd);
+    lcd->clr_en(lcd);
 
 #if (LCD_AN_INIT_DELAY > 0)
     /* Need to wait at least 15ms on power up. */
@@ -62,7 +62,7 @@ void lcd_an_register(LCD_AN *lcd)
     if (status == SUCCESS)
     {
         /* Send second 0x3. */
-        LCD_AN_TGT_CLR_RW(lcd);
+        lcd->clr_rw(lcd);
         lcd_an_send_nibble(lcd, 0x3);
 
         /* Wait for LCD to process the command in 8 bit mode. */
@@ -72,7 +72,7 @@ void lcd_an_register(LCD_AN *lcd)
     if (status == SUCCESS)
     {
         /* Send third 0x3. */
-        LCD_AN_TGT_CLR_RW(lcd);
+        lcd->clr_rw(lcd);
         lcd_an_send_nibble(lcd, 0x3);
 
         /* Wait for LCD to process the command in 8 bit mode. */
@@ -82,7 +82,7 @@ void lcd_an_register(LCD_AN *lcd)
     if (status == SUCCESS)
     {
         /* Switch to 4-bit mode. */
-        LCD_AN_TGT_CLR_RW(lcd);
+        lcd->clr_rw(lcd);
         lcd_an_send_nibble(lcd, 0x2);
 
         /* Wait for LCD to process the command in 8 bit mode. */
@@ -170,30 +170,30 @@ int32_t lcd_an_wait_8bit(LCD_AN *lcd)
 #else
 
     /* Read the command register. */
-    LCD_AN_TGT_SET_RW(lcd);
-    LCD_AN_TGT_SET_EN(lcd);
+    lcd->set_rw(lcd);
+    lcd->set_en(lcd);
 
     /* Save current system time. */
     sys_time = current_system_tick();
 
     /* Read the first 4 bit and wait for the busy bit. */
     while ((current_system_tick() - sys_time) < (MS_TO_TICK(LCD_AN_BUSY_TIMEOUT)) &&
-           (LCD_AN_TGT_READ_DAT(lcd) & (1 << 3)))
+           (lcd->read_data(lcd) & (1 << 3)))
     {
-        LCD_AN_TGT_CLR_EN(lcd);
+        lcd->clr_en(lcd);
         task_yield();
-        LCD_AN_TGT_SET_EN(lcd);
+        lcd->set_en(lcd);
     }
 
     /* If we timed out waiting for the LCD. */
-    if (LCD_AN_TGT_READ_DAT(lcd) & (1 << 3))
+    if (lcd->read_data(lcd) & (1 << 3))
     {
         /* Return error to the caller. */
         status = LCD_AN_TIME_OUT;
     }
 
     /* Clear the enable pin. */
-    LCD_AN_TGT_CLR_EN(lcd);
+    lcd->clr_en(lcd);
 #endif
 
     /* Return status to the caller. */
@@ -210,13 +210,13 @@ int32_t lcd_an_wait_8bit(LCD_AN *lcd)
 void lcd_an_send_nibble(LCD_AN *lcd, uint8_t nibble)
 {
     /* Put nibble value. */
-    LCD_AN_TGT_PUT_DAT(lcd, nibble);
+    lcd->put_data(lcd, nibble);
 
     /* Latch the data on the register. */
-    LCD_AN_TGT_SET_EN(lcd);
+    lcd->set_en(lcd);
 
     /* Clear enable. */
-    LCD_AN_TGT_CLR_EN(lcd);
+    lcd->clr_en(lcd);
 
 } /* lcd_an_send_nibble */
 
@@ -259,19 +259,19 @@ int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
         if (rs == TRUE)
         {
             /* Select data register. */
-            LCD_AN_TGT_SET_RS(lcd);
+            lcd->set_rs(lcd);
         }
         else
         {
             /* Select command register. */
-            LCD_AN_TGT_CLR_RS(lcd);
+            lcd->clr_rs(lcd);
         }
 
         /* We are writing data. */
-        LCD_AN_TGT_CLR_RW(lcd);
+        lcd->clr_rw(lcd);
 
         /* Disable the LCD data line. */
-        LCD_AN_TGT_CLR_EN(lcd);
+        lcd->clr_en(lcd);
 
         /* Put byte on the LCD. */
         lcd_an_send_nibble(lcd, ((byte >> 4) & 0x0F));
@@ -307,40 +307,40 @@ int32_t lcd_an_read_register(LCD_AN *lcd, uint8_t rs, uint8_t *byte)
     if (rs == TRUE)
     {
         /* Select data register. */
-        LCD_AN_TGT_SET_RS(lcd);
+        lcd->set_rs(lcd);
     }
     else
     {
         /* Select command register. */
-        LCD_AN_TGT_CLR_RS(lcd);
+        lcd->clr_rs(lcd);
     }
 
     /* We are reading data. */
-    LCD_AN_TGT_SET_RW(lcd);
+    lcd->set_rw(lcd);
 
     /* Enable the LCD data line. */
-    LCD_AN_TGT_SET_EN(lcd);
+    lcd->set_en(lcd);
 
     /* Wait before reading back from the LCD. */
     sleep_us(LCD_AN_READ_DELAY);
 
     /* Read first 4 bits. */
-    ret_byte = LCD_AN_TGT_READ_DAT(lcd) << 4;
+    ret_byte = lcd->read_data(lcd) << 4;
 
     /* Clear the LCD data line. */
-    LCD_AN_TGT_CLR_EN(lcd);
+    lcd->clr_en(lcd);
 
     /* Enable the LCD data line. */
-    LCD_AN_TGT_SET_EN(lcd);
+    lcd->set_en(lcd);
 
     /* Wait before reading back from the LCD. */
     sleep_us(LCD_AN_READ_DELAY);
 
     /* Read last 4 bits. */
-    ret_byte |= LCD_AN_TGT_READ_DAT(lcd);
+    ret_byte |= lcd->read_data(lcd);
 
     /* Clear the LCD data line. */
-    LCD_AN_TGT_CLR_EN(lcd);
+    lcd->clr_en(lcd);
 
     /* Return the read byte. */
     *byte = ret_byte;
