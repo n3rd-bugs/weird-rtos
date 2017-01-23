@@ -47,7 +47,8 @@ typedef struct _resume
 typedef struct _suspend SUSPEND;
 struct _suspend
 {
-    /* System tick at which we will resume. */
+    /* System tick at which we will resume or number of ticks we would
+     * want to wait. */
     uint64_t    timeout;
 
     /* Suspend link list member. */
