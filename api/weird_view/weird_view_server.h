@@ -65,8 +65,8 @@ typedef struct _weird_view_server
     UDP_PORT            port;
 
     /* Condition data for processing requests on for this server. */
-    CONDITION           *port_condition;
     SUSPEND             port_suspend;
+    CONDITION           *port_condition;
     FS_PARAM            port_fs_param;
 
     /* Device name to be used. */
@@ -75,6 +75,9 @@ typedef struct _weird_view_server
     /* Plugin database. */
     WEIRD_VIEW_PLUGIN   *plugin;
     uint32_t            num_plugin;
+
+    /* Structure padding. */
+    uint8_t             pad[4];
 
 } WEIRD_VIEW_SERVER;
 

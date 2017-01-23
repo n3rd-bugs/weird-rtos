@@ -54,12 +54,12 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     if (state == DHCP_CLI_LEASE_EXPIRE)
     {
         /* Wait until the lease expire and then trigger this state. */
-        client_data->suspend.timeout = (uint32_t)(current_system_tick() + (client_data->lease_time * OS_TICKS_PER_SEC));
+        client_data->suspend.timeout = (current_system_tick() + (client_data->lease_time * OS_TICKS_PER_SEC));
     }
     else
     {
         /* Trigger this state now. */
-        client_data->suspend.timeout = (uint32_t)current_system_tick();
+        client_data->suspend.timeout = current_system_tick();
     }
 
     /* If we need to start a new transaction in next state. */
@@ -73,7 +73,7 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     if (state == DHCP_CLI_DISCOVER)
     {
         /* Initialize the DHCP client data. */
-        client_data->start_time = (uint16_t)current_system_tick();
+        client_data->start_time = current_system_tick();
         client_data->client_ip = client_data->server_ip = client_data->lease_time = 0;
     }
 
@@ -170,7 +170,7 @@ static void dhcp_event(void *data)
         }
 
         /* Update the time for which we will be wait for a reply. */
-        client_data->suspend.timeout = (uint32_t)(current_system_tick() + client_data->current_timeout);
+        client_data->suspend.timeout = (current_system_tick() + client_data->current_timeout);
 
         /* Process the DHCP event according to current state of the client. */
         switch (net_device->ipv4.dhcp_client->state)

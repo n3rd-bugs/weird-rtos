@@ -63,14 +63,14 @@ typedef struct _arp_entry
         FS_BUFFER       *tail;
     } buffer_list;
 
+    /* Tick at which we will be routing this entry again. */
+    uint64_t    next_timeout;
+
     /* IP address for this ARP entry. */
     uint32_t    ip;
 
     /* Ethernet MAC address for the destination IP address. */
     uint8_t     mac[ALLIGN_CEIL(ETH_ADDR_LEN)];
-
-    /* Tick at which we will be routing this entry again. */
-    uint32_t    next_timeout;
 
     /* Number of retries we have sent for this ARP entry. */
     uint8_t     retry_count;

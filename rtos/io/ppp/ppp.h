@@ -88,11 +88,11 @@ struct _ppp
     /* PPP instance list member. */
     PPP         *next;
 
-    /* Networking device structure. */
-    NET_DEV     net_device;
-
     /* File descriptor registered with PPP device. */
     FD          fd;
+
+    /* Networking device structure. */
+    NET_DEV     net_device;
 
     /* File system watchers. */
     FS_CONNECTION_WATCHER   connection_watcher;

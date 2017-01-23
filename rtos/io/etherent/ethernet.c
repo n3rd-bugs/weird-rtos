@@ -150,7 +150,7 @@ uint8_t *ethernet_get_mac_address(FD fd)
 void ethernet_wdt_enable(ETH_DEVICE *device, uint32_t ticks)
 {
     /* Enable watch dog timer for this device. */
-    device->net_device.suspend.timeout = (uint32_t)(current_system_tick() + ticks);
+    device->net_device.suspend.timeout = current_system_tick() + ticks;
 
 } /* ethernet_wdt_enable */
 

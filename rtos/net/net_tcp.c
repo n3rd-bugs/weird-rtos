@@ -583,7 +583,7 @@ static void tcp_rtx_start(TCP_PORT *port)
 static void tcp_rtx_start_timeout(TCP_PORT *port, uint32_t timeout)
 {
     /* Set required next timeout. */
-    port->rtx_data.suspend.timeout = (uint32_t)(current_system_tick() + timeout);
+    port->rtx_data.suspend.timeout = (current_system_tick() + timeout);
 
     /* Networking condition data has been updated. */
     net_condition_updated();
@@ -632,7 +632,7 @@ static void tcp_rtx_stop(TCP_PORT *port)
 static void tcp_rtx_callback(void *data)
 {
     TCP_PORT *port = (TCP_PORT *)data;
-    uint32_t next_timeout;
+    uint64_t next_timeout;
 
     /* Get lock for this port. */
     if (fd_get_lock((FD)port) == SUCCESS)
@@ -718,7 +718,7 @@ static void tcp_rtx_callback(void *data)
         if (next_timeout != MAX_WAIT)
         {
             /* Schedule next time out. */
-            port->rtx_data.suspend.timeout = (uint32_t)(current_system_tick() + next_timeout);
+            port->rtx_data.suspend.timeout = (current_system_tick() + next_timeout);
         }
         else
         {
@@ -826,13 +826,13 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
             if (status == SUCCESS)
             {
                 /* Calculate checksum for TCP header. */
-                status = net_pseudo_csum_calculate(buffer, socket_address->local_ip, socket_address->foreign_ip, IP_PROTO_TCP, (uint16_t)buffer->total_length, 0, flags, &csum);
+                status = net_pseudo_csum_calculate(buffer, socket_address->local_ip, socket_address->foreign_ip, IP_PROTO_TCP, (uint16_t)buffer->total_length, 0, (uint8_t)flags, &csum);
 
                 /* If checksum was successfully calculated. */
                 if (status == SUCCESS)
                 {
                     /* Push the TCP checksum on the buffer. */
-                    status = fs_buffer_push_offset(buffer, &csum, 2, TCP_HRD_CSUM_OFFSET, (flags | FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+                    status = fs_buffer_push_offset(buffer, &csum, 2, TCP_HRD_CSUM_OFFSET, (uint8_t)(flags | FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
                 }
             }
 

@@ -82,11 +82,11 @@ typedef struct _ipv4_fragment
         FS_BUFFER       *tail;
     } buffer_list;
 
+    /* The system tick at which this fragment will timeout. */
+    uint64_t    timeout;
+
     /* Source address from this fragment is being received. */
     uint32_t    sa;
-
-    /* The system tick at which this fragment will timeout. */
-    uint32_t    timeout;
 
     /* Packet ID for this fragment list. */
     uint16_t    id;
@@ -116,13 +116,13 @@ typedef struct _ipv4_fragment_data
 /* IPv4 device data. */
 typedef struct _ipv4_device
 {
-    /* IP address assigned to this interface. */
-    uint32_t    address;
-
 #ifdef IPV4_ENABLE_FRAG
     /* IPv4 fragments for this device. */
     IPV4_FRAGMENT_DATA  fargment;
 #endif
+
+    /* IP address assigned to this interface. */
+    uint32_t    address;
 
 #ifdef DHCP_CLIENT
     /* IPv4 DHCP client data. */

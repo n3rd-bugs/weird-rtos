@@ -134,11 +134,14 @@ struct _fs
     /* File system buffer data. */
     FS_BUFFER_DATA  *buffer;
 
+    /* This will hold the timeout if blocking mode is used. */
+    uint64_t    timeout;
+
     /* File system specific flags. */
     uint32_t    flags;
 
-    /* This will hold the timeout if blocking mode is used. */
-    uint32_t    timeout;
+    /* Structure padding. */
+    uint8_t     pad[4];
 };
 
 /* This holds the resumption criteria for a task waiting on a FS. */

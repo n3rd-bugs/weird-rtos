@@ -134,6 +134,9 @@ struct _tcp_port
     /* Console structure for this TCP port. */
     CONSOLE         console;
 
+    /* Retransmission data. */
+    TCP_RTX         rtx_data;
+
     /* TCP port list member. */
     TCP_PORT        *next;
 
@@ -162,9 +165,6 @@ struct _tcp_port
     SOCKET_ADDRESS  socket_address;
 
     /* These variables maintain the socket state and configurations. */
-
-    /* Retransmission data. */
-    TCP_RTX         rtx_data;
 
     /* Receive sequence numbers. */
     uint32_t        rcv_nxt;
@@ -199,6 +199,9 @@ struct _tcp_port
 
     /* Exponential back off value. */
     uint8_t         expboff;
+
+    /* Structure padding. */
+    uint8_t         pad[4];
 };
 
 /* TCP global data. */

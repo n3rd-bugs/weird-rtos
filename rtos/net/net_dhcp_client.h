@@ -46,6 +46,9 @@ typedef struct _dhcp_client_data
 
     /* File system parameter to process data for DHCP client. */
     FS_PARAM    fs_param;
+
+    /* Structure padding. */
+    uint8_t     pad[ALLIGN_CEIL(4)];
 } DHCP_CLIENT_DATA;
 
 /* DHCP client device data. */
@@ -68,7 +71,7 @@ struct _dhcp_client_device
     uint32_t    xid;
 
     /* Time at which this client started this transaction. */
-    uint32_t    start_time;
+    uint64_t    start_time;
 
     /* Current timeout for DHCP client. */
     uint16_t    current_timeout;
@@ -79,6 +82,9 @@ struct _dhcp_client_device
     /* Number of retries we have done on this state, not including the discover
      * state. */
     uint8_t     retry;
+
+    /* Structure padding. */
+    uint8_t     pad[4];
 
 };
 
