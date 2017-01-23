@@ -538,7 +538,7 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
         if (status == SUCCESS)
         {
             /* Calculate the UDP checksum. */
-            status = net_pseudo_csum_calculate(fs_buffer, socket_address.local_ip, socket_address.foreign_ip, IP_PROTO_UDP, fs_buffer->total_length, 0, flags, &csum);
+            status = net_pseudo_csum_calculate(fs_buffer, socket_address.local_ip, socket_address.foreign_ip, IP_PROTO_UDP, (uint16_t)fs_buffer->total_length, 0, flags, &csum);
 
             /* If checksum was successfully calculated. */
             if (status == SUCCESS)
