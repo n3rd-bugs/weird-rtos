@@ -150,7 +150,18 @@ void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEN
     suspend->param = (void *)semaphore;
     suspend->flags = (semaphore->type & SEMAPHORE_PRIORITY ? SUSPEND_PRIORITY : 0);
     suspend->do_suspend = &semaphore_do_suspend;
-    suspend->timeout = current_system_tick() + timeout;
+
+    /* If we don't want to wait indefinitely. */
+    if (timeout != MAX_WAIT)
+    {
+        /* Calculate the tick at which we would want to be resumed. */
+        suspend->timeout = current_system_tick() + timeout;
+    }
+    else
+    {
+        /* Wait indefinitely. */
+        suspend->timeout = MAX_WAIT;
+    }
 
     /* Return the condition for this semaphore. */
     *condition = &semaphore->condition;
