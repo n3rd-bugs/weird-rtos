@@ -233,13 +233,12 @@ void lcd_an_send_nibble(LCD_AN *lcd, uint8_t nibble)
  */
 int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
 {
-    uint8_t cmd_byte = 0xFF;
+    uint8_t cmd_byte;
     uint64_t sys_time = current_system_tick();
     int32_t status = SUCCESS;
 
     /* Wait for LCD. */
-    while ((current_system_tick() - sys_time) < (MS_TO_TICK(LCD_AN_BUSY_TIMEOUT)) &&
-           (cmd_byte & (1 << 7)))
+    do
     {
         /* Read command register. */
         lcd_an_read_register(lcd, FALSE, &cmd_byte);
@@ -250,7 +249,8 @@ int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
             /* Yield the task. */
             task_yield();
         }
-    }
+
+    } while ((current_system_tick() - sys_time) < (MS_TO_TICK(LCD_AN_BUSY_TIMEOUT)) && (cmd_byte & (1 << 7)));
 
     /* If we did not timeout waiting for the LCD. */
     if ((cmd_byte & (1 << 7)) == 0)
