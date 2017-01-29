@@ -33,9 +33,11 @@
 int32_t net_buffer_process(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
+    uint32_t flags;
     uint8_t protocol;
 
-    /* Skim the protocol from the buffer. */
+    /* Skim the protocol and flags from the buffer. */
+    OS_ASSERT(fs_buffer_pull(buffer, &flags, sizeof(uint32_t), 0) != SUCCESS);
     OS_ASSERT(fs_buffer_pull(buffer, &protocol, sizeof(uint8_t), 0) != SUCCESS);
 
     /* Interpret the protocol. */
@@ -47,7 +49,7 @@ int32_t net_buffer_process(FS_BUFFER *buffer)
     case NET_PROTO_IPV4:
 
         /* Process this IPv4 buffer. */
-        status = net_process_ipv4(buffer);
+        status = net_process_ipv4(buffer, flags);
 
         break;
 #endif
