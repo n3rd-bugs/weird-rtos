@@ -35,7 +35,7 @@
 /* ARP configuration. */
 #define ARP_TIMEOUT             (1 * OS_TICKS_PER_SEC)
 #define ARP_RETRY_COUNT         (3)
-#define ARP_UPDATE_TIME         (5 * OS_TICKS_PER_SEC)
+#define ARP_UPDATE_TIME         (20 * OS_TICKS_PER_SEC)
 
 /* ARP header definitions. */
 #define ARP_HDR_LEN             (28)
@@ -99,6 +99,7 @@ typedef struct _arp_data
 } ARP_DATA;
 
 /* Function prototypes. */
+int32_t arp_resolve(FS_BUFFER *, uint32_t, uint8_t *);
 void arp_set_data(FD, ARP_ENTRY *, uint32_t);
 ARP_DATA *arp_get_data(FD);
 int32_t net_process_arp(FS_BUFFER *);
