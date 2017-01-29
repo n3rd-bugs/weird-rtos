@@ -41,7 +41,7 @@ void fs_init()
 
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect global file system data. */
-    semaphore_create(&file_data.lock, 1, 1, SEMAPHORE_PRIORITY);
+    semaphore_create(&file_data.lock, 1, 1, 0);
 #endif
 
 #ifdef FS_CONSOLE
@@ -504,7 +504,6 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
     /* Initialize file system parameter. */
     param->flag = flag;
     suspend->param = param;
-    suspend->flags = (fs->flags & FS_PRIORITY_SORT ? SUSPEND_PRIORITY : 0);
     suspend->do_suspend = &fs_do_suspend;
     suspend->timeout = fs->timeout;
 

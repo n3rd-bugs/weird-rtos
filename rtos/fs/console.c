@@ -55,7 +55,7 @@ void console_init()
 
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect global console data. */
-    semaphore_create(&console_data.lock, 1, 1, SEMAPHORE_PRIORITY);
+    semaphore_create(&console_data.lock, 1, 1, 0);
 #endif
 
     /* Register console with file system. */
@@ -84,7 +84,7 @@ void console_register(CONSOLE *console)
 
     /* Create a semaphore to protect this console device. */
     memset(&console->lock, 0, sizeof(SEMAPHORE));
-    semaphore_create(&console->lock, 1, 1, SEMAPHORE_PRIORITY);
+    semaphore_create(&console->lock, 1, 1, 0);
 #endif
 
     /* This utility is called by drivers for registering consoles for the

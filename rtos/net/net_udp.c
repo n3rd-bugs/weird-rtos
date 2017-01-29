@@ -43,7 +43,7 @@ void udp_initialize()
 
 #ifdef CONFIG_SEMAPHORE
     /* Create the semaphore to protect global UDP data. */
-    semaphore_create(&udp_data.lock, 1, 1, SEMAPHORE_PRIORITY);
+    semaphore_create(&udp_data.lock, 1, 1, 0);
 #endif
 
 } /* udp_initialize */

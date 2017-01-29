@@ -28,8 +28,6 @@ static uint8_t semaphore_do_resume(void *, void *);
  * @count: Initial count to be set for this semaphore.
  * @max_count: Maximum count for this semaphore.
  * @type: Type flags for this semaphore.
- *  SEMAPHORE_FIFO: FIFO semaphore task queue.
- *  SEMAPHORE_PRIORITY: Priority based task queue.
  *  SEMAPHORE_INT: This semaphore will also be accessed by interrupts.
  * This routine initializes a semaphore control block. After this the semaphore
  * can be used to protect shared resources.
@@ -60,8 +58,6 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
  * @count: New initial count to be set for this semaphore.
  * @max_count: New maximum count for this semaphore.
  * @type: Type flags for this semaphore.
- *  SEMAPHORE_FIFO: FIFO semaphore task queue.
- *  SEMAPHORE_PRIORITY: Priority based task queue.
  *  SEMAPHORE_INT: This semaphore will also be accessed by interrupts.
  * This routine will update the semaphore parameters.
  */
@@ -148,7 +144,6 @@ void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEN
 {
     /* Initialize suspend criteria. */
     suspend->param = (void *)semaphore;
-    suspend->flags = (semaphore->type & SEMAPHORE_PRIORITY ? SUSPEND_PRIORITY : 0);
     suspend->do_suspend = &semaphore_do_suspend;
 
     /* If we don't want to wait indefinitely. */

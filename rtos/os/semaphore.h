@@ -23,8 +23,7 @@
 #define SEMAPHORE_DELETED   -701
 
 /* Semaphore type flags. */
-#define SEMAPHORE_PRIORITY  0x01
-#define SEMAPHORE_INT       0x02
+#define SEMAPHORE_INT       0x01
 
 /* Semaphore interrupt lock/unlock APIs. */
 typedef void SEM_INT_LOCK (void *data);
