@@ -514,8 +514,8 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
     uint16_t csum = 0;
 #endif
 
-    /* Make a copy of socket address for this port. */
-    socket_address = port->socket_address;
+    /* Make a copy of destination address for this port. */
+    socket_address = port->destination_address;
 
     /* Release lock for this UDP port. */
     fd_release_lock(fd);
@@ -622,7 +622,7 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
     FD buffer_fd;
 
     /* Resolve the device from which we need to send a UDP datagram. */
-    net_device = ipv4_get_source_device(port->socket_address.local_ip);
+    net_device = ipv4_get_source_device(port->destination_address.local_ip);
 
     /* Release lock for this UDP port. */
     fd_release_lock(fd);

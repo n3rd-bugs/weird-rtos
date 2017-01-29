@@ -475,6 +475,10 @@ void net_dhcp_client_initialize()
     /* Register UDP port for DHCP client. */
     udp_register(fd, "dhcp_client", &sock_addr);
 
+    /* Initialize destination address. */
+    dhcp_client.udp.destination_address.foreign_port = DHCP_SRV_PORT;
+    dhcp_client.udp.destination_address.local_port = DHCP_CLI_PORT;
+
     /* Don't block on read for this UDP port. */
     dhcp_client.udp.console.fs.flags &= (uint32_t)~(FS_BLOCK);
 
@@ -517,8 +521,8 @@ void net_dhcp_client_start(NET_DEV *net_device)
         /* Initialize condition data. */
         client_data->condition.data = fd;
 
-        /* This will be a timer condition. */
-        client_data->suspend.flags = SUSPEND_TIMER;
+        /* Disable timer by default. */
+        client_data->suspend.timeout = MAX_WAIT;
 
         /* Start from discover state. */
         dhcp_change_state(client_data, DHCP_CLI_DISCOVER);

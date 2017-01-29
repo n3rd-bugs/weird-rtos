@@ -99,7 +99,6 @@ static void weird_view_server_process(void *data)
     WEIRD_VIEW_SERVER *weird_view = (WEIRD_VIEW_SERVER *)data;
     WEIRD_VIEW_PLUGIN *plugin;
     FS_BUFFER *rx_buffer;
-    SOCKET_ADDRESS socket_address;
     uint32_t command, i, value, value_div, disp_max;
     int32_t received;
     uint16_t id;
@@ -397,18 +396,13 @@ static void weird_view_server_process(void *data)
         /* If request was successfully processed. */
         if (received >= 0)
         {
-            /* Save the actual socket address. */
-            socket_address = weird_view->port.socket_address;
-
-            /* Update the socket address to which we will reply. */
-            weird_view->port.socket_address = weird_view->port.last_datagram_address;
-            ipv4_get_device_address(rx_buffer->fd, &weird_view->port.socket_address.local_ip);
+            /* Save the address to which we will reply. */
+            weird_view->port.destination_address = weird_view->port.last_datagram_address;
+            weird_view->port.destination_address.local_ip = IPV4_ADDR_UNSPEC;
+            ipv4_get_device_address(rx_buffer->fd, &weird_view->port.destination_address.local_ip, NULL);
 
             /* Send received data back on the UDP port. */
             received = fs_write(&weird_view->port, (uint8_t *)rx_buffer, sizeof(FS_BUFFER));
-
-            /* Restore the actual socket address. */
-            weird_view->port.socket_address = socket_address;
         }
     }
 

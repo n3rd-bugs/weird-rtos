@@ -40,9 +40,6 @@ struct _udp_port
     /* Console structure for this UDP port. */
     CONSOLE         console;
 
-    /* UDP port list member. */
-    UDP_PORT        *next;
-
     /* UDP buffer lists. */
     struct _udp_port_buffer_list
     {
@@ -50,8 +47,14 @@ struct _udp_port
         FS_BUFFER       *tail;
     } buffer_list;
 
+    /* UDP port list member. */
+    UDP_PORT        *next;
+
     /* UDP socket address. */
     SOCKET_ADDRESS  socket_address;
+
+    /* Destination address. */
+    SOCKET_ADDRESS  destination_address;
 
     /* Last datagram address. */
     SOCKET_ADDRESS  last_datagram_address;
@@ -60,7 +63,7 @@ struct _udp_port
     uint8_t         flags;
 
     /* Padding variable. */
-    uint8_t         pad[3];
+    uint8_t         pad[7];
 
 };
 
