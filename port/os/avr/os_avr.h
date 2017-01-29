@@ -21,13 +21,14 @@
 #ifndef F_CPU
 #define F_CPU 20000000
 #endif
-#define OSC_FREQ            F_CPU
-#define SYS_CLK_DIV         1
-#define SYS_FREQ            (OSC_FREQ / SYS_CLK_DIV)
-#define PCLK_FREQ           SYS_FREQ
-#define SYS_STACK_SIZE      256
-#define AVR_HARD_RESET      TRUE
-#define OS_HW_TICKS_PER_SEC (PCLK_FREQ / 64)
+#define OSC_FREQ                F_CPU
+#define SYS_CLK_DIV             1
+#define SYS_FREQ                (OSC_FREQ / SYS_CLK_DIV)
+#define PCLK_FREQ               SYS_FREQ
+#define SYS_STACK_SIZE          (256)
+#define AVR_HARD_RESET          TRUE
+#define OS_HW_TICKS_PER_SEC     (PCLK_FREQ / 64)
+#define IDLE_TASK_STACK_SIZE    (64)
 
 /* System interrupt level. */
 extern volatile uint8_t sys_interrupt_level;

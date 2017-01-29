@@ -65,6 +65,7 @@ extern uint32_t sys_interrupt_level;
 #define STATIC_MEM_END                  ((uint8_t *)(&static_end))
 #define DYNAMIC_MEM_START               ((uint8_t *)(&dynamic_start))
 #define DYNAMIC_MEM_END                 ((uint8_t *)(&dynamic_end))
+#define IDLE_TASK_STACK_SIZE            (256)
 
 typedef struct _hardware_stack_farme
 {

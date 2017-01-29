@@ -46,9 +46,6 @@
 #define TASK_FINISHED               (3)
 #define TASK_RESUME_SLEEP           (4)
 
-/* Idle task configuration. */
-#define IDLE_TASK_STACK_SIZE        (64)
-
 /* Scheduler class definition. */
 typedef struct _scheduler SCHEDULER;
 struct _scheduler
