@@ -39,8 +39,8 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
     /* Clear semaphore memory. */
     memset(semaphore, 0,  sizeof(SEMAPHORE));
 
-    /* If this is interrupt accessible than count should be zero. */
-    OS_ASSERT((type == SEMAPHORE_INT) && (count != 0));
+    /* If this is interrupt accessible max count should be 1. */
+    OS_ASSERT(((type & SEMAPHORE_INT) == TRUE) && (max_count != 1));
 
     /* Initialize semaphore count. */
     semaphore->count = count;
