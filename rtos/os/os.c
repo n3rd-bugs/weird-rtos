@@ -141,8 +141,20 @@ TASK *get_current_task()
  */
 uint64_t current_system_tick()
 {
+    uint64_t return_tick;
+    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
+
+    /* Atomically save the current system tick. */
+    return_tick = current_tick;
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
     /* Return current system tick. */
-   return (current_tick);
+   return (return_tick);
 
 } /* current_system_tick */
 
