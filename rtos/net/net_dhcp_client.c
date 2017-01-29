@@ -25,6 +25,7 @@
 #include <net_udp.h>
 #include <ethernet.h>
 #include <net_dhcp_client.h>
+#include <net_route.h>
 
 /* DHCP client data. */
 DHCP_CLIENT_DATA dhcp_client;
@@ -44,6 +45,8 @@ static void dhcp_event(void *);
  */
 static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
 {
+    uint64_t system_tick = current_system_tick();
+
     /* Update the client state. */
     client_data->state = state;
     client_data->retry = 0;
@@ -51,20 +54,36 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     /* Process the state change. */
     client_data->current_timeout = (DHCP_BASE_TIMEOUT / 2);
 
+    /* Times T1 and T2 are configurable by the server through options.
+     * T1 defaults to (0.5 * duration_of_lease).
+     * T2 defaults to (0.875 * duration_of_lease). */
+
     /* If next state is lease expire state. */
-    if (state == DHCP_CLI_LEASE_EXPIRE)
+    if (state == DHCP_CLI_RENEW)
+    {
+        /* Load T1 to trigger rebind state. */
+        client_data->suspend.timeout = (client_data->lease_start + (client_data->lease_time / 2));
+    }
+    else if (state == DHCP_CLI_REBIND)
     {
         /* Wait until the lease expire and then trigger this state. */
-        client_data->suspend.timeout = (current_system_tick() + (client_data->lease_time * OS_TICKS_PER_SEC));
+        client_data->suspend.timeout = (client_data->lease_start + ((client_data->lease_time * 7) / 8));
     }
     else
     {
         /* Trigger this state now. */
-        client_data->suspend.timeout = current_system_tick();
+        client_data->suspend.timeout = system_tick;
+    }
+
+    /* We should not wait more than the lease expire. */
+    if ((state != DHCP_CLI_DISCOVER) && (client_data->suspend.timeout > (client_data->lease_start + client_data->lease_time)))
+    {
+        /* Lets wait till this lease expires. */
+        client_data->suspend.timeout = client_data->lease_start + client_data->lease_time;
     }
 
     /* If we need to start a new transaction in next state. */
-    if ((state == DHCP_CLI_DISCOVER) || (state == DHCP_CLI_LEASE_EXPIRE))
+    if ((state == DHCP_CLI_DISCOVER) || (state == DHCP_CLI_RENEW) || (state == DHCP_CLI_REBIND))
     {
         /* Create a new transaction ID. */
         client_data->xid = (uint32_t)(current_hardware_tick());
@@ -73,9 +92,31 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     /* If we are moving to discover state, reinitialize the transaction data. */
     if (state == DHCP_CLI_DISCOVER)
     {
+        /* If we have assigned the IP address. */
+        if (client_data->address_assigned == TRUE)
+        {
+            /* If we had a valid IP address assigned. */
+            if (client_data->client_ip != IPV4_ADDR_UNSPEC)
+            {
+                /* Remove the on-link route. */
+                route_remove(client_data->condition.data, IPV4_GATWAY_LL, client_data->client_ip);
+            }
+
+            /* If we have a default gateway. */
+            if (client_data->gateway_ip != IPV4_ADDR_UNSPEC)
+            {
+                /* Remove the on-link route. */
+                route_remove(client_data->condition.data, client_data->gateway_ip, IPV4_ADDR_UNSPEC);
+            }
+
+            /* IP address is no longer assigned. */
+            client_data->address_assigned = FALSE;
+        }
+
         /* Initialize the DHCP client data. */
-        client_data->start_time = current_system_tick();
-        client_data->client_ip = client_data->server_ip = client_data->lease_time = 0;
+        client_data->start_time = system_tick;
+        client_data->client_ip = client_data->server_ip = client_data->gateway_ip = IPV4_ADDR_UNSPEC;
+        client_data->lease_time = 0;
     }
 
 } /* dhcp_change_state */
@@ -95,7 +136,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
     int32_t status;
 
     /* Add DHCP header on the buffer. */
-    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)(((uint16_t)current_system_tick() - client_data->start_time) / OS_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_LEASE_EXPIRE) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
+    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)(((uint16_t)current_system_tick() - client_data->start_time) / OS_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_RENEW) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
 
     if (status == SUCCESS)
     {
@@ -150,6 +191,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
 static void dhcp_event(void *data)
 {
     FD fd = (FD)data, udp_fd = (FD)&dhcp_client;
+    uint64_t system_tick = current_system_tick();
     NET_DEV *net_device = net_device_get_fd(fd);
     DHCP_CLIENT_DEVICE *client_data = net_device->ipv4.dhcp_client;
     FS_BUFFER *buffer;
@@ -163,48 +205,79 @@ static void dhcp_event(void *data)
     /* If we do have a buffer to send a request. */
     if (buffer != NULL)
     {
-        /* If current timeout is less than the maximum timeout. */
-        if (client_data->current_timeout < DHCP_MAX_TIMEOUT)
+        /* Our lease is no longer valid. */
+        if ((net_device->ipv4.dhcp_client->state != DHCP_CLI_DISCOVER) && (net_device->ipv4.dhcp_client->state != DHCP_CLI_REQUEST) && (system_tick >= (client_data->lease_start + client_data->lease_time)))
         {
-            /* Double the timeout. */
-            client_data->current_timeout = (uint16_t)(client_data->current_timeout * 2);
+            /* Move to discover state. */
+            dhcp_change_state(client_data, DHCP_CLI_DISCOVER);
         }
-
-        /* Update the time for which we will be wait for a reply. */
-        client_data->suspend.timeout = (current_system_tick() + client_data->current_timeout);
-
-        /* Process the DHCP event according to current state of the client. */
-        switch (net_device->ipv4.dhcp_client->state)
+        else
         {
-        /* We are still discovering. */
-        case DHCP_CLI_DISCOVER:
-
-            /* Build a DHCP discover message. */
-            net_dhcp_client_build(fd, buffer, client_data, DHCP_MSG_DICOVER);
-
-            break;
-
-        /* We are requesting a new address or an old lease is expired. */
-        case DHCP_CLI_REQUEST:
-        case DHCP_CLI_LEASE_EXPIRE:
-
-            /* If we have not tried this for maximum number of times. */
-            if (client_data->retry < DHCP_MAX_RETRY)
+            /* If current timeout is less than the maximum timeout. */
+            if (client_data->current_timeout < DHCP_MAX_TIMEOUT)
             {
-                /* Build a DHCP request message. */
-                if (net_dhcp_client_build(fd, buffer, client_data, DHCP_MSG_REQUEST) == SUCCESS)
+                /* Double the timeout. */
+                client_data->current_timeout = (uint16_t)(client_data->current_timeout * 2);
+            }
+
+            /* Update the time for which we will be wait for a reply. */
+            client_data->suspend.timeout = (system_tick + client_data->current_timeout);
+
+            /* Process the DHCP event according to current state of the client. */
+            switch (net_device->ipv4.dhcp_client->state)
+            {
+            /* We are still discovering. */
+            case DHCP_CLI_DISCOVER:
+
+                /* Build a DHCP discover message. */
+                net_dhcp_client_build(fd, buffer, client_data, DHCP_MSG_DICOVER);
+
+                break;
+
+            /* We are requesting a new address or trying to renew the lease or
+             * it is expired. */
+            case DHCP_CLI_REQUEST:
+            case DHCP_CLI_RENEW:
+            case DHCP_CLI_REBIND:
+
+                /* If we have not tried this for maximum number of times. */
+                if (client_data->retry < DHCP_MAX_RETRY)
                 {
-                    /* We have sent a request. */
-                    client_data->retry++;
+                    /* Build a DHCP request message. */
+                    if (net_dhcp_client_build(fd, buffer, client_data, DHCP_MSG_REQUEST) == SUCCESS)
+                    {
+                        /* We have sent a request. */
+                        client_data->retry++;
+                    }
                 }
-            }
-            else
-            {
-                /* Move back to discover state. */
-                dhcp_change_state(client_data, DHCP_CLI_DISCOVER);
-            }
+                else
+                {
+                    /* Load appropriate state. */
+                    switch (net_device->ipv4.dhcp_client->state)
+                    {
 
-            break;
+                    /* If we are requesting a new address or we are trying to
+                     * renew it. */
+                    case DHCP_CLI_REBIND:
+                    case DHCP_CLI_REQUEST:
+
+                        /* Move to discover state. */
+                        dhcp_change_state(client_data, DHCP_CLI_DISCOVER);
+
+                        break;
+
+                    /* If lease is now expired. */
+                    case DHCP_CLI_RENEW:
+
+                        /* Move to rebind state. */
+                        dhcp_change_state(client_data, DHCP_CLI_REBIND);
+
+                        break;
+                    }
+                }
+
+                break;
+            }
         }
 
         /* If we have a buffer to send. */
@@ -213,7 +286,31 @@ static void dhcp_event(void *data)
             /* Release lock for this file descriptor. */
             fd_release_lock(fd);
 
-            /* Send this buffer on the UDP client port. */
+            /* If we are renewing/re-binding the lease. */
+            if (net_device->ipv4.dhcp_client->state == DHCP_CLI_RENEW)
+            {
+                /* Send the frame to the leasing server. */
+                dhcp_client.udp.destination_address.foreign_ip = client_data->server_ip;
+            }
+            else
+            {
+                /* Send the frame with broadcast address. */
+                dhcp_client.udp.destination_address.foreign_ip = IPV4_ADDR_BCAST;
+            }
+
+            /* If we are renewing/re-binding the lease. */
+            if ((net_device->ipv4.dhcp_client->state == DHCP_CLI_RENEW) || (net_device->ipv4.dhcp_client->state == DHCP_CLI_REBIND))
+            {
+                /* Send the frame with leased address. */
+                dhcp_client.udp.destination_address.local_ip = client_data->client_ip;
+            }
+            else
+            {
+                /* Send the frame with unassigned address. */
+                dhcp_client.udp.destination_address.local_ip = IPV4_ADDR_UNSPEC;
+            }
+
+            /* Send a DHCP frame. */
             fs_write(udp_fd, (uint8_t *)buffer, sizeof(FS_BUFFER));
 
             /* Acquire lock for this file descriptor. */
@@ -240,7 +337,7 @@ static void dhcp_event(void *data)
  */
 static void net_dhcp_client_process(void *data)
 {
-    uint32_t xid, cli_addr, your_addr, serv_addr, dhcp_serv_addr, lease_time;
+    uint32_t xid, cli_addr, your_addr, serv_addr, dhcp_serv_addr, lease_time, network = 0;
     FS_BUFFER *buffer;
     FD udp_fd = (FD)data, buffer_fd;
     NET_DEV *net_device;
@@ -298,6 +395,40 @@ static void net_dhcp_client_process(void *data)
                         {
                             /* Pull and save the DHCP type. */
                             status = fs_buffer_pull(buffer, &dhcp_type, opt_length, 0);
+                        }
+                        else
+                        {
+                            /* Invalid header was parsed. */
+                            status = NET_INVALID_HDR;
+                        }
+
+                        break;
+
+                    /* Network address. */
+                    case DHCP_OPT_NETWORK:
+
+                        /* Verify the option length. */
+                        if (opt_length == IPV4_ADDR_LEN)
+                        {
+                            /* Pull and save the network address. */
+                            status = fs_buffer_pull(buffer, &network, opt_length, FS_BUFFER_PACKED);
+                        }
+                        else
+                        {
+                            /* Invalid header was parsed. */
+                            status = NET_INVALID_HDR;
+                        }
+
+                        break;
+
+                    /* Network gateway address. */
+                    case DHCP_OPT_GATEWAY:
+
+                        /* Verify the option length. */
+                        if (opt_length == IPV4_ADDR_LEN)
+                        {
+                            /* Pull and save the gateway address. */
+                            status = fs_buffer_pull(buffer, &client_data->gateway_ip, opt_length, FS_BUFFER_PACKED);
                         }
                         else
                         {
@@ -389,9 +520,6 @@ static void net_dhcp_client_process(void *data)
                         /* Save the DHCP server address. */
                         client_data->server_ip = dhcp_serv_addr;
 
-                        /* Save the lease time. */
-                        client_data->lease_time = lease_time;
-
                         /* Move client to the request state. */
                         dhcp_change_state(client_data, DHCP_CLI_REQUEST);
                     }
@@ -400,7 +528,8 @@ static void net_dhcp_client_process(void *data)
 
                 /* If we have sent a request and waiting for an ACK. */
                 case DHCP_CLI_REQUEST:
-                case DHCP_CLI_LEASE_EXPIRE:
+                case DHCP_CLI_RENEW:
+                case DHCP_CLI_REBIND:
 
                     /* Process the DHCP message type. */
                     switch (dhcp_type)
@@ -408,21 +537,35 @@ static void net_dhcp_client_process(void *data)
                     /* Got an ACK from the server. */
                     case DHCP_MSG_ACK:
 
-                        /* Save/update the lease time. */
-                        client_data->lease_time = lease_time;
+                        /* Save the lease start and validity time. */
+                        client_data->lease_start = current_system_tick();
+                        client_data->lease_time = (lease_time * OS_TICKS_PER_SEC);
 
                         /* Release lock for networking file descriptor. */
                         fd_release_lock(buffer_fd);
 
-                        /* We can now use this IP address. */
-                        ipv4_set_device_address(buffer_fd, client_data->client_ip);
+                        /* If we have not yet assigned the IP address. */
+                        if (client_data->address_assigned == FALSE)
+                        {
+                            /* We can now use this IP address. */
+                            ipv4_set_device_address(buffer_fd, client_data->client_ip, network);
+
+                            /* If we have a default gateway. */
+                            if (client_data->gateway_ip != 0)
+                            {
+                                /* Add a default gateway. */
+                                route_add(buffer_fd, client_data->client_ip, client_data->gateway_ip, 0x0, 0x0, 0);
+                            }
+
+                            /* IP address is now assigned. */
+                            client_data->address_assigned = TRUE;
+                        }
 
                         /* Acquire lock for networking file descriptor. */
                         OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
-                        /* We have a lease, we will try to renew it when it
-                         * expires. */
-                        dhcp_change_state(client_data, DHCP_CLI_LEASE_EXPIRE);
+                        /* We have a lease, we will try to renew it in next state. */
+                        dhcp_change_state(client_data, DHCP_CLI_RENEW);
 
                         break;
 
@@ -502,6 +645,9 @@ void net_dhcp_client_initialize_device(NET_DEV *net_device, DHCP_CLIENT_DEVICE *
     /* Set DHCP client data. */
     net_device->ipv4.dhcp_client = data;
 
+    /* We are in stopped state. */
+    data->state = DHCP_CLI_STOPPED;
+
 } /* net_dhcp_client_initialize_device */
 
 /*
@@ -516,7 +662,7 @@ void net_dhcp_client_start(NET_DEV *net_device)
     DHCP_CLIENT_DEVICE *client_data = net_device->ipv4.dhcp_client;
 
     /* If DHCP client data is actually set. */
-    if (client_data != NULL)
+    if ((client_data != NULL) && (client_data->state == DHCP_CLI_STOPPED))
     {
         /* Initialize condition data. */
         client_data->condition.data = fd;
@@ -542,12 +688,30 @@ void net_dhcp_client_start(NET_DEV *net_device)
 void net_dhcp_client_stop(NET_DEV *net_device)
 {
     DHCP_CLIENT_DEVICE *client_data = net_device->ipv4.dhcp_client;
+    FD *fd = net_device->fd;
 
     /* If DHCP client data is actually set. */
-    if (client_data != NULL)
+    if ((client_data != NULL) && (client_data->state != DHCP_CLI_STOPPED))
     {
         /* For now just remove the networking condition for this device. */
         net_condition_remove(&client_data->condition);
+
+        /* If we have a valid IP address assigned. */
+        if (client_data->client_ip != IPV4_ADDR_UNSPEC)
+        {
+            /* Remove the on-link route. */
+            route_remove(fd, IPV4_GATWAY_LL, client_data->client_ip);
+        }
+
+        /* If we have a default gateway. */
+        if (client_data->gateway_ip != IPV4_ADDR_UNSPEC)
+        {
+            /* Remove the on-link route. */
+            route_remove(fd, client_data->gateway_ip, IPV4_ADDR_UNSPEC);
+        }
+
+        /* We are in stopped state. */
+        client_data->state = DHCP_CLI_STOPPED;
     }
 
 } /* net_dhcp_client_stop */
