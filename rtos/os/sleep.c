@@ -75,7 +75,7 @@ static TASK *sleep_process_system_tick(void)
 
                 /* Put back this task on the scheduler list. */
                 /* We will remove it from this list when we will resume. */
-                sll_push(&sleep_scheduler.ready_tasks, tcb, OFFSETOF(TASK, next_sleep));
+                sll_append(&sleep_scheduler.ready_tasks, tcb, OFFSETOF(TASK, next_sleep));
 
                 /* Save the task at which we will need to break the search. */
                 tcb_break = tcb;
