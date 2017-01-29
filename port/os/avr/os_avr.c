@@ -70,6 +70,9 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
     /* Load system stack. */
     LOAD_SYSTEM_STACK();
 
+    /* Clear the interrupt level. */
+    sys_interrupt_level = 0;
+
     /* Process system tick. */
     os_process_system_tick();
 

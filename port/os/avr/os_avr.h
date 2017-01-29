@@ -79,6 +79,7 @@ extern uint8_t avr_in_isr;
                                 SAVE_CONTEXT_ISR();                     \
                                 LOAD_SYSTEM_STACK();                    \
                                 avr_in_isr = TRUE;                      \
+                                sys_interrupt_level = 0;                \
                             }
 
 #define CPU_ISR_EXIT()      {                                           \
