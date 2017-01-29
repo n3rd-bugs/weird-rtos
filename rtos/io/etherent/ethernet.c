@@ -13,6 +13,7 @@
 #include <os.h>
 
 #ifdef CONFIG_ETHERNET
+#include <net_route.h>
 #include <string.h>
 #include <ethernet.h>
 #include <net_buffer.h>
@@ -353,11 +354,21 @@ int32_t ethernet_interrupt(ETH_DEVICE *device)
 int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
 {
     int32_t status = SUCCESS;
+    uint32_t flags = 0;
     uint16_t proto;
     uint8_t net_proto;
+    uint8_t dst_mac[ETH_ADDR_LEN];
 
-    /* Pull and discard the destination and source addresses. */
-    OS_ASSERT(fs_buffer_pull(buffer, NULL, (ETH_ADDR_LEN * 2), 0) != SUCCESS);
+    /* Pull the destination and source addresses. */
+    OS_ASSERT(fs_buffer_pull(buffer, dst_mac, (ETH_ADDR_LEN), 0) != SUCCESS);
+    OS_ASSERT(fs_buffer_pull(buffer, NULL, (ETH_ADDR_LEN), 0) != SUCCESS);
+
+    /* If this was a broadcast frame. */
+    if (memcmp(dst_mac, ETH_BCAST_ADDR, ETH_ADDR_LEN) == 0)
+    {
+        /* Set the broadcast flag. */
+        flags |= ETH_FRAME_BCAST;
+    }
 
     /* Pull the protocol. */
     OS_ASSERT(fs_buffer_pull(buffer, &proto, ETH_PROTO_LEN, FS_BUFFER_PACKED) != SUCCESS);
@@ -396,7 +407,7 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
     if (status == SUCCESS)
     {
         /* Pass this frame to the networking stack. */
-        status = net_device_buffer_receive(buffer, net_proto);
+        status = net_device_buffer_receive(buffer, net_proto, flags);
 
         /* If buffer was successfully passed to the networking stack. */
         if (status == SUCCESS)
@@ -426,7 +437,11 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
     ETH_DEVICE *device = (ETH_DEVICE *)buffer->fd;
     int32_t status = SUCCESS;
     HDR_GEN_MACHINE hdr_machine;
+    uint32_t iface_addr, subnet;
     uint16_t proto = 0;
+#ifdef NET_IPV4
+    uint32_t dst_ip;
+#endif
     uint8_t net_proto, dst_mac[ETH_ADDR_LEN];
     HEADER eth_hdr[] =
     {
@@ -444,8 +459,30 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
     /* If an IPv4 packet is needed to be transmitted. */
     case NET_PROTO_IPV4:
 
-        /* Try to resolve destination MAC address for this buffer. */
-        status = arp_resolve(buffer, dst_mac);
+        /* Pull the intended source and destination IP address. */
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &iface_addr, IPV4_ADDR_LEN, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
+        OS_ASSERT(fs_buffer_pull_offset(buffer, &dst_ip, IPV4_ADDR_LEN, IPV4_HDR_DST_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
+
+        /* Get the subnet mask for the address. */
+        ipv4_get_device_address(buffer->fd, &iface_addr, &subnet);
+
+        /* If destination is a broadcast address. */
+        if ((dst_ip == IPV4_ADDR_BCAST_NET(iface_addr, subnet)) || (dst_ip == IPV4_ADDR_BCAST))
+        {
+            /* Use the broadcast ethernet address. */
+            memcpy(dst_mac, ETH_BCAST_ADDR, ETH_ADDR_LEN);
+        }
+        else
+        {
+            /* Find a route for this destination. */
+            status = route_get(&buffer->fd, dst_ip, NULL, &dst_ip, NULL);
+
+            if (status == SUCCESS)
+            {
+                /* Try to resolve destination MAC address for resolved route. */
+                status = arp_resolve(buffer, dst_ip, dst_mac);
+            }
+        }
 
         /* Use the ethernet IPv4 type. */
         proto = ETH_PROTO_IP;

@@ -31,6 +31,7 @@
 #include <net_csum.h>
 #include <sll.h>
 #include <string.h>
+#include <net_route.h>
 
 /* Internal function prototypes. */
 #ifdef IPV4_ENABLE_FRAG
@@ -49,7 +50,7 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *, FS_BUFFER *);
 void ipv4_device_initialize(NET_DEV *net_dev)
 {
     /* Clear the IPv4 address assigned to this device. */
-    ipv4_set_device_address(net_dev->fd, 0);
+    ipv4_set_device_address(net_dev->fd, 0x0, 0x0);
 
 } /* ipv4_device_initialize */
 
@@ -105,21 +106,39 @@ uint8_t ipv4_compare_address(uint32_t address1, uint32_t address2, uint8_t match
  * ipv4_get_device_address
  * @fd: File descriptor associated with the networking device.
  * @address: IPv4 address associated with this device will be returned here.
+ * @subnet: Subnet mask for this address will be returned here.
  * @return: A success status will be returned if IPv4 address was successfully
  *  returned, NET_INVALID_FD will be returned if the given file descriptor don't
  *  have an associated networking device.
  * This function will return IPv4 address associated with the networking device
  * as resolved from the file descriptor.
  */
-int32_t ipv4_get_device_address(FD fd, uint32_t *address)
+int32_t ipv4_get_device_address(FD fd, uint32_t *address, uint32_t *subnet)
 {
     NET_DEV *net_device = net_device_get_fd(fd);
     int32_t status = SUCCESS;
 
     if (net_device != NULL)
     {
-        /* Return the IPv4 address assigned to this device. */
-        *address = net_device->ipv4.address;
+        /* Search for the required address. */
+        if (route_get(&fd, IPV4_ADDR_BCAST, address, NULL, subnet) != SUCCESS)
+        {
+            /* If we need to return the address. */
+            if (address != NULL)
+            {
+                /* Address is not yet assigned. */
+                address = IPV4_ADDR_UNSPEC;
+            }
+
+            /* If we need to return the subnet mask. */
+            if (subnet != NULL)
+            {
+                /* Return the associated subnet mask. */
+                *subnet = 0x0;
+            }
+
+            status = SUCCESS;
+        }
     }
     else
     {
@@ -136,27 +155,31 @@ int32_t ipv4_get_device_address(FD fd, uint32_t *address)
  * ipv4_set_device_address
  * @fd: File descriptor associated with the networking device.
  * @address: IPv4 address needed to be updated.
+ * @subnet: Subnet for this address.
  * @return: A success status will be returned if IPv4 address was successfully
  *  returned, NET_INVALID_FD will be returned if the given file descriptor don't
  *  have an associated networking device.
  * This function will update the IPv4 address associated with the networking
  * device as resolved from the file descriptor.
  */
-int32_t ipv4_set_device_address(FD fd, uint32_t address)
+int32_t ipv4_set_device_address(FD fd, uint32_t address, uint32_t subnet)
 {
     NET_DEV *net_device = net_device_get_fd(fd);
     int32_t status = SUCCESS;
 
     if (net_device != NULL)
     {
-        /* Acquire lock for this file descriptor. */
-        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
-
-        /* Update the IPv4 address assigned to this device. */
-        net_device->ipv4.address = address;
-
-        /* Release lock for this file descriptor. */
-        fd_release_lock(fd);
+        /* If we are not clearing old address. */
+        if (address != 0x0)
+        {
+            /* Add a link local route for this IP address. */
+            route_add(fd, address, IPV4_GATWAY_LL, address, subnet, 0);
+        }
+        else
+        {
+            /* Remove all the associated routes for this device. */
+            route_remove(fd, IPV4_ADDR_UNSPEC, IPV4_ADDR_UNSPEC);
+        }
     }
     else
     {
@@ -170,33 +193,6 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address)
 } /* ipv4_set_device_address */
 
 /*
- * ipv4_sreach_device
- * @node: An existing device.
- * @param: IPv4 source address for which source device is required.
- * @return: True will be returned if this is the required device, otherwise
- *  false will be returned.
- * This is a search function to find a source device for a given IPv4 source
- * address.
- */
-uint8_t ipv4_sreach_device(void *node, void *param)
-{
-    NET_DEV *net_device = (NET_DEV *)node;
-    uint32_t address = *(uint32_t *)param;
-    uint8_t match = FALSE;
-
-    /* If this is the required device. */
-    if (net_device->ipv4.address == address)
-    {
-        /* Got an match. */
-        match = TRUE;
-    }
-
-    /* Return if this is the required device. */
-    return (match);
-
-} /* ipv4_sreach_device */
-
-/*
  * ipv4_get_source_device
  * @address: IPv4 address for which device is required.
  * @return: If not null a device entry associated with given address will be
@@ -205,13 +201,13 @@ uint8_t ipv4_sreach_device(void *node, void *param)
  */
 NET_DEV *ipv4_get_source_device(uint32_t address)
 {
-    NET_DEV *ret_device;
+    NET_DEV *ret_device = NULL;
 
     /* Disable preemption. */
     scheduler_lock();
 
     /* Search for the required device. */
-    ret_device = sll_search(&net_dev_data.devices, NULL, &ipv4_sreach_device, &address, OFFSETOF(NET_DEV, next));
+    route_get(&ret_device->fd, address, NULL, NULL, NULL);
 
     /* Enable scheduling. */
     scheduler_unlock();
@@ -224,6 +220,7 @@ NET_DEV *ipv4_get_source_device(uint32_t address)
 /*
  * net_process_ipv4
  * @buffer: Received networking buffer needed to be processed.
+ * @flags: Associated flags for this buffer.
  * @return: A success status will be returned if IPv4 packet was successfully
  *  processed.
  *  NET_BUFFER_CONSUMED will be returned if buffer was consumed and
@@ -234,10 +231,10 @@ NET_DEV *ipv4_get_source_device(uint32_t address)
  *  drop it silently.
  * This function will process an incoming IPv4 packet.
  */
-int32_t net_process_ipv4(FS_BUFFER *buffer)
+int32_t net_process_ipv4(FS_BUFFER *buffer, uint32_t flags)
 {
     int32_t status = SUCCESS;
-    uint32_t ip_iface = 0, ip_dst, ip_src;
+    uint32_t ip_dst, ip_src, subnet, ip_iface = 0;
     uint8_t proto, ver_ihl;
     uint16_t flag_offset, ip_length;
 #ifdef NET_ICMP
@@ -297,7 +294,8 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         OS_ASSERT(fs_buffer_pull_offset(buffer, &ip_dst, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Get IPv4 address assigned to this device. */
-        OS_ASSERT(ipv4_get_device_address(buffer->fd, &ip_iface) != SUCCESS);
+        ip_iface = ip_dst;
+        OS_ASSERT(ipv4_get_device_address(buffer->fd, &ip_iface, &subnet) != SUCCESS);
 
         /* Pull the IPv4 length for this packet. */
         OS_ASSERT(fs_buffer_pull_offset(buffer, &ip_length, 2, IPV4_HDR_LENGTH_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
@@ -324,7 +322,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         {
             /* Broadcast and multicast packets cannot be fragmented so if we are
              * not the destination just drop this packet. */
-            if ((ip_iface != IPV4_ADDR_UNSPEC) && (ip_dst == ip_iface))
+            if (((flags & ETH_FRAME_BCAST) == FALSE) && (ip_iface != IPV4_ADDR_UNSPEC) && (ip_dst == ip_iface))
             {
 #ifdef IPV4_ENABLE_FRAG
                 /* Try to process this fragment. */
@@ -403,8 +401,8 @@ int32_t net_process_ipv4(FS_BUFFER *buffer)
         }
 
 #ifdef NET_ICMP
-        /* If packet was not parsed correctly. */
-        if ((status != SUCCESS) && (status != NET_BUFFER_CONSUMED))
+        /* If packet was not parsed correctly and it is not a broadcast frame. */
+        if ((status != SUCCESS) && (status != NET_BUFFER_CONSUMED) && ((flags & ETH_FRAME_BCAST) == FALSE) && (ip_dst != IPV4_ADDR_BCAST_NET(ip_iface, subnet)) && (ip_dst != IPV4_ADDR_BCAST))
         {
             /* Resolve an ICMP message needed be sent. */
             switch (status)

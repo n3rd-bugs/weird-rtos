@@ -96,7 +96,7 @@ void enc28j60_init(ENC28J60 *device)
     net_dhcp_client_initialize_device(net_device_get_fd(fd), &device->dhcp_client);
 #else
     /* Set static IP address for this device. */
-    ipv4_set_device_address(fd, 0xC0A80132);
+    ipv4_set_device_address(fd, 0xC0A80132, 0xFFFFFF00);
 #endif
 
 } /* enc28j60_init */

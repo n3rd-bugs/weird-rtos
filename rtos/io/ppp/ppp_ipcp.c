@@ -19,6 +19,7 @@
 #include <ppp_packet.h>
 #include <net.h>
 #include <net_ipv4.h>
+#include <net_route.h>
 
 /* PPP IPCP protocol definition. */
 PPP_PROTO ppp_proto_ipcp =
@@ -219,7 +220,10 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
         fd_release_lock(fd);
 
         /* Set the IPv4 address for this device. */
-        OS_ASSERT(ipv4_set_device_address(fd, ppp->local_ip_address) != SUCCESS);
+        OS_ASSERT(ipv4_set_device_address(fd, ppp->local_ip_address, IPV4_SUBNET_LL) != SUCCESS);
+
+        /* Add a route for remote address. */
+        route_add(fd, ppp->local_ip_address, ppp->remote_ip_address, ppp->remote_ip_address, IPV4_SUBNET_LL, 0);
 
         /* Acquire lock for this file descriptor. */
         OS_ASSERT(fd_get_lock(fd) != SUCCESS);

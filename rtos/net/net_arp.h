@@ -99,7 +99,6 @@ typedef struct _arp_data
 } ARP_DATA;
 
 /* Function prototypes. */
-int32_t arp_resolve(FS_BUFFER *, uint8_t *);
 void arp_set_data(FD, ARP_ENTRY *, uint32_t);
 ARP_DATA *arp_get_data(FD);
 int32_t net_process_arp(FS_BUFFER *);

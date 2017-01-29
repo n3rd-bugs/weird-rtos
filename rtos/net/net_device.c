@@ -153,18 +153,25 @@ uint32_t net_device_get_mtu(FD fd)
  * @buffer: A networking buffer needed to be added in the receive list.
  * @protocol: Packet protocol as parsed on the lower layer required by upper
  *  layers to parse the contents of this buffer.
+ * @flags: Associated flags for this buffer.
  * @return: A success status will be returned if buffer was successfully added
  *  to the networking buffer list.
  * This function will be called by a device when it wants to transfer a buffer
  * to the networking stack, the device should already have registered itself
  * with the networking stack.
  */
-int32_t net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol)
+int32_t net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol, uint32_t flags)
 {
     int32_t status;
 
     /* Push the protocol on the buffer. */
     status = fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD);
+
+    if (status == SUCCESS)
+    {
+        /* Push the flag on the buffer. */
+        status = fs_buffer_push(buffer, &flags, sizeof(uint32_t), FS_BUFFER_HEAD);
+    }
 
     if (status == SUCCESS)
     {
@@ -289,14 +296,8 @@ void net_device_link_up(FD fd)
     net_device->flags |= NET_DEVICE_UP;
 
 #ifdef DHCP_CLIENT
-
-    /* If this device is using DHCP client, invoke the DHCP for it. */
-    if (net_device->ipv4.dhcp_client != NULL)
-    {
-        /* Start DHCP client. */
-        net_dhcp_client_start(net_device);
-    }
-
+    /* Start DHCP client. */
+    net_dhcp_client_start(net_device);
 #endif
 
 } /* net_device_link_up */
@@ -315,15 +316,18 @@ void net_device_link_down(FD fd)
     net_device->flags &= (uint32_t)(~(NET_DEVICE_UP));
 
 #ifdef DHCP_CLIENT
-
-    /* If this device is using DHCP client, terminate the DHCP for it. */
-    if (net_device->ipv4.dhcp_client != NULL)
-    {
-        /* Stop DHCP client. */
-        net_dhcp_client_stop(net_device);
-    }
-
+    /* Stop DHCP client. */
+    net_dhcp_client_stop(net_device);
 #endif
+
+    /* Release lock for networking file descriptor. */
+    fd_release_lock(fd);
+
+    /* Clear IP address for this device. */
+    ipv4_set_device_address(fd, 0x0, 0x0);
+
+    /* Acquire lock for networking file descriptor. */
+    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
 
 } /* net_device_link_down */
 

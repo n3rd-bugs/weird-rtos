@@ -67,8 +67,11 @@ typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 #define IPV4_FRAG_DROP              0x08
 
 /* IPv4 address definitions. */
-#define IPV4_ADDR_UNSPEC            (0)
-#define IPV4_ADDR_BCAST             (0xFFFFFFFF)
+#define IPV4_ADDR_UNSPEC                (0)
+#define IPV4_ADDR_BCAST                 (0xFFFFFFFF)
+#define IPV4_ADDR_BCAST_NET(ip, subnet) ((ip) | ((uint32_t)~(subnet)))
+#define IPV4_SUBNET_LL                  (0xFFFFFFFF)
+#define IPV4_GATWAY_LL                  (0xFFFFFFFF)
 
 #ifdef IPV4_ENABLE_FRAG
 
@@ -133,11 +136,10 @@ typedef struct _ipv4_device
 /* Function prototypes. */
 void ipv4_device_initialize(NET_DEV *);
 uint8_t ipv4_compare_address(uint32_t, uint32_t, uint8_t);
-int32_t ipv4_get_device_address(FD, uint32_t *);
-int32_t ipv4_set_device_address(FD, uint32_t);
+int32_t ipv4_get_device_address(FD, uint32_t *, uint32_t *);
+int32_t ipv4_set_device_address(FD, uint32_t, uint32_t);
 NET_DEV *ipv4_get_source_device(uint32_t);
-uint8_t ipv4_sreach_device(void *, void *);
-int32_t net_process_ipv4(FS_BUFFER *);
+int32_t net_process_ipv4(FS_BUFFER *, uint32_t);
 int32_t ipv4_header_add(FS_BUFFER *, uint8_t, uint32_t, uint32_t, uint8_t);
 #ifdef IPV4_ENABLE_FRAG
 void ipv4_fragment_set_data(FD, IPV4_FRAGMENT *, uint32_t);

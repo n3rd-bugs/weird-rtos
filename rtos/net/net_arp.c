@@ -97,7 +97,8 @@ static int32_t arp_process_request(FS_BUFFER *buffer)
 
     /* Get IPv4 address assigned to the device on which we have received this
      * packet. */
-    OS_ASSERT(ipv4_get_device_address(buffer->fd, &own_ip) != SUCCESS);
+    own_ip = IPV4_ADDR_UNSPEC;
+    OS_ASSERT(ipv4_get_device_address(buffer->fd, &own_ip, NULL) != SUCCESS);
 
     /* If remote needs our target hardware address. */
     if ((own_ip != IPV4_ADDR_UNSPEC) && (own_ip == target_ip))
@@ -150,9 +151,6 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
             /* Set this entry as up. */
             arp_data->entries[i].flags |= ARP_FLAG_UP;
 
-            /* Clear the in-use flag. */
-            arp_data->entries[i].flags &= (uint8_t)(~ARP_FLAG_IN_USE);
-
             /* Send any packets that are still needed to be sent. */
             if (arp_data->entries[i].buffer_list.head != NULL)
             {
@@ -161,6 +159,14 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
 
                 /* Clear the ARP buffer list. */
                 arp_data->entries[i].buffer_list.head = arp_data->entries[i].buffer_list.tail = NULL;
+
+                /* We are still using this address. */
+                arp_data->entries[i].flags |= ARP_FLAG_IN_USE;
+            }
+            else
+            {
+                /* Clear the in-use flag. */
+                arp_data->entries[i].flags &= (uint8_t)(~ARP_FLAG_IN_USE);
             }
 
             /* Break out of this loop. */
@@ -337,7 +343,8 @@ static int32_t arp_route(FD fd, ARP_ENTRY *entry)
     uint32_t src_ip;
 
     /* Get IPv4 address assigned to this device. */
-    OS_ASSERT(ipv4_get_device_address(fd, &src_ip) != SUCCESS);
+    src_ip = IPV4_ADDR_UNSPEC;
+    OS_ASSERT(ipv4_get_device_address(fd, &src_ip, NULL) != SUCCESS);
 
     /* Get a free buffer that can be used to send an ARP request. */
     buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
@@ -462,91 +469,78 @@ static void arp_event(void *data)
  * arp_resolve
  * @buffer: IPv4 packet for which a destination ethernet address is needed to
  *  be resolved.
+ * @dst_ip: Destination IP needed to be resolved.
  * @dst_addr: Destination MAC address will be copied in here if found.
  * This function will try to resolve the destination ethernet address for an
- * IPv4 packet.
+ * IPv4 destination for the given buffer.
  */
-int32_t arp_resolve(FS_BUFFER *buffer, uint8_t *dst_addr)
+int32_t arp_resolve(FS_BUFFER *buffer, uint32_t dst_ip, uint8_t *dst_addr)
 {
     int32_t status = SUCCESS;
-    uint32_t dst_ip;
     ARP_ENTRY *entry;
 
-    /* Pull the intended destination IP address. */
-    OS_ASSERT(fs_buffer_pull_offset(buffer, &dst_ip, IPV4_ADDR_LEN, IPV4_HDR_DST_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
+    /* Try to find an entry in ARP cache for the device. */
+    entry = arp_find_entry(buffer->fd, dst_ip);
 
-    /* If this is a broadcast IP. */
-    if (dst_ip == IPV4_ADDR_BCAST)
+    /* If we do have an entry. */
+    if (entry != NULL)
     {
-        /* Return the broadcast ethernet address. */
-        memcpy(dst_addr, ETH_BCAST_ADDR, ETH_ADDR_LEN);
-    }
-
-    else
-    {
-        /* Try to find an entry in ARP cache for the device. */
-        entry = arp_find_entry(buffer->fd, dst_ip);
-
-        /* If we do have an entry. */
-        if (entry != NULL)
+        /* If we are using an expired entry. */
+        if ((entry->flags & ARP_FLAG_VALID) && (entry->ip != dst_ip))
         {
-            /* If we are using an expired entry. */
-            if ((entry->flags & ARP_FLAG_VALID) && (entry->ip != dst_ip))
+            /* Free this ARP entry. */
+            arp_free_entry(entry);
+
+            /* Update ARP timers. */
+            arp_update_timers(buffer->fd);
+        }
+
+        /* If destination is reachable. */
+        if (entry->flags & ARP_FLAG_UP)
+        {
+            /* Return the destination MAC address to be used. */
+            memcpy(dst_addr, entry->mac, ETH_ADDR_LEN);
+
+            /* If we are not using this entry. */
+            if ((entry->flags & ARP_FLAG_IN_USE) == 0)
             {
-                /* Free this ARP entry. */
-                arp_free_entry(entry);
+                /* This ARP entry is being used, try to update this entry again. */
+                entry->flags |= ARP_FLAG_IN_USE;
+                entry->next_timeout = (current_system_tick() + ARP_UPDATE_TIME);
+
+                /* Update ARP timers. */
+                arp_update_timers(buffer->fd);
+            }
+        }
+        else
+        {
+            /* Check if this is a new entry. */
+            if ((entry->flags & ARP_FLAG_VALID) == 0)
+            {
+                /* Clear this ARP entry. */
+                memset(entry, 0, sizeof(ARP_ENTRY));
+
+                /* Initialize this ARP entry. */
+                entry->flags |= ARP_FLAG_VALID;
+                entry->ip = dst_ip;
+                entry->next_timeout = current_system_tick();
 
                 /* Update ARP timers. */
                 arp_update_timers(buffer->fd);
             }
 
-            /* If destination is reachable. */
-            if (entry->flags & ARP_FLAG_UP)
-            {
-                /* Return the destination MAC address to be used. */
-                memcpy(dst_addr, entry->mac, ETH_ADDR_LEN);
+            /* Put this buffer in the ARP buffer list. */
+            sll_append(&entry->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-                /* If we are not using this entry. */
-                if ((entry->flags & ARP_FLAG_IN_USE) == 0)
-                {
-                    /* This ARP entry is being used, try to update this entry again. */
-                    entry->flags |= ARP_FLAG_IN_USE;
-                    entry->next_timeout = (current_system_tick() + ARP_UPDATE_TIME);
-
-                    /* Update ARP timers. */
-                    arp_update_timers(buffer->fd);
-                }
-            }
-            else
-            {
-                /* Check if this is a new entry. */
-                if ((entry->flags & ARP_FLAG_VALID) == 0)
-                {
-                    /* Clear this ARP entry. */
-                    memset(entry, 0, sizeof(ARP_ENTRY));
-
-                    /* Initialize this ARP entry. */
-                    entry->flags |= ARP_FLAG_VALID;
-                    entry->ip = dst_ip;
-                    entry->next_timeout = current_system_tick();
-
-                    /* Update ARP timers. */
-                    arp_update_timers(buffer->fd);
-                }
-
-                /* Put this buffer in the ARP buffer list. */
-                sll_append(&entry->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
-
-                /* This packet will be sent when we have resolved the destination
-                 * MAC address. */
-                status = NET_BUFFER_CONSUMED;
-            }
+            /* This packet will be sent when we have resolved the destination
+             * MAC address. */
+            status = NET_BUFFER_CONSUMED;
         }
-        else
-        {
-            /* Destination is not reachable, return an error. */
-            status = NET_DST_UNREACHABLE;
-        }
+    }
+    else
+    {
+        /* Destination is not reachable, return an error. */
+        status = NET_DST_UNREACHABLE;
     }
 
     /* Return status to the caller. */

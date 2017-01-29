@@ -44,6 +44,8 @@ This list is needed to be updated whenever a new error code is added.
     LCD_AN_COLUMN_FULL      -1301
     LCD_AN_ROW_FULL         -1302
     LCD_AN_INTERNAL_ERROR   -1303
+    ROUTE_EXIST             -1400
+    ROUTE_NO_MEM            -1401
     ENC28J60_SPI_ERROR      -11000
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001
