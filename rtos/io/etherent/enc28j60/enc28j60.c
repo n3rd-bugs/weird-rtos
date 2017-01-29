@@ -265,8 +265,24 @@ static void enc28j60_initialize(void *data)
 
         if (status == SUCCESS)
         {
+            /* Handle link status for this device. */
+            enc28j60_link_changed(device);
+        }
+
+        if (status == SUCCESS)
+        {
+#if ENC28J60_DEBUG
+            printf("enc28j60_initialize: driver initialized.\r\n");
+#endif
+
             /* Enable enc28j60 interrupts. */
             device->flags |= ENC28J60_INT_ENABLE;
+        }
+        else
+        {
+#if ENC28J60_DEBUG
+            printf("enc28j60_initialize: failed %ld.\r\n", status);
+#endif
         }
     }
 
@@ -349,6 +365,10 @@ static void enc28j60_interrupt(void *data)
                 /* If an RX error was detected. */
                 if (value & ENC28J60_EIR_RXERIF)
                 {
+#if ENC28J60_DEBUG
+                    printf("enc28j60_interrupt: RX error detected.\r\n");
+#endif
+
                     /* Handle RX error. */
                     enc28j60_handle_rx_error(device);
 
@@ -417,6 +437,10 @@ static void enc28j60_interrupt(void *data)
     }
     else
     {
+#if ENC28J60_DEBUG
+        printf("enc28j60_interrupt: driver error %ld.\r\n", status);
+#endif
+
         /* Disable interrupts. */
         enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0);
 
@@ -595,6 +619,10 @@ static void enc28j60_link_changed(ENC28J60 *device)
     /* If we are now in connected state. */
     if ((status == SUCCESS) && (phy_register & ENC28J60_PHSTAT2_LSTAT))
     {
+#if ENC28J60_DEBUG
+        printf("enc28j60_link_changed: Link UP.\r\n");
+#endif
+
         /* Initialize RX FIFO. */
         status = enc28j60_rx_fifo_init(device);
 
@@ -621,6 +649,10 @@ static void enc28j60_link_changed(ENC28J60 *device)
     }
     else
     {
+#if ENC28J60_DEBUG
+        printf("enc28j60_link_changed: Link DOWN.\r\n");
+#endif
+
         /* Set link-down for this device. */
         net_device_link_down(fd);
     }
