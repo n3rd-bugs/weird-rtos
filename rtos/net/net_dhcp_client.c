@@ -38,6 +38,7 @@ static void dhcp_event(void *);
 /*
  * dhcp_change_state
  * @client_data: DHCP client data.
+ * @state: New DHCP state we want to load.
  * This function will change state for a DHCP client, including triggering the
  * state action and initializing any state data.
  */

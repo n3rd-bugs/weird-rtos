@@ -37,7 +37,7 @@ typedef void CONDITION_LOCK (void *);
 typedef struct _resume
 {
     /* Function that will be called to see if we need to resume. */
-    CONDITION_DO_RESUME *do_resume;
+    CONDITION_DO_RESUME     *do_resume;
 
     void        *param;     /* User defined criteria. */
     int32_t     status;     /* Status needed to be returned to the task. */
@@ -55,7 +55,7 @@ struct _suspend
     SUSPEND     *next;
 
     /* Function that will be called to see if we need to suspend. */
-    CONDITION_DO_SUSPEND *do_suspend;
+    CONDITION_DO_SUSPEND    *do_suspend;
 
     TASK        *task;      /* Task suspended on this. */
     void        *param;     /* User defined criteria for the tasks. */
@@ -69,6 +69,7 @@ typedef struct _suspend_list
     /* Link-list of the suspend on this condition. */
     SUSPEND     *head;
     SUSPEND     *tail;
+
 } SUSPEND_LIST;
 
 /* Condition data. */

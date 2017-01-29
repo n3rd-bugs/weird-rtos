@@ -118,7 +118,7 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offse
         OS_ASSERT((offset + (uint32_t)num_bytes) > buffer->total_length);
     }
 
-    /* Moveover the offset. */
+    /* Move over the offset. */
     while ((one) && (offset > 0))
     {
         /* If this buffer has more data to process. */

@@ -73,7 +73,7 @@ static TASK *sleep_process_system_tick(void)
                 /* Lets not get this task out of sleep any time soon. */
                 tcb->tick_sleep = MAX_WAIT;
 
-                /* Put back this task on the scheduler list. */
+                /* Put back this task on the scheduler list at the end. */
                 /* We will remove it from this list when we will resume. */
                 sll_append(&sleep_scheduler.ready_tasks, tcb, OFFSETOF(TASK, next_sleep));
 

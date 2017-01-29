@@ -543,7 +543,7 @@ static void tcp_rtx_timer_register(TCP_PORT *port)
     port->rtx_data.suspend.flags = SUSPEND_TIMER;
     port->rtx_data.suspend.timeout = MAX_WAIT;
 
-    /* Add networking condition to process RTX timer events. */
+    /* Add networking condition to process retransmission timer events. */
     net_condition_add(&port->rtx_data.condition, &port->rtx_data.suspend, &tcp_rtx_callback, (FD)port);
 
 } /* tcp_rtx_timer_register */

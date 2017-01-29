@@ -113,7 +113,7 @@ static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDIT
  * suspend_lock_condition
  * @condition: Condition list for which we need to get lock.
  * @num: Number of conditions.
- * @tcb: Condition for which we don't need to acquire lock.
+ * @resume_condition: Condition for which we don't need to acquire lock.
  * This routine will lock the conditions.
  */
 static void suspend_lock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
@@ -225,7 +225,7 @@ static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, u
         /* If this is the condition from which we got resumed. */
         if (resume_condition == (*condition))
         {
-            /* Return the condition index that was matched. */
+            /* Return the condition index that matches. */
             *return_num = n;
         }
         else
@@ -248,7 +248,7 @@ static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, u
  *  suspend.
  * @suspend: Suspend list from which we need to check if we do need to suspend.
  * @num: Number of conditions.
- * @return_num: If a condition is valid the index for that condition will be
+ * @return_num: If a condition is valid, the index for that condition will be
  *  returned here.
  * @return: Will return true if we do need to suspend on a condition.
  * This routine will check for all the conditions if we do need to suspend on
@@ -323,16 +323,13 @@ static uint8_t suspend_is_task_waiting(TASK *task, CONDITION *check_condition)
 #ifdef CONFIG_SLEEP
 /*
  * suspend_timeout_get_min
- * @condition: Condition list for which we will calculate the the minimum
- *  timeout we need to wait.
- * @suspend: Suspend list from which we will search for timeout for
- *  corresponding condition.
- * @num: Number of conditions.
+ * @suspend: Suspend list from which we will search for minimum timeout.
+ * @num: Number of suspends.
  * @return_num: The index at which first minimum timeout was found will be
  *  returned here.
  * @return: Minimum timeout calculated will be returned here.
- * This routine will calculate the minimum number of times we need to wait on
- * the given conditions before returning a timeout.
+ * This routine will calculate the timeout for which we need to wait on the
+ * given conditions before returning a timeout.
  */
 static uint64_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
 {
@@ -570,9 +567,8 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
  * @condition: Condition for which we need to resume tasks.
  * @resume: Resume data.
  * @locked: If we are resuming task(s) on a condition in locked state.
- * @return: SUCCESS if criteria was successfully achieved,
- *  SUSPEND_PRIORITY will be returned if a timeout was occurred while waiting
- *  for the condition.
+ * @return: SUCCESS if we have successfully resumed tasks waiting on the
+ *  criteria.
  * This function will suspend the caller task to wait for a criteria.
  */
 void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
