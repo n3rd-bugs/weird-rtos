@@ -79,7 +79,7 @@ void util_print_sys_info()
     printf("System tick: %lu\r\n", (uint32_t)current_system_tick());
 
     /* Print table header. */
-    printf("Name\tClass\tTotal\tFree\tMin.\tStatus\tn(T)\r\n");
+    printf("Name\tClass\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n");
 
     /* Print information about all the tasks in the system. */
     while (tcb != NULL)
@@ -88,7 +88,7 @@ void util_print_sys_info()
         stack_free = util_task_calc_free_stack(tcb);
 
         /* Print task information. */
-        printf("%s\t(%d)\t%lu\t%lu\t%lu\t%li\t%lu%s\r\n",
+        printf("%s\t(%d)\t%lu\t%lu\t%lu\t%li\t%lu\t%lu%s\r\n",
                tcb->name,
                tcb->class,
                tcb->stack_size,
@@ -96,6 +96,7 @@ void util_print_sys_info()
                tcb->stack_size - stack_free,
                tcb->status,
                (uint32_t)tcb->scheduled,
+               (uint32_t)tcb->tick_sleep,
                (tcb == get_current_task()) ? "\t<Running>" : "");
 
         /* Get the next task. */
@@ -148,7 +149,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
     if (status == SUCCESS)
     {
         /* Print table header. */
-        status = fs_buffer_push(buffer, (uint8_t *)"Name\tClass\tTotal\tFree\tMin.\tStatus\tn(T)\r\n", sizeof("Name\tClass\tTotal\tFree\tMin.\tStatus\tn(T)\r\n") - 1, 0);
+        status = fs_buffer_push(buffer, (uint8_t *)"Name\tClass\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n", sizeof("Name\tClass\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n") - 1, 0);
     }
 
     /* Print information about all the tasks in the system. */
@@ -192,7 +193,13 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "%lu\r\n", (uint32_t)tcb->scheduled);
+            snprintf(str, sizeof(str), "%lu\t", (uint32_t)tcb->scheduled);
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
+
+        if (status == SUCCESS)
+        {
+            snprintf(str, sizeof(str), "%lu\r\n", (uint32_t)tcb->tick_sleep);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
