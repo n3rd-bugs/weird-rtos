@@ -35,6 +35,10 @@ void enc28j60_stm32f407_init()
 
     /* Initialize SPI device data. */
     enc28j60_spi.device_num = 1;
+    enc28j60.spi.init = &spi_stm32f407_init;
+    enc28j60.spi.slave_select = &spi_stm32f407_slave_select;
+    enc28j60.spi.slave_unselect = &spi_stm32f407_slave_unselect;
+    enc28j60.spi.msg = &spi_stm32f407_message;
     enc28j60.spi.data = &enc28j60_spi;
 
     /* Enable GPIO A clock. */
