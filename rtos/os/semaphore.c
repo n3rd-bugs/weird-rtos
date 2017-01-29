@@ -32,7 +32,7 @@ static uint8_t semaphore_do_resume(void *, void *);
  *  SEMAPHORE_PRIORITY: Priority based task queue.
  *  SEMAPHORE_INT: This semaphore will also be accessed by interrupts.
  * This routine initializes a semaphore control block. After this the semaphore
- * can be used to protect important resources.
+ * can be used to protect shared resources.
  */
 void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t type)
 {
@@ -102,7 +102,7 @@ void semaphore_set_interrupt_data(SEMAPHORE *semaphore, void *data, SEM_INT_LOCK
 
     /* Semaphore must not have been obtained. */
     OS_ASSERT(semaphore->count != semaphore->max_count);
-    OS_ASSERT((semaphore->type & SEMAPHORE_INT) == 0)
+    OS_ASSERT((semaphore->type & SEMAPHORE_INT) == FALSE)
 
     /* Set semaphore interrupt data. */
     semaphore->interrupt_lock = lock;
