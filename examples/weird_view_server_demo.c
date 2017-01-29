@@ -383,8 +383,10 @@ void adc_sample_process(void *data)
         /* Stop the ADC timer. */
         adc_suspend.timeout = MAX_WAIT;
 
+#if (PLAT_TARGET == PLAT_ATMEGA644P)
         /* Start periodic ADC conversion. */
         adc_atmega644_periodic_read_start(&adc_data_callback, (ADC_PRESCALE - 1));
+#endif
     }
 
     else
@@ -454,6 +456,7 @@ void adc_sample_process(void *data)
             adc_channel = 0;
         }
 
+#if (PLAT_TARGET == PLAT_ATMEGA644P)
         switch (adc_channel)
         {
         case 0:
@@ -466,6 +469,7 @@ void adc_sample_process(void *data)
             adc_channel_select(3);
             break;
         }
+#endif
 
         /* Before actually start sampling wait for some time. */
         adc_suspend.timeout = (current_system_tick() + ADC_CHANNEL_DELAY);
