@@ -351,7 +351,6 @@ void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_
 
     /* Initialize file system parameter. */
     suspend->param = param;
-    suspend->flags = (fs->flags & FS_PRIORITY_SORT ? SUSPEND_PRIORITY : 0);
     suspend->do_suspend = &fs_buffer_do_suspend;
     suspend->timeout = MAX_WAIT;
 

@@ -73,13 +73,8 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
     /* Register a networking device. */
     net_register_fd(&device->net_device, fd, &ethernet_buffer_transmit, &ethernet_process);
 
-    /* If we are also require WDT for this ethernet device. */
-    if (wdt != NULL)
-    {
-        /* Update suspend flags. */
-        device->net_device.suspend.flags = SUSPEND_TIMER;
-        device->net_device.suspend.timeout = MAX_WAIT;
-    }
+    /* Disable timeout. */
+    device->net_device.suspend.timeout = MAX_WAIT;
 
     /* Set MTU for this device. */
     net_device_set_mtu(fd, (ETH_MTU_SIZE - ETH_HRD_SIZE));

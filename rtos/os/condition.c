@@ -35,7 +35,7 @@ static uint64_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
 
 /*
  * suspend_sreach
- * @node: An task waiting on this condition.
+ * @node: A task waiting on this condition.
  * @param: Resumption criteria.
  * @return: TRUE if we need to resume this task, FALSE if we cannot resume
  *  this task.
@@ -67,8 +67,8 @@ static uint8_t suspend_sreach(void *node, void *param)
  */
 static uint8_t suspend_priority_sort(void *node, void *new)
 {
-    uint8_t schedule = FALSE;
     SUSPEND *suspend_node = (SUSPEND *)node, *suspned_new = (SUSPEND *)new;
+    uint8_t schedule = FALSE;
 
     /* Check if this node has lower priority than the new suspend. */
     if (suspend_node->task->priority > suspned_new->task->priority)
@@ -88,7 +88,7 @@ static uint8_t suspend_priority_sort(void *node, void *new)
  * @num: Number of conditions.
  * @resume_condition: Condition for which we don't need to acquire lock.
  * This routine will unlock all the conditions in the condition list, except
- * the one that was returned on the resume.
+ * the one for which we were resumed.
  */
 static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
 {
@@ -118,28 +118,19 @@ static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDIT
  */
 static void suspend_lock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
 {
-    uint32_t n;
-
     /* For all conditions acquire lock for which we can suspend. */
-    for (n = 0; n < num; n++)
+    while (num)
     {
         /* If we can lock this condition. */
-        if (((!resume_condition) || (resume_condition != condition[n])) && (((condition[n]->flags & CONDITION_LOCK_NO_SUSPEND) == 0) && (condition[n]->lock)))
+        if (((!resume_condition) || (resume_condition != *condition)) && ((*condition)->lock))
         {
             /* Get lock for this condition. */
-            (condition[n])->lock(condition[n]->data);
+            (*condition)->lock((*condition)->data);
         }
-    }
 
-    /* For all conditions acquire lock for which we can not suspend. */
-    for (n = 0; n < num; n++)
-    {
-        /* If we can lock this condition. */
-        if (((!resume_condition) || (resume_condition != condition[n])) && ((condition[n]->flags & CONDITION_LOCK_NO_SUSPEND) && (condition[n]->lock)))
-        {
-            /* Get lock for this condition. */
-            (condition[n])->lock(condition[n]->data);
-        }
+        /* Pick next condition. */
+        condition++;
+        num--;
     }
 
 } /* suspend_lock_condition */
@@ -160,18 +151,8 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
         /* Add this task on the suspend data. */
         (*suspend)->task = tcb;
 
-        /* If we need to sort the list on priority. */
-        if ((*suspend)->flags & SUSPEND_PRIORITY)
-        {
-            /* Add suspend to the suspend list on priority. */
-            sll_insert(&(*condition)->suspend_list, *suspend, &suspend_priority_sort, OFFSETOF(SUSPEND, next));
-        }
-
-        else
-        {
-            /* Add suspend at the end of suspend list. */
-            sll_append(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next));
-        }
+        /* Add suspend to the suspend list on priority. */
+        sll_insert(&(*condition)->suspend_list, *suspend, &suspend_priority_sort, OFFSETOF(SUSPEND, next));
 
         /* Pick next condition. */
         condition++;
@@ -257,8 +238,8 @@ static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, u
  */
 static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint32_t num, uint32_t *return_num)
 {
-    uint8_t do_suspend = TRUE;
     uint32_t n;
+    uint8_t do_suspend = TRUE;
 
     /* For all conditions check if we need to suspend. */
     for (n = 0; n < num; n++)
@@ -299,8 +280,8 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
  */
 static uint8_t suspend_is_task_waiting(TASK *task, CONDITION *check_condition)
 {
-    uint8_t waiting = FALSE;
     uint32_t n;
+    uint8_t waiting = FALSE;
 
     /* Check the task list. */
     for (n = 0; n < task->num_conditions; n++)
@@ -333,42 +314,28 @@ static uint8_t suspend_is_task_waiting(TASK *task, CONDITION *check_condition)
  */
 static uint64_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
 {
-    uint32_t n, min_index = 0;
     uint64_t min_timeout = MAX_WAIT, this_timeout;
     uint64_t clock = current_system_tick();
+    uint32_t n, min_index = 0;
 
     /* For all conditions search the minimum timeout. */
     for (n = 0; n < num; n++)
     {
-        /* If this is a timer condition. */
-        if ((*suspend)->flags & SUSPEND_TIMER)
+        /* If we are actually using this timer. */
+        if ((*suspend)->timeout != MAX_WAIT)
         {
-            /* If we are actually using this timer. */
-            if ((*suspend)->timeout != MAX_WAIT)
+            /* Calculate the number of ticks left till it's timeout. */
+            this_timeout = (((*suspend)->timeout > clock) ? ((*suspend)->timeout - clock) : 0);
+
+            /* If this timer has minimum ticks left on it. */
+            if (this_timeout < min_timeout)
             {
-                /* Calculate the number of ticks left till it's timeout. */
-                this_timeout = (((*suspend)->timeout > clock) ? ((*suspend)->timeout - clock) : 0);
+                /* Update the minimum timeout. */
+                min_timeout = this_timeout;
 
-                /* If this timer has minimum ticks left on it. */
-                if (this_timeout < min_timeout)
-                {
-                    /* Update the minimum timeout. */
-                    min_timeout = this_timeout;
-
-                    /* Save the entry index. */
-                    min_index = n;
-                }
+                /* Save the entry index. */
+                min_index = n;
             }
-        }
-
-        /* Check if we don't need to suspend for this condition. */
-        else if ((*suspend)->timeout < min_timeout)
-        {
-            /* Update the minimum timeout. */
-            min_timeout = (*suspend)->timeout;
-
-            /* Save the entry index. */
-            min_index = n;
         }
 
         /* Pick next condition. */

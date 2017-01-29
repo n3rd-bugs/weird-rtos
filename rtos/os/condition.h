@@ -16,13 +16,8 @@
 /* Error codes. */
 #define CONDITION_TIMEOUT               -600
 
-/* Suspend flags. */
-#define SUSPEND_PRIORITY                0x01
-#define SUSPEND_TIMER                   0x02
-
 /* Condition flags. */
-#define CONDITION_LOCK_NO_SUSPEND       0x01
-#define CONDITION_PING                  0x02
+#define CONDITION_PING                  0x01
 
 /* Helper macros. */
 #define CONDITION_INVALID               ((uint32_t)-1)
@@ -47,8 +42,7 @@ typedef struct _resume
 typedef struct _suspend SUSPEND;
 struct _suspend
 {
-    /* System tick at which we will resume or number of ticks we would
-     * want to wait. */
+    /* System tick at which we will resume this condition. */
     uint64_t    timeout;
 
     /* Suspend link list member. */
@@ -59,8 +53,7 @@ struct _suspend
 
     TASK        *task;      /* Task suspended on this. */
     void        *param;     /* User defined criteria for the tasks. */
-    uint32_t    flags;      /* Suspend flags. */
-    uint8_t     pad[4];     /* Structure padding. */
+
 };
 
 /* Link list of suspend. */

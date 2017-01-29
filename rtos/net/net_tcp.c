@@ -539,8 +539,7 @@ static void tcp_rtx_timer_register(TCP_PORT *port)
     /* Initialize TCP retransmission condition data. */
     port->rtx_data.condition.data = port;
 
-    /* This will be a timer condition. */
-    port->rtx_data.suspend.flags = SUSPEND_TIMER;
+    /* Disable retransmission timer by default. */
     port->rtx_data.suspend.timeout = MAX_WAIT;
 
     /* Add networking condition to process retransmission timer events. */
