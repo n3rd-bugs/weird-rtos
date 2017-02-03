@@ -89,7 +89,9 @@ static TASK *sleep_process_system_tick(void)
             else
             {
                 /* Task is being resumed from sleep. */
+                tcb->tick_sleep = 0;
                 tcb->status = TASK_RESUME_SLEEP;
+                tcb->flags |= TASK_RESUMED;
             }
         }
 
@@ -116,15 +118,12 @@ static void sleep_task_re_enqueue(TASK *tcb, uint8_t from)
     /* Process all the cases from a task can be re/scheduled. */
     switch (from)
     {
-    case YIELD_CANNOT_RUN:
-        /* Just put back this task on the scheduler list. */
-        sll_push(&sleep_scheduler.ready_tasks, tcb, OFFSETOF(TASK, next_sleep));
-
-        /* Task is being suspended. */
-        tcb->status = TASK_SUSPENDED;
-
-        break;
+    /* Nothing to do here. */
     default:
+
+        /* Remove some compiler warnings. */
+        UNUSED_PARAM(tcb);
+
         break;
     }
 

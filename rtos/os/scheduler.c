@@ -109,7 +109,6 @@ void scheduler_init()
 TASK *scheduler_get_next_task()
 {
     SCHEDULER *scheduler = scheduler_list.head;
-    SCHEDULER *scheduler_hp = scheduler;
     TASK *tcb = NULL, *tcb_hp = NULL;
 
     /* Try to get a new task to run from registered schedulers. */
@@ -129,26 +128,23 @@ TASK *scheduler_get_next_task()
 
                  /* If this tasks have same priority but the scheduler has higher priority. */
                  ( (tcb->priority == tcb_hp->priority) &&
-                   (scheduler->priority < scheduler_hp->priority) ) )
+                   (scheduler->priority < ((SCHEDULER *)tcb_hp->scheduler)->priority) ) )
             {
                 /* If we have an old task that we want to return to the
                  * scheduler. */
                 if (tcb_hp != NULL)
                 {
                     /* Return the previously dequeued task to the scheduler. */
-                    scheduler_hp->yield(tcb_hp, YIELD_CANNOT_RUN);
+                    ((SCHEDULER *)tcb_hp->scheduler)->yield(tcb_hp, YIELD_CANNOT_RUN);
                 }
 
                 /* Run this task if possible. */
                 tcb_hp = tcb;
-
-                /* Save the scheduler for this task. */
-                scheduler_hp = scheduler;
             }
             else
             {
                 /* Put back this task to it's scheduler. */
-                scheduler->yield(tcb, YIELD_CANNOT_RUN);
+                ((SCHEDULER *)tcb->scheduler)->yield(tcb, YIELD_CANNOT_RUN);
             }
         }
 
@@ -161,6 +157,11 @@ TASK *scheduler_get_next_task()
     {
         /* Just run the idle task. */
         tcb_hp = &__idle_task;
+    }
+    else
+    {
+        /* We have now resumed this tasks, lets clear the resume flag. */
+        tcb_hp->flags &= (~TASK_RESUMED);
     }
 
 #ifdef CONFIG_TASK_STATS

@@ -87,10 +87,11 @@ static TASK *sch_aperiodic_get_task()
     TASK *tcb = (TASK *)sll_pop(&aperiodic_scheduler.ready_tasks, OFFSETOF(TASK, next));
 
     /* If there is a task that can run next. */
-    if (tcb != NULL)
+    if ((tcb != NULL) && ((tcb->flags & TASK_RESUMED) == 0))
     {
         /* Task is being resumed. */
         tcb->status = TASK_RESUME;
+        tcb->flags |= TASK_RESUMED;
     }
 
     /* Return the task to be scheduled. */
