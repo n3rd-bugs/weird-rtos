@@ -91,10 +91,10 @@ extern uint8_t avr_in_isr;
 /* Load system stack. */
 #define LOAD_SYSTEM_STACK()                                             \
     system_stack_pointer = (system_stack + SYS_STACK_SIZE);             \
-    asm volatile("lds	r28,        system_stack_pointer");             \
-    asm volatile("lds	r29,        system_stack_pointer + 1");         \
-    asm volatile("out	__SP_L__,   r28");                              \
-    asm volatile("out	__SP_H__,   r29");
+    asm volatile("lds   r28,        system_stack_pointer");             \
+    asm volatile("lds   r29,        system_stack_pointer + 1");         \
+    asm volatile("out   __SP_L__,   r28");                              \
+    asm volatile("out   __SP_H__,   r29");
 
 /* This macro saves a task's context on the stack. */
 #define SAVE_CONTEXT()                                      \
