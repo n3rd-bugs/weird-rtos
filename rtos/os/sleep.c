@@ -136,7 +136,8 @@ static void sleep_task_re_enqueue(TASK *tcb, uint8_t from)
  * @ticks: Number of ticks for which this task is needed to sleep.
  * This function is called when a task is needed to sleep for a particular
  * number of system ticks. This function adds the given task in the sleeping
- * tasks list.
+ * tasks list. Interrupts must be locked by caller as sleep list can be
+ * modified in the context of interrupts.
  */
 void sleep_add_to_list(TASK *tcb, uint64_t ticks)
 {
@@ -186,12 +187,12 @@ void sleep_ticks(uint32_t ticks)
     /* Lock the scheduler. */
     scheduler_lock();
 
-    /* Add current task to the sleep list. */
-    sleep_add_to_list(tcb, ticks);
-
     /* Disable interrupts. */
     interrupt_level = GET_INTERRUPT_LEVEL();
     DISABLE_INTERRUPTS();
+
+    /* Add current task to the sleep list. */
+    sleep_add_to_list(tcb, ticks);
 
     /* Task is being suspended. */
     tcb->status = TASK_SUSPENDED;

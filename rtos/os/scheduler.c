@@ -187,9 +187,11 @@ TASK *scheduler_get_next_task()
 void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t param)
 {
     SCHEDULER *scheduler;
+    uint32_t interrupt_level;
 
-    /* Lock the scheduler. */
-    scheduler_lock();
+    /* Disable interrupts. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+    DISABLE_INTERRUPTS();
 
     /* Get the first scheduler from the scheduler list. */
     scheduler = scheduler_list.head;
@@ -225,8 +227,8 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
     sll_append(&sch_task_list, tcb, OFFSETOF(TASK, next_global));
 #endif /* CONFIG_TASK_STATS */
 
-    /* Enable scheduling. */
-    scheduler_unlock();
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* scheduler_task_add */
 
@@ -278,7 +280,7 @@ void scheduler_lock()
     if (tcb != NULL)
     {
         /* Should never happen. */
-        OS_ASSERT(tcb->lock_count == SCHEDULER_MAX_LOCK);
+        OS_ASSERT(tcb->lock_count >= SCHEDULER_MAX_LOCK);
 
         /* Increment the lock count for this task. */
         tcb->lock_count ++;

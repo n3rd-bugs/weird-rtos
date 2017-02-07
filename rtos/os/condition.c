@@ -419,6 +419,11 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         /* Disable preemption. */
         scheduler_lock();
 
+        /* Disable global interrupts, need to do this to protect against any
+         * interrupt locks. */
+        interrupt_level = GET_INTERRUPT_LEVEL();
+        DISABLE_INTERRUPTS();
+
 #ifdef CONFIG_SLEEP
         /* Check if we need to wait for a finite time. */
         if (timeout != MAX_WAIT)
@@ -428,11 +433,6 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
             sleep_add_to_list(tcb, timeout);
         }
 #endif /* CONFIG_SLEEP */
-
-        /* Disable global interrupts, need to do this to protect against any
-         * interrupt locks. */
-        interrupt_level = GET_INTERRUPT_LEVEL();
-        DISABLE_INTERRUPTS();
 
         /* Task is going to suspended. This will release the lock without
          * enabling interrupts. */
@@ -542,6 +542,7 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 {
     SUSPEND *suspend;
     SUSPEND_LIST tmp_list = {NULL, NULL};
+    uint32_t interrupt_level;
 
     /* If caller is not in locked state. */
     if ((locked == FALSE) && (condition->lock))
@@ -578,6 +579,11 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
             /* If task is actually suspended on this condition. */
             if ((suspend->task->status == TASK_SUSPENDED) && (suspend_is_task_waiting(suspend->task, condition) == TRUE))
             {
+                /* Disable interrupts to protect the sleep and scheduler
+                 * lists. */
+                interrupt_level = GET_INTERRUPT_LEVEL();
+                DISABLE_INTERRUPTS();
+
 #ifdef CONFIG_SLEEP
                 /* Remove this task from sleeping tasks. */
                 sleep_remove_from_list(suspend->task);
@@ -585,6 +591,9 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 
                 /* Try to reschedule this task. */
                 ((SCHEDULER *)(suspend->task->scheduler))->yield(suspend->task, YIELD_SYSTEM);
+
+                /* Restore old interrupt level. */
+                SET_INTERRUPT_LEVEL(interrupt_level);
 
                 /* If do have resume data. */
                 if (resume != NULL)
