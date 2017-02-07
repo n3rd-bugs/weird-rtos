@@ -248,7 +248,7 @@ NAKED_FUN control_to_system()
     /* If we are in a task. */
     if (avr_in_isr == FALSE)
     {
-        /* Restore the previous task's context. */
+        /* Restore the next task's context. */
         RESTORE_CONTEXT();
     }
     else
