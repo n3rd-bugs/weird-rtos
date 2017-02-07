@@ -317,28 +317,21 @@ static void ethernet_process(void *data)
  * ethernet_interrupt
  * @data: Ethernet device for which an interrupt has happened.
  * This function will process an interrupt event for given ethernet device.
+ * This is to be called from the interrupt handler for a particular device.
  */
 int32_t ethernet_interrupt(ETH_DEVICE *device)
 {
-    int32_t status;
+    /* If we are handling the interrupt for this device, there must be no
+     * holder of the lock so no need to acquire it. */
 
-    /* Obtain lock for this device. */
-    status = fd_get_lock((FD)device);
+    /* Set flag to tell that we have an interrupt to process. */
+    device->flags |= ETH_FLAG_INT;
 
-    if (status == SUCCESS)
-    {
-        /* Set flag to tell that we have an interrupt to process. */
-        device->flags |= ETH_FLAG_INT;
+    /* Set flag that we have some data available on this device. */
+    fd_data_available((FD)device);
 
-        /* Set flag that we have some data available on this device. */
-        fd_data_available((FD)device);
-
-        /* Release lock for this file descriptor. */
-        fd_release_lock((FD)device);
-    }
-
-    /* Return status to the caller. */
-    return (status);
+    /* Always return success. */
+    return (SUCCESS);
 
 } /* ethernet_interrupt */
 
