@@ -42,20 +42,20 @@ typedef struct _sll_head
  * @return: Returns if a member already exists in a list.
  * This function will return if a member already exists in a list.
  */
-inline uint8_t sll_in_list(void *list, void *node, int offset)                          \
-{                                                                                       \
-    void *list_node = ((SLL_HEAD *)list)->head;                                         \
-    uint8_t in_list = FALSE;                                                            \
-    while (list_node != NULL)                                                           \
-    {                                                                                   \
-        if (node == list_node)                                                          \
-        {                                                                               \
-            in_list = TRUE;                                                             \
-            break;                                                                      \
-        }                                                                               \
-        list_node = ((SLL_NODE *)((uint8_t *)list_node + offset))->next;                \
-    }                                                                                   \
-    return (in_list);                                                                   \
+inline uint8_t sll_in_list(void *list, void *node, int offset)                                          \
+{                                                                                                       \
+    void *list_node = ((SLL_HEAD *)list)->head;                                                         \
+    uint8_t in_list = FALSE;                                                                            \
+    while (list_node != NULL)                                                                           \
+    {                                                                                                   \
+        if ((node == list_node) || (list_node == ((SLL_NODE *)((uint8_t *)list_node + offset))->next))  \
+        {                                                                                               \
+            in_list = TRUE;                                                                             \
+            break;                                                                                      \
+        }                                                                                               \
+        list_node = ((SLL_NODE *)((uint8_t *)list_node + offset))->next;                                \
+    }                                                                                                   \
+    return (in_list);                                                                                   \
 } /* sll_in_list */
 
 /*
@@ -68,6 +68,7 @@ inline uint8_t sll_in_list(void *list, void *node, int offset)                  
 inline void sll_push(void *list, void *node, int offset)                                \
 {                                                                                       \
     OS_ASSERT(node == NULL);                                                            \
+    OS_ASSERT(sll_in_list(list, node, offset));                                         \
     ((SLL_NODE *)((uint8_t *)node + offset))->next = ((SLL_HEAD *)list)->head;          \
     ((SLL_HEAD *)list)->head = node;                                                    \
     if (((SLL_HEAD *)list)->tail == NULL)                                               \
@@ -113,6 +114,7 @@ inline void *sll_pop(void *list, int offset)                                    
 inline void sll_append(void *list, void *node, int offset)                              \
 {                                                                                       \
     OS_ASSERT(node == NULL);                                                            \
+    OS_ASSERT(sll_in_list(list, node, offset));                                         \
     ((SLL_NODE *)((uint8_t *)node + offset))->next = NULL;                              \
     if (((SLL_HEAD *)list)->tail != NULL)                                               \
     {                                                                                   \
@@ -267,6 +269,7 @@ inline void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *
 inline void sll_add_node(void *list, void *node, void *prev_node, int offset)                                       \
 {                                                                                                                   \
     OS_ASSERT(node == NULL);                                                                                        \
+    OS_ASSERT(sll_in_list(list, node, offset));                                                                     \
     if (prev_node == NULL)                                                                                          \
     {                                                                                                               \
         ((SLL_NODE *)((uint8_t *)node + offset))->next = ((SLL_HEAD *)list)->head;                                  \

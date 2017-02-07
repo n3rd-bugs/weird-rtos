@@ -26,6 +26,11 @@ void sll_push(void *list, void *node, int offset)
     /* A null member should never be added. */
     OS_ASSERT(node == NULL);
 
+#ifdef SLL_DEBUG
+    /* The node should not already exist in the list. */
+    OS_ASSERT(sll_in_list(list, node, offset));
+#endif
+
     /* Update the node. */
     ((SLL_NODE *)((uint8_t *)node + offset))->next = ((SLL_HEAD *)list)->head;
 
@@ -84,6 +89,11 @@ void sll_append(void *list, void *node, int offset)
 {
     /* A null member should never be added. */
     OS_ASSERT(node == NULL);
+
+#ifdef SLL_DEBUG
+    /* The node should not already exist in the list. */
+    OS_ASSERT(sll_in_list(list, node, offset));
+#endif
 
     /* Update the node. */
     ((SLL_NODE *)((uint8_t *)node + offset))->next = NULL;
@@ -305,6 +315,11 @@ void sll_add_node(void *list, void *node, void *prev_node, int offset)
     /* A null member should never be searched. */
     OS_ASSERT(node == NULL);
 
+#ifdef SLL_DEBUG
+    /* The node should not already exist in the list. */
+    OS_ASSERT(sll_in_list(list, node, offset));
+#endif
+
     /* Check if we are adding a node on the list's head. */
     if (prev_node == NULL)
     {
@@ -444,8 +459,8 @@ uint8_t sll_in_list(void *list, void *node, int offset)
     /* While we have an item in this list. */
     while (list_node != NULL)
     {
-        /* Check if this is same as the node. */
-        if (node == list_node)
+        /* Check if this is same as the node or the list is corrupted. */
+        if ((node == list_node) || (list_node == ((SLL_NODE *)((uint8_t *)list_node + offset))->next))
         {
             /* Return true. */
             in_list = TRUE;
