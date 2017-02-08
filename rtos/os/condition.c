@@ -454,12 +454,12 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         /* Wait for either being resumed by some data or timeout. */
         CONTROL_TO_SYSTEM();
 
-        /* Restore old interrupt level. */
-        SET_INTERRUPT_LEVEL(interrupt_level);
-
         /* Save task status and the condition from which we are resumed. */
         task_status = tcb->status;
         resume_condition = tcb->suspend_data;
+
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
 
         /* Enable preemption. */
         scheduler_unlock();
@@ -576,14 +576,13 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
             /* Disable preemption as we are accessing task data structure. */
             scheduler_lock();
 
+            /* Disable interrupts to protect access to resources from interrupts. */
+            interrupt_level = GET_INTERRUPT_LEVEL();
+            DISABLE_INTERRUPTS();
+
             /* If task is actually suspended on this condition. */
             if ((suspend->task->status == TASK_SUSPENDED) && (suspend_is_task_waiting(suspend->task, condition) == TRUE))
             {
-                /* Disable interrupts to protect the sleep and scheduler
-                 * lists. */
-                interrupt_level = GET_INTERRUPT_LEVEL();
-                DISABLE_INTERRUPTS();
-
 #ifdef CONFIG_SLEEP
                 /* Remove this task from sleeping tasks. */
                 sleep_remove_from_list(suspend->task);
@@ -591,9 +590,6 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 
                 /* Try to reschedule this task. */
                 ((SCHEDULER *)(suspend->task->scheduler))->yield(suspend->task, YIELD_SYSTEM);
-
-                /* Restore old interrupt level. */
-                SET_INTERRUPT_LEVEL(interrupt_level);
 
                 /* If do have resume data. */
                 if (resume != NULL)
@@ -620,7 +616,11 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
                 sll_push(&tmp_list, suspend, OFFSETOF(SUSPEND, next));
             }
 
-            /* Enable preemption. */
+            /* Restore old interrupt level. */
+            SET_INTERRUPT_LEVEL(interrupt_level);
+
+            /* Enable preemption, we will switch to a new task here if
+             * required. */
             scheduler_unlock();
         }
 
