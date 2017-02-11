@@ -22,7 +22,7 @@
 /* Internal function prototypes. */
 static int32_t ethernet_buffer_transmit(FS_BUFFER *, uint8_t);
 static void ethernet_process(void *);
-static int32_t ethernet_lock(void *);
+static int32_t ethernet_lock(void *, uint64_t);
 static void ethernet_unlock(void *);
 
 /*
@@ -168,14 +168,16 @@ void ethernet_wdt_disable(ETH_DEVICE *device)
  * @fd: File descriptor for a ethernet device.
  * This function will get the lock for a given ethernet device.
  */
-static int32_t ethernet_lock(void *fd)
+static int32_t ethernet_lock(void *fd, uint64_t timeout)
 {
     ETH_DEVICE *device = (ETH_DEVICE *)fd;
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain data lock for this ethernet device. */
-    return semaphore_obtain(&device->lock, MAX_WAIT);
+    return semaphore_obtain(&device->lock, timeout);
 #else
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(timeout);
 
     /* If this is ISR accessible. */
     if (device->interrupt != NULL)

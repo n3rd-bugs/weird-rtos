@@ -431,6 +431,26 @@ uint8_t fs_sreach_node(void *node, void *param)
  */
 int32_t fd_get_lock(FD fd)
 {
+    int32_t status;
+
+    /* Try to acquire lock for the given file descriptor. */
+    status = fd_try_get_lock(fd, MAX_WAIT);
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* fd_get_lock */
+
+/*
+ * fd_try_get_lock
+ * @fd: File descriptor from which lock is needed.
+ * @timeout: Number of ticks we need to wait for the lock.
+ * @return: A success status will be returned if file descriptor lock was
+ *  successfully acquired.
+ * This function will try to acquire lock for given file descriptor.
+ */
+int32_t fd_try_get_lock(FD fd, uint64_t timeout)
+{
     int32_t status = SUCCESS;
     FS *fs = (FS *)fd;
 
@@ -438,13 +458,13 @@ int32_t fd_get_lock(FD fd)
     if (fs->get_lock)
     {
         /* Get lock for this file descriptor. */
-        status = fs->get_lock((void *)fd);
+        status = fs->get_lock((void *)fd, timeout);
     }
 
     /* Return status to the caller. */
     return (status);
 
-} /* fd_get_lock */
+} /* fd_try_get_lock */
 
 /*
  * fd_release_lock

@@ -28,8 +28,8 @@ static CONSOLE_DATA console_data;
 
 /* Function prototypes. */
 static void *console_open(char *, uint32_t);
-static void console_unlock(void *fd);
-static int32_t console_lock(void *fd);
+static void console_unlock(void *);
+static int32_t console_lock(void *, uint64_t);
 
 /* File system definition. */
 FS console_fs =
@@ -208,16 +208,18 @@ static void *console_open(char *name, uint32_t flags)
 /*
  * console_lock
  * @fd: File descriptor for the console.
+ * @timeout: Number of ticks we need to wait for the lock.
  * This function will get the lock for a given console.
  */
-static int32_t console_lock(void *fd)
+static int32_t console_lock(void *fd, uint64_t timeout)
 {
 #ifdef CONFIG_SEMAPHORE
     /* Obtain data lock for this console. */
-    return semaphore_obtain(&((CONSOLE *)fd)->lock, MAX_WAIT);
+    return semaphore_obtain(&((CONSOLE *)fd)->lock, timeout);
 #else
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
+    UNUSED_PARAM(timeout);
 
     /* Lock scheduler. */
     scheduler_lock();

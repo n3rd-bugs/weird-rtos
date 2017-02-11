@@ -91,7 +91,7 @@ struct _fs
     int32_t     (*ioctl) (void *, uint32_t, void *);
 
     /* Driver operations. */
-    int32_t     (*get_lock) (void *);
+    int32_t     (*get_lock) (void *, uint64_t);
     void        (*release_lock) (void *);
 
     /* Condition data for a file system. */
@@ -196,6 +196,7 @@ FD fs_open(char *, uint32_t);
 void fs_close(FD *);
 
 int32_t fd_get_lock(FD);
+int32_t fd_try_get_lock(FD, uint64_t);
 void fd_release_lock(FD);
 
 int32_t fs_read(FD, uint8_t *, int32_t);
