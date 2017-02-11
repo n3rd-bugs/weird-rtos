@@ -24,7 +24,7 @@ FD net_buff_fd = (FD)NULL;
 static NET_BUFFER_FS net_buffers_fs;
 
 /* Internal function prototypes. */
-static int32_t net_buffer_lock(void *);
+static int32_t net_buffer_lock(void *, uint64_t);
 static void net_buffer_unlock(void *);
 static void net_buffer_condition_callback(void *);
 static int32_t net_buffer_write(void *, uint8_t *, int32_t);
@@ -127,16 +127,18 @@ static void net_buffer_condition_callback(void *data)
 /*
  * net_buffer_lock
  * @fd: Networking buffer file descriptor.
+ * @timeout: Number of ticks we need to wait for the lock.
  * This function will get the lock for net buffer file descriptor.
  */
-static int32_t net_buffer_lock(void *fd)
+static int32_t net_buffer_lock(void *fd, uint64_t timeout)
 {
 #ifdef CONFIG_SEMAPHORE
     /* Obtain data lock for networking buffers. */
-    return semaphore_obtain(&((NET_BUFFER_FS *)fd)->lock, MAX_WAIT);
+    return semaphore_obtain(&((NET_BUFFER_FS *)fd)->lock, timeout);
 #else
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
+    UNUSED_PARAM(timeout);
 
     /* Lock scheduler. */
     scheduler_lock();
