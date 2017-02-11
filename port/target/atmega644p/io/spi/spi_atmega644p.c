@@ -150,15 +150,20 @@ void spi_atmega644_slave_unselect(SPI_DEVICE *device)
 int32_t spi_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
 {
     int32_t bytes = 0, timeout;
+    uint8_t *ptr, need_read;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(device);
+
+    /* Save the data pointer. */
+    ptr = message->buffer;
+    need_read = ((message->flags & SPI_MSG_READ) != 0);
 
     /* While we have a byte to write and read. */
     while (bytes < message->length)
     {
         /* Send a byte. */
-        SPDR = message->buffer[bytes];
+        SPDR = *ptr;
 
         /* Wait for transmission to complete. */
         timeout = 0;
@@ -168,13 +173,14 @@ int32_t spi_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
         if (timeout < ATMEGA644P_SPI_TIMEOUT)
         {
             /* Check if we are also reading. */
-            if (message->flags & SPI_MSG_READ)
+            if (need_read == TRUE)
             {
                 /* Save the byte read from SPI. */
-                message->buffer[bytes] = SPDR;
+                *ptr = SPDR;
             }
 
             /* Get next byte to send and update. */
+            ptr++;
             bytes++;
         }
         else

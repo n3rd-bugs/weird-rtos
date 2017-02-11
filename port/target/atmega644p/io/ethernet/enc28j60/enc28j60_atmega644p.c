@@ -19,10 +19,17 @@
 #include <enc28j60_atmega644p.h>
 #include <net_csum.h>
 #include <string.h>
+#if (ENC28J60_USE_SPI_BB == TRUE)
+#include <spi_bb_atmega644p.h>
+#else
 #include <spi_atmega644p.h>
+#endif
 
 /* ENC28J60 device instance. */
 static ENC28J60 enc28j60;
+#if (ENC28J60_USE_SPI_BB == TRUE)
+static SPI_BB_AVR spi_bb_enc28j60;
+#endif
 
 /*
  * enc28j60_atmega644p_init
@@ -56,10 +63,29 @@ void enc28j60_atmega644p_init()
     enc28j60.get_mac = &enc28j60_atmega644p_get_mac;
 
     /* Hook-up SPI for this device. */
+#if (ENC28J60_USE_SPI_BB == TRUE)
+    /* Populate the SPI bit-bang interface. */
+    spi_bb_enc28j60.pin_num_ss = 4;
+    spi_bb_enc28j60.pin_num_mosi = 5;
+    spi_bb_enc28j60.pin_num_miso = 6;
+    spi_bb_enc28j60.pin_num_sclk = 7;
+    spi_bb_enc28j60.pin_miso = spi_bb_enc28j60.pin_mosi = spi_bb_enc28j60.pin_ss = spi_bb_enc28j60.pin_sclk = 0x03;
+    spi_bb_enc28j60.ddr_miso = spi_bb_enc28j60.ddr_mosi = spi_bb_enc28j60.ddr_ss = spi_bb_enc28j60.ddr_sclk = 0x04;
+    spi_bb_enc28j60.port_miso = spi_bb_enc28j60.port_mosi = spi_bb_enc28j60.port_ss = spi_bb_enc28j60.port_sclk = 0x05;
+
+    /* Initialize enc28j60 SPI device. */
+    enc28j60.spi.data = &spi_bb_enc28j60;
+    enc28j60.spi.init = &spi_bb_atmega644_init;
+    enc28j60.spi.slave_select = &spi_bb_atmega644_slave_select;
+    enc28j60.spi.slave_unselect = &spi_bb_atmega644_slave_unselect;
+    enc28j60.spi.msg = &spi_bb_atmega644_message;
+#else
+    /* Initialize enc28j60 SPI device. */
     enc28j60.spi.init = &spi_atmega644_init;
     enc28j60.spi.slave_select = &spi_atmega644_slave_select;
     enc28j60.spi.slave_unselect = &spi_atmega644_slave_unselect;
     enc28j60.spi.msg = &spi_atmega644_message;
+#endif
 
     /* Initialize name for this device. */
     enc28j60.ethernet_device.fs.name = "\\ethernet\\enc28j60";
