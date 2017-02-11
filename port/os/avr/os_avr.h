@@ -28,7 +28,6 @@
 #define SYS_STACK_SIZE          (256)
 #define AVR_HARD_RESET          TRUE
 #define OS_HW_TICKS_PER_SEC     (PCLK_FREQ / 64)
-#define IDLE_TASK_STACK_SIZE    (64)
 
 /* System interrupt level. */
 extern volatile uint8_t sys_interrupt_level;

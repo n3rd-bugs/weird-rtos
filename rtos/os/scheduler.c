@@ -16,34 +16,13 @@
 #include <sch_periodic.h>
 #include <sleep.h>
 #include <string.h>
+#include <idle.h>
 
 /* A list of all the tasks in the system. */
 TASK_LIST sch_task_list;
 
 /* This is the list of schedulers sorted on their priority. */
 static SCHEDULER_LIST scheduler_list;
-
-/* Definitions for idle task. */
-static TASK __idle_task;
-static uint8_t __idle_task_stack[IDLE_TASK_STACK_SIZE];
-static void __idle_task_entry(void *argv);
-
-/*
- * __idle_task_entry
- * @argv: Unused parameter.
- * This is idle task that will run when there is no task in the system to run
- * at a particular instance.
- */
-static void __idle_task_entry(void *argv)
-{
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(argv);
-
-    while(1)
-    {
-        ;
-    }
-}
 
 /*
  * scheduler_sort
@@ -95,9 +74,9 @@ void scheduler_init()
     sll_insert(&scheduler_list, &sleep_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
 #endif /* CONFIG_SLEEP */
 
-    /* Initialize idle task's control block and stack. */
-    task_create(&__idle_task, "Idle", __idle_task_stack, IDLE_TASK_STACK_SIZE, &__idle_task_entry, (void *)0x00, TASK_NO_RETURN);
-    scheduler_task_add(&__idle_task, TASK_IDLE, 0, 0);
+    /* Initialize idle task. */
+    idle_task_init();
+
 } /* scheduler_init */
 
 /*
@@ -156,12 +135,12 @@ TASK *scheduler_get_next_task()
     if (tcb_hp == NULL)
     {
         /* Just run the idle task. */
-        tcb_hp = &__idle_task;
+        tcb_hp = idle_task_get();
     }
     else
     {
         /* We have now resumed this tasks, lets clear the resume flag. */
-        tcb_hp->flags &= (~TASK_RESUMED);
+        tcb_hp->flags &= (uint8_t)(~TASK_RESUMED);
     }
 
 #ifdef CONFIG_TASK_STATS
