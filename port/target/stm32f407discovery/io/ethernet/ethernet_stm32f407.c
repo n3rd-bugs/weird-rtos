@@ -20,6 +20,7 @@
 #endif
 #include <string.h>
 
+#if (ENC28J60_INT_POLL == FALSE)
 /*
  * exti2_interrupt
  * This function is interrupt handler for EXTI2 interrupt.
@@ -39,6 +40,7 @@ ISR_FUN exti2_interrupt()
     OS_ISR_EXIT();
 
 } /* exti2_interrupt */
+#endif
 
 /*
  * ethernet_stm32f407_init

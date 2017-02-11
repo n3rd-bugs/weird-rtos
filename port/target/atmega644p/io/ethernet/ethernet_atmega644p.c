@@ -21,6 +21,7 @@
 #endif
 #include <string.h>
 
+#if (ENC28J60_INT_POLL == FALSE)
 /*
  * ISR(INT0_vect, ISR_NAKED)
  * This is interrupt callback for external interrupt signal 0.
@@ -39,6 +40,7 @@ ISR(INT0_vect, ISR_NAKED)
     OS_ISR_EXIT();
 
 } /* ISR(INT0_vect, ISR_NAKED) */
+#endif
 
 /*
  * ethernet_atmega644p_init

@@ -20,12 +20,15 @@
 
 /* ENC28J60 device configuration. */
 #define ENC28J60_ATMEGA644P_RESET_DELAY     (100)
+#define ENC28J60_USE_SPI_BB                 (TRUE)
 
 /* Function prototypes. */
 void enc28j60_atmega644p_init();
+#if (ENC28J60_INT_POLL == FALSE)
 void enc28j60_atmega644p_handle_interrupt();
 void enc28j60_atmega644p_enable_interrupt(ENC28J60 *);
 void enc28j60_atmega644p_disable_interrupt(ENC28J60 *);
+#endif
 uint8_t enc28j60_atmega644p_interrupt_pin(ENC28J60 *);
 void enc28j60_atmega644p_reset(ENC28J60 *);
 uint8_t *enc28j60_atmega644p_get_mac(ETH_DEVICE *);

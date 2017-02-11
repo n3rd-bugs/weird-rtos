@@ -28,6 +28,9 @@ static void enc28j60_set_mac_address(ENC28J60 *, uint8_t *);
 static void enc28j60_link_changed(ENC28J60 *);
 static void enc28j60_receive_packet(ENC28J60 *);
 static int32_t enc28j60_transmit_packet(void *, FS_BUFFER *);
+#if (ENC28J60_INT_POLL == TRUE)
+static void enc28j60_int_poll(void *);
+#endif
 
 /*
  * enc28j60_init
@@ -70,12 +73,16 @@ void enc28j60_init(ENC28J60 *device)
         fs_buffer_add(fd, &device->fs_buffer_list[i], FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
     }
 
+#if (ENC28J60_INT_POLL == TRUE)
     /* Register this ethernet device. */
-    ethernet_regsiter(&device->ethernet_device, &enc28j60_initialize, &enc28j60_transmit_packet, &enc28j60_interrupt, &enc28j60_wdt);
-
+    ethernet_regsiter(&device->ethernet_device, &enc28j60_initialize, &enc28j60_transmit_packet, &enc28j60_interrupt, &enc28j60_wdt, &enc28j60_int_poll);
+#else
+    /* Register this ethernet device. */
+    ethernet_regsiter(&device->ethernet_device, &enc28j60_initialize, &enc28j60_transmit_packet, &enc28j60_interrupt, &enc28j60_wdt, NULL);
 #ifdef CONFIG_SEMAPHORE
     /* Rather locking the global interrupts lock only the ethernet interrupts. */
     semaphore_set_interrupt_data(&device->ethernet_device.lock, device, (SEM_INT_LOCK *)device->disable_interrupts, (SEM_INT_UNLOCK *)device->enable_interrupts);
+#endif
 #endif
 
     /* Clear device flags. */
@@ -875,5 +882,39 @@ static int32_t enc28j60_transmit_packet(void *data, FS_BUFFER *buffer)
     return (status);
 
 } /* enc28j60_transmit_packet */
+
+#if (ENC28J60_INT_POLL == TRUE)
+/*
+ * enc28j60_int_poll
+ * @data: ENC28J60 device instance for which we need to poll the interrupt
+ *  line.
+ * This function will poll the interrupt line of the given enc28j60 device.
+ */
+static void enc28j60_int_poll(void *data)
+{
+    ENC28J60 *device = (ENC28J60 *)data;
+    FD fd = (FD)&device->ethernet_device;
+
+    /* If we have an interrupt and it is enabled. */
+    /* We can safely access these here as we could never execute these
+     * statements if we can run another task. */
+    if ((device->interrupt_pin(device) == FALSE) && (device->flags & ENC28J60_INT_ENABLE))
+    {
+        /* Try to acquire lock for this device. */
+        if (fd_try_get_lock(fd, 0) == SUCCESS)
+        {
+            /* Lets not trigger interrupts any more. */
+            device->flags &= (uint8_t)(~ENC28J60_INT_ENABLE);
+
+            /* Invoke the interrupt event. */
+            ethernet_interrupt(&device->ethernet_device);
+
+            /* Release lock for this device. */
+            fd_release_lock(fd);
+        }
+    }
+
+} /* enc28j60_int_poll */
+#endif
 
 #endif /* ETHERNET_ENC28J60 */

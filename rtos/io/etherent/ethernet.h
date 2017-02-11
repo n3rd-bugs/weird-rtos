@@ -67,6 +67,7 @@ typedef void ETH_INIT (void *);
 typedef void ETH_INTERRUPT (void *);
 typedef int32_t ETH_TRANSMIT (void *, FS_BUFFER *);
 typedef void ETH_WDT (void *);
+typedef void ETH_INT_POLL (void *);
 
 /* Include ethernet target configurations. */
 #include <ethernet_target.h>
@@ -101,6 +102,7 @@ typedef struct _eth_device
     ETH_INTERRUPT   *interrupt;
     ETH_TRANSMIT    *transmit;
     ETH_WDT         *wdt;
+    ETH_INT_POLL    *int_poll;
 
     /* MAC address assigned to this device. */
     uint8_t     mac[ALLIGN_CEIL(ETH_ADDR_LEN)];
@@ -115,7 +117,7 @@ typedef struct _eth_device
 
 /* Function prototypes. */
 void ethernet_init();
-void ethernet_regsiter(ETH_DEVICE *, ETH_INIT *, ETH_TRANSMIT *, ETH_INTERRUPT *, ETH_WDT *);
+void ethernet_regsiter(ETH_DEVICE *, ETH_INIT *, ETH_TRANSMIT *, ETH_INTERRUPT *, ETH_WDT *, ETH_INT_POLL *);
 uint8_t *ethernet_random_mac(ETH_DEVICE *);
 uint8_t *ethernet_get_mac_address(FD);
 void ethernet_wdt_enable(ETH_DEVICE *, uint32_t);

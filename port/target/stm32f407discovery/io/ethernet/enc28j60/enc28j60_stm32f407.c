@@ -59,6 +59,7 @@ void enc28j60_stm32f407_init()
     GPIOA->OSPEEDR &= (uint32_t)(~((GPIO_OSPEEDER_OSPEEDR0 << (2 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (3 * 2))));
     GPIOA->OSPEEDR |= ((0x03 << (2 * 2)) | (0x03 << (3 * 2)));
 
+#if (ENC28J60_INT_POLL == FALSE)
     /* Set EXTI line for processing interrupts on GPIOA.2. */
     SYSCFG->EXTICR[(0x02 >> 0x02)] &= (uint32_t)(~(0x0F << (0x04 * (0x02 & 0x03))));
     SYSCFG->EXTICR[(0x02 >> 0x02)] |= (0x00 << (0x04 * (0x02 & 0x03)));
@@ -77,10 +78,13 @@ void enc28j60_stm32f407_init()
 
     /* Set EXT2 IRQ channel priority. */
     NVIC->IP[EXTI2_IRQn] = 2;
+#endif
 
     /* Initialize device APIs. */
+#if (ENC28J60_INT_POLL == FALSE)
     enc28j60.enable_interrupts = &enc28j60_stm32f407_enable_interrupt;
     enc28j60.disable_interrupts = &enc28j60_stm32f407_disable_interrupt;
+#endif
     enc28j60.interrupt_pin = &enc28j60_stm32f407_interrupt_pin;
     enc28j60.reset = &enc28j60_stm32f407_reset;
 
@@ -92,6 +96,7 @@ void enc28j60_stm32f407_init()
 
 } /* enc28j60_stm32f407_init */
 
+#if (ENC28J60_INT_POLL == FALSE)
 /*
  * enc28j60_stm32f407_handle_interrupt
  * This function will handle interrupt for given enc28j60 device.
@@ -139,6 +144,7 @@ void enc28j60_stm32f407_disable_interrupt(ENC28J60 *device)
     NVIC->ICER[EXTI2_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI2_IRQn & (uint8_t)0x1F);
 
 } /* enc28j60_stm32f407_disable_interrupt */
+#endif
 
 /*
  * enc28j60_stm32f407_interrupt_pin

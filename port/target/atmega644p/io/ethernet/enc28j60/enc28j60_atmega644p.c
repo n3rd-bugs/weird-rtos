@@ -37,16 +37,20 @@ void enc28j60_atmega644p_init()
     DDRD |= (1 << 4);
     DDRD &= (uint8_t)~(1 << 2);
 
+#if (ENC28J60_INT_POLL == FALSE)
     /* Disable INT0 interrupt. */
     EIMSK &= (uint8_t)~(1 << 0);
 
     /* Setup INT0 to raise an interrupt on falling edge. */
     EICRA &= (uint8_t)~(0x03 << 0);
     EICRA |= (0x02 << 0);
+#endif
 
     /* Initialize device APIs. */
+#if (ENC28J60_INT_POLL == FALSE)
     enc28j60.enable_interrupts = &enc28j60_atmega644p_enable_interrupt;
     enc28j60.disable_interrupts = &enc28j60_atmega644p_disable_interrupt;
+#endif
     enc28j60.interrupt_pin = &enc28j60_atmega644p_interrupt_pin;
     enc28j60.reset = &enc28j60_atmega644p_reset;
     enc28j60.get_mac = &enc28j60_atmega644p_get_mac;
@@ -65,6 +69,7 @@ void enc28j60_atmega644p_init()
 
 } /* enc28j60_atmega644p_init */
 
+#if (ENC28J60_INT_POLL == FALSE)
 /*
  * enc28j60_atmega644p_handle_interrupt
  * This function will handle interrupt for given enc28j60 device.
@@ -112,6 +117,7 @@ void enc28j60_atmega644p_disable_interrupt(ENC28J60 *device)
     EIMSK &= (uint8_t)~(1 << 0);
 
 } /* enc28j60_atmega644p_disable_interrupt */
+#endif
 
 /*
  * enc28j60_atmega644p_interrupt_pin

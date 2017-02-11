@@ -23,9 +23,11 @@
 
 /* Function prototypes. */
 void enc28j60_stm32f407_init();
+#if (ENC28J60_INT_POLL == FALSE)
 void enc28j60_stm32f407_handle_interrupt();
 void enc28j60_stm32f407_enable_interrupt(ENC28J60 *);
 void enc28j60_stm32f407_disable_interrupt(ENC28J60 *);
+#endif
 uint8_t enc28j60_stm32f407_interrupt_pin(ENC28J60 *);
 void enc28j60_stm32f407_reset(ENC28J60 *);
 

@@ -12,6 +12,7 @@
  */
 #include <os.h>
 #include <isr.h>
+#include <enc28j60.h>
 
 /* Initial vector table definition. */
 __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
@@ -42,7 +43,7 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x05  RCC                   */
         (isr)&cpu_interrupt,        /*  0x06  EXTI Line0            */
         (isr)&cpu_interrupt,        /*  0x07  EXTI Line1            */
-#ifdef CONFIG_ETHERNET
+#if (defined(CONFIG_ETHERNET) && (ENC28J60_INT_POLL == FALSE))
         (isr)&exti2_interrupt,      /*  0x08  EXTI Line2            */
 #else
         (isr)&cpu_interrupt,        /*  0x08  EXTI Line2            */

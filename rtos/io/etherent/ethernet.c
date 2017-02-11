@@ -18,6 +18,7 @@
 #include <ethernet.h>
 #include <net_buffer.h>
 #include <header.h>
+#include <idle.h>
 
 /* Internal function prototypes. */
 static int32_t ethernet_buffer_transmit(FS_BUFFER *, uint8_t);
@@ -43,9 +44,10 @@ void ethernet_init()
  * @transmit: Function that will be called to transmit a packet.
  * @interrupt: Ethernet interrupt callback.
  * @wdt: Watch dog event callback.
+ * @int_poll: Function to be called to poll the status of interrupt.
  * This function will register an ethernet device.
  */
-void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *transmit, ETH_INTERRUPT *interrupt, ETH_WDT *wdt)
+void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *transmit, ETH_INTERRUPT *interrupt, ETH_WDT *wdt, ETH_INT_POLL *int_poll)
 {
     FD fd = (FD)&device->fs;
 
@@ -57,7 +59,7 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect this device. */
     memset(&device->lock, 0, sizeof(SEMAPHORE));
-    semaphore_create(&device->lock, 1, 1, ((interrupt != NULL) ? SEMAPHORE_INT : 0));
+    semaphore_create(&device->lock, 1, 1, (((interrupt == NULL) || (int_poll != NULL)) ? 0 : SEMAPHORE_INT));
 #endif
 
     /* Initialize file system condition. */
@@ -85,12 +87,20 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
     device->transmit = transmit;
     device->interrupt = interrupt;
     device->wdt = wdt;
+    device->int_poll = int_poll;
 
     /* If we do have an initialize callback for this device. */
     if (initialize != NULL)
     {
         /* We still need to initialize this device. */
         device->flags = ETH_FLAG_INIT;
+    }
+
+    /* If we need to poll the interrupt line. */
+    if (int_poll != NULL)
+    {
+        /* Register interrupt polling work for this device. */
+        OS_ASSERT(idle_add_work(int_poll, device) != SUCCESS);
     }
 
 } /* ethernet_regsiter */
@@ -166,6 +176,7 @@ void ethernet_wdt_disable(ETH_DEVICE *device)
 /*
  * ethernet_lock
  * @fd: File descriptor for a ethernet device.
+ * @timeout: Number of ticks we need to wait for the lock.
  * This function will get the lock for a given ethernet device.
  */
 static int32_t ethernet_lock(void *fd, uint64_t timeout)
@@ -180,7 +191,7 @@ static int32_t ethernet_lock(void *fd, uint64_t timeout)
     UNUSED_PARAM(timeout);
 
     /* If this is ISR accessible. */
-    if (device->interrupt != NULL)
+    if ((device->interrupt != NULL) && (device->int_poll == NULL))
     {
         /* Save interrupt status for this device. */
         device->int_status = GET_INTERRUPT_LEVEL();
@@ -212,7 +223,7 @@ static void ethernet_unlock(void *fd)
 #else
 
     /* If this is ISR accessible. */
-    if (device->interrupt != NULL)
+    if ((device->interrupt != NULL) && (device->int_poll == NULL))
     {
         /* Restore old interrupt level. */
         SET_INTERRUPT_LEVEL(device->int_status);
