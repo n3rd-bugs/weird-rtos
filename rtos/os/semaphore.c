@@ -98,7 +98,7 @@ void semaphore_set_interrupt_data(SEMAPHORE *semaphore, void *data, SEM_INT_LOCK
 
     /* Semaphore must not have been obtained. */
     OS_ASSERT(semaphore->count != semaphore->max_count);
-    OS_ASSERT((semaphore->type & SEMAPHORE_INT) == FALSE)
+    OS_ASSERT((semaphore->type & SEMAPHORE_INT) == FALSE);
 
     /* Set semaphore interrupt data. */
     semaphore->interrupt_lock = lock;
