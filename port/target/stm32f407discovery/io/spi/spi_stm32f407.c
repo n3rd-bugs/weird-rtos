@@ -180,7 +180,7 @@ void spi_stm32f407_slave_unselect(SPI_DEVICE *device)
  * spi_stm32f407_message
  * @device: SPI device for which messages are needed to be processed.
  * @message: SPI message needed to be sent.
- * @return: Total number of bytes read or written.
+ * @return: Success will be returned if SPI message was successfully processed.
  * This function will process a SPI message.
  */
 int32_t spi_stm32f407_message(SPI_DEVICE *device, SPI_MSG *message)
@@ -240,7 +240,14 @@ int32_t spi_stm32f407_message(SPI_DEVICE *device, SPI_MSG *message)
         }
     }
 
-    /* Return number of bytes written and read from SPI. */
+    /* If we did not encounter any error. */
+    if (bytes > 0)
+    {
+        /* Return status to the caller. */
+        bytes = SUCCESS;
+    }
+
+    /* Return status to the caller. */
     return (bytes);
 
 } /* spi_stm32f407_message */

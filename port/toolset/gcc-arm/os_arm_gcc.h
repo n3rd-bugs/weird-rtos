@@ -24,6 +24,7 @@
 #define NAKED_FUN           void __attribute__ ((naked))
 
 #define NOOPTIMIZATION      __attribute__((optimize("O0")))
+#define SPEEDOPTIMIZATION   __attribute__((optimize("O3")))
 
 #define OS_LITTLE_ENDIAN
 
