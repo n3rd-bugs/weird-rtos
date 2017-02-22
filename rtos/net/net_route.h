@@ -18,14 +18,14 @@
 #include <fs.h>
 
 /* Number of route entries to manage. */
-#define NET_NUM_ROUTES  4
+#define NET_NUM_ROUTES          (4)
 
 /* Error definitions. */
-#define ROUTE_EXIST     (-1400)
-#define ROUTE_NO_MEM    (-1401)
+#define ROUTE_EXIST             -1400
+#define ROUTE_NO_MEM            -1401
 
 /* Route flag definitions. */
-#define ROUTE_VALID     (0x01)
+#define ROUTE_VALID             (0x01)
 
 /* A single route entry. */
 typedef struct _net_route

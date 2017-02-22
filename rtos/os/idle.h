@@ -16,12 +16,12 @@
 #include <os.h>
 
 /* Idle work configurations. */
-#define IDLE_WORK_MAX           5
-#define IDLE_TASK_STACK_SIZE    512
+#define IDLE_WORK_MAX           (5)
+#define IDLE_TASK_STACK_SIZE    (512)
 
 /* Error definitions. */
-#define IDLE_NO_SPACE           (-500)
-#define IDLE_NOT_FOUND          (-501)
+#define IDLE_NO_SPACE           -500
+#define IDLE_NOT_FOUND          -501
 
 /* Idle work function definition. */
 typedef void (IDLE_DO) (void *);

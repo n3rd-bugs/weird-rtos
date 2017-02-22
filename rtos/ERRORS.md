@@ -48,7 +48,10 @@ This list is needed to be updated whenever a new error code is added.
     LCD_AN_INTERNAL_ERROR   -1303
     ROUTE_EXIST             -1400
     ROUTE_NO_MEM            -1401
-    ENC28J60_SPI_ERROR      -11000
+    MMC_SPI_CMD_ERROR       -1500
+    MMC_SPI_READ_ERROR      -1500
+    MMC_SPI_WRITE_ERROR     -1502
+    ENC28J60_DISCONNECTED   -11000
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001
     WV_NO_DATA              -20002

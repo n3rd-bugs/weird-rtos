@@ -19,11 +19,11 @@
 #include <condition.h>
 
 /* Some status definitions. */
-#define SEMAPHORE_BUSY      -700
-#define SEMAPHORE_DELETED   -701
+#define SEMAPHORE_BUSY          -700
+#define SEMAPHORE_DELETED       -701
 
 /* Semaphore type flags. */
-#define SEMAPHORE_INT       0x01
+#define SEMAPHORE_INT           (0x01)
 
 /* Semaphore interrupt lock/unlock APIs. */
 typedef void SEM_INT_LOCK (void *data);
