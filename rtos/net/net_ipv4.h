@@ -50,8 +50,8 @@ typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 #define IPV4_HDR_LENGTH_OFFSET      2
 #define IPV4_HDR_ID_OFFSET          4
 #define IPV4_HDR_FLAG_FRAG_OFFSET   6
-#define IPV4_HDR_FALG_MF            (0x2000)
-#define IPV4_HDR_FALG_DF            (0x4000)
+#define IPV4_HDR_FLAG_MF            (0x2000)
+#define IPV4_HDR_FLAG_DF            (0x4000)
 #define IPV4_HDR_FRAG_MASK          (0x1FFF)
 #define IPV4_HDR_TOL_OFFSET         8
 #define IPV4_HDR_PROTO_OFFSET       9

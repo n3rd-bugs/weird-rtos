@@ -318,7 +318,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer, uint32_t flags)
     if (status == SUCCESS)
     {
         /* If this is a fragmented packet and this is intended for us. */
-        if ((flag_offset & IPV4_HDR_FALG_MF) || ((flag_offset & IPV4_HDR_FRAG_MASK) != 0))
+        if ((flag_offset & IPV4_HDR_FLAG_MF) || ((flag_offset & IPV4_HDR_FRAG_MASK) != 0))
         {
             /* Broadcast and multicast packets cannot be fragmented so if we are
              * not the destination just drop this packet. */
@@ -555,7 +555,7 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
             OS_ASSERT(fs_buffer_divide(buffer, 0, max_payload_len) != SUCCESS);
 
             /* We will be sending more fragments after this. */
-            flag_offset |= IPV4_HDR_FALG_MF;
+            flag_offset |= IPV4_HDR_FLAG_MF;
         }
 #endif
 
@@ -859,7 +859,7 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
                 }
 
                 /* If we have received the last fragment. */
-                if (((flag_offset & IPV4_HDR_FALG_MF) == 0) || (fragment->flags & IPV4_FRAG_LAST_RCVD))
+                if (((flag_offset & IPV4_HDR_FLAG_MF) == 0) || (fragment->flags & IPV4_FRAG_LAST_RCVD))
                 {
                     /* Set the last fragment received flag. */
                     fragment->flags |= IPV4_FRAG_LAST_RCVD;

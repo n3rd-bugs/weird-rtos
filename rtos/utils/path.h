@@ -11,12 +11,12 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 
-#ifndef PATH_H
-#define PATH_H
+#ifndef _PATH_H_
+#define _PATH_H_
 
 #include <os.h>
 
 /* Function prototypes. */
 uint32_t util_path_match(char *, char **);
 
-#endif /* PATH_H */
+#endif /* _PATH_H_ */

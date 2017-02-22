@@ -48,12 +48,12 @@
 #define PPP_STATE_DISCONNECTED      5
 
 /* PPP configuration flags. */
-#define PPP_FALG_ACFC               0x01
+#define PPP_FLAG_ACFC               0x01
 #define PPP_FLAG_PFC                0x02
 #define PPP_DEDICATED_FD            0x04
 
 /* ACFC and PFC helper macros. */
-#define PPP_IS_ACFC_VALID(ppp)      (((ppp)->flags & PPP_FALG_ACFC) != 0)
+#define PPP_IS_ACFC_VALID(ppp)      (((ppp)->flags & PPP_FLAG_ACFC) != 0)
 #define PPP_IS_PFC_VALID(ppp)       (((ppp)->flags & PPP_FLAG_PFC) != 0)
 
 /* LCP code definitions. */
