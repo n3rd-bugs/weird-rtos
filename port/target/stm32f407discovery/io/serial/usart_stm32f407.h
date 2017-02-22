@@ -15,14 +15,27 @@
 
 #include <os.h>
 
+/* Hook-up the STDIO printf function. */
+#ifdef printf
+#undef printf
+#endif
+#define printf  usart_stm32f407_printf
+#ifdef vprintf
+#undef vprintf
+#endif
+#define vprintf usart_stm32f407_vprintf
+
 /* Used by console file system to initialize DEBUG console. */
 #define DEBUG_CONSOLE_INIT  usart_stm32f407_init
 
 /* Some configurations. */
-#define BAUD_RATE       115200
+#define BAUD_RATE           115200
+#define PRINTF_BUFFER_SIZE  64
 
 /* Function prototypes. */
-int32_t usart_stm32f407_puts(void *priv_data, uint8_t *buf, int32_t nbytes);
+int32_t usart_stm32f407_puts(void *, uint8_t *, int32_t);
+uint32_t usart_stm32f407_printf(char *, ...);
+int32_t usart_stm32f407_vprintf(const char *, va_list);
 void usart_stm32f407_init();
 
 #endif /* _USART_STM32F407_H_ */

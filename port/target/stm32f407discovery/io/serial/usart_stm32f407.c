@@ -75,6 +75,74 @@ int32_t usart_stm32f407_puts(void *priv_data, uint8_t *buf, int32_t nbytes)
 } /* usart_stm32f407_puts */
 
 /*
+ * usart_stm32f407_printf
+ * @format: Formated string to be printed on UART.
+ * This function prints a formated string on the UART1.
+ */
+uint32_t usart_stm32f407_printf(char *format, ...)
+{
+    uint32_t n = 0;
+    uint8_t buf[PRINTF_BUFFER_SIZE];
+    va_list vl;
+
+    /* Arguments start from the format. */
+    va_start(vl, format);
+
+    /* Process the given string and save the result in a temporary buffer. */
+    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
+
+#ifdef FS_CONSOLE
+    /* Assert if debug FD is not yet initialized. */
+    OS_ASSERT(debug_fd == NULL);
+
+    /* Use the debug FD. */
+    n = fs_write(debug_fd, buf, n);
+#else
+    /* Print the result on the UART. */
+    n = usart_stm32f407_puts(NULL, buf, n);
+#endif
+
+    /* Destroy the argument list. */
+    va_end(vl);
+
+    /* Return number of bytes printed on UART. */
+    return (n);
+
+} /* usart_stm32f407_printf */
+
+/*
+ * usart_stm32f407_vprintf
+ * @format: Formated string to be printed on USART.
+ * This function prints a formated log message on the console.
+ */
+int32_t usart_stm32f407_vprintf(const char *format, va_list vl)
+{
+    int32_t n;
+    uint8_t buf[PRINTF_BUFFER_SIZE];
+
+    /* Process the given string and save the result in a temporary buffer. */
+    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
+
+    if (n > 0)
+    {
+#ifdef FS_CONSOLE
+        /* Assert if debug FD is not yet initialized. */
+        OS_ASSERT(debug_fd == NULL);
+
+        /* Use the debug FD. */
+        n = fs_write(debug_fd, buf, n);
+#else
+        /* Print the result on the UART. */
+        n = usart_stm32f407_puts(NULL, buf, n);
+#endif
+    }
+
+    /* Return number of bytes printed on UART. */
+    return (n);
+
+} /* usart_stm32f407_vprintf */
+
+/*
  * usart_stm32f407_init
  * This function initializes UART1 for STM32F407.
  */
