@@ -12,6 +12,7 @@ C Includes:
 "${workspace_loc:/${ProjName}/rtos/io/etherent}"
 "${workspace_loc:/${ProjName}/rtos/io/etherent/enc28j60}"
 "${workspace_loc:/${ProjName}/rtos/io/ppp}"
+"${workspace_loc:/${ProjName}/rtos/io/mmc}"
 "${workspace_loc:/${ProjName}/rtos/io/spi}"
 "${workspace_loc:/${ProjName}/port/os}"
 "${workspace_loc:/${ProjName}/port/os/avr}"
@@ -23,3 +24,6 @@ C Includes:
 "${workspace_loc:/${ProjName}/port/target/atmega644p/io/ethernet}"
 "${workspace_loc:/${ProjName}/port/target/atmega644p/io/ethernet/enc28j60}"
 "${workspace_loc:/${ProjName}/port/target/atmega644p/utils}"
+
+Linker Script through other arguments:
+-T ../port/target/atmega644p/atmega1284p.ld
