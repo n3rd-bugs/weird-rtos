@@ -31,12 +31,13 @@ void spi_init(SPI_DEVICE *device)
  * @device: SPI device on which we need to process a SPI message.
  * @messages: SPI message array.
  * @num_messages: Number of SPI messages to process.
- * @return: Total number of bytes read or/and written.
+ * @return: Success will be returned if all SPI messages were successfully
+ *  processed.
  * This function will process given SPI messages.
  */
 int32_t spi_message(SPI_DEVICE *device, SPI_MSG *messages, uint32_t num_messages)
 {
-    int32_t ret_bytes = 0, nbytes;
+    int32_t status = SUCCESS;
 
     /* Select slave for the device. */
     device->slave_select(device);
@@ -45,22 +46,16 @@ int32_t spi_message(SPI_DEVICE *device, SPI_MSG *messages, uint32_t num_messages
     while (num_messages --)
     {
         /* Process this SPI message on the target. */
-        nbytes = device->msg(device, messages);
+        status = device->msg(device, messages);
 
         /* If this SPI message was successfully processed. */
-        if (nbytes >= 0)
+        if (status == SUCCESS)
         {
-            /* Add bytes to total number of bytes processed. */
-            ret_bytes += nbytes;
-
             /* Get the next message to be sent. */
             messages++;
         }
         else
         {
-            /* Return received error. */
-            ret_bytes = nbytes;
-
             /* Break and stop processing SPI messages. */
             break;
         }
@@ -69,8 +64,8 @@ int32_t spi_message(SPI_DEVICE *device, SPI_MSG *messages, uint32_t num_messages
     /* Un-select the SPI device. */
     device->slave_unselect(device);
 
-    /* Return number of bytes written to and read from the SPI. */
-    return (ret_bytes);
+    /* Return status to the caller. */
+    return (status);
 
 } /* spi_message */
 
