@@ -39,7 +39,7 @@
 void spi_atmega644_init();
 void spi_atmega644_slave_select(SPI_DEVICE *);
 void spi_atmega644_slave_unselect(SPI_DEVICE *);
-int32_t spi_atmega644_message(SPI_DEVICE *, SPI_MSG *);
+int32_t spi_atmega644_message(SPI_DEVICE *, SPI_MSG *) SPEEDOPTIMIZATION;
 
 #endif /* CONFIG_SPI */
 #endif /* _SPI_ATMEGA644P_H_ */

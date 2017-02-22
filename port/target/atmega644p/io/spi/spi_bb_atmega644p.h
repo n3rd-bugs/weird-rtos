@@ -52,7 +52,7 @@ typedef struct _spi_bb_avr
 void spi_bb_atmega644_init(SPI_DEVICE *);
 void spi_bb_atmega644_slave_select(SPI_DEVICE *);
 void spi_bb_atmega644_slave_unselect(SPI_DEVICE *);
-int32_t spi_bb_atmega644_message(SPI_DEVICE *, SPI_MSG *);
+int32_t spi_bb_atmega644_message(SPI_DEVICE *, SPI_MSG *) SPEEDOPTIMIZATION;
 
 #endif /* CONFIG_SPI */
 #endif /* _SPI_BB_ATMEGA644P_H_ */

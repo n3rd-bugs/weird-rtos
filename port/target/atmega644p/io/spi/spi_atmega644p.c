@@ -144,56 +144,179 @@ void spi_atmega644_slave_unselect(SPI_DEVICE *device)
  * spi_atmega644_message
  * @device: SPI device for which messages are needed to be processed.
  * @message: SPI message needed to be sent.
- * @return: Total number of bytes read or written.
+ * @return: Success will be returned if SPI message was successfully processed.
  * This function will process a SPI message.
  */
 int32_t spi_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
 {
-    int32_t bytes = 0, timeout;
-    uint8_t *ptr, need_read;
+    int32_t bytes = SUCCESS;
+    uint8_t *ptr, next_byte, timeout, this_len, i;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(device);
 
     /* Save the data pointer. */
     ptr = message->buffer;
-    need_read = ((message->flags & SPI_MSG_READ) != 0);
+    next_byte = *ptr;
 
-    /* While we have a byte to write and read. */
-    while (bytes < message->length)
+    /* Process the message request. */
+    switch (message->flags & (SPI_MSG_WRITE | SPI_MSG_READ))
     {
-        /* Send a byte. */
-        SPDR = *ptr;
 
-        /* Wait for transmission to complete. */
-        timeout = 0;
-        while((!(SPSR & (1 << SPIF))) && (timeout++ < ATMEGA644P_SPI_TIMEOUT)) ;
+    /* If we are only writing. */
+    case SPI_MSG_WRITE:
 
-        /* If we did not timeout while transferring data on SPI. */
-        if (timeout < ATMEGA644P_SPI_TIMEOUT)
+        /* While we have a byte to write. */
+        for (bytes = message->length; (bytes > 0); bytes -= this_len)
         {
-            /* Check if we are also reading. */
-            if (need_read == TRUE)
+            /* See if we need to transfer more than 255 bytes. */
+            if (bytes > 255)
             {
-                /* Save the byte read from SPI. */
-                *ptr = SPDR;
+                /* Lets send only 255 bytes. */
+                this_len = 255;
+            }
+            else
+            {
+                /* Send remaining number of bytes. */
+                this_len = bytes;
             }
 
-            /* Get next byte to send and update. */
-            ptr++;
-            bytes++;
-        }
-        else
-        {
-            /* We timed out while transferring data on the SPI. */
-            bytes = SPI_TIMEOUT;
+            /* Transfer this chuck. */
+            for (i = 0; i < this_len; i++)
+            {
+                /* Send a byte. */
+                SPDR = next_byte;
 
-            /* Break and stop processing any more data for this message. */
-            break;
+                /* Move to next byte in the message. */
+                ptr++;
+
+                /* Save the next byte. */
+                next_byte = *ptr;
+
+                /* Wait for transmission to complete. */
+                timeout = 0;
+                while((!(SPSR & (1 << SPIF))) && (timeout++ < ATMEGA644P_SPI_TIMEOUT)) ;
+
+                /* If we did not timeout while transferring data on SPI. */
+                if (timeout >= ATMEGA644P_SPI_TIMEOUT)
+                {
+                    /* We timed out while transferring data on the SPI. */
+                    bytes = SPI_TIMEOUT;
+
+                    /* Break and stop processing any more data for this message. */
+                    break;
+                }
+            }
         }
+
+        break;
+
+    /* If we are only reading. */
+    case SPI_MSG_READ:
+
+        /* While we have a byte to read. */
+        for (bytes = message->length; (bytes > 0); bytes -= this_len)
+        {
+            /* See if we need to transfer more than 255 bytes. */
+            if (bytes > 255)
+            {
+                /* Lets read 255 bytes. */
+                this_len = 255;
+            }
+            else
+            {
+                /* Read remaining number of bytes. */
+                this_len = bytes;
+            }
+
+            /* Transfer this chuck. */
+            for (i = 0; i < this_len; i++)
+            {
+                /* Start SPI transaction. */
+                SPDR = 0xFF;
+
+                /* Wait for transmission to complete. */
+                timeout = 0;
+                while((!(SPSR & (1 << SPIF))) && (timeout++ < ATMEGA644P_SPI_TIMEOUT)) ;
+
+                /* If we did not timeout while transferring data on SPI. */
+                if (timeout < ATMEGA644P_SPI_TIMEOUT)
+                {
+                    /* Save the byte read from SPI. */
+                    *ptr = SPDR;
+
+                    /* Move to next byte. */
+                    ptr++;
+                }
+                else
+                {
+                    /* We timed out while transferring data on the SPI. */
+                    bytes = SPI_TIMEOUT;
+
+                    /* Break and stop processing any more data for this message. */
+                    break;
+                }
+            }
+        }
+
+        break;
+
+    /* If we need to write and read. */
+    case (SPI_MSG_WRITE | SPI_MSG_READ):
+
+        /* While we have a byte to write and read. */
+        for (bytes = message->length; (bytes > 0); bytes -= this_len)
+        {
+            /* See if we need to transfer more than 255 bytes. */
+            if (bytes > 255)
+            {
+                /* Lets transfer 255 bytes. */
+                this_len = 255;
+            }
+            else
+            {
+                /* Send transfer remaining number of bytes. */
+                this_len = bytes;
+            }
+
+            /* Transfer this chuck. */
+            for (i = 0; i < this_len; i++)
+            {
+                /* Send a byte. */
+                SPDR = next_byte;
+
+                /* Get the next byte. */
+                next_byte = *(ptr + 1);
+
+                /* Wait for transmission to complete. */
+                timeout = 0;
+                while((!(SPSR & (1 << SPIF))) && (timeout++ < ATMEGA644P_SPI_TIMEOUT)) ;
+
+                /* If we did not timeout while transferring data on SPI. */
+                if (timeout < ATMEGA644P_SPI_TIMEOUT)
+                {
+                    /* Save the byte read from SPI. */
+                    *ptr = SPDR;
+
+                    /* Move to next byte. */
+                    ptr++;
+                }
+                else
+                {
+                    /* We timed out while transferring data on the SPI. */
+                    bytes = SPI_TIMEOUT;
+
+                    /* Break and stop processing any more data for this message. */
+                    break;
+                }
+            }
+        }
+
+        break;
     }
 
-    /* Return number of bytes written and read from SPI. */
+
+    /* Return status to the caller. */
     return (bytes);
 
 } /* spi_atmega644_message */
