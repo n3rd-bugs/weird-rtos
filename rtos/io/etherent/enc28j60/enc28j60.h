@@ -33,8 +33,7 @@
 #endif
 
 /* Error code definitions. */
-#define ENC28J60_SPI_ERROR          -11000
-#define ENC28J60_DISCONNECTED       -11001
+#define ENC28J60_DISCONNECTED       -11000
 
 /* Debug configuration. */
 #define ENC28J60_DEBUG              FALSE

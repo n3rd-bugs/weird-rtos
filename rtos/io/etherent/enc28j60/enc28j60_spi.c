@@ -312,7 +312,7 @@ int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address
         /* Initialize first SPI message. */
         msg[0].buffer = op_buffer;
         msg[0].length = 1;
-        msg[1].flags = SPI_MSG_WRITE;
+        msg[0].flags = SPI_MSG_WRITE;
 
         /* Initialize the data needed to be sent. */
         op_buffer[0] = (uint8_t)(opcode | (address & ENC28J60_ADDR_MASK));
@@ -359,12 +359,8 @@ int32_t enc28j60_write_read_op(ENC28J60 *device, uint8_t opcode, uint8_t address
             msg[1].length = 1;
         }
 
-        /* Process populated SPI messages. */
-        if (spi_message(&device->spi, msg, 2) != (msg[0].length + msg[1].length))
-        {
-            /* Return error to the caller. */
-            status = ENC28J60_SPI_ERROR;
-        }
+        /* Transfer these SPI messages. */
+        status = spi_message(&device->spi, msg, 2);
     }
 
     /* Return status to the caller. */
