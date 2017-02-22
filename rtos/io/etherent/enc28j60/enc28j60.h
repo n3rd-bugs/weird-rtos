@@ -35,9 +35,6 @@
 /* Error code definitions. */
 #define ENC28J60_DISCONNECTED       -11000
 
-/* Debug configuration. */
-#define ENC28J60_DEBUG              FALSE
-
 /* ENC28J60 watch dog configuration. */
 #define ENC28J60_WDT_TIMEOUT        (OS_TICKS_PER_SEC / 10)
 
