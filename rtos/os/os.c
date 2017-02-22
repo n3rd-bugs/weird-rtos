@@ -165,6 +165,11 @@ uint64_t current_system_tick()
  */
 void os_run()
 {
+#ifndef SYS_LOG_NONE
+    /* Initialize system logging. */
+    sys_log_init();
+#endif
+
     /* Initialize system clock. */
     system_tick_Init();
 

@@ -19,6 +19,7 @@
 #include <scheduler.h>
 #include <assert.h>
 #include <os_target.h>
+#include <sys_log.h>
 
 /* Some return codes. */
 #define SUCCESS                     (0)
