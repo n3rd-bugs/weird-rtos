@@ -77,14 +77,14 @@ uint32_t uart_pk40x256vlq100_puts(void *priv_data, uint8_t *buf, uint32_t nbytes
 uint32_t uart_pk40x256vlq100_printf(char *format, ...)
 {
     uint32_t n = 0;
-    uint8_t buf[100];
+    uint8_t buf[PRINTF_BUFFER_SIZE];
     va_list vl;
 
     /* Arguments start from the format. */
     va_start(vl, format);
 
     /* Process the given string and save the result in a temporary buffer. */
-    n = vsnprintf((char *)buf, 100, format, vl);
+    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
 
 #ifdef FS_CONSOLE
     /* Assert if debug FD is not yet initialized. */
@@ -104,6 +104,38 @@ uint32_t uart_pk40x256vlq100_printf(char *format, ...)
     return (n);
 
 } /* uart_pk40x256vlq100_printf */
+
+/*
+ * uart_pk40x256vlq100_vprintf
+ * @format: Formated string to be printed on USART.
+ * This function prints a formated log message on the console.
+ */
+int32_t uart_pk40x256vlq100_vprintf(const char *format, va_list vl)
+{
+    int32_t n;
+    uint8_t buf[PRINTF_BUFFER_SIZE];
+
+    /* Process the given string and save the result in a temporary buffer. */
+    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
+
+    if (n > 0)
+    {
+#ifdef FS_CONSOLE
+        /* Assert if debug FD is not yet initialized. */
+        OS_ASSERT(debug_fd == NULL);
+
+        /* Use the debug FD. */
+        n = fs_write(debug_fd, buf, n);
+#else
+        /* Print the result on the UART. */
+        n = uart_pk40x256vlq100_puts(NULL, buf, n);
+#endif
+    }
+
+    /* Return number of bytes printed on UART. */
+    return (n);
+
+} /* uart_pk40x256vlq100_vprintf */
 
 /*
  * uart_pk40x256vlq100_init

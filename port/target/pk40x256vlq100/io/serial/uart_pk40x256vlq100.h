@@ -20,16 +20,22 @@
 #undef printf
 #endif
 #define printf uart_pk40x256vlq100_printf
+#ifdef vprintf
+#undef vprintf
+#endif
+#define vprintf uart_pk40x256vlq100_vprintf
 
 /* Used by console file system to initialize DEBUG console. */
 #define DEBUG_CONSOLE_INIT  uart_pk40x256vlq100_init
 
 /* Some configurations. */
-#define BAUD_RATE       115200
+#define BAUD_RATE           115200
+#define PRINTF_BUFFER_SIZE  64
 
 /* Function prototypes. */
-uint32_t uart_pk40x256vlq100_puts(void *priv_data, uint8_t *buf, uint32_t nbytes);
-uint32_t uart_pk40x256vlq100_printf(char *format, ...);
+uint32_t uart_pk40x256vlq100_puts(void *, uint8_t *, uint32_t);
+uint32_t uart_pk40x256vlq100_printf(char *, ...);
+int32_t uart_pk40x256vlq100_vprintf(const char *, va_list);
 void uart_pk40x256vlq100_init();
 
 #endif /* _UART_PK40X256VLQ100_H_ */
