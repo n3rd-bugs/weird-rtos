@@ -20,6 +20,10 @@
 #undef printf
 #endif
 #define printf uart_atmega644p_printf
+#ifdef vprintf
+#undef vprintf
+#endif
+#define vprintf uart_atmega644p_vprintf
 
 /* Used by console file system to initialize DEBUG console. */
 #define DEBUG_CONSOLE_INIT  usart_atmega644p_init
@@ -31,6 +35,7 @@
 /* Function prototypes. */
 int32_t usart_atmega644p_puts(void *, uint8_t *, int32_t);
 int32_t uart_atmega644p_printf(const char *, ...);
+int32_t uart_atmega644p_vprintf(const char *, va_list);
 void usart_atmega644p_init();
 
 #endif /* _USART_ATMEGA664P_H_ */

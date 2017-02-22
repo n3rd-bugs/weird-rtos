@@ -80,34 +80,54 @@ int32_t usart_atmega644p_puts(void *priv_data, uint8_t *buf, int32_t nbytes)
  */
 int32_t uart_atmega644p_printf(const char *format, ...)
 {
-    int32_t n = 0;
-    uint8_t buf[PRINTF_BUFFER_SIZE];
+    int32_t n;
     va_list vl;
 
     /* Arguments start from the format. */
     va_start(vl, format);
 
-    /* Process the given string and save the result in a temporary buffer. */
-    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
-
-#ifdef FS_CONSOLE
-    /* Assert if debug FD is not yet initialized. */
-    OS_ASSERT(debug_fd == NULL);
-
-    /* Use the debug FD. */
-    n = fs_write(debug_fd, buf, n);
-#else
-    /* Print the result on the UART. */
-    n = usart_atmega644p_puts(NULL, buf, n);
-#endif
+    /* Print the given string on the console. */
+    n = uart_atmega644p_vprintf(format, vl);
 
     /* Destroy the argument list. */
     va_end(vl);
 
-    /* Return number of bytes printed on UART. */
+    /* Return number of bytes printed on USART. */
     return (n);
 
 } /* uart_atmega644p_printf */
+
+/*
+ * uart_atmega644p_vprintf
+ * @format: Formated string to be printed on USART.
+ * This function prints a formated log message on the console.
+ */
+int32_t uart_atmega644p_vprintf(const char *format, va_list vl)
+{
+    int32_t n;
+    uint8_t buf[PRINTF_BUFFER_SIZE];
+
+    /* Process the given string and save the result in a temporary buffer. */
+    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
+
+    if (n > 0)
+    {
+#ifdef FS_CONSOLE
+        /* Assert if debug FD is not yet initialized. */
+        OS_ASSERT(debug_fd == NULL);
+
+        /* Use the debug FD. */
+        n = fs_write(debug_fd, buf, n);
+#else
+        /* Print the result on the UART. */
+        n = usart_atmega644p_puts(NULL, buf, n);
+#endif
+    }
+
+    /* Return number of bytes printed on USART. */
+    return (n);
+
+} /* uart_atmega644p_vprintf */
 
 /*
  * usart_atmega644p_init
