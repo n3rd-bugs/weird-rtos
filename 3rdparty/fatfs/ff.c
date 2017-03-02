@@ -19,7 +19,7 @@
 
 
 #include "ff.h"			/* Declarations of FatFs API */
-#include "diskio.h"		/* Declarations of device I/O functions */
+#include "ffdiskio.h"		/* Declarations of device I/O functions */
 
 
 /*--------------------------------------------------------------------------
@@ -1270,7 +1270,7 @@ FRESULT remove_chain (	/* FR_OK(0):succeeded, !=0:error */
 #if _FS_EXFAT || _USE_TRIM
 		if (ecl + 1 == nxt) {	/* Is next cluster contiguous? */
 			ecl = nxt;
-		} else {				/* End of contiguous cluster block */ 
+		} else {				/* End of contiguous cluster block */
 #if _FS_EXFAT
 			if (fs->fs_type == FS_EXFAT) {
 				res = change_bitmap(fs, scl, ecl - scl + 1, 0);	/* Mark the cluster block 'free' on the bitmap */
@@ -2869,7 +2869,7 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) */
 		for (tt = *path; (UINT)*tt >= (_USE_LFN ? ' ' : '!') && *tt != ':'; tt++) ;	/* Find ':' in the path */
 		if (*tt == ':') {	/* If a ':' is exist in the path name */
 			tp = *path;
-			i = *tp++ - '0'; 
+			i = *tp++ - '0';
 			if (i < 10 && tp == tt) {	/* Is there a numeric drive id? */
 				if (i < _VOLUMES) {	/* If a drive id is found, get the value and strip it */
 					vol = (int)i;

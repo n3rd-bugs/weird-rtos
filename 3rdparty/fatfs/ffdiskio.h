@@ -9,8 +9,11 @@
 extern "C" {
 #endif
 
-#include "integer.h"
+#include "ffinteger.h"
+#include <mmc_spi.h>
 
+/* WeirdRTOS configuration. */
+#define FF_NUM_DEVICES      1
 
 /* Status of Disk Functions */
 typedef BYTE	DSTATUS;
@@ -24,13 +27,27 @@ typedef enum {
 	RES_PARERR		/* 4: Invalid Parameter */
 } DRESULT;
 
+/* FatFile system device definition. */
+typedef struct _ff_device
+{
+    /* SPI device for this device. */
+    MMC_SPI     *spi_device;
+
+    /* If this device is initialized. */
+    uint8_t     initialized;
+
+    /* Index of this device. */
+    uint8_t     phy_index;
+
+} FF_DEVICE;
 
 /*---------------------------------------*/
 /* Prototypes for disk control functions */
 
-
-DSTATUS disk_initialize (BYTE pdrv);
+DSTATUS disk_register (MMC_SPI *spi_device, BYTE pdrv);
+FF_DEVICE *disk_search (BYTE pdrv);
 DSTATUS disk_status (BYTE pdrv);
+DSTATUS disk_initialize (BYTE pdrv);
 DRESULT disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
 DRESULT disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
 DRESULT disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
