@@ -11,6 +11,7 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <os.h>
+
 #ifdef CONFIG_MMC
 #include <mmc_spi.h>
 
@@ -18,19 +19,22 @@
 static int32_t mmc_spi_get_csd(MMC_SPI *, uint8_t *);
 static int32_t mmc_spi_rx_data(MMC_SPI *, uint8_t *, int32_t);
 static int32_t mmc_spi_cmd(MMC_SPI *, uint8_t, uint8_t, uint32_t, uint8_t *, int32_t);
-static int32_t mmc_slave_select(MMC_SPI *);
+static int32_t mmc_slave_select(MMC_SPI *, uint8_t);
 static int32_t mmc_slave_unselect(MMC_SPI *);
 
 /*
  * mmc_spi_init
  * @mmc: MMC SPI device needed to be initialized.
- * @return: Success will be returned if MMC device was successfully initialized.
+ * @return: Success will be returned if MMC device was successfully initialized,
+ *  MMC_SPI_CMD_ERROR will be returned if a command was failed,
+ *  MMC_SPI_RESUME_ERROR will be returned if card was failed to resume in time.
  * This function will initialize a MMC/SD device over SPI bus.
  */
 int32_t mmc_spi_init(MMC_SPI *mmc)
 {
-    int32_t status;
+    int32_t status = MMC_SPI_CMD_ERROR;
     SPI_MSG msg;
+    uint32_t retries;
     uint8_t resp[5];
 
     SYS_LOG_FUNTION_ENTRY(MMC);
@@ -47,8 +51,14 @@ int32_t mmc_spi_init(MMC_SPI *mmc)
     mmc->spi.msg(&mmc->spi, &msg);
     mmc->spi.msg(&mmc->spi, &msg);
 
-    /* Send CMD0 on MMC. */
-    status = mmc_spi_cmd(mmc, MMC_SPI_CMD0, MMC_SPI_CMD_SEL, 0x0, NULL, 0);
+    /* Select the slave before we send the CMD0. */
+    mmc_slave_select(mmc, FALSE);
+
+    for (retries = MMC_SPI_IDLE_RETRIES; ((status != SUCCESS) && (retries > 0)); retries--)
+    {
+        /* Send CMD0 on MMC. */
+        status = mmc_spi_cmd(mmc, MMC_SPI_CMD0, 0, 0x0, NULL, 0);
+    }
 
     if (status == SUCCESS)
     {
@@ -60,8 +70,8 @@ int32_t mmc_spi_init(MMC_SPI *mmc)
             /* Check if we are SDv2. */
             if ((resp[3] == 0x01) && (resp[4] == 0xAA))
             {
-                /* Let get card out of idle. */
-                while (status == SUCCESS)
+                /* Lets get the card out of idle. */
+                for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_RESUME_RETRIES)); retries++)
                 {
                     /* Send CMD55. */
                     status = mmc_spi_cmd(mmc, MMC_SPI_CMD55, 0, 0, NULL, 0);
@@ -72,11 +82,25 @@ int32_t mmc_spi_init(MMC_SPI *mmc)
                         status = mmc_spi_cmd(mmc, MMC_SPI_ACMD41, 0, MMC_SPI_ACMD41_ARG, resp, 1);
                     }
 
+                    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
+
                     /* If card is now out of idle. */
                     if ((resp[0] & MMC_SPI_R1_IDLE) == 0)
                     {
                         break;
                     }
+                    else
+                    {
+                        /* Sleep before trying again. */
+                        sleep_ms(MMC_SPI_RESUME_DELAY);
+                    }
+                }
+
+                /* If we are out of retries. */
+                if ((resp[0] & MMC_SPI_R1_IDLE) != 0)
+                {
+                    /* Return error to the caller. */
+                    status = MMC_SPI_RESUME_ERROR;
                 }
 
                 if (status == SUCCESS)
@@ -91,7 +115,7 @@ int32_t mmc_spi_init(MMC_SPI *mmc)
                     mmc->flags = MMC_SPI_CARD_SD2;
 
                     /* If card supports block mode. */
-                    if (resp[0] & MMC_SPI_CMD58_BM)
+                    if (resp[1] & MMC_SPI_CMD58_BM)
                     {
                         /* Set the block mode flag. */
                         mmc->flags |= MMC_SPI_CARD_BLOCK;
@@ -112,8 +136,8 @@ int32_t mmc_spi_init(MMC_SPI *mmc)
                 /* If we got a valid response. */
                 if (resp[0] <= 1)
                 {
-                    /* Let get card out of idle. */
-                    while (status == SUCCESS)
+                    /* Lets get the card out of idle. */
+                    for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_RESUME_RETRIES)); retries++)
                     {
                         /* Send CMD55. */
                         status = mmc_spi_cmd(mmc, MMC_SPI_CMD55, 0, 0, resp, 1);
@@ -124,11 +148,25 @@ int32_t mmc_spi_init(MMC_SPI *mmc)
                             status = mmc_spi_cmd(mmc, MMC_SPI_ACMD41, 0, MMC_SPI_ACMD41_ARG, resp, 1);
                         }
 
+                        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
+
                         /* If card is now out of idle. */
                         if ((resp[0] & MMC_SPI_R1_IDLE) == 0)
                         {
                             break;
                         }
+                        else
+                        {
+                            /* Sleep before trying again. */
+                            sleep_ms(MMC_SPI_RESUME_DELAY);
+                        }
+                    }
+
+                    /* If we are out of retries. */
+                    if ((resp[0] & MMC_SPI_R1_IDLE) != 0)
+                    {
+                        /* Return error to the caller. */
+                        status = MMC_SPI_RESUME_ERROR;
                     }
 
                     if (status == SUCCESS)
@@ -145,17 +183,31 @@ int32_t mmc_spi_init(MMC_SPI *mmc)
                 }
                 else
                 {
-                    /* Let get card out of idle. */
-                    while (status == SUCCESS)
+                    /* Lets get the card out of idle. */
+                    for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_RESUME_RETRIES)); retries++)
                     {
                         /* Send CMD1. */
                         status = mmc_spi_cmd(mmc, MMC_SPI_CMD1, 0, 0, resp, 1);
+
+                        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
 
                         /* If card is now out of idle. */
                         if ((resp[0] & MMC_SPI_R1_IDLE) == 0)
                         {
                             break;
                         }
+                        else
+                        {
+                            /* Sleep before trying again. */
+                            sleep_ms(MMC_SPI_RESUME_DELAY);
+                        }
+                    }
+
+                    /* If we are out of retries. */
+                    if ((resp[0] & MMC_SPI_R1_IDLE) != 0)
+                    {
+                        /* Return error to the caller. */
+                        status = MMC_SPI_RESUME_ERROR;
                     }
 
                     if (status == SUCCESS)
@@ -199,8 +251,8 @@ int32_t mmc_spi_init(MMC_SPI *mmc)
  */
 int32_t mmc_spi_read(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *buffer, int32_t size)
 {
-    int32_t this_size, status = SUCCESS;
-    uint32_t sector_offset;
+    int32_t this_size = 0, status = SUCCESS;
+    uint32_t sector_offset, retries;
     SPI_MSG msg;
     uint8_t line = 0x00;
 
@@ -209,6 +261,8 @@ int32_t mmc_spi_read(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *b
     /* Need to start a new read transaction. */
     if (*offset == 0)
     {
+        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "starting read from sector 0x%08lX", sector);
+
         /* If card is in byte mode. */
         if ((mmc->flags & MMC_SPI_CARD_BLOCK) == 0)
         {
@@ -227,7 +281,7 @@ int32_t mmc_spi_read(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *b
     if (buffer != NULL)
     {
         /* While we have some data to read. */
-        while ((status == SUCCESS) && (size != 0))
+        for ( ; ((status == SUCCESS) && (size != 0)); (size -= this_size))
         {
             /* If we are at the start of a new sector. */
             if (sector_offset == 0)
@@ -238,17 +292,22 @@ int32_t mmc_spi_read(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *b
                 msg.flags = (SPI_MSG_READ);
 
                 /* Wait for card to start data transmission. */
-                while (status == SUCCESS)
+                for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_RX_RETRIES)); retries++)
                 {
                     /* Send dummy bytes. */
                     status = mmc->spi.msg(&mmc->spi, &msg);
 
-                    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "line 0x%02X", line);
+                    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
 
                     /* If card has sent us some data. */
                     if (line != 0xFF)
                     {
                         break;
+                    }
+                    else
+                    {
+                        /* Sleep before retrying. */
+                        sleep_ms(MMC_SPI_RX_DELAY);
                     }
                 }
 
@@ -286,7 +345,7 @@ int32_t mmc_spi_read(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *b
                 {
                     /* Updated data offset and remaining number of bytes. */
                     *offset += this_size;
-                    size -= this_size;
+                    buffer += this_size;
                 }
             }
 
@@ -323,7 +382,7 @@ int32_t mmc_spi_read(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *b
         if (buffer == NULL)
         {
             /* Send CMD12 to terminate transaction. */
-            status = mmc_spi_cmd(mmc, MMC_SPI_CMD12, 0, sector, NULL, 0);
+            status = mmc_spi_cmd(mmc, MMC_SPI_CMD12, 0, 0, NULL, 0);
 
             if (status == SUCCESS)
             {
@@ -362,8 +421,8 @@ int32_t mmc_spi_read(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *b
  */
 int32_t mmc_spi_write(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *buffer, int32_t size)
 {
-    int32_t this_size, status = SUCCESS;
-    uint32_t sector_offset;
+    int32_t this_size = 0, status = SUCCESS;
+    uint32_t sector_offset, retries;
     SPI_MSG msg;
     uint8_t line = 0x00;
 
@@ -372,6 +431,8 @@ int32_t mmc_spi_write(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *
     /* Need to start a write transaction. */
     if (*offset == 0)
     {
+        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "starting write from sector 0x%08lX", sector);
+
         /* If card is in byte mode. */
         if ((mmc->flags & MMC_SPI_CARD_BLOCK) == 0)
         {
@@ -390,7 +451,7 @@ int32_t mmc_spi_write(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *
     if (buffer != NULL)
     {
         /* If we have more data to transfer. */
-        while ((status == SUCCESS) && (size != 0))
+        for ( ; ((status == SUCCESS) && (size != 0)); (size -= this_size))
         {
             /* If we are at the start of a new sector. */
             if (sector_offset == 0)
@@ -401,18 +462,30 @@ int32_t mmc_spi_write(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *
                 msg.flags = (SPI_MSG_READ);
 
                 /* Wait for card to get ready. */
-                while (status == SUCCESS)
+                for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_TX_RETRIES)); retries++)
                 {
                     /* Read a byte form the SPI. */
                     status = mmc->spi.msg(&mmc->spi, &msg);
 
-                    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "line 0x%02X", line);
+                    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
 
                     /* If SPI line is now stable. */
                     if (line == 0xFF)
                     {
                         break;
                     }
+                    else
+                    {
+                        /* Sleep before retrying. */
+                        sleep_ms(MMC_SPI_TX_DELAY);
+                    }
+                }
+
+                /* If we are out of retries. */
+                if (retries == MMC_SPI_TX_RETRIES)
+                {
+                    /* Return error to the caller. */
+                    status = MMC_SPI_WRITE_ERROR;
                 }
 
                 if (status == SUCCESS)
@@ -452,7 +525,7 @@ int32_t mmc_spi_write(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *
                 {
                     /* Updated data offset and remaining number of bytes. */
                     *offset += this_size;
-                    size -= this_size;
+                    buffer += this_size;
                 }
             }
 
@@ -528,18 +601,30 @@ int32_t mmc_spi_write(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *
                 msg.flags = (SPI_MSG_READ);
 
                 /* Wait for card to get ready. */
-                while (status == SUCCESS)
+                for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_TX_RETRIES)); retries++)
                 {
                     /* Read a byte form the SPI. */
                     status = mmc->spi.msg(&mmc->spi, &msg);
 
-                    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "line 0x%02X", line);
+                    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
 
                     /* If SPI line is now stable. */
                     if (line == 0xFF)
                     {
                         break;
                     }
+                    else
+                    {
+                        /* Sleep before retrying. */
+                        sleep_ms(MMC_SPI_TX_DELAY);
+                    }
+                }
+
+                /* If we are out of retries. */
+                if (retries == MMC_SPI_TX_RETRIES)
+                {
+                    /* Return error to the caller. */
+                    status = MMC_SPI_WRITE_ERROR;
                 }
 
                 if (status == SUCCESS)
@@ -765,6 +850,7 @@ static int32_t mmc_spi_get_csd(MMC_SPI *mmc, uint8_t *csd)
 static int32_t mmc_spi_rx_data(MMC_SPI *mmc, uint8_t *buffer, int32_t size)
 {
     int32_t status = SUCCESS;
+    uint32_t retries;
     SPI_MSG msg;
     uint8_t line;
 
@@ -775,16 +861,22 @@ static int32_t mmc_spi_rx_data(MMC_SPI *mmc, uint8_t *buffer, int32_t size)
     msg.length = 1;
     msg.flags = (SPI_MSG_READ);
 
-    while (status == SUCCESS)
+    /* Wait for card to start data transmission. */
+    for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_RX_RETRIES)); retries++)
     {
         /* Send dummy bytes. */
         status = mmc->spi.msg(&mmc->spi, &msg);
 
-        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "line 0x%02X", line);
+        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
 
         if (line != 0xFF)
         {
             break;
+        }
+        else
+        {
+            /* Sleep before retrying. */
+            sleep_ms(MMC_SPI_RX_DELAY);
         }
     }
 
@@ -830,6 +922,7 @@ static int32_t mmc_spi_rx_data(MMC_SPI *mmc, uint8_t *buffer, int32_t size)
 static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t argv, uint8_t *rsp, int32_t rsp_len)
 {
     int32_t status = SUCCESS;
+    uint32_t retries;
     SPI_MSG msg;
     uint8_t cmd_buff[MMC_SPI_CMD_LEN];
 
@@ -839,7 +932,7 @@ static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t ar
     if (flags & MMC_SPI_CMD_SEL)
     {
         /* Select the MMC device. */
-        status = mmc_slave_select(mmc);
+        status = mmc_slave_select(mmc, TRUE);
     }
 
     if (status == SUCCESS)
@@ -898,12 +991,13 @@ static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t ar
             mmc->spi.msg(&mmc->spi, &msg);
         }
 
-        while (status == SUCCESS)
+        /* Wait for card to send command status. */
+        for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_CMD_RETRIES)); retries++)
         {
             /* Read status byte form SPI. */
             status = mmc->spi.msg(&mmc->spi, &msg);
 
-            SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "status 0x%02X", cmd_buff[0]);
+            SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, cmd_buff[0]);
 
             /* If this is the response byte. */
             if ((cmd_buff[0] & MMC_SPI_R1_COMP) == 0)
@@ -919,7 +1013,7 @@ static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t ar
             rsp[0] = cmd_buff[0];
         }
 
-        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "CMD: %d, STATUS 0x%02X", cmd, cmd_buff[0]);
+        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "CMD: %d, ARGV 0x%08lX, STATUS 0x%02X", cmd, argv, cmd_buff[0]);
 
         /* If command was successful. */
         if ((cmd_buff[0] & (uint8_t)(~MMC_SPI_R1_IDLE)) == SUCCESS)
@@ -960,39 +1054,59 @@ static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t ar
 /*
  * mmc_slave_select
  * @mmc: MMC SPI device for which slave is needed to be selected.
- * @return: Success will be returned if slave was successfully selected.
+ * @test_line: If true line will be tested if it is stable.
+ * @return: Success will be returned if slave was successfully selected,
+ *  MMC_SPI_SELECT_ERROR will be returned if device was not selected.
  * This will select the MMC device.
  */
-static int32_t mmc_slave_select(MMC_SPI *mmc)
+static int32_t mmc_slave_select(MMC_SPI *mmc, uint8_t test_line)
 {
     int32_t status = SUCCESS;
+    uint32_t retries;
     SPI_MSG msg;
     uint8_t line = 0xFF;
 
     SYS_LOG_FUNTION_ENTRY(MMC);
 
-    /* Initialize a dummy message. */
-    msg.buffer = &line;
-    msg.length = 1;
-    msg.flags = (SPI_MSG_READ);
-
     /* Select the slave. */
     mmc->spi.slave_select(&mmc->spi);
 
-    /* Read a dummy byte form the SPI. */
-    mmc->spi.msg(&mmc->spi, &msg);
-
-    while (status == SUCCESS)
+    /* If line is needed to be tested. */
+    if (test_line == TRUE)
     {
-        /* Read a byte form the SPI. */
-        status = mmc->spi.msg(&mmc->spi, &msg);
+        /* Initialize a dummy message. */
+        msg.buffer = &line;
+        msg.length = 1;
+        msg.flags = (SPI_MSG_READ);
 
-        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "line 0x%02X", line);
+        /* Read a dummy byte form the SPI. */
+        mmc->spi.msg(&mmc->spi, &msg);
 
-        /* If SPI line is now stable. */
-        if (line == 0xFF)
+        /* While line is not stable. */
+        for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_LINE_RETRIES)); retries ++)
         {
-            break;
+            /* Read a byte form the SPI. */
+            status = mmc->spi.msg(&mmc->spi, &msg);
+
+            SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
+
+            /* If SPI line is now stable. */
+            if (line == 0xFF)
+            {
+                break;
+            }
+            else
+            {
+                /* Sleep before trying again. */
+                sleep_ms(MMC_SPI_SELECT_DELAY);
+            }
+        }
+
+        /* If slave did not respond. */
+        if (retries == MMC_SPI_LINE_RETRIES)
+        {
+            /* Unable to select the device. */
+            status = MMC_SPI_SELECT_ERROR;
         }
     }
 

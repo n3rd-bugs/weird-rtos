@@ -22,8 +22,10 @@
 
 /* MMC error definitions. */
 #define MMC_SPI_CMD_ERROR       -1500
-#define MMC_SPI_READ_ERROR      -1500
+#define MMC_SPI_READ_ERROR      -1501
 #define MMC_SPI_WRITE_ERROR     -1502
+#define MMC_SPI_SELECT_ERROR    -1503
+#define MMC_SPI_RESUME_ERROR    -1504
 
 /* MMC SPI command definitions. */
 #define MMC_SPI_CMD0            (0x00)
@@ -43,6 +45,16 @@
 #define MMC_SPI_CMD58_BM        (0x40)
 
 /* MMC SPI definitions. */
+#define MMC_SPI_LINE_RETRIES    (10)
+#define MMC_SPI_IDLE_RETRIES    (2)
+#define MMC_SPI_RESUME_RETRIES  (10)
+#define MMC_SPI_RX_RETRIES      (15)
+#define MMC_SPI_TX_RETRIES      (150)
+#define MMC_SPI_CMD_RETRIES     (15)
+#define MMC_SPI_RESUME_DELAY    (50)
+#define MMC_SPI_SELECT_DELAY    (10)
+#define MMC_SPI_RX_DELAY        (10)
+#define MMC_SPI_TX_DELAY        (10)
 #define MMC_SPI_CMD_LEN         (0x06)
 #define MMC_SPI_CSD_LEN         (0x10)
 #define MMC_SPI_STATUS_LEN      (0x40)

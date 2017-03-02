@@ -49,8 +49,10 @@ This list is needed to be updated whenever a new error code is added.
     ROUTE_EXIST             -1400
     ROUTE_NO_MEM            -1401
     MMC_SPI_CMD_ERROR       -1500
-    MMC_SPI_READ_ERROR      -1500
+    MMC_SPI_READ_ERROR      -1501
     MMC_SPI_WRITE_ERROR     -1502
+    MMC_SPI_SELECT_ERROR    -1503
+    MMC_SPI_RESUME_ERROR    -1504
     ENC28J60_DISCONNECTED   -11000
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001
