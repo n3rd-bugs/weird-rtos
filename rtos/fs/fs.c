@@ -54,6 +54,11 @@ void fs_init()
     pipe_init();
 #endif
 
+#ifdef FS_TGT_INIT
+    /* Initialize target specific file system. */
+    FS_TGT_INIT();
+#endif
+
 } /* fs_init */
 
 /*

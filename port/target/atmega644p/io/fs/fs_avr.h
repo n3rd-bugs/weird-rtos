@@ -1,7 +1,7 @@
 /*
- * os_atmega644p.h
+ * fs_avr.h
  *
- * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
+ * Copyright (c) 2017 Usama Masood <mirzaon@gmail.com>
  *
  * Standard MIT License apply on this source code, with the inclusion of below
  * clause.
@@ -10,19 +10,15 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#ifndef OS_ATMEGA644P_H
-#define OS_ATMEGA644P_H
+#ifndef _FS_AVR_H_
+#define _FS_AVR_H_
 
-#ifdef CONFIG_BOOTLOAD
-#include <bootload_atmega644p.h>
-#endif
-
-#include <usart_atmega644p.h>
+#include <os.h>
 
 #ifdef CONFIG_FS
-#include <fs_target.h>
-#endif
 
-/* Any other configuration is being managed by Eclipse plugin for avr-gcc. */
+/* Function prototypes. */
+void fs_avr_init();
 
-#endif /* OS_ATMEGA644P_H */
+#endif /* CONFIG_FS */
+#endif /* _FS_AVR_H_ */
