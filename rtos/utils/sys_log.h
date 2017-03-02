@@ -64,7 +64,14 @@ extern SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
 #define SYS_LOG_FUNTION_ENTRY(component)                                                                                \
         SYS_LOG_MSG(component, SYS_LOG_FUNCTION_CALL, "%s enter", __func__)
 #define SYS_LOG_FUNTION_EXIT_STATUS(component, status)                                                                  \
-        SYS_LOG_MSG(component, SYS_LOG_FUNCTION_CALL, "%s exit %ld", __func__, status)
+        if (status != SUCCESS)                                                                                          \
+        {                                                                                                               \
+            SYS_LOG_MSG(component, SYS_LOG_ERROR, "%s exit %ld", __func__, status);                                     \
+        }                                                                                                               \
+        else                                                                                                            \
+        {                                                                                                               \
+            SYS_LOG_MSG(component, SYS_LOG_FUNCTION_CALL, "%s exit %ld", __func__, status);                             \
+        }
 #define SYS_LOG_FUNTION_EXIT(component)                                                                                 \
         SYS_LOG_MSG(component, SYS_LOG_FUNCTION_CALL, "%s exit", __func__)
 #define SYS_LOG_HEXDUMP(component, level, message, bytes, num_bytes)                                                    \
