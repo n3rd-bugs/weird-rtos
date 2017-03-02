@@ -37,5 +37,6 @@
 
 /* API's. */
 //#define CONFIG_WEIRD_VIEW
+//#define CONFIG_BOOTLOAD
 
 #endif /* _CONFIG_H_ */
