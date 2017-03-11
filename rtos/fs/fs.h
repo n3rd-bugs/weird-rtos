@@ -22,6 +22,7 @@
 /* File system configuration. */
 #define FS_PIPE
 #define FS_CONSOLE
+#define FS_FAT
 
 /* Error definitions. */
 #define FS_NODE_DELETED         -800
@@ -187,6 +188,10 @@ typedef struct _node_param
     char        *name;
     void        *priv;
 } NODE_PARAM;
+
+#ifdef FS_FAT
+#include <fat_fs.h>
+#endif
 
 /* Function prototypes. */
 void fs_init();
