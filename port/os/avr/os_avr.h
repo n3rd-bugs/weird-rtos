@@ -75,24 +75,23 @@ extern uint8_t avr_in_isr;
 
 #define WDT_RESET()         asm volatile ( "wdr" :: );
 
-#define CPU_ISR_ENTER()     {                                           \
-                                SAVE_CONTEXT_ISR();                     \
-                                LOAD_SYSTEM_STACK();                    \
-                                avr_in_isr = TRUE;                      \
-                                sys_interrupt_level = 0;                \
+#define CPU_ISR_ENTER()     {                               \
+                                SAVE_CONTEXT_ISR();         \
+                                LOAD_SYSTEM_STACK();        \
+                                avr_in_isr = TRUE;          \
+                                sys_interrupt_level = 0;    \
                             }
 
-#define CPU_ISR_EXIT()      {                                           \
-                                avr_in_isr = FALSE;                     \
-                                RESTORE_CONTEXT();                      \
+#define CPU_ISR_EXIT()      {                               \
+                                avr_in_isr = FALSE;         \
+                                RESTORE_CONTEXT();          \
                             }
 
 /* Load system stack. */
-#define LOAD_SYSTEM_STACK()                                             \
-    system_stack_pointer = (system_stack + SYS_STACK_SIZE);             \
-    asm volatile("lds   r28,        system_stack_pointer");             \
-    asm volatile("lds   r29,        system_stack_pointer + 1");         \
-    asm volatile("out   __SP_L__,   r28");                              \
+#define LOAD_SYSTEM_STACK()                                     \
+    asm volatile("lds   r28,        system_stack_pointer");     \
+    asm volatile("lds   r29,        system_stack_pointer + 1"); \
+    asm volatile("out   __SP_L__,   r28");                      \
     asm volatile("out   __SP_H__,   r29");
 
 /* This macro saves a task's context on the stack. */

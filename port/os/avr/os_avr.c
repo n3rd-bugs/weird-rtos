@@ -171,8 +171,23 @@ void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
 } /* os_stack_init */
 
 /*
- * avr_stack_init
+ * avr_stack_load
  * This function initializes system stack pointer.
+ */
+void avr_stack_load(void) __attribute__((naked)) __attribute__((section(".init2")));
+void avr_stack_load(void)
+{
+    /* Calculate system stack pointer. */
+    system_stack_pointer = system_stack + (SYS_STACK_SIZE - 1);
+
+    /* Load system pointer. */
+    LOAD_SYSTEM_STACK();
+
+} /* avr_stack_load */
+
+/*
+ * avr_stack_init
+ * This function will disable WDT and perform boatload operation if required.
  */
 void avr_stack_init(void) __attribute__((naked)) __attribute__((section(".init3")));
 void avr_stack_init(void)
@@ -186,15 +201,8 @@ void avr_stack_init(void)
     BOOTLOAD();
 #endif
 
-    /* Load a predefined pattern on the system stack. */
-    memset(system_stack, CONFIG_STACK_PATTERN, SYS_STACK_SIZE);
-
-    /* Set the stack pointer to the end of the system stack. */
-    LOAD_SYSTEM_STACK();
-
 } /* avr_stack_init */
 
-#ifdef CONFIG_TASK_STATS
 /*
  * avr_sys_stack_fill
  * This function will load a predefined pattern on the system stack.
@@ -202,6 +210,7 @@ void avr_stack_init(void)
 void avr_sys_stack_fill(void) __attribute__((naked)) __attribute__((section(".init8")));
 void avr_sys_stack_fill(void)
 {
+#ifdef CONFIG_TASK_STATS
     uint32_t i = 0;
 
     /* Load a predefined pattern on the system stack until we hit the
@@ -212,9 +221,13 @@ void avr_sys_stack_fill(void)
         system_stack[i] = CONFIG_STACK_PATTERN;
         i++;
     }
+#endif /* CONFIG_TASK_STATS */
+
+    /* Adjust system stack pointer again as it was  cleared during
+     * initialization. */
+    system_stack_pointer = system_stack + (SYS_STACK_SIZE - 1);
 
 } /* avr_sys_stack_fill */
-#endif /* CONFIG_TASK_STATS */
 
 /*
  * control_to_system
