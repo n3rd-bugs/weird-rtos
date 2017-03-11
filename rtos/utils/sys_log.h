@@ -38,6 +38,9 @@ enum
 #ifdef CONFIG_ETHERNET
     SYS_LOG_ENC28J60,
 #endif
+#ifdef CONFIG_FS
+    SYS_LOG_FATFS,
+#endif
     SYS_LOG_MAX
 } SYS_LOG_ID;
 
