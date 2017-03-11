@@ -26,6 +26,9 @@ extern "C" {
 #endif
 
 #include <os.h>
+
+#ifdef CONFIG_FS
+#ifdef FS_FAT
 #include "ffinteger.h"	/* Basic integer types */
 #include "ffconf.h"		/* FatFs configuration options */
 
@@ -359,6 +362,8 @@ int ff_del_syncobj (_SYNC_t sobj);				/* Delete a sync object */
 #define AM_DIR	0x10	/* Directory */
 #define AM_ARC	0x20	/* Archive */
 
+#endif /* CONFIG_FS */
+#endif /* FS_FAT */
 
 #ifdef __cplusplus
 }

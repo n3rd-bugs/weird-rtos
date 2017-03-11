@@ -18,9 +18,11 @@
 /----------------------------------------------------------------------------*/
 
 
+#include <fs.h>
 #include "ff.h"			/* Declarations of FatFs API */
 #include "ffdiskio.h"		/* Declarations of device I/O functions */
 
+#ifdef FS_FAT
 
 /*--------------------------------------------------------------------------
 
@@ -2866,8 +2868,15 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) */
 
 
 	if (*path) {	/* If the pointer is not a null */
+#ifdef FS_FAT
+		/* First character must be the driver number if given. */
+		tt = *path;
+		tt++;
+		if (*tt == '\\') {	/* If a ':' is exist in the path name */
+#else
 		for (tt = *path; (UINT)*tt >= (_USE_LFN ? ' ' : '!') && *tt != ':'; tt++) ;	/* Find ':' in the path */
 		if (*tt == ':') {	/* If a ':' is exist in the path name */
+#endif
 			tp = *path;
 			i = *tp++ - '0';
 			if (i < 10 && tp == tt) {	/* Is there a numeric drive id? */
@@ -6039,3 +6048,4 @@ int f_printf (
 
 #endif /* !_FS_READONLY */
 #endif /* _USE_STRFUNC */
+#endif /* FS_FAT */

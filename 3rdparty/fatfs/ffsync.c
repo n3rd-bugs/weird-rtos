@@ -10,12 +10,9 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
-#include <os.h>
-
-#ifdef CONFIG_FS
-#ifdef CONFIG_MMC
 #include <ffsync.h>
 
+#ifdef FS_FAT
 #if (_FS_REENTRANT == TRUE)
 /*
  * ff_cre_syncobj
@@ -91,5 +88,4 @@ int ff_del_syncobj(_SYNC_t sobj)
 } /* ff_del_syncobj */
 
 #endif /* _FS_REENTRANT */
-#endif /* CONFIG_FS */
-#endif /* CONFIG_MMC */
+#endif /* FS_FAT */

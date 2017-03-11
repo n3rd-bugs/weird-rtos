@@ -9,6 +9,8 @@
 
 #include "ffdiskio.h"		/* FatFs lower layer API */
 
+#ifdef FS_FAT
+
 /* List of registered file systems. */
 static FF_DEVICE ff_devices[FF_NUM_DEVICES];
 
@@ -27,7 +29,7 @@ FF_DEVICE *disk_search (
 	for (index = 0; index < FF_NUM_DEVICES; index++)
 	{
 		/* If this is the required device. */
-		if ((ff_devices[index].spi_device != NULL) && (ff_devices[index].phy_index == pdrv))
+		if ((ff_devices[index].phy_device != NULL) && (ff_devices[index].phy_index == pdrv))
 		{
 			/* Return this device. */
 			device = &ff_devices[index];
@@ -45,7 +47,11 @@ FF_DEVICE *disk_search (
 /*-----------------------------------------------------------------------*/
 
 DSTATUS disk_register (
-	MMC_SPI *spi_device,	/* SPI device to be registered. */
+	void *pdevice,			/* Device to be registered. */
+	FF_INIT *pinit,			/* Function to be called to initialize the device */
+	FF_READ *pread,			/* Function to be called to read from device */
+	FF_WRITE *pwrite,		/* Function to be called to write on device */
+	uint32_t psector_size,	/* Sector size of this device. */
 	BYTE pdrv				/* Physical drive index. */
 )
 {
@@ -59,10 +65,14 @@ DSTATUS disk_register (
 		for (index = 0; index < FF_NUM_DEVICES; index++)
 		{
 			/* If this is a free slot. */
-			if (ff_devices[index].spi_device == NULL)
+			if (ff_devices[index].phy_device == NULL)
 			{
-				/* Register this device.. */
-				ff_devices[index].spi_device = spi_device;
+				/* Register this device. */
+				ff_devices[index].phy_device = pdevice;
+				ff_devices[index].init = pinit;
+				ff_devices[index].read = pread;
+				ff_devices[index].write = pwrite;
+				ff_devices[index].sector_size = psector_size;
 				ff_devices[index].phy_index = pdrv;
 
 				break;
@@ -111,8 +121,12 @@ DSTATUS disk_initialize (
 	if (device != NULL)
 	{
 		/* Initialize SPI. */
-		if (mmc_spi_init(device->spi_device) == SUCCESS)
+		if (device->init(device->phy_device) == SUCCESS)
 		{
+			/* Device is idle. */
+			device->state = FDEV_IDLE;
+			device->offset = 0;
+
 			/* Device is now initialized. */
 			device->initialized = TRUE;
 		}
@@ -140,22 +154,33 @@ DSTATUS disk_initialize (
 /*-----------------------------------------------------------------------*/
 
 DRESULT disk_read (
-	BYTE pdrv,		/* Physical drive nmuber to identify the drive */
+	BYTE pdrv,		/* Physical drive number to identify the drive */
 	BYTE *buff,		/* Data buffer to store read data */
 	DWORD sector,	/* Start sector in LBA */
 	UINT count		/* Number of sectors to read */
 )
 {
 	FF_DEVICE *device = disk_search(pdrv);
-	uint64_t offset = 0;
 	DRESULT status = RES_OK;
 
 	/* If the given device was resolved. */
 	if (device != NULL)
 	{
+		/* If we need to terminate an old request, */
+		if ((device->state != FDEV_READING) || (device->current_sector != sector))
+		{
+			/* Synchronize updates on the device. */
+			disk_ioctl(pdrv, CTRL_SYNC, NULL);
+		}
+
 		/* Read and return required sector. */
-		if ((mmc_spi_read(device->spi_device, sector, &offset, buff, count * MMC_SPI_SECTOR_SIZE) != SUCCESS) ||
-			(mmc_spi_read(device->spi_device, sector, &offset, NULL, 0) != SUCCESS))
+		if (device->read(device->phy_device, sector, &device->offset, buff, count * device->sector_size) == SUCCESS)
+		{
+			/* Update the device state. */
+			device->current_sector = sector + count;
+			device->state = FDEV_READING;
+		}
+		else
 		{
 			/* Read write error. */
 			status = RES_ERROR;
@@ -179,22 +204,33 @@ DRESULT disk_read (
 /*-----------------------------------------------------------------------*/
 
 DRESULT disk_write (
-	BYTE pdrv,			/* Physical drive nmuber to identify the drive */
+	BYTE pdrv,			/* Physical drive number to identify the drive */
 	const BYTE *buff,	/* Data to be written */
 	DWORD sector,		/* Start sector in LBA */
 	UINT count			/* Number of sectors to write */
 )
 {
 	FF_DEVICE *device = disk_search(pdrv);
-	uint64_t offset = 0;
 	DRESULT status = RES_OK;
 
 	/* If the given device was resolved. */
 	if (device != NULL)
 	{
+		/* If we need to terminate an old request, */
+		if ((device->state != FDEV_WRITING) || (device->current_sector != sector))
+		{
+			/* Synchronize updates on the device. */
+			disk_ioctl(pdrv, CTRL_SYNC, NULL);
+		}
+
 		/* Read and return required sector. */
-		if ((mmc_spi_write(device->spi_device, sector, &offset, (uint8_t *)buff, count * MMC_SPI_SECTOR_SIZE) != SUCCESS) ||
-			(mmc_spi_write(device->spi_device, sector, &offset, NULL, 0) != SUCCESS))
+		if (device->write(device->phy_device, sector, &device->offset, (uint8_t *)buff, count * device->sector_size) == SUCCESS)
+		{
+			/* Update the device state. */
+			device->current_sector = sector + count;
+			device->state = FDEV_WRITING;
+		}
+		else
 		{
 			/* Read write error. */
 			status = RES_ERROR;
@@ -223,17 +259,43 @@ DRESULT disk_ioctl (
 )
 {
 	DRESULT res = RES_PARERR;
+    FF_DEVICE *device = disk_search(pdrv);
 
-	UNUSED_PARAM(pdrv);
 	UNUSED_PARAM(buff);
 
 	switch (cmd)
 	{
 	case CTRL_SYNC:
+
+		/* Process the device state. */
+		switch (device->state)
+		{
+		/* If we were writing data. */
+		case FDEV_WRITING:
+
+			/* Terminate the old write. */
+			device->write(device->phy_device, 0, &device->offset, NULL, 0);
+			break;
+
+		/* If we were reading data. */
+		case FDEV_READING:
+
+			/* Terminate the old read. */
+			device->read(device->phy_device, 0, &device->offset, NULL, 0);
+			break;
+
+		default:
+			break;
+		}
+
+		/* Update the device state. */
+		device->state = FDEV_IDLE;
+		device->offset = 0;
 		res = RES_OK;
+
 		break;
 	}
 
 	return (res);
 }
-
+#endif /* FS_FAT */
