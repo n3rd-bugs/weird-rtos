@@ -14,8 +14,9 @@
 
 #ifdef CONFIG_FS
 #include <fs_avr.h>
+#include <fs.h>
 
-#ifdef CONFIG_MMC
+#if (defined(FS_FAT) && defined(CONFIG_MMC))
 #include <mmc_spi.h>
 #include <spi_bb_atmega644p.h>
 #include <ffdiskio.h>
@@ -33,7 +34,7 @@ static FATFS fat_fs;
  */
 void fs_avr_init()
 {
-#ifdef CONFIG_MMC
+#if (defined(FS_FAT) && defined(CONFIG_MMC))
     char mount_point[4] = "0:\\";
 
     /* Populate the SPI bit-bang interface. */
@@ -53,11 +54,11 @@ void fs_avr_init()
     mmc_spi.spi.msg = &spi_bb_atmega644_message;
 
     /* Register this device with FatFile system. */
-    disk_register(&mmc_spi, 0);
+    disk_register(&mmc_spi, &mmc_spi_init, &mmc_spi_read, &mmc_spi_write, MMC_SPI_SECTOR_SIZE, 0);
 
     /* Mount this drive later. */
     f_mount(&fat_fs, mount_point, 0);
-#endif /* CONFIG_MMC */
+#endif /* (defined(FS_FAT) && defined(CONFIG_MMC)) */
 
 } /* fs_avr_init */
 #endif /* CONFIG_FS */

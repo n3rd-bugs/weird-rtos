@@ -24,14 +24,15 @@ static int32_t mmc_slave_unselect(MMC_SPI *);
 
 /*
  * mmc_spi_init
- * @mmc: MMC SPI device needed to be initialized.
+ * @device: MMC SPI device needed to be initialized.
  * @return: Success will be returned if MMC device was successfully initialized,
  *  MMC_SPI_CMD_ERROR will be returned if a command was failed,
  *  MMC_SPI_RESUME_ERROR will be returned if card was failed to resume in time.
  * This function will initialize a MMC/SD device over SPI bus.
  */
-int32_t mmc_spi_init(MMC_SPI *mmc)
+int32_t mmc_spi_init(void *device)
 {
+    MMC_SPI *mmc = (MMC_SPI *)device;
     int32_t status = MMC_SPI_CMD_ERROR;
     SPI_MSG msg;
     uint32_t retries;
@@ -238,7 +239,7 @@ int32_t mmc_spi_init(MMC_SPI *mmc)
 
 /*
  * mmc_spi_read
- * @mmc: MMC SPI device from which data is needed to be read.
+ * @device: MMC SPI device from which data is needed to be read.
  * @sector: Start sector needed to be read.
  * @offset: On input this should be initialized with 0, on return
  *  will return number of bytes we have read.
@@ -249,8 +250,9 @@ int32_t mmc_spi_init(MMC_SPI *mmc)
  * This function will read data from the card, this can be called in chucks
  * to read a complete sector or more than one sectors.
  */
-int32_t mmc_spi_read(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *buffer, int32_t size)
+int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *buffer, int32_t size)
 {
+    MMC_SPI *mmc = (MMC_SPI *)device;
     int32_t this_size = 0, status = SUCCESS;
     uint32_t sector_offset, retries;
     SPI_MSG msg;
@@ -407,7 +409,7 @@ int32_t mmc_spi_read(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *b
 
 /*
  * mmc_spi_write
- * @mmc: MMC SPI device on which data is needed to be written.
+ * @device: MMC SPI device on which data is needed to be written.
  * @sector: Start sector needed to be written. This is only used to initialize
  *  offset in first call.
  * @offset: At first call this should be initialized with 0, on successive
@@ -419,8 +421,9 @@ int32_t mmc_spi_read(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *b
  * This function will write a buffer on the card, this can be called in chucks
  * to transfer a complete sector.
  */
-int32_t mmc_spi_write(MMC_SPI *mmc, uint32_t sector, uint64_t *offset, uint8_t *buffer, int32_t size)
+int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *buffer, int32_t size)
 {
+    MMC_SPI *mmc = (MMC_SPI *)device;
     int32_t this_size = 0, status = SUCCESS;
     uint32_t sector_offset, retries;
     SPI_MSG msg;

@@ -90,9 +90,9 @@ typedef struct _mmc_spi
 } MMC_SPI;
 
 /* Function prototypes. */
-int32_t mmc_spi_init(MMC_SPI *);
-int32_t mmc_spi_read(MMC_SPI *, uint32_t, uint64_t *, uint8_t *, int32_t);
-int32_t mmc_spi_write(MMC_SPI *, uint32_t, uint64_t *, uint8_t *, int32_t);
+int32_t mmc_spi_init(void *);
+int32_t mmc_spi_read(void *, uint32_t, uint64_t *, uint8_t *, int32_t);
+int32_t mmc_spi_write(void *, uint32_t, uint64_t *, uint8_t *, int32_t);
 int32_t mmc_spi_get_num_sectors(MMC_SPI *, uint64_t *);
 int32_t mmc_spi_get_sectors_per_block(MMC_SPI *, uint64_t *);
 
