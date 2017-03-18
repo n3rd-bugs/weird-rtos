@@ -127,7 +127,7 @@ int32_t ipv4_get_device_address(FD fd, uint32_t *address, uint32_t *subnet)
             if (address != NULL)
             {
                 /* Address is not yet assigned. */
-                address = IPV4_ADDR_UNSPEC;
+                *address = IPV4_ADDR_UNSPEC;
             }
 
             /* If we need to return the subnet mask. */
