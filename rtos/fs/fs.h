@@ -48,6 +48,12 @@ typedef void *FD;
 #define FS_BLOCK_READ       0x00000001
 #define FS_BLOCK_WRITE      0x00000002
 
+/* File open flags. */
+#define FS_READ             0x01
+#define FS_WRITE            0x02
+#define FS_CREATE           0x04
+#define FS_APPEND           0x08
+
 /* Data watcher data. */
 typedef struct _fs_data_watcher FS_DATA_WATCHER;
 struct _fs_data_watcher
