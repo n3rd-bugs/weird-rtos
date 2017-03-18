@@ -44,7 +44,7 @@ void fat_demo_entry(void *argv)
     UNUSED_PARAM(argv);
 
     /* Create a write file. */
-    fd = fs_open("fatfs\\0\\testfile.txt", (FA_CREATE_ALWAYS | FA_WRITE));
+    fd = fs_open("fatfs\\0\\testfile.txt", (FS_CREATE | FS_WRITE));
     if (fd != NULL)
     {
         /* Write some data on it. */
@@ -59,7 +59,7 @@ void fat_demo_entry(void *argv)
     }
 
     /* Create the created file to read back. */
-    fd = fs_open("fatfs\\0\\testfile.txt", (FA_READ));
+    fd = fs_open("fatfs\\0\\testfile.txt", (FS_READ));
     if (fd != NULL)
     {
         /* Read file content. */
@@ -78,7 +78,7 @@ void fat_demo_entry(void *argv)
     }
 
     /* Create a large write file. */
-    fd = fs_open("fatfs\\0\\longfile.txt", (FA_CREATE_ALWAYS | FA_WRITE));
+    fd = fs_open("fatfs\\0\\longfile.txt", (FS_CREATE | FS_WRITE));
     if (fd != NULL)
     {
         /* Set a predefined pattern on the test buffer. */
@@ -115,7 +115,7 @@ void fat_demo_entry(void *argv)
     }
 
     /* Open the large file for reading. */
-    fd = fs_open("fatfs\\0\\longfile.txt", (FA_READ));
+    fd = fs_open("fatfs\\0\\longfile.txt", (FS_READ));
     if (fd != NULL)
     {
         /* Save the before tick. */
