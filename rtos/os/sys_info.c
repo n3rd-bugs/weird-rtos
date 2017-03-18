@@ -54,7 +54,7 @@ uint32_t util_system_calc_free_stack()
     uint32_t free = 0;
 
     /* Calculate the number of bytes intact on the system stack. */
-    while (system_stack[free] == CONFIG_STACK_PATTERN)
+    while (SYSTEM_STACK[free] == CONFIG_STACK_PATTERN)
     {
         free ++;
     }
