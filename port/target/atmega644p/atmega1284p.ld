@@ -3,9 +3,9 @@ OUTPUT_FORMAT("elf32-avr","elf32-avr","elf32-avr")
 OUTPUT_ARCH(avr:51)
 MEMORY
 {
-    text          (rx)   :  ORIGIN = 0x000000,  LENGTH = 0x1F800
-    boot          (rx)   :  ORIGIN = 0x01F800,  LENGTH = 0x00800
-    data          (rw!x) :  ORIGIN = 0x800060,  LENGTH = 0x0FFA0
+    text          (rx)   :  ORIGIN = 0x000000,  LENGTH = 0x1F000
+    boot          (rx)   :  ORIGIN = 0x01F000,  LENGTH = 0x01000
+    data          (rw!x) :  ORIGIN = 0x800060,  LENGTH = 0x10000
     eeprom        (rw!x) :  ORIGIN = 0x810000,  LENGTH = 0x10000
     fuse          (rw!x) :  ORIGIN = 0x820000,  LENGTH = 0x00400
     lock          (rw!x) :  ORIGIN = 0x830000,  LENGTH = 0x00400
@@ -160,8 +160,9 @@ SECTIONS
     /* Boot region of flash.  */
     .boot   :
     {
-        *(bootvector_table)
-        KEEP(*bootvector_table)
+        *(.boot_vector)
+        KEEP(*(.boot_vector))
+        *(.boot)
     } > boot
 
     .data       : AT (ADDR (.text) + SIZEOF (.text))

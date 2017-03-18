@@ -25,8 +25,7 @@ volatile uint8_t sys_interrupt_level = TRUE;
 extern TASK *current_task;
 
 /* AVR system stack. */
-uint8_t system_stack[SYS_STACK_SIZE];
-uint8_t *system_stack_pointer;
+uint8_t *system_stack_end;
 
 /* Flag to specify that we are in ISR context. */
 uint8_t avr_in_isr = FALSE;
@@ -171,19 +170,24 @@ void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
 } /* os_stack_init */
 
 /*
- * avr_stack_load
- * This function initializes system stack pointer.
+ * avr_stack_fill
+ * This function will fill the stack with predefined pattern.
  */
-void avr_stack_load(void) __attribute__((naked)) __attribute__((section(".init2")));
-void avr_stack_load(void)
+void avr_stack_fill(void) __attribute__((naked)) __attribute__((section(".init1")));
+void avr_stack_fill(void)
 {
-    /* Calculate system stack pointer. */
-    system_stack_pointer = system_stack + (SYS_STACK_SIZE - 1);
+#ifdef CONFIG_TASK_STATS
+    uint8_t *stack = &__heap_start;
 
-    /* Load system pointer. */
-    LOAD_SYSTEM_STACK();
-
-} /* avr_stack_load */
+    /* Load a predefined pattern on the system stack until we hit the
+     * stack pointer. */
+    while ((uint8_t *)SP > stack)
+    {
+        /* Load a predefined pattern. */
+        *(stack++) = CONFIG_STACK_PATTERN;
+    }
+#endif /* CONFIG_TASK_STATS */
+} /* avr_stack_fill */
 
 /*
  * avr_stack_init
@@ -204,30 +208,16 @@ void avr_stack_init(void)
 } /* avr_stack_init */
 
 /*
- * avr_sys_stack_fill
- * This function will load a predefined pattern on the system stack.
+ * avr_sys_stack_pointer_save
+ * This function will save the system stack pointer to be used when needed.
  */
-void avr_sys_stack_fill(void) __attribute__((naked)) __attribute__((section(".init8")));
-void avr_sys_stack_fill(void)
+void avr_sys_stack_pointer_save(void) __attribute__((naked)) __attribute__((section(".init8")));
+void avr_sys_stack_pointer_save(void)
 {
-#ifdef CONFIG_TASK_STATS
-    uint32_t i = 0;
+    /* Save the system stack pointer. */
+    system_stack_end = (uint8_t *)SP;
 
-    /* Load a predefined pattern on the system stack until we hit the
-     * stack pointer. */
-    while ((uint8_t *)SP > &system_stack[i])
-    {
-        /* Load a predefined pattern. */
-        system_stack[i] = CONFIG_STACK_PATTERN;
-        i++;
-    }
-#endif /* CONFIG_TASK_STATS */
-
-    /* Adjust system stack pointer again as it was  cleared during
-     * initialization. */
-    system_stack_pointer = system_stack + (SYS_STACK_SIZE - 1);
-
-} /* avr_sys_stack_fill */
+} /* avr_sys_stack_pointer_save */
 
 /*
  * control_to_system
