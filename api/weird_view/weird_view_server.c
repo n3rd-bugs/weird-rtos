@@ -35,7 +35,7 @@ void weird_view_server_init(WEIRD_VIEW_SERVER *weird_view, SOCKET_ADDRESS *socke
     /* Clear the given server structure. */
     memset(weird_view, 0, sizeof(WEIRD_VIEW_SERVER));
 
-    /* initialize server data. */
+    /* Initialize server data. */
     weird_view->device_name = name;
     weird_view->plugin      = plugin;
     weird_view->num_plugin  = num_plugin;
