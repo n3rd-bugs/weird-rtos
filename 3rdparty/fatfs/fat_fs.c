@@ -83,6 +83,7 @@ static void *fatfs_open(char *name, uint32_t flags)
     uint32_t i;
     FAT_FILE *fd = NULL;
     int32_t status;
+    uint32_t fs_flags = 0;
 
     SYS_LOG_FUNTION_ENTRY(FATFS);
 
@@ -128,8 +129,36 @@ static void *fatfs_open(char *name, uint32_t flags)
     {
         SYS_LOG_FUNTION_MSG(FATFS, SYS_LOG_DEBUG, "opening %s", name);
 
+        /* If read is requested. */
+        if (flags & FS_READ)
+        {
+            /* Set read flag. */
+            fs_flags |= FA_READ;
+        }
+
+        /* If write was requested. */
+        if (flags & FS_WRITE)
+        {
+            /* Set write flag. */
+            fs_flags |= FA_WRITE;
+        }
+
+        /* If create was requested. */
+        if (flags & FS_CREATE)
+        {
+            /* Set create flag. */
+            fs_flags |= FA_CREATE_ALWAYS;
+        }
+
+        /* If append was requested. */
+        if (flags & FS_APPEND)
+        {
+            /* Set append flag. */
+            fs_flags |= FA_OPEN_APPEND;
+        }
+
         /* Transfer open to the FAT file system. */
-        if ((status = f_open(&fd->file, name, flags)) != FR_OK)
+        if ((status = f_open(&fd->file, name, fs_flags)) != FR_OK)
         {
             SYS_LOG_FUNTION_MSG(FATFS, SYS_LOG_INFO, "f_open returned %d", status);
 
