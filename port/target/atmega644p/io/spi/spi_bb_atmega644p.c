@@ -37,7 +37,7 @@ void spi_bb_atmega644_init(SPI_DEVICE *device)
     _SFR_IO8(bb_avr->port_ss) |= (1 << bb_avr->pin_num_ss);
     _SFR_IO8(bb_avr->port_mosi) |= (1 << bb_avr->pin_num_mosi);
 
-    /* Clear MOSI and SCLK. */
+    /* Clear SCLK. */
     _SFR_IO8(bb_avr->port_sclk) &= (uint8_t)(~(1 << bb_avr->pin_num_sclk));
 
     /* MISO will be input. */
@@ -86,9 +86,9 @@ int32_t spi_bb_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
 
     /* Save the register addresses we will need to access. */
     port_mosi = bb_avr->port_mosi;
-    pin_map_mosi = (1 <<bb_avr->pin_num_mosi);
+    pin_map_mosi = (1 << bb_avr->pin_num_mosi);
     port_sclk = bb_avr->port_sclk;
-    pin_map_sclk = (1 <<bb_avr->pin_num_sclk);
+    pin_map_sclk = (1 << bb_avr->pin_num_sclk);
     pin_miso = bb_avr->pin_miso;
     pin_map_miso = (1 << bb_avr->pin_num_miso);
 
