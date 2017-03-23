@@ -88,7 +88,7 @@ struct _fs
     FS          *next;
 
     /* Parent node definition. */
-    char        *name;
+    const char  *name;
 
     /* File operations. */
     void        *(*open) (char *, uint32_t);
