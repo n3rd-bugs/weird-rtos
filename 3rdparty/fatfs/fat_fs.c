@@ -131,7 +131,7 @@ static void *fatfs_open(void *priv_data, char *name, uint32_t flags)
     /* If we did find a file entry. */
     if (fd != NULL)
     {
-        SYS_LOG_FUNTION_MSG(FATFS, SYS_LOG_DEBUG, "opening %s", name);
+        SYS_LOG_FUNTION_MSG(FATFS, SYS_LOG_INFO, "opening \"%s\"", name);
 
         /* If read is requested. */
         if (flags & FS_READ)
