@@ -3737,6 +3737,11 @@ FRESULT f_sync (
 				}
 			}
 		}
+		else
+		{
+			/* Send sync to terminate any read operations. */
+			if (disk_ioctl(fs->drv, CTRL_SYNC, 0) != RES_OK) res = FR_DISK_ERR;
+		}
 	}
 
 	LEAVE_FF(fs, res);
