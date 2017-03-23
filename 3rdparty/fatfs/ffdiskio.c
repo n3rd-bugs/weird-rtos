@@ -125,7 +125,7 @@ DSTATUS disk_initialize (
 		{
 			/* Device is idle. */
 			device->state = FDEV_IDLE;
-			device->offset = 0;
+			device->offset = FDEV_STRAT_OFFSET;
 
 			/* Device is now initialized. */
 			device->initialized = TRUE;
@@ -290,7 +290,7 @@ DRESULT disk_ioctl (
 
 		/* Update the device state. */
 		device->state = FDEV_IDLE;
-		device->offset = 0;
+		device->offset = FDEV_STRAT_OFFSET;
 		res = RES_OK;
 
 		break;

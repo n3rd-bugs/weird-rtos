@@ -37,6 +37,11 @@ void fs_avr_init()
 #if (defined(FS_FAT) && defined(CONFIG_MMC))
     char mount_point[4] = "0:\\";
 
+#ifdef MMC_SPI_FS
+    /* Register MMC device with file system */
+    mmc_spi_fsregister(&mmc_spi, "mmc0");
+#endif /* MMC_SPI_FS */
+
     /* Populate the SPI bit-bang interface. */
     mmc_spi_bb.pin_num_ss = 3;
     mmc_spi_bb.pin_num_mosi = 5;

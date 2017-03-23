@@ -20,12 +20,29 @@
 #endif
 #include <spi.h>
 
+/* Enable file system interface of MMC. */
+#define MMC_SPI_FS
+
+#ifdef MMC_SPI_FS
+#include <fs.h>
+#ifdef CONFIG_SEMAPHORE
+#include <semaphore.h>
+#else
+#error "Semaphores are required for FS interface."
+#endif
+#endif
+
 /* MMC error definitions. */
 #define MMC_SPI_CMD_ERROR       -1500
 #define MMC_SPI_READ_ERROR      -1501
 #define MMC_SPI_WRITE_ERROR     -1502
 #define MMC_SPI_SELECT_ERROR    -1503
 #define MMC_SPI_RESUME_ERROR    -1504
+#define MMC_SPI_INVALID_PARAM   -1505
+
+/* MMC read/write offset definitions. */
+#define MMC_SPI_START_OFFSET    (uint64_t)(-1)
+#define MMC_SPI_UNKNOWN_NBYTES  (uint64_t)(-1)
 
 /* MMC SPI command definitions. */
 #define MMC_SPI_CMD0            (0x00)
@@ -77,19 +94,39 @@
 #define MMC_SPI_CARD_SD2        (0x04)
 #define MMC_SPI_CARD_SD         ((MMC_SPI_CARD_SD1) | (MMC_SPI_CARD_SD2))
 #define MMC_SPI_CARD_BLOCK      (0x08)
+#define MMC_SPI_INIT_COMPLETE   (0x10)
+#define MMC_SPI_OPEN_READ       (0x20)
+#define MMC_SPI_OPEN_WRITE      (0x40)
 
 /* MMC SPI structure. */
 typedef struct _mmc_spi
 {
+#ifdef MMC_SPI_FS
+    /* File system hook for this device. */
+    FS          fs;
+
+    /* Semaphore to protect access to this MMC device. */
+    SEMAPHORE   lock;
+
+    /* Current offset in the flash. */
+    uint64_t    offset;
+
+    /* Number of bytes we need to read or write. */
+    uint64_t    num_bytes;
+#endif
+
     /* SPI device configuration structure. */
     SPI_DEVICE  spi;
 
     /* Card flags. */
-    uint8_t     flags;
+    uint16_t    flags;
 
 } MMC_SPI;
 
 /* Function prototypes. */
+#ifdef MMC_SPI_FS
+void mmc_spi_fsregister(void *, const char *);
+#endif
 int32_t mmc_spi_init(void *);
 int32_t mmc_spi_read(void *, uint32_t, uint64_t *, uint8_t *, int32_t);
 int32_t mmc_spi_write(void *, uint32_t, uint64_t *, uint8_t *, int32_t);

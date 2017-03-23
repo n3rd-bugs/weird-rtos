@@ -75,6 +75,9 @@ typedef enum {
 #define FDEV_READING		1
 #define FDEV_WRITING		2
 
+/* Disk read/write definitions. */
+#define FDEV_STRAT_OFFSET	(uint64_t)(-1)
+
 /* Device APIs. */
 typedef int32_t FF_INIT(void *);
 typedef int32_t FF_READ(void *, uint32_t, uint64_t *, uint8_t *, int32_t);
