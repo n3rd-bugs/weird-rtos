@@ -18,7 +18,7 @@
 #endif
 
 /* Internal function prototypes. */
-static void *fatfs_open(char *, uint32_t);
+static void *fatfs_open(void *, char *, uint32_t);
 static int32_t fatfs_read(void *, uint8_t *, int32_t);
 static int32_t fatfs_write(void *, uint8_t *, int32_t);
 static void fatfs_close(void **priv_data);
@@ -74,16 +74,20 @@ void fatfs_init()
 
 /*
  * fatfs_open
+ * @priv_data: Private data.
  * @name: File name.
  * @flags: Open flags.
  * This function will open a file.
  */
-static void *fatfs_open(char *name, uint32_t flags)
+static void *fatfs_open(void *priv_data, char *name, uint32_t flags)
 {
     uint32_t i;
     FAT_FILE *fd = NULL;
     int32_t status;
     uint32_t fs_flags = 0;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(priv_data);
 
     SYS_LOG_FUNTION_ENTRY(FATFS);
 

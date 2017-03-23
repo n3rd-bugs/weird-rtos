@@ -691,7 +691,7 @@ FD fs_open(char *name, uint32_t flags)
         if (fs->open != NULL)
         {
             /* Call the underlying API to get the file descriptor. */
-            fs = (FD)fs->open(name, flags);
+            fs = (FD)fs->open(fs, name, flags);
         }
     }
 

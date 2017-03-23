@@ -25,7 +25,7 @@ static PIPE_DATA pipe_data;
 /* Internal function prototypes. */
 static int32_t pipe_lock(void *, uint64_t);
 static void pipe_unlock(void *);
-static void *pipe_open(char *, uint32_t );
+static void *pipe_open(void *, char *, uint32_t);
 
 /* File system definition. */
 FS pipe_fs =
@@ -218,16 +218,18 @@ static void pipe_unlock(void *fd)
 
 /*
  * pipe_open
+ * @priv_data: Private data.
  * @name: Pipe name.
  * @flags: Open flags.
  * This function will open a pipe node.
  */
-static void *pipe_open(char *name, uint32_t flags)
+static void *pipe_open(void *priv_data, char *name, uint32_t flags)
 {
     NODE_PARAM param;
     void *fd = NULL;
 
     /* Remove some compiler warnings. */
+    UNUSED_PARAM(priv_data);
     UNUSED_PARAM(flags);
 
 #ifdef CONFIG_SEMAPHORE
@@ -261,7 +263,7 @@ static void *pipe_open(char *name, uint32_t flags)
         if (((PIPE *)fd)->fs.open != NULL)
         {
             /* Call the underlying API to get the file descriptor. */
-            fd = ((PIPE *)fd)->fs.open(name, flags);
+            fd = ((PIPE *)fd)->fs.open(fd, name, flags);
         }
     }
 

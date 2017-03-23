@@ -27,7 +27,7 @@ FD debug_fd = NULL;
 static CONSOLE_DATA console_data;
 
 /* Function prototypes. */
-static void *console_open(char *, uint32_t);
+static void *console_open(void *, char *, uint32_t);
 static void console_unlock(void *);
 static int32_t console_lock(void *, uint64_t);
 
@@ -156,14 +156,18 @@ void console_unregister(CONSOLE *console)
 
 /*
  * console_open
+ * @priv_data: Private data.
  * @name: Console name.
  * @flags: Open flags.
  * This function will open a console node.
  */
-static void *console_open(char *name, uint32_t flags)
+static void *console_open(void *priv_data, char *name, uint32_t flags)
 {
     NODE_PARAM param;
     void *fd = NULL;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(priv_data);
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data lock. */
@@ -196,7 +200,7 @@ static void *console_open(char *name, uint32_t flags)
         if (((CONSOLE *)fd)->fs.open != NULL)
         {
             /* Call the underlying API to get the file descriptor. */
-            fd = ((CONSOLE *)fd)->fs.open(name, flags);
+            fd = ((CONSOLE *)fd)->fs.open(fd, name, flags);
         }
     }
 

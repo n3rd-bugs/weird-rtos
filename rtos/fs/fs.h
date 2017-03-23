@@ -91,7 +91,7 @@ struct _fs
     const char  *name;
 
     /* File operations. */
-    void        *(*open) (char *, uint32_t);
+    void        *(*open) (void *, char *, uint32_t);
     void        (*close) (void **);
     int32_t     (*write) (void *, uint8_t *, int32_t);
     int32_t     (*read) (void *, uint8_t *, int32_t);
