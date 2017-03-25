@@ -1066,7 +1066,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
     OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
     /* Remove all the data from the buffer except the actual TCP segment. */
-    fs_buffer_pull(buffer, NULL, (buffer->total_length - seg_len), FS_BUFFER_HEAD);
+    fs_buffer_pull(buffer, NULL, (buffer->total_length - seg_len), 0);
 
     /* SEG.SEQ = RCV.NXT ? */
     if (seg_seq == port->rcv_nxt)
@@ -1150,7 +1150,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
         if ((oo_param.flags & TCP_FLAG_SEG_CONFLICT) == 0)
         {
             /* Push the sequence number for this buffer on the buffer head. */
-            status = fs_buffer_push(buffer, &seg_seq, 4, (FS_BUFFER_HEAD | FS_BUFFER_PACKED));
+            status = fs_buffer_push(buffer, &seg_seq, 4, (FS_BUFFER_PACKED));
 
             if (status == SUCCESS)
             {

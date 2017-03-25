@@ -117,7 +117,7 @@ static void weird_view_server_process(void *data)
         OS_ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
 
         /* Pull the command from the buffer. */
-        fs_buffer_pull(rx_buffer, &command, sizeof(uint32_t), (FS_BUFFER_HEAD | FS_BUFFER_PACKED));
+        fs_buffer_pull(rx_buffer, &command, sizeof(uint32_t), (FS_BUFFER_PACKED));
 
         /* Process the given command. */
         switch (command)
@@ -196,7 +196,7 @@ static void weird_view_server_process(void *data)
             if (rx_buffer->total_length >= (int32_t)sizeof(uint16_t))
             {
                 /* Pull the plugin id. */
-                fs_buffer_pull(rx_buffer, &id, sizeof(uint16_t), (FS_BUFFER_HEAD | FS_BUFFER_PACKED));
+                fs_buffer_pull(rx_buffer, &id, sizeof(uint16_t), (FS_BUFFER_PACKED));
 
                 /* Try to get the required plugin. */
                 plugin = weird_view_get_plugin(weird_view, id);

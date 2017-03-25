@@ -909,9 +909,12 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
     int32_t status = SUCCESS;
     uint32_t this_size, this_offset = offset;
 #ifdef OS_LITTLE_ENDIAN
-    uint8_t reverse = (uint8_t)(((flags & FS_BUFFER_PACKED) != 0) ^ ((flags & FS_BUFFER_HEAD) != 0));
+    uint8_t reverse = (uint8_t)((flags & FS_BUFFER_PACKED) != 0);
 #endif
     uint8_t *to;
+
+    /* Head flag should not be used with pull. */
+    OS_ASSERT(flags & FS_BUFFER_HEAD);
 
     /* Validate that we do have enough space on this buffer. */
     if (buffer->total_length >= (size + offset))
