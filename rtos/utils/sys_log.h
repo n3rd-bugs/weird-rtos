@@ -41,6 +41,9 @@ enum
 #ifdef CONFIG_FS
     SYS_LOG_FATFS,
 #endif
+#ifdef CONFIG_TFTPS
+    SYS_LOG_TFTPS,
+#endif
     SYS_LOG_MAX
 } SYS_LOG_ID;
 

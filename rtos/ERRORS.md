@@ -58,3 +58,10 @@ This list is needed to be updated whenever a new error code is added.
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001
     WV_NO_DATA              -20002
+    TFTP_NOT_SUPPORTED      -22000
+    TFTP_LONG_FILENAME      -22001
+    TFTP_ERROR_FS           -22002
+    TFTP_ERROR_EXHAUSTED    -22003
+    TFTP_UNKNOWN_TID        -22004
+    TFTP_OUTOFBOUND_BLOCK   -22005
+    TFTP_FRAME_DROP         -22006
