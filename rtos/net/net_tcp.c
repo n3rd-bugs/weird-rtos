@@ -282,6 +282,7 @@ static void tcp_resume_socket(TCP_PORT *port, uint8_t flags)
  */
 static int32_t tcp_port_wait(TCP_PORT *port, uint8_t flags)
 {
+    int32_t status;
     uint32_t num_conditions;
     CONDITION *condition;
     SUSPEND suspend, *suspend_ptr = &suspend;
