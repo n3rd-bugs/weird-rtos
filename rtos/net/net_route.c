@@ -248,14 +248,14 @@ int32_t route_get(FD *device, uint32_t destination, uint32_t *iface_addr, uint32
         if (route > 0)
         {
             /* If we need to return the device associated for this route. */
-            if ((device != NULL) && (*device != NULL))
+            if ((device != NULL) && (*device == NULL))
             {
                 /* Return the device we need to use. */
                 *device = routes[route].device;
             }
 
             /* If we need to return the interface address for this route. */
-            if (iface_addr != NULL)
+            if ((iface_addr != NULL) && (*iface_addr == IPV4_ADDR_UNSPEC))
             {
                 /* Return the source address we need to use. */
                 *iface_addr = routes[route].interface_address;
@@ -289,14 +289,14 @@ int32_t route_get(FD *device, uint32_t destination, uint32_t *iface_addr, uint32
         else if (default_route > 0)
         {
             /* If we need to return the device associated for this route. */
-            if (device != NULL)
+            if ((device != NULL) && (*device == NULL))
             {
                 /* Return associated device. */
                 *device = routes[default_route].device;
             }
 
             /* If we need to return the interface address for this route. */
-            if (iface_addr != NULL)
+            if ((iface_addr != NULL) && (*iface_addr == IPV4_ADDR_UNSPEC))
             {
                 /* Return the source address we need to use. */
                 *iface_addr = routes[default_route].interface_address;

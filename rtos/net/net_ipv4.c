@@ -217,7 +217,7 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address, uint32_t subnet)
  */
 NET_DEV *ipv4_get_source_device(uint32_t address)
 {
-    NET_DEV *ret_device = NULL;
+    FD fd = NULL;
 
     SYS_LOG_FUNTION_ENTRY(IPV4);
 
@@ -225,15 +225,15 @@ NET_DEV *ipv4_get_source_device(uint32_t address)
     scheduler_lock();
 
     /* Search for the required device. */
-    route_get(&ret_device->fd, address, NULL, NULL, NULL);
+    route_get(&fd, IPV4_ADDR_BCAST, &address, NULL, NULL);
 
     /* Enable scheduling. */
     scheduler_unlock();
 
-    /* Return the resolved device for the given IP address. */
-    return (ret_device);
     SYS_LOG_FUNTION_EXIT(IPV4);
 
+    /* Resolve and return the required device. */
+    return (net_device_get_fd(fd));
 
 } /* ipv4_get_source_device */
 
