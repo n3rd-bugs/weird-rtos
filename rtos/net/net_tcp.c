@@ -1691,7 +1691,9 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
             if (status == SUCCESS)
             {
                 /* Save the send window size. */
-                port->snd_wnd = (uint32_t)(seg_wnd << port->snd_wnd_scale);
+                port->snd_wnd = ((uint32_t)seg_wnd << port->snd_wnd_scale);
+
+                SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "SND_WND: %ld, SND_WND_SCALE: %d", port->snd_wnd, port->snd_wnd_scale);
 
                 /* Process this packet according to the current state of the TCP
                  * socket. */
