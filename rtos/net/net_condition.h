@@ -18,7 +18,7 @@
 #include <condition.h>
 
 /* Networking condition definitions. */
-#define NET_COND_NUM_DEVICES    1
+#define NET_COND_NUM_DEVICES    2
 #define NET_COND_NUM_INTERNAL   7
 #define NET_COND_NUM_TOTAL      (NET_COND_NUM_DEVICES + NET_COND_NUM_INTERNAL)
 
@@ -26,7 +26,7 @@
 #define NET_COND_STACK_SIZE     1024
 
 /* Networking condition process function. */
-typedef void NET_CONDITION_PROCESS (void *data);
+typedef void NET_CONDITION_PROCESS (void *);
 
 /* Networking condition global data. */
 typedef struct _net_condition
