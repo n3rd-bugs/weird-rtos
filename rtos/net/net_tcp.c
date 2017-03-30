@@ -902,7 +902,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
             if (status == SUCCESS)
             {
                 /* Calculate checksum for TCP header. */
-                status = net_pseudo_csum_calculate(buffer, socket_address->local_ip, socket_address->foreign_ip, IP_PROTO_TCP, (uint16_t)buffer->total_length, 0, (uint8_t)flags, &csum);
+                status = net_pseudo_csum_calculate(buffer, socket_address->local_ip, socket_address->foreign_ip, IP_PROTO_TCP, (uint16_t)buffer->total_length, 0, 0, &csum);
 
                 /* If checksum was successfully calculated. */
                 if (status == SUCCESS)
