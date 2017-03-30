@@ -161,14 +161,11 @@ void tcp_unregister(TCP_PORT *port)
     /* Free all the buffers in the TCP buffer list. */
     fs_buffer_add_buffer_list(port->buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
-    /* Clear the TCP port structure. */
-    memset(port, 0, sizeof(TCP_PORT));
-
-    /* Initialize TCP port configuration. */
-    tcp_port_initialize(port);
-
     /* Unregister networking condition for this TCP port. */
     tcp_rtx_timer_unregister(port);
+
+    /* Clear the TCP port structure. */
+    memset(port, 0, sizeof(TCP_PORT));
 
 #ifndef CONFIG_SEMAPHORE
     /* Enable scheduling. */
