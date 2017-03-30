@@ -15,8 +15,10 @@
 #ifndef SYS_LOG_NONE
 #include <string.h>
 
+#ifdef SYS_LOG_RUNTIME_UPDATE
 /* For each component we want to enable logging an entry must exist here. */
 SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
+#endif /* SYS_LOG_RUNTIME_UPDATE */
 
 /*
  * sys_log_init
@@ -24,6 +26,7 @@ SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
  */
 void sys_log_init()
 {
+#ifdef SYS_LOG_RUNTIME_UPDATE
     uint32_t i;
 
     /* Set default level for all the components. */
@@ -31,7 +34,7 @@ void sys_log_init()
     {
         log_level[i] = SYS_LOG_DEFAULT;
     }
-
+#endif /* SYS_LOG_RUNTIME_UPDATE */
 } /* sys_log_init */
 
 /*
