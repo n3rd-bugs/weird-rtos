@@ -604,8 +604,13 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
             status = net_device_buffer_transmit(fs_buffer, NET_PROTO_IPV4, ((flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
         }
 
-        /* If buffer was not consumed. */
-        if (status != NET_BUFFER_CONSUMED)
+        /* If buffer was consumed. */
+        if (status == NET_BUFFER_CONSUMED)
+        {
+            /* Reset the return status. */
+            status = SUCCESS;
+        }
+        else
         {
             /* Add the allocated buffer back to the descriptor. */
             fs_buffer_add_buffer_list(fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
@@ -625,7 +630,7 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
     else
     {
         /* Return an error to the caller. */
-        ret_size = NET_UNKNOWN_SRC;
+        status = ret_size = NET_UNKNOWN_SRC;
     }
 
     /* Obtain lock for this port before returning. */
