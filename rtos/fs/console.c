@@ -213,6 +213,7 @@ static void *console_open(void *priv_data, char *name, uint32_t flags)
  * console_lock
  * @fd: File descriptor for the console.
  * @timeout: Number of ticks we need to wait for the lock.
+ * @return: Success will be returned if lock was successfully acquired.
  * This function will get the lock for a given console.
  */
 static int32_t console_lock(void *fd, uint64_t timeout)
