@@ -39,7 +39,7 @@ void fs_avr_init()
 
 #ifdef MMC_SPI_FS
     /* Register MMC device with file system */
-    mmc_spi_fsregister(&mmc_spi, "mmc0");
+    mmc_spi_fsregister(&mmc_spi, "\\mmc0");
 #endif /* MMC_SPI_FS */
 
     /* Populate the SPI bit-bang interface. */

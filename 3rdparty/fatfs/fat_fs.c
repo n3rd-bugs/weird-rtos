@@ -28,7 +28,7 @@ static FAT_FILE fat_files[FAT_NUM_FILES];
 static FS fat_fs =
     {
         /* Name of this interface. */
-        .name = "fatfs",
+        .name = "\\fatfs",
 
         /* Hook-up file system. */
         .open = &fatfs_open,
