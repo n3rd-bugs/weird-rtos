@@ -1712,7 +1712,7 @@ int32_t fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one,
 int32_t fs_buffer_hdr_pull(void *buffer, uint8_t *data, uint32_t size, uint16_t flags)
 {
     /* Call the underlying buffer pull function. */
-    return (fs_buffer_pull((FS_BUFFER *)buffer, data, size, (FS_BUFFER_HEAD | (uint8_t)flags)));
+    return (fs_buffer_pull((FS_BUFFER *)buffer, data, size, ((uint8_t)flags)));
 
 } /* fs_buffer_hdr_pull */
 
