@@ -900,7 +900,7 @@ static int32_t enc28j60_transmit_packet(void *data, FS_BUFFER *buffer)
         status = ETH_TX_BLOCKED;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, status);
+    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, (status == ETH_TX_BLOCKED) ? SUCCESS : status);
 
     /* Return status to the caller. */
     return (status);
