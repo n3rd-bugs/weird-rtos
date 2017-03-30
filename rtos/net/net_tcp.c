@@ -2573,6 +2573,10 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
                         /* Update the port state. */
                         client_port->state = TCP_SOCK_SYN_RCVD;
 
+                        /* Save the window size and scale. */
+                        client_port->snd_wnd = server_port->snd_wnd;
+                        client_port->snd_wnd_scale = server_port->snd_wnd_scale;
+
                         /* Release lock for buffer file descriptor. */
                         fd_release_lock(buffer->fd);
 
