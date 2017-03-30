@@ -2623,7 +2623,16 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
                 }
 
                 /* Check if connection was successful. */
-                if (client_port->state != TCP_SOCK_ESTAB)
+                if (client_port->state == TCP_SOCK_ESTAB)
+                {
+                    /* If we have some space available to write data on this port. */
+                    if (client_port->snd_wnd > 0)
+                    {
+                        /* There is space available to write data on this port. */
+                        fd_space_available((FD)client_port);
+                    }
+                }
+                else
                 {
                     /* Return error that connection was refused. */
                     status = NET_REFUSED;
