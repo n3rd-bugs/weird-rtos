@@ -1796,6 +1796,9 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                             /* SND.UNA := SEG.ACK */
                                             port->snd_una = seg_ack;
 
+                                            /* Reset the duplicate ACK counter. */
+                                            port->dack = 0;
+
                                             /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=ACK) */
                                             tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
 
@@ -1924,6 +1927,9 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                     /* SND.UNA := SEG.ACK. */
                                     port->snd_una = seg_ack;
 
+                                    /* Reset the duplicate ACK counter. */
+                                    port->dack = 0;
+
                                     /* Upon receiving a <SYN> segment with a Window Scale
                                      * option containing shift.cnt = S, a TCP MUST set
                                      * Snd.Wind.Shift to S and MUST set Rcv.Wind.Shift
@@ -2005,6 +2011,8 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                     /* Update TCP window configurations. */
                                     tcp_window_update(port, seg_len);
 
+                                    SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "SND_WND: %ld, CONG_WND: %d", port->snd_wnd, port->cwnd);
+
                                     /* SND.WND := min (CWND, SEG.WND) */
                                     port->snd_wnd = MIN(port->cwnd, port->snd_wnd);
 
@@ -2013,6 +2021,9 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
                                     /* ExpBoff := 1. */
                                     port->expboff = 1;
+
+                                    /* Reset the duplicate ACK counter. */
+                                    port->dack = 0;
 
                                     /* If remote has ACKed the segment we were
                                      * sending. */
@@ -2034,7 +2045,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                 /* If we are in established state. */
                                 case TCP_SOCK_ESTAB:
 
-                                    /* A duplicate ACK is received. */
+                                    /* An ACK is received. */
                                     /* SEG.ACK = SND.UNA ? */
                                     if (port->snd_una == seg_ack)
                                     {
@@ -2042,14 +2053,16 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                         port->dack = (uint8_t)(port->dack + 1);
 
                                         /* Second ACK. */
-                                        if (port->dack == 1)
+                                        if (port->dack == 2)
                                         {
-                                            ;
+                                            SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "First duplicate ACK", "");
                                         }
 
                                         /* Third ACK. */
-                                        else if (port->dack == 2)
+                                        else if (port->dack == 3)
                                         {
+                                            SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "Second duplicate ACK", "");
+
                                             /* Fart retransmit the segment in the RTX queue. */
                                             /* Segment (SEQ=SEG.ACK, ACK=[?], CTL =[?]) */
                                             tcp_fast_rtx(port, seg_seq);
@@ -2059,6 +2072,8 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
                                             /* CWND := SSthresh + 3 */
                                             port->cwnd = (uint16_t)(port->ssthresh + 3);
+
+                                            SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "updated CONG_WND: %d", port->cwnd);
                                         }
 
                                         else
