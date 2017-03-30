@@ -124,7 +124,7 @@ void semaphore_destroy(SEMAPHORE *semaphore)
     DISABLE_INTERRUPTS();
 
     /* No one should be waiting on this lock. */
-    OS_ASSERT(semaphore->condition.suspend_list.head == NULL);
+    OS_ASSERT(semaphore->condition.suspend_list.head != NULL);
 
     /* Clear the semaphore memory. */
     memset(semaphore, 0,  sizeof(SEMAPHORE));
