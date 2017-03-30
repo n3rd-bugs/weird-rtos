@@ -32,6 +32,8 @@ NET_DEV_DATA net_dev_data;
  */
 void net_devices_init()
 {
+    SYS_LOG_FUNTION_ENTRY(NET_DEVICE);
+
     /* Clear the global data. */
     memset(&net_dev_data, 0, sizeof(NET_DEV_DATA));
 
@@ -48,6 +50,8 @@ void net_devices_init()
 void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
 {
     CONDITION *condition;
+
+    SYS_LOG_FUNTION_ENTRY(NET_DEVICE);
 
     /* Will only work with buffered file descriptors. */
     OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
@@ -78,6 +82,8 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     /* Add networking condition for this file descriptor. */
     net_condition_add(condition, &net_device->suspend, rx, fd);
 
+    SYS_LOG_FUNTION_EXIT(NET_DEVICE);
+
 } /* net_register_fd */
 
 /*
@@ -91,6 +97,8 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
 NET_DEV *net_device_get_fd(FD fd)
 {
     NET_DEV *ret_device;
+
+    SYS_LOG_FUNTION_ENTRY(NET_DEVICE);
 
     /* Disable preemption. */
     scheduler_lock();
@@ -108,6 +116,8 @@ NET_DEV *net_device_get_fd(FD fd)
     /* Enable scheduling. */
     scheduler_unlock();
 
+    SYS_LOG_FUNTION_EXIT(NET_DEVICE);
+
     /* Return the required device. */
     return (ret_device);
 
@@ -124,8 +134,12 @@ void net_device_set_mtu(FD fd, uint32_t mtu)
 {
     NET_DEV *net_device = net_device_get_fd(fd);
 
+    SYS_LOG_FUNTION_ENTRY(NET_DEVICE);
+
     /* Set the MTU for this networking device. */
     net_device->mtu = mtu;
+
+    SYS_LOG_FUNTION_EXIT(NET_DEVICE);
 
 } /* net_device_set_mtu */
 
@@ -140,8 +154,12 @@ uint32_t net_device_get_mtu(FD fd)
     NET_DEV *net_device = net_device_get_fd(fd);
     uint32_t ret_mtu;
 
+    SYS_LOG_FUNTION_ENTRY(NET_DEVICE);
+
     /* Save the MTU for this networking device. */
     ret_mtu = net_device->mtu;
+
+    SYS_LOG_FUNTION_EXIT(NET_DEVICE);
 
     /* Return the MTU for this networking device. */
     return(ret_mtu);
@@ -164,6 +182,8 @@ int32_t net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol, uint32_t 
 {
     int32_t status;
 
+    SYS_LOG_FUNTION_ENTRY(NET_DEVICE);
+
     /* Push the protocol on the buffer. */
     status = fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD);
 
@@ -184,6 +204,8 @@ int32_t net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol, uint32_t 
         /* Again obtain lock for buffer file descriptor. */
         OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
     }
+
+    SYS_LOG_FUNTION_EXIT_STATUS(NET_DEVICE, status);
 
     /* Return status to the caller. */
     return (status);
@@ -209,6 +231,8 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
     int32_t status = SUCCESS;
     NET_DEV *net_device;
     FS_BUFFER *tmp_buffer;
+
+    SYS_LOG_FUNTION_ENTRY(NET_DEVICE);
 
     /* Resolve the required networking device. */
     net_device = net_device_get_fd(buffer->fd);
@@ -276,6 +300,8 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
         status = NET_LINK_DOWN;
     }
 
+    SYS_LOG_FUNTION_EXIT_STATUS(NET_DEVICE, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
+
     /* Return status to the caller. */
     return (status);
 
@@ -292,6 +318,8 @@ void net_device_link_up(FD fd)
 {
     NET_DEV *net_device = net_device_get_fd(fd);
 
+    SYS_LOG_FUNTION_ENTRY(NET_DEVICE);
+
     /* Set this device UP. */
     net_device->flags |= NET_DEVICE_UP;
 
@@ -299,6 +327,8 @@ void net_device_link_up(FD fd)
     /* Start DHCP client. */
     net_dhcp_client_start(net_device);
 #endif
+
+    SYS_LOG_FUNTION_EXIT(NET_DEVICE);
 
 } /* net_device_link_up */
 
@@ -311,6 +341,8 @@ void net_device_link_up(FD fd)
 void net_device_link_down(FD fd)
 {
     NET_DEV *net_device = net_device_get_fd(fd);
+
+    SYS_LOG_FUNTION_ENTRY(NET_DEVICE);
 
     /* Clear the UP flag for this device. */
     net_device->flags &= (uint32_t)(~(NET_DEVICE_UP));
@@ -328,6 +360,8 @@ void net_device_link_down(FD fd)
 
     /* Acquire lock for networking file descriptor. */
     OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+
+    SYS_LOG_FUNTION_EXIT(NET_DEVICE);
 
 } /* net_device_link_down */
 

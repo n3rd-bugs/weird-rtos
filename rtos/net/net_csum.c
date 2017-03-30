@@ -49,6 +49,8 @@ int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t d
         {&length,           2, (FS_BUFFER_PACKED | flags) },    /* Packet length. */
     };
 
+    SYS_LOG_FUNTION_ENTRY(NET_CSUM);
+
     /* Allocate a buffer and initialize a pseudo header. */
     csum_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, flags);
 
@@ -83,6 +85,8 @@ int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t d
         status = FS_BUFFER_NO_SPACE;
     }
 
+    SYS_LOG_FUNTION_EXIT(NET_CSUM);
+
     /* Return status to the caller. */
     return (status);
 
@@ -102,6 +106,8 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offse
     uint32_t csum = 0, left = 0;
     uint16_t *bytes = (uint16_t *)one->buffer;
     uint8_t last_left = FALSE;
+
+    SYS_LOG_FUNTION_ENTRY(NET_CSUM);
 
     /* If we have negative number of bytes. */
     if (num_bytes < 0)
@@ -227,6 +233,8 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offse
     /* Add back the carry to the checksum. */
     csum = (csum & 0xFFFF) + (csum >> 16);
     csum = (csum & 0xFFFF) + (csum >> 16);
+
+    SYS_LOG_FUNTION_EXIT(NET_CSUM);
 
     /* Take one's complement of the checksum. */
     return (~(csum) & 0xFFFF);

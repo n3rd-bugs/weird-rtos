@@ -29,8 +29,12 @@ static void route_unlock();
  */
 static int32_t route_lock()
 {
+    SYS_LOG_FUNTION_ENTRY(ROUTE);
+
     /* Lock scheduler. */
     scheduler_lock();
+
+    SYS_LOG_FUNTION_EXIT(ROUTE);
 
     /* Return success. */
     return (SUCCESS);
@@ -43,8 +47,12 @@ static int32_t route_lock()
  */
 static void route_unlock()
 {
+    SYS_LOG_FUNTION_ENTRY(ROUTE);
+
     /* Enable scheduling. */
     scheduler_unlock();
+
+    SYS_LOG_FUNTION_EXIT(ROUTE);
 
 } /* route_unlock */
 
@@ -65,6 +73,8 @@ static void route_unlock()
 int32_t route_add(FD device, uint32_t interface_address, uint32_t gateway, uint32_t destination, uint32_t subnet, uint8_t flags)
 {
     int32_t i, free_route = -1, status;
+
+    SYS_LOG_FUNTION_ENTRY(ROUTE);
 
     /* Lock the routes. */
     status = route_lock();
@@ -100,6 +110,8 @@ int32_t route_add(FD device, uint32_t interface_address, uint32_t gateway, uint3
                 routes[free_route].subnet = subnet;
                 routes[free_route].interface_address = interface_address;
 
+                SYS_LOG_FUNTION_MSG(ROUTE, SYS_LOG_INFO, "adding %d.%d.%d.%d/%d.%d.%d.%d through %d.%d.%d.%d at %s", SYS_LOG_IP(destination), SYS_LOG_IP(subnet), SYS_LOG_IP(gateway), ((FS *)device)->name);
+
                 /* Mark this route as valid. */
                 routes[free_route].flags = (flags | ROUTE_VALID);
             }
@@ -113,6 +125,8 @@ int32_t route_add(FD device, uint32_t interface_address, uint32_t gateway, uint3
         /* Unlock the routes. */
         route_unlock();
     }
+
+    SYS_LOG_FUNTION_EXIT_STATUS(ROUTE, status);
 
     /* Return status to the caller. */
     return (status);
@@ -130,6 +144,8 @@ int32_t route_add(FD device, uint32_t interface_address, uint32_t gateway, uint3
 int32_t route_remove(FD device, uint32_t gateway, uint32_t destination)
 {
     int32_t i, status;
+
+    SYS_LOG_FUNTION_ENTRY(ROUTE);
 
     /* Lock the routes. */
     status = route_lock();
@@ -158,6 +174,8 @@ int32_t route_remove(FD device, uint32_t gateway, uint32_t destination)
         route_unlock();
     }
 
+    SYS_LOG_FUNTION_EXIT_STATUS(ROUTE, status);
+
     /* Return status to the caller. */
     return (status);
 
@@ -179,6 +197,8 @@ int32_t route_get(FD *device, uint32_t destination, uint32_t *iface_addr, uint32
 {
     int32_t i, status, route = -1, default_route = -1;
     uint32_t this_match, match = 0;
+
+    SYS_LOG_FUNTION_ENTRY(ROUTE);
 
     /* Lock the routes. */
     status = route_lock();
@@ -307,6 +327,8 @@ int32_t route_get(FD *device, uint32_t destination, uint32_t *iface_addr, uint32
         route_unlock();
     }
 
+    SYS_LOG_FUNTION_EXIT_STATUS(ROUTE, status);
+
     /* Return status to the caller. */
     return (status);
 
@@ -320,6 +342,8 @@ void route_print()
 {
     int32_t i;
     FS *net_fs;
+
+    SYS_LOG_FUNTION_ENTRY(ROUTE);
 
     /* Lock the routes. */
     if (route_lock() == SUCCESS)
@@ -343,6 +367,8 @@ void route_print()
         /* Unlock the routes. */
         route_unlock();
     }
+
+    SYS_LOG_FUNTION_EXIT(ROUTE);
 
 } /* route_print */
 

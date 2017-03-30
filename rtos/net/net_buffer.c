@@ -37,6 +37,8 @@ static int32_t net_buffer_read(void *, uint8_t *, int32_t);
  */
 void net_buffer_init()
 {
+    SYS_LOG_FUNTION_ENTRY(NET_BUFFER);
+
     /* Clear the global structure. */
     memset(&net_buffers_fs, 0, sizeof(NET_BUFFER_FS));
 
@@ -67,6 +69,8 @@ void net_buffer_init()
     /* Set the global networking stack buffer descriptor. */
     net_buff_fd = (FD)&net_buffers_fs;
 
+    SYS_LOG_FUNTION_EXIT(NET_BUFFER);
+
 } /* net_buffer_init */
 
 /*
@@ -78,11 +82,15 @@ void net_buffer_init()
  */
 void net_buffer_get_condition(CONDITION **condition, SUSPEND *suspend, NET_CONDITION_PROCESS **process)
 {
+    SYS_LOG_FUNTION_ENTRY(NET_BUFFER);
+
     /* For networking buffers we will wait for data on networking buffer file descriptor. */
     fs_condition_get((FD)&net_buffers_fs, condition, suspend, &net_buffers_fs.fs_param, FS_BLOCK_READ);
 
     /* Set callback that is needed to be called when this condition is fulfilled. */
     *process = &net_buffer_condition_callback;
+
+    SYS_LOG_FUNTION_EXIT(NET_BUFFER);
 
 } /* net_buffer_get_condition */
 
@@ -98,6 +106,8 @@ static void net_buffer_condition_callback(void *data)
 
     /* Remove a compiler warning. */
     UNUSED_PARAM(data);
+
+    SYS_LOG_FUNTION_ENTRY(NET_BUFFER);
 
     /* Read a buffer pointer from the file descriptor. */
     if (fs_read(net_buff_fd, (uint8_t *)&buffer, sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
@@ -122,6 +132,8 @@ static void net_buffer_condition_callback(void *data)
         fd_release_lock(buffer_fd);
     }
 
+    SYS_LOG_FUNTION_EXIT(NET_BUFFER);
+
 } /* net_buffer_condition_callback */
 
 /*
@@ -132,9 +144,13 @@ static void net_buffer_condition_callback(void *data)
  */
 static int32_t net_buffer_lock(void *fd, uint64_t timeout)
 {
+    int32_t status = SUCCESS;
+
+    SYS_LOG_FUNTION_ENTRY(NET_BUFFER);
+
 #ifdef CONFIG_SEMAPHORE
     /* Obtain data lock for networking buffers. */
-    return semaphore_obtain(&((NET_BUFFER_FS *)fd)->lock, timeout);
+    status = semaphore_obtain(&((NET_BUFFER_FS *)fd)->lock, timeout);
 #else
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
@@ -142,10 +158,13 @@ static int32_t net_buffer_lock(void *fd, uint64_t timeout)
 
     /* Lock scheduler. */
     scheduler_lock();
-
-    /* Return success. */
-    return (SUCCESS);
 #endif
+
+    SYS_LOG_FUNTION_EXIT_STATUS(NET_BUFFER, status);
+
+    /* Return status to the caller. */
+    return (status);
+
 } /* net_buffer_lock */
 
 /*
@@ -155,6 +174,8 @@ static int32_t net_buffer_lock(void *fd, uint64_t timeout)
  */
 static void net_buffer_unlock(void *fd)
 {
+    SYS_LOG_FUNTION_ENTRY(NET_BUFFER);
+
 #ifdef CONFIG_SEMAPHORE
     /* Release data lock for networking buffers. */
     semaphore_release(&((NET_BUFFER_FS *)fd)->lock);
@@ -165,6 +186,9 @@ static void net_buffer_unlock(void *fd)
     /* Enable scheduling. */
     scheduler_unlock();
 #endif
+
+    SYS_LOG_FUNTION_EXIT(NET_BUFFER);
+
 } /* net_buffer_unlock */
 
 /*
@@ -183,6 +207,8 @@ static int32_t net_buffer_write(void *fd, uint8_t *data, int32_t nbytes)
     /* Unused parameter. */
     UNUSED_PARAM(nbytes);
 
+    SYS_LOG_FUNTION_ENTRY(NET_BUFFER);
+
     /* Caller already has the lock for net buffer data. */
 
     /* Push the buffer on the network buffer queue. */
@@ -190,6 +216,8 @@ static int32_t net_buffer_write(void *fd, uint8_t *data, int32_t nbytes)
 
     /* Tell the file system that there is some data available on this file descriptor. */
     fd_data_available(fd);
+
+    SYS_LOG_FUNTION_EXIT(NET_BUFFER);
 
     /* Return the number of bytes. */
     return (sizeof(FS_BUFFER *));
@@ -214,6 +242,8 @@ static int32_t net_buffer_read(void *fd, uint8_t *buffer, int32_t size)
 
     /* Unused parameter. */
     UNUSED_PARAM(size);
+
+    SYS_LOG_FUNTION_ENTRY(NET_BUFFER);
 
     /* Caller already has the lock for net buffer data. */
 
@@ -241,6 +271,8 @@ static int32_t net_buffer_read(void *fd, uint8_t *buffer, int32_t size)
         /* Tell the file system that there is no data on the file descriptor. */
         fd_data_flushed(fd);
     }
+
+    SYS_LOG_FUNTION_EXIT(NET_BUFFER);
 
     /* Return the number of bytes. */
     return (nbytes);

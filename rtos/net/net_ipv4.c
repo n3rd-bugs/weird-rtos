@@ -49,8 +49,12 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *, FS_BUFFER *);
  */
 void ipv4_device_initialize(NET_DEV *net_dev)
 {
+    SYS_LOG_FUNTION_ENTRY(IPV4);
+
     /* Clear the IPv4 address assigned to this device. */
     ipv4_set_device_address(net_dev->fd, 0x0, 0x0);
+
+    SYS_LOG_FUNTION_EXIT(IPV4);
 
 } /* ipv4_device_initialize */
 
@@ -66,6 +70,8 @@ void ipv4_device_initialize(NET_DEV *net_dev)
  */
 uint8_t ipv4_compare_address(uint32_t address1, uint32_t address2, uint8_t match)
 {
+    SYS_LOG_FUNTION_ENTRY(IPV4);
+
     /* If match is not already failed. */
     if (match != FALSE)
     {
@@ -97,6 +103,8 @@ uint8_t ipv4_compare_address(uint32_t address1, uint32_t address2, uint8_t match
         }
     }
 
+    SYS_LOG_FUNTION_EXIT(IPV4);
+
     /* Return match status to the caller. */
     return (match);
 
@@ -117,6 +125,8 @@ int32_t ipv4_get_device_address(FD fd, uint32_t *address, uint32_t *subnet)
 {
     NET_DEV *net_device = net_device_get_fd(fd);
     int32_t status = SUCCESS;
+
+    SYS_LOG_FUNTION_ENTRY(IPV4);
 
     if (net_device != NULL)
     {
@@ -146,6 +156,8 @@ int32_t ipv4_get_device_address(FD fd, uint32_t *address, uint32_t *subnet)
         status = NET_INVALID_FD;
     }
 
+    SYS_LOG_FUNTION_EXIT_STATUS(IPV4, status);
+
     /* Return status to the caller. */
     return (status);
 
@@ -167,6 +179,8 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address, uint32_t subnet)
     NET_DEV *net_device = net_device_get_fd(fd);
     int32_t status = SUCCESS;
 
+    SYS_LOG_FUNTION_ENTRY(IPV4);
+
     if (net_device != NULL)
     {
         /* If we are not clearing old address. */
@@ -187,6 +201,8 @@ int32_t ipv4_set_device_address(FD fd, uint32_t address, uint32_t subnet)
         status = NET_INVALID_FD;
     }
 
+    SYS_LOG_FUNTION_EXIT_STATUS(IPV4, status);
+
     /* Return status to the caller. */
     return (status);
 
@@ -203,6 +219,8 @@ NET_DEV *ipv4_get_source_device(uint32_t address)
 {
     NET_DEV *ret_device = NULL;
 
+    SYS_LOG_FUNTION_ENTRY(IPV4);
+
     /* Disable preemption. */
     scheduler_lock();
 
@@ -214,6 +232,8 @@ NET_DEV *ipv4_get_source_device(uint32_t address)
 
     /* Return the resolved device for the given IP address. */
     return (ret_device);
+    SYS_LOG_FUNTION_EXIT(IPV4);
+
 
 } /* ipv4_get_source_device */
 
@@ -240,6 +260,8 @@ int32_t net_process_ipv4(FS_BUFFER *buffer, uint32_t flags)
 #ifdef NET_ICMP
     uint8_t keep, icmp_rep;
 #endif
+
+    SYS_LOG_FUNTION_ENTRY(IPV4);
 
     /* We must have at least one byte to verify an IPv4 packet. */
     if (buffer->total_length >= 1)
@@ -473,6 +495,8 @@ int32_t net_process_ipv4(FS_BUFFER *buffer, uint32_t flags)
 #endif /* NET_ICMP */
     }
 
+    SYS_LOG_FUNTION_EXIT_STATUS(IPV4, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
+
     /* Return status to the caller. */
     return (status);
 
@@ -516,6 +540,8 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
         {&src_addr,     4,  (FS_BUFFER_PACKED | flags) },   /* Source address. */
         {&dst_addr,     4,  (FS_BUFFER_PACKED | flags) },   /* Destination address. */
     };
+
+    SYS_LOG_FUNTION_ENTRY(IPV4);
 
     /* Increment the ID for each packet we send. */
     id++;
@@ -597,6 +623,8 @@ int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uin
         }
     }
 
+    SYS_LOG_FUNTION_EXIT_STATUS(IPV4, status);
+
     /* Return status to the caller. */
     return (status);
 
@@ -616,6 +644,8 @@ void ipv4_fragment_set_data(FD fd, IPV4_FRAGMENT *fragments, uint32_t num)
 {
     NET_DEV *net_device = net_device_get_fd(fd);
 
+    SYS_LOG_FUNTION_ENTRY(IPV4);
+
     /* Initialize the IPv4 fragment data. */
     net_device->ipv4.fargment.list = fragments;
     net_device->ipv4.fargment.num = num;
@@ -625,6 +655,8 @@ void ipv4_fragment_set_data(FD fd, IPV4_FRAGMENT *fragments, uint32_t num)
 
     /* Add condition for this fragment in networking stack. */
     net_condition_add(&net_device->ipv4.fargment.condition, &net_device->ipv4.fargment.suspend, &ipv4_fragment_expired, net_device);
+
+    SYS_LOG_FUNTION_EXIT(IPV4);
 
 } /* ipv4_fragment_set_data */
 
@@ -638,6 +670,8 @@ static void ipv4_fragment_update_timer(NET_DEV *net_device)
 {
     uint64_t next_timeout = MAX_WAIT;
     uint32_t n;
+
+    SYS_LOG_FUNTION_ENTRY(IPV4);
 
     /* Go though all the fragments in this device. */
     for (n = 0; n < net_device->ipv4.fargment.num; n++)
@@ -657,6 +691,8 @@ static void ipv4_fragment_update_timer(NET_DEV *net_device)
     /* Save the timeout at which we will need to expire next fragment. */
     net_device->ipv4.fargment.suspend.timeout = next_timeout;
 
+    SYS_LOG_FUNTION_EXIT(IPV4);
+
 } /* ipv4_fragment_update_timer */
 
 /*
@@ -671,6 +707,8 @@ static void ipv4_fragment_expired(void *data)
     uint64_t clock = current_system_tick();
     FD buffer_fd;
     uint32_t n;
+
+    SYS_LOG_FUNTION_ENTRY(IPV4);
 
     /* Go though all the fragments in this device. */
     for (n = 0; n < net_device->ipv4.fargment.num; n++)
@@ -703,6 +741,8 @@ static void ipv4_fragment_expired(void *data)
     /* Update fragment timer. */
     ipv4_fragment_update_timer(net_device);
 
+    SYS_LOG_FUNTION_EXIT(IPV4);
+
 } /* ipv4_fragment_expired */
 
 /*
@@ -720,6 +760,8 @@ static uint8_t ipv4_frag_sort(void *node, void *new_node)
     uint16_t this_flag_offset, flag_offset;
     uint8_t insert = FALSE;
 
+    SYS_LOG_FUNTION_ENTRY(IPV4);
+
     /* Pull the flag and offset field for these buffers. */
     OS_ASSERT(fs_buffer_pull_offset(this_buffer, &this_flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
     OS_ASSERT(fs_buffer_pull_offset(buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
@@ -730,6 +772,8 @@ static uint8_t ipv4_frag_sort(void *node, void *new_node)
         /* Insert this fragment here. */
         insert = TRUE;
     }
+
+    SYS_LOG_FUNTION_EXIT(IPV4);
 
     /* Return if we need to insert this fragment here. */
     return (insert);
@@ -755,6 +799,8 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
     uint32_t sa, n;
     int32_t status = FS_BUFFER_NO_SPACE;
     uint16_t id;
+
+    SYS_LOG_FUNTION_ENTRY(IPV4);
 
     /* Should never happen. */
     OS_ASSERT(net_device == NULL);
@@ -871,6 +917,8 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
         }
     }
 
+    SYS_LOG_FUNTION_EXIT_STATUS(IPV4, status);
+
     /* Return status to the caller. */
     return (status);
 
@@ -894,6 +942,8 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER *buffer)
     int32_t status = SUCCESS;
     uint16_t flag_offset, next_offset = 0;
     uint8_t ver_ihl;
+
+    SYS_LOG_FUNTION_ENTRY(IPV4);
 
     /* Pick the first and next buffer. */
     last_buffer = fragment->buffer_list.head;
@@ -976,6 +1026,8 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER *buffer)
             status = NET_NO_ACTION;
         }
     }
+
+    SYS_LOG_FUNTION_EXIT_STATUS(IPV4, status);
 
     /* Return status to the caller. */
     return (status);
