@@ -18,6 +18,7 @@
 #include <enc28j60_stm32f407.h>
 #include <string.h>
 #include <spi_stm32f407.h>
+#include <net_csum.h>
 
 /* ENC28J60 device instance. */
 static ENC28J60 enc28j60;
@@ -87,6 +88,7 @@ void enc28j60_stm32f407_init()
 #endif
     enc28j60.interrupt_pin = &enc28j60_stm32f407_interrupt_pin;
     enc28j60.reset = &enc28j60_stm32f407_reset;
+    enc28j60.get_mac = &enc28j60_stm32f407_get_mac;
 
     /* Initialize name for this device. */
     enc28j60.ethernet_device.fs.name = "\\ethernet\\enc28j60";
@@ -187,5 +189,29 @@ void enc28j60_stm32f407_reset(ENC28J60 *device)
     GPIOA->BSRR |= (1 << 3);
 
 } /* enc28j60_stm32f407_reset */
+
+/*
+ * enc28j60_stm32f407_get_mac
+ * @device: Ethernet device instance for which MAC address is needed to
+ *  be assigned.
+ * @return: Returns the start of random MAC address generated.
+ * This function will generate a MAC address using the device serial.
+ */
+uint8_t *enc28j60_stm32f407_get_mac(ETH_DEVICE *device)
+{
+    /* Push ENC28j60 OUI bytes. */
+    device->mac[0] = ENC28J60_OUI_B0;
+    device->mac[1] = ENC28J60_OUI_B1;
+    device->mac[2] = ENC28J60_OUI_B2;
+
+    /* Assign remaining MAC address using the device serial. */
+    device->mac[3] = (uint8_t)NET_CSUM_BYTE(NET_CSUM_BYTE(NET_CSUM_BYTE(STM32_UUID[0], STM32_UUID[1]), STM32_UUID[2]), STM32_UUID[3]);
+    device->mac[4] = (uint8_t)NET_CSUM_BYTE(NET_CSUM_BYTE(NET_CSUM_BYTE(STM32_UUID[4], STM32_UUID[5]), STM32_UUID[6]), STM32_UUID[7]);
+    device->mac[5] = (uint8_t)NET_CSUM_BYTE(NET_CSUM_BYTE(NET_CSUM_BYTE(STM32_UUID[8], STM32_UUID[9]), STM32_UUID[10]), STM32_UUID[11]);
+
+    /* Return the generated MAC address. */
+    return (device->mac);
+
+} /* enc28j60_stm32f407_get_mac */
 
 #endif /* ETHERNET_ENC28J60 */

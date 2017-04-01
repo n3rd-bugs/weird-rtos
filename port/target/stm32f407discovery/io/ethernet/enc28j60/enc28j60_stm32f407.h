@@ -21,6 +21,8 @@
 /* ENC28J60 device configuration. */
 #define ENC28J60_STM32F407_RESET_DELAY  (100)
 
+#define STM32_UUID                      ((uint8_t *)0x1FFF7A10)
+
 /* Function prototypes. */
 void enc28j60_stm32f407_init();
 #if (ENC28J60_INT_POLL == FALSE)
@@ -30,6 +32,7 @@ void enc28j60_stm32f407_disable_interrupt(ENC28J60 *);
 #endif
 uint8_t enc28j60_stm32f407_interrupt_pin(ENC28J60 *);
 void enc28j60_stm32f407_reset(ENC28J60 *);
+uint8_t *enc28j60_stm32f407_get_mac(ETH_DEVICE *);
 
 #endif /* ETHERNET_ENC28J60 */
 #endif /* _ENC28J60_STM32F407_H_ */
