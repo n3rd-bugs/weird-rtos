@@ -100,13 +100,13 @@ static void *mmc_spi_fsopen(void *priv_data, char *name, uint32_t flags)
         if (ptr != NULL)
         {
             /* Copy the start address in a buffer. */
-            strncpy((char *)uint32_buffer, name, ((uint8_t *)ptr - (uint8_t *)name));
+            strncpy((char *)uint32_buffer, name, (size_t)((uint8_t *)ptr - (uint8_t *)name));
             uint32_buffer[((uint8_t *)ptr - (uint8_t *)name)] = '\0';
 
             SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_INFO, "requested start sector %s", uint32_buffer);
 
             /* Retrieve the start sector. */
-            start_sector = atoi((char *)uint32_buffer);
+            start_sector = (uint32_t)atoi((char *)uint32_buffer);
 
             /* If we have anticipated data. */
             if (*(ptr + 1) != '\0')
@@ -118,7 +118,7 @@ static void *mmc_spi_fsopen(void *priv_data, char *name, uint32_t flags)
                 SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_INFO, "requested number of sector %s", uint32_buffer);
 
                 /* Retrieve the number of sectors. */
-                num_sectors = atoi((char *)uint32_buffer);
+                num_sectors = (uint32_t)atoi((char *)uint32_buffer);
 
                 /* If do have at least one sector to read and write. */
                 if (num_sectors > 0)
@@ -251,14 +251,14 @@ static int32_t mmc_spi_fsread(void *fd, uint8_t *buffer, int32_t nbytes)
             if ((uint64_t)nbytes > mmc->num_bytes)
             {
                 /* Read only the bytes remaining. */
-                nbytes = mmc->num_bytes;
+                nbytes = (int32_t)mmc->num_bytes;
             }
 
             /* Read a chunk of buffer. */
             if (mmc_spi_read(mmc, 0, &mmc->offset, buffer, nbytes) == SUCCESS)
             {
                 /* Decrement number of bytes to read. */
-                mmc->num_bytes -= nbytes;
+                mmc->num_bytes -= (uint64_t)nbytes;
             }
             else
             {
@@ -310,7 +310,7 @@ static int32_t mmc_spi_fswrite(void *fd, uint8_t *buffer, int32_t nbytes)
             if ((mmc->num_bytes != MMC_SPI_UNKNOWN_NBYTES) && ((uint64_t)nbytes > mmc->num_bytes))
             {
                 /* Only write the remaining number of bytes. */
-                nbytes = mmc->num_bytes;
+                nbytes = (int32_t)mmc->num_bytes;
             }
 
             /* Write a chunk of buffer. */
@@ -319,7 +319,7 @@ static int32_t mmc_spi_fswrite(void *fd, uint8_t *buffer, int32_t nbytes)
                 if (mmc->num_bytes != MMC_SPI_UNKNOWN_NBYTES)
                 {
                     /* Decrement number of bytes to write. */
-                    mmc->num_bytes -= nbytes;
+                    mmc->num_bytes -= (uint64_t)nbytes;
                 }
             }
             else
@@ -770,10 +770,10 @@ int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *b
             if (status == SUCCESS)
             {
                 /* If this read may span on multiple sectors. */
-                if ((sector_offset + size) > MMC_SPI_SECTOR_SIZE)
+                if (((int32_t)sector_offset + size) > MMC_SPI_SECTOR_SIZE)
                 {
                     /* Just receive number of bytes we can from this sector. */
-                    this_size = MMC_SPI_SECTOR_SIZE - sector_offset;
+                    this_size = MMC_SPI_SECTOR_SIZE - (int32_t)sector_offset;
                 }
                 else
                 {
@@ -792,7 +792,7 @@ int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *b
                 if (status == SUCCESS)
                 {
                     /* Updated data offset and remaining number of bytes. */
-                    *offset += this_size;
+                    *offset += (uint64_t)this_size;
                     buffer += this_size;
                 }
             }
@@ -972,10 +972,10 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
             if (status == SUCCESS)
             {
                 /* If this write may span on multiple sectors. */
-                if ((sector_offset + size) > MMC_SPI_SECTOR_SIZE)
+                if (((int32_t)sector_offset + size) > MMC_SPI_SECTOR_SIZE)
                 {
                     /* Just send number of bytes we can send in this sector. */
-                    this_size = MMC_SPI_SECTOR_SIZE - sector_offset;
+                    this_size = MMC_SPI_SECTOR_SIZE - (int32_t)sector_offset;
                 }
                 else
                 {
@@ -994,7 +994,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
                 if (status == SUCCESS)
                 {
                     /* Updated data offset and remaining number of bytes. */
-                    *offset += this_size;
+                    *offset += (uint64_t)this_size;
                     buffer += this_size;
                 }
             }
@@ -1169,7 +1169,7 @@ int32_t mmc_spi_get_num_sectors(MMC_SPI *mmc, uint64_t *num_sectors)
         if ((csd[0] >> 6) == 1)
         {
             /* Parse the driver size. */
-            drive_size = csd[9] + ((uint16_t)csd[8] << 8) + ((uint32_t)(csd[7] & 0x3F) << 16) + 1;
+            drive_size = (uint32_t)csd[9] + (uint32_t)((uint16_t)csd[8] << 8) + (uint32_t)((uint32_t)(csd[7] & 0x3F) << 16) + 1;
 
             /* Return number of sectors. */
             *num_sectors = ((uint64_t)drive_size << 10);
@@ -1177,10 +1177,10 @@ int32_t mmc_spi_get_num_sectors(MMC_SPI *mmc, uint64_t *num_sectors)
         else
         {
             /* Parse size scale. */
-            scale = (csd[5] & 0xF) + ((csd[10] & 0x80) >> 7) + ((csd[9] & 0x3) << 1) + 2;
+            scale = (uint8_t)((uint8_t)(csd[5] & 0xF) + (uint8_t)((csd[10] & 0x80) >> 7) + (uint8_t)((csd[9] & 0x3) << 1) + 2);
 
             /* Parse the driver size. */
-            drive_size = (csd[8] >> 6) + ((uint16_t)csd[7] << 2) + ((uint16_t)(csd[6] & 0x3) << 10) + 1;
+            drive_size = (uint32_t)(csd[8] >> 6) + ((uint32_t)csd[7] << 2) + ((uint32_t)(csd[6] & 0x3) << 10) + 1;
 
             /* Return number of sectors. */
             *num_sectors = ((uint64_t)drive_size << (scale - 9));
@@ -1239,7 +1239,7 @@ int32_t mmc_spi_get_sectors_per_block(MMC_SPI *mmc, uint64_t *num_sectors)
                 msg.flags = (SPI_MSG_READ);
 
                 /* Read next 63 bytes [1:63] */
-                for (i = MMC_SPI_CSD_LEN; ((status == SUCCESS) && (i < 64)); i += MMC_SPI_CSD_LEN)
+                for (i = MMC_SPI_CSD_LEN; ((status == SUCCESS) && (i < 64)); i = (uint8_t)(i + MMC_SPI_CSD_LEN))
                 {
                     /* Receive next 16 byte. */
                     status = mmc->spi.msg(&mmc->spi, &msg);
@@ -1261,14 +1261,14 @@ int32_t mmc_spi_get_sectors_per_block(MMC_SPI *mmc, uint64_t *num_sectors)
             if (mmc->flags & MMC_SPI_CARD_SD1)
             {
                 /* Calculate and return number of sectors per block. */
-                *num_sectors = (((csd[10] & 0x3F) << 1) + ((uint64_t)(csd[11] & 0x80) >> 7) + 1) << ((csd[13] >> 6) - 1);
+                *num_sectors = ((uint64_t)((csd[10] & 0x3F) << 1) + ((uint64_t)(csd[11] & 0x80) >> 7) + 1) << ((csd[13] >> 6) - 1);
             }
 
             /* This is MMCv3. */
             else
             {
                 /* Calculate and return number of sectors per block. */
-                *num_sectors = ((uint64_t)((csd[10] & 0x7C) >> 2) + 1) * (((csd[11] & 0x03) << 3) + ((csd[11] & 0xE0) >> 5) + 1);
+                *num_sectors = ((uint64_t)((csd[10] & 0x7C) >> 2) + 1) * (uint64_t)(((csd[11] & 0x03) << 3) + ((csd[11] & 0xE0) >> 5) + 1);
             }
         }
     }

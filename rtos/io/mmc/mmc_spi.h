@@ -121,6 +121,8 @@ typedef struct _mmc_spi
     /* Card flags. */
     uint16_t    flags;
 
+    /* Structure padding. */
+    uint8_t     pad[2];
 } MMC_SPI;
 
 /* Function prototypes. */
