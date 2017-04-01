@@ -101,7 +101,7 @@ int32_t route_add(FD device, uint32_t interface_address, uint32_t gateway, uint3
         if (status == SUCCESS)
         {
             /* If we have a free  route entry. */
-            if (free_route > 0)
+            if (free_route >= 0)
             {
                 /* Update the route entry. */
                 routes[free_route].device = device;
@@ -245,7 +245,7 @@ int32_t route_get(FD *device, uint32_t destination, uint32_t *iface_addr, uint32
         }
 
         /* If we have a route. */
-        if (route > 0)
+        if (route >= 0)
         {
             /* If we need to return the device associated for this route. */
             if ((device != NULL) && (*device == NULL))
@@ -286,7 +286,7 @@ int32_t route_get(FD *device, uint32_t destination, uint32_t *iface_addr, uint32
         }
 
         /* If we found a default route. */
-        else if (default_route > 0)
+        else if (default_route >= 0)
         {
             /* If we need to return the device associated for this route. */
             if ((device != NULL) && (*device == NULL))
