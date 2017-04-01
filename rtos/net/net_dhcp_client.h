@@ -50,7 +50,8 @@ typedef struct _dhcp_client_data
     FS_PARAM    fs_param;
 
     /* Structure padding. */
-    uint8_t     pad[ALLIGN_CEIL(4)];
+    uint8_t     pad[4];
+
 } DHCP_CLIENT_DATA;
 
 /* DHCP client device data. */

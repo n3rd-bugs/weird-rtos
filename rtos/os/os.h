@@ -51,7 +51,7 @@
 #define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
 
 /* Alignment manipulation macros. */
-#define ALLIGN_SIZE                 (uint32_t)(0x4)
+#define ALLIGN_SIZE                 (uint32_t)(0x8)
 #define ALLIGN_FLOOR_N(n, num)      (uint32_t)(((n) % num) ? ((n) & (uint32_t)~(num - 1)) : (n))
 #define ALLIGN_CEIL_N(n, num)       (uint32_t)(((n) % num) ? ((n) & (uint32_t)~(num - 1)) + num : (n))
 #define ALLIGN_FLOOR(n)             (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(ALLIGN_SIZE - 1)) : (n))

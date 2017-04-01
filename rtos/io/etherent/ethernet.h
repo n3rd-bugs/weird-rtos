@@ -111,7 +111,7 @@ typedef struct _eth_device
     uint8_t     flags;
 
     /* Structure padding. */
-    uint8_t     pad[7];
+    uint8_t     pad[3];
 
 } ETH_DEVICE;
 
