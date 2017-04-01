@@ -130,6 +130,9 @@ typedef struct _ipv4_device
 #ifdef DHCP_CLIENT
     /* IPv4 DHCP client data. */
     DHCP_CLIENT_DEVICE  *dhcp_client;
+#else
+    /* Structure padding. */
+    uint8_t     pad[4];
 #endif
 } IPV4_DEVICE;
 
