@@ -99,9 +99,11 @@ typedef struct {
 	BYTE	n_fats;			/* Number of FATs (1 or 2) */
 	BYTE	wflag;			/* win[] flag (b0:dirty) */
 	BYTE	fsi_flag;		/* FSINFO flags (b7:disabled, b0:dirty) */
+	BYTE	pad[3];
 	WORD	id;				/* File system mount ID */
 	WORD	n_rootdir;		/* Number of root directory entries (FAT12/16) */
 	WORD	csize;			/* Cluster size [sectors] */
+	BYTE	pad_2[2];
 #if _MAX_SS != _MIN_SS
 	WORD	ssize;			/* Sector size (512, 1024, 2048 or 4096) */
 #endif
@@ -166,6 +168,7 @@ typedef struct {
 	_FDID	obj;			/* Object identifier (must be the 1st member to detect invalid object pointer) */
 	BYTE	flag;			/* File status flags */
 	BYTE	err;			/* Abort flag (error code) */
+	BYTE	pad[2];
 	FSIZE_t	fptr;			/* File read/write pointer (Zeroed on file open) */
 	DWORD	clust;			/* Current cluster of fpter (invalid when fprt is 0) */
 	DWORD	sect;			/* Sector number appearing in buf[] (0:invalid) */
@@ -214,6 +217,7 @@ typedef struct {
 	TCHAR	fname[_MAX_LFN + 1];	/* Primary file name */
 #else
 	TCHAR	fname[13];		/* File name */
+	BYTE	pad[2];
 #endif
 } FILINFO;
 

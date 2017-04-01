@@ -84,7 +84,7 @@ static void *fatfs_open(void *priv_data, char *name, uint32_t flags)
     uint32_t i;
     FAT_FILE *fd = NULL;
     int32_t status;
-    uint32_t fs_flags = 0;
+    BYTE fs_flags = 0;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(priv_data);
@@ -215,7 +215,7 @@ static int32_t fatfs_read(void *priv_data, uint8_t *buf, int32_t nbytes)
     SYS_LOG_FUNTION_ENTRY(FATFS);
 
     /* Transfer read to the file system. */
-    if ((status = f_read(&fd->file, buf, nbytes, (UINT *)&bytes)) != FR_OK)
+    if ((status = f_read(&fd->file, buf, (UINT)nbytes, (UINT *)&bytes)) != FR_OK)
     {
         /* Nothing was read from the file system. */
         bytes = 0;
@@ -223,7 +223,7 @@ static int32_t fatfs_read(void *priv_data, uint8_t *buf, int32_t nbytes)
         SYS_LOG_FUNTION_MSG(FATFS, SYS_LOG_INFO, "f_read returned %d", status);
     }
 
-    SYS_LOG_FUNTION_HEXDUMP(FATFS, SYS_LOG_DEBUG, "read ", buf, nbytes);
+    SYS_LOG_FUNTION_HEXDUMP(FATFS, SYS_LOG_DEBUG, "read ", buf, (uint32_t)nbytes);
 
     SYS_LOG_FUNTION_EXIT(FATFS);
 
@@ -248,10 +248,10 @@ static int32_t fatfs_write(void *priv_data, uint8_t *buf, int32_t nbytes)
 
     SYS_LOG_FUNTION_ENTRY(FATFS);
 
-    SYS_LOG_FUNTION_HEXDUMP(FATFS, SYS_LOG_DEBUG, "writing ", buf, nbytes);
+    SYS_LOG_FUNTION_HEXDUMP(FATFS, SYS_LOG_DEBUG, "writing ", buf, (uint32_t)nbytes);
 
     /* Transfer write to the file system. */
-    if ((status = f_write(&fd->file, buf, nbytes, (UINT *)&bytes)) != FR_OK)
+    if ((status = f_write(&fd->file, buf, (UINT)nbytes, (UINT *)&bytes)) != FR_OK)
     {
         /* Nothing was read from the file system. */
         bytes = 0;

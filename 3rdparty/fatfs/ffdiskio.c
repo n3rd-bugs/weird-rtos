@@ -174,7 +174,7 @@ DRESULT disk_read (
 		}
 
 		/* Read and return required sector. */
-		if (device->read(device->phy_device, sector, &device->offset, buff, count * device->sector_size) == SUCCESS)
+		if (device->read(device->phy_device, sector, &device->offset, buff, (int32_t)(count * device->sector_size)) == SUCCESS)
 		{
 			/* Update the device state. */
 			device->current_sector = sector + count;
@@ -224,7 +224,7 @@ DRESULT disk_write (
 		}
 
 		/* Read and return required sector. */
-		if (device->write(device->phy_device, sector, &device->offset, (uint8_t *)buff, count * device->sector_size) == SUCCESS)
+		if (device->write(device->phy_device, sector, &device->offset, (uint8_t *)buff, (int32_t)(count * device->sector_size)) == SUCCESS)
 		{
 			/* Update the device state. */
 			device->current_sector = sector + count;

@@ -606,7 +606,7 @@ WORD ld_word (const BYTE* ptr)	/*	 Load a 2-byte little-endian word */
 	WORD rv;
 
 	rv = ptr[1];
-	rv = rv << 8 | ptr[0];
+	rv = (WORD)(rv << 8 | ptr[0]);
 	return rv;
 }
 
@@ -1007,7 +1007,7 @@ DWORD get_fat (	/* 0xFFFFFFFF:Disk error, 1:Internal error, 2..0x7FFFFFFF:Cluste
 			if (move_window(fs, fs->fatbase + (bc / SS(fs))) != FR_OK) break;
 			wc = fs->win[bc++ % SS(fs)];
 			if (move_window(fs, fs->fatbase + (bc / SS(fs))) != FR_OK) break;
-			wc |= fs->win[bc % SS(fs)] << 8;
+			wc |= (UINT)fs->win[bc % SS(fs)] << 8;
 			val = (clst & 1) ? (wc >> 4) : (wc & 0xFFF);
 			break;
 
@@ -1079,12 +1079,12 @@ FRESULT put_fat (	/* FR_OK(0):succeeded, !=0:error */
 			res = move_window(fs, fs->fatbase + (bc / SS(fs)));
 			if (res != FR_OK) break;
 			p = fs->win + bc++ % SS(fs);
-			*p = (clst & 1) ? ((*p & 0x0F) | ((BYTE)val << 4)) : (BYTE)val;
+			*p = (clst & 1) ? (BYTE)(((*p & 0x0F) | ((BYTE)val << 4))) : (BYTE)val;
 			fs->wflag = 1;
 			res = move_window(fs, fs->fatbase + (bc / SS(fs)));
 			if (res != FR_OK) break;
 			p = fs->win + bc % SS(fs);
-			*p = (clst & 1) ? (BYTE)(val >> 4) : ((*p & 0xF0) | ((BYTE)(val >> 8) & 0x0F));
+			*p = (clst & 1) ? (BYTE)(val >> 4) : (BYTE)(((*p & 0xF0) | ((BYTE)(val >> 8) & 0x0F)));
 			fs->wflag = 1;
 			break;
 
@@ -1498,7 +1498,7 @@ FRESULT dir_next (	/* FR_OK(0):succeeded, FR_NO_FILE:End of table, FR_DENIED:Cou
 			}
 		}
 		else {					/* Dynamic table */
-			if ((ofs / SS(fs) & (fs->csize - 1)) == 0) {		/* Cluster changed? */
+			if ((ofs / SS(fs) & (DWORD)(fs->csize - 1)) == 0) {		/* Cluster changed? */
 				clst = get_fat(&dp->obj, dp->clust);			/* Get next cluster */
 				if (clst <= 1) return FR_INT_ERR;				/* Internal error */
 				if (clst == 0xFFFFFFFF) return FR_DISK_ERR;		/* Disk error */
@@ -2742,7 +2742,7 @@ FRESULT create_name (	/* FR_OK: successful, FR_INVALID_NAME: could not create */
 			sfn[i++] = d;
 		} else {						/* SBC */
 			if (chk_chr("\"*+,:;<=>\?[]|\x7F", c)) return FR_INVALID_NAME;	/* Reject illegal chrs for SFN */
-			if (IsLower(c)) c -= 0x20;	/* To upper */
+			if (IsLower(c)) c = (BYTE)(c - 0x20);	/* To upper */
 			sfn[i++] = c;
 		}
 	}
@@ -2878,7 +2878,7 @@ int get_ldnumber (		/* Returns logical drive number (-1:invalid drive) */
 		if (*tt == ':') {	/* If a ':' is exist in the path name */
 #endif
 			tp = *path;
-			i = *tp++ - '0';
+			i = (UINT)(*tp++ - '0');
 			if (i < 10 && tp == tt) {	/* Is there a numeric drive id? */
 				if (i < _VOLUMES) {	/* If a drive id is found, get the value and strip it */
 					vol = (int)i;
@@ -3477,7 +3477,7 @@ FRESULT f_read (
 	for ( ;  btr;								/* Repeat until all data read */
 		rbuff += rcnt, fp->fptr += rcnt, *br += rcnt, btr -= rcnt) {
 		if (fp->fptr % SS(fs) == 0) {			/* On the sector boundary? */
-			csect = (UINT)(fp->fptr / SS(fs) & (fs->csize - 1));	/* Sector offset in the cluster */
+			csect = (UINT)(fp->fptr / SS(fs) & (FSIZE_t)(fs->csize - 1));	/* Sector offset in the cluster */
 			if (csect == 0) {					/* On the cluster boundary? */
 				if (fp->fptr == 0) {			/* On the top of the file? */
 					clst = fp->obj.sclust;		/* Follow cluster chain from the origin */
@@ -3579,7 +3579,7 @@ FRESULT f_write (
 	for ( ;  btw;							/* Repeat until all data written */
 		wbuff += wcnt, fp->fptr += wcnt, fp->obj.objsize = (fp->fptr > fp->obj.objsize) ? fp->fptr : fp->obj.objsize, *bw += wcnt, btw -= wcnt) {
 		if (fp->fptr % SS(fs) == 0) {		/* On the sector boundary? */
-			csect = (UINT)(fp->fptr / SS(fs)) & (fs->csize - 1);	/* Sector offset in the cluster */
+			csect = (UINT)(fp->fptr / SS(fs)) & (FSIZE_t)(fs->csize - 1);	/* Sector offset in the cluster */
 			if (csect == 0) {				/* On the cluster boundary? */
 				if (fp->fptr == 0) {		/* On the top of the file? */
 					clst = fp->obj.sclust;	/* Follow from the origin */
