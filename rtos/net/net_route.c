@@ -91,10 +91,10 @@ int32_t route_add(FD device, uint32_t interface_address, uint32_t gateway, uint3
                 status = ROUTE_EXIST;
                 break;
             }
-            else if ((routes[i].flags & ROUTE_VALID) == 0)
+            else if (((routes[i].flags & ROUTE_VALID) == 0) && (free_route == -1))
             {
                 /* Save the free route index. */
-                free_route =  i;
+                free_route = i;
             }
         }
 
