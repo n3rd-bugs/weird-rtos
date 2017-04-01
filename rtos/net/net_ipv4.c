@@ -680,7 +680,7 @@ static void ipv4_fragment_update_timer(NET_DEV *net_device)
         if (net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE)
         {
             /* If this fragment will expire before the last saved expire time. */
-            if (net_device->ipv4.fargment.list[n].timeout < next_timeout)
+            if (INT64CMP(next_timeout, net_device->ipv4.fargment.list[n].timeout) > 0)
             {
                 /* Use this fragment's timeout. */
                 next_timeout = net_device->ipv4.fargment.list[n].timeout;
@@ -714,7 +714,7 @@ static void ipv4_fragment_expired(void *data)
     for (n = 0; n < net_device->ipv4.fargment.num; n++)
     {
         /* If this fragment is now expired. */
-        if ((net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE) && (net_device->ipv4.fargment.list[n].timeout <= clock))
+        if ((net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE) && (INT64CMP(clock, net_device->ipv4.fargment.list[n].timeout) >= 0))
         {
             /* If we do have at least one buffer on this fragment. */
             if (net_device->ipv4.fargment.list[n].buffer_list.head)

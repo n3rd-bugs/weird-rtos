@@ -325,7 +325,7 @@ static uint64_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
         if ((*suspend)->timeout != MAX_WAIT)
         {
             /* Calculate the number of ticks left till it's timeout. */
-            this_timeout = (((*suspend)->timeout > clock) ? ((*suspend)->timeout - clock) : 0);
+            this_timeout = (INT64CMP((*suspend)->timeout, clock) > 0) ? (uint64_t)INT64CMP((*suspend)->timeout, clock) : 0;
 
             /* If this timer has minimum ticks left on it. */
             if (this_timeout < min_timeout)

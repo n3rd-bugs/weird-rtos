@@ -31,7 +31,7 @@ static uint8_t sch_periodic_task_sort(void *node, void *task)
 
     /* If node has scheduling time greater than the given task then we need to
      * insert this task before this node. */
-    if ( (((TASK *)node)->scheduler_data_2 > ((TASK *)task)->scheduler_data_2) ||
+    if ( (INT64CMP(((TASK *)node)->scheduler_data_2, ((TASK *)task)->scheduler_data_2) > 0) ||
 
          /* If node has scheduling time equal to the given task but the node has
           * lass priority then we need to schedule this task before this node. */

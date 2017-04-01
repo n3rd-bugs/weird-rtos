@@ -251,7 +251,7 @@ static void ethernet_process(void *data)
     OS_ASSERT(fd_get_lock((FD)device) != SUCCESS);
 
     /* If watch dog interrupt was triggered for this device. */
-    if ((device->net_device.suspend.timeout != MAX_WAIT) && (device->net_device.suspend.timeout <= current_system_tick()))
+    if ((device->net_device.suspend.timeout != MAX_WAIT) && (INT64CMP(device->net_device.suspend.timeout, current_system_tick()) <= 0))
     {
         /* Disable watch dog timer. */
         ethernet_wdt_disable(device);
