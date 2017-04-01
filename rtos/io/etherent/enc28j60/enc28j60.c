@@ -103,9 +103,6 @@ void enc28j60_init(ENC28J60 *device)
 #ifdef DHCP_CLIENT
     /* Initialize the DHCP client data for this device. */
     net_dhcp_client_initialize_device(net_device_get_fd(fd), &device->dhcp_client);
-#else
-    /* Set static IP address for this device. */
-    ipv4_set_device_address(fd, 0xC0A80132, 0xFFFFFF00);
 #endif
 
     SYS_LOG_FUNTION_EXIT(ENC28J60);
@@ -665,6 +662,11 @@ static void enc28j60_link_changed(ENC28J60 *device)
         {
             /* Set link-up for this device. */
             net_device_link_up(fd);
+
+#ifndef DHCP_CLIENT
+            /* Set static IP address for this device. */
+            ipv4_set_device_address(fd, 0xC0A80032, 0xFFFFFF00);
+#endif
 
             /* Process any frames needed to be sent. */
             device->ethernet_device.flags |= ETH_FLAG_TX;
