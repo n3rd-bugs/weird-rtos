@@ -14,6 +14,7 @@
 #define _USART_STM32F407_H_
 
 #include <os.h>
+#include <stdarg.h>
 
 /* Hook-up the STDIO printf function. */
 #ifdef printf
@@ -34,7 +35,7 @@
 
 /* Function prototypes. */
 int32_t usart_stm32f407_puts(void *, uint8_t *, int32_t);
-uint32_t usart_stm32f407_printf(char *, ...);
+int32_t usart_stm32f407_printf(char *, ...);
 int32_t usart_stm32f407_vprintf(const char *, va_list);
 void usart_stm32f407_init();
 

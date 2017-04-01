@@ -10,14 +10,12 @@
  * any other purpose. If this source is used for other than educational purpose
  * (in any form) the author will not be liable for any legal charges.
  */
+#include <stdio.h>
 #include <os.h>
-#include <string.h>
 #include <fs.h>
 #include <console.h>
 
 #ifdef FS_CONSOLE
-/* Debug file descriptor. */
-FD debug_usart_fd = NULL;
 
 /* Console data. */
 static CONSOLE usart_1 =
@@ -79,9 +77,9 @@ int32_t usart_stm32f407_puts(void *priv_data, uint8_t *buf, int32_t nbytes)
  * @format: Formated string to be printed on UART.
  * This function prints a formated string on the UART1.
  */
-uint32_t usart_stm32f407_printf(char *format, ...)
+int32_t usart_stm32f407_printf(char *format, ...)
 {
-    uint32_t n = 0;
+    int32_t n = 0;
     uint8_t buf[PRINTF_BUFFER_SIZE];
     va_list vl;
 
@@ -204,7 +202,7 @@ void usart_stm32f407_init()
     console_register(&usart_1);
 
     /* Set debug file descriptor. */
-    debug_usart_fd = fs_open("\\console\\usart1", 0);
+    debug_fd = fs_open("\\console\\usart1", 0);
 
 #endif /* FS_CONSOLE */
 

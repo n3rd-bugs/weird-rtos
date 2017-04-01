@@ -37,15 +37,8 @@
 #define current_hardware_tick()         pit_get_clock()
 #define current_hardware_tick_usec()    (pit_get_clock() / PCLK_FREQ)
 
-/* Hook-up the STDIO printf function. */
-#ifdef printf
-#undef printf
-#endif
-#define printf stm32f407_printf
-
 /* Function prototypes. */
 uint64_t pit_get_clock();
-int32_t stm32f407_printf(char *, ...);
 
 /* Helper functions. */
 void system_entry(void);
