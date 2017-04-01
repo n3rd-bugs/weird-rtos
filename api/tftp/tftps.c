@@ -234,7 +234,7 @@ static void tftp_server_process(void *data)
                                     fd_release_lock(rx_buffer->fd);
 
                                     /* Write a chuck on the file. */
-                                    if (fs_write(tftp_server->fd, data_buffer, data_len) <= 0)
+                                    if (fs_write(tftp_server->fd, data_buffer, (int32_t)data_len) <= 0)
                                     {
                                         /* File error. */
                                         status = TFTP_ERROR_FS;
@@ -411,7 +411,7 @@ static void tftp_server_process(void *data)
                     for (data_len = 0; ((status == SUCCESS) && (data_len < TFTP_BLOCK_SIZE));)
                     {
                         /* Calculate the number of bytes we need to read. */
-                        status = (((data_len + TFTP_BUFFER_SIZE) > TFTP_BLOCK_SIZE) ? (TFTP_BLOCK_SIZE - data_len) : (TFTP_BUFFER_SIZE));
+                        status = (int32_t)(((data_len + TFTP_BUFFER_SIZE) > TFTP_BLOCK_SIZE) ? (TFTP_BLOCK_SIZE - data_len) : (TFTP_BUFFER_SIZE));
 
                         /* Read a chunk of buffer. */
                         status = fs_read(tftp_server->fd, data_buffer, status);
@@ -420,10 +420,10 @@ static void tftp_server_process(void *data)
                         if (status > 0)
                         {
                             /* Update the data length. */
-                            data_len += status;
+                            data_len += (uint32_t)status;
 
                             /* Push the read buffer on the buffer. */
-                            status = fs_buffer_push(rx_buffer, data_buffer, status, (FS_BUFFER_TAIL));
+                            status = fs_buffer_push(rx_buffer, data_buffer, (uint32_t)status, (FS_BUFFER_TAIL));
                         }
                         else
                         {
@@ -433,7 +433,7 @@ static void tftp_server_process(void *data)
                     }
 
                     /* Save the number of bytes we sent in this block. */
-                    tftp_server->tx_block_len = data_len;
+                    tftp_server->tx_block_len = (uint16_t)data_len;
 
                     /* If this was the last chunk. */
                     if (data_len != TFTP_BLOCK_SIZE)

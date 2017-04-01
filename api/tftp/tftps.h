@@ -83,6 +83,9 @@ typedef struct _tftp_server
     /* Flag to specify that we have just sent the last frame. */
     uint8_t     last_block;
 
+    /* Structure padding. */
+    uint8_t     pad[3];
+
 } TFTP_SERVER;
 
 /* Function prototypes. */
