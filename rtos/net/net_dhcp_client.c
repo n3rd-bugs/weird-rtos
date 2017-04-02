@@ -78,7 +78,7 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     }
 
     /* We should not wait more than the lease expire. */
-    if ((state != DHCP_CLI_DISCOVER) && (INT64CMP(client_data->suspend.timeout, (client_data->lease_start + client_data->lease_time)) > 0))
+    if ((state != DHCP_CLI_DISCOVER) && (client_data->suspend.timeout > (client_data->lease_start + client_data->lease_time)))
     {
         /* Lets wait till this lease expires. */
         client_data->suspend.timeout = client_data->lease_start + client_data->lease_time;
@@ -142,7 +142,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
     SYS_LOG_FUNTION_ENTRY(DHCPC);
 
     /* Add DHCP header on the buffer. */
-    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)((uint64_t)(INT64CMP(current_system_tick(), client_data->start_time)) / OS_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_RENEW) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
+    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)(((uint16_t)current_system_tick() - client_data->start_time) / OS_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_RENEW) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
 
     if (status == SUCCESS)
     {
@@ -216,7 +216,7 @@ static void dhcp_event(void *data)
     if (buffer != NULL)
     {
         /* Our lease is no longer valid. */
-        if ((net_device->ipv4.dhcp_client->state != DHCP_CLI_DISCOVER) && (net_device->ipv4.dhcp_client->state != DHCP_CLI_REQUEST) && (INT64CMP(system_tick, (client_data->lease_start + client_data->lease_time)) > 0))
+        if ((net_device->ipv4.dhcp_client->state != DHCP_CLI_DISCOVER) && (net_device->ipv4.dhcp_client->state != DHCP_CLI_REQUEST) && (system_tick >= (client_data->lease_start + client_data->lease_time)))
         {
             /* Move to discover state. */
             dhcp_change_state(client_data, DHCP_CLI_DISCOVER);

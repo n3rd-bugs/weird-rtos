@@ -30,7 +30,7 @@ static uint8_t sleep_task_sort(void *node, void *task)
     uint8_t schedule = FALSE;
 
     /* Check if task is needed to be scheduled before the given task . */
-    if ( (INT64CMP(((TASK *)node)->tick_sleep, ((TASK *)task)->tick_sleep) > 0) ||
+    if ( (((TASK *)node)->tick_sleep > ((TASK *)task)->tick_sleep) ||
 
          /* Check if this node task has same scheduling instance as the given task. */
          ( (((TASK *)node)->tick_sleep == ((TASK *)task)->tick_sleep) &&
@@ -62,7 +62,7 @@ static TASK *sleep_process_system_tick(void)
     {
         /* Check if we need to schedule a sleeping task. */
         if ( (sleep_scheduler.ready_tasks.head != tcb_break) &&
-             (INT64CMP(current_system_tick(), sleep_scheduler.ready_tasks.head->tick_sleep) >= 0) )
+             (current_system_tick() >= sleep_scheduler.ready_tasks.head->tick_sleep) )
         {
             /* Schedule this sleeping task. */
             tcb = (TASK *)sll_pop(&sleep_scheduler.ready_tasks, OFFSETOF(TASK, next_sleep));

@@ -177,7 +177,7 @@ int32_t lcd_an_wait_8bit(LCD_AN *lcd)
     sys_time = current_system_tick();
 
     /* Read the first 4 bit and wait for the busy bit. */
-    while ((INT64CMP(current_system_tick(), sys_time) < (MS_TO_TICK(LCD_AN_BUSY_TIMEOUT))) &&
+    while ((current_system_tick() - sys_time) < (MS_TO_TICK(LCD_AN_BUSY_TIMEOUT)) &&
            (lcd->read_data(lcd) & (1 << 3)))
     {
         lcd->clr_en(lcd);

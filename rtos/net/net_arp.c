@@ -341,7 +341,7 @@ static void arp_update_timers(FD fd)
             {
                 /* If this time out is smaller then the one we have previously
                  * saved. */
-                if (INT64CMP(next_timeout, arp_data->entries[i].next_timeout) > 0)
+                if (arp_data->entries[i].next_timeout < next_timeout)
                 {
                     /* Use this timeout. */
                     next_timeout = arp_data->entries[i].next_timeout;
@@ -442,7 +442,7 @@ static void arp_event(void *data)
             }
 
             /* Check if we need to send a new request for this ARP entry. */
-            else if (INT64CMP(clock, arp_data->entries[i].next_timeout) >= 0)
+            else if (arp_data->entries[i].next_timeout <= clock)
             {
                 /* Try to find route for this entry. */
                 status = arp_route(fd, &arp_data->entries[i]);

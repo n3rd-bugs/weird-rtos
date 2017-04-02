@@ -49,7 +49,6 @@
 #define OS_MASK_REG32(x, clr, set)  OS_WRITE_REG32(x, (((OS_READ_REG32(x)) & (uint32_t)(~clr)) | set))
 #define MIN(a, b)                   (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
-#define INT64CMP(a, b)              ((int64_t)((a) - (b)))
 
 /* Alignment manipulation macros. */
 #define ALLIGN_SIZE                 (uint32_t)(0x8)

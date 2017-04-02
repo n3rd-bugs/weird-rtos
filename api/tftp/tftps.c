@@ -76,7 +76,7 @@ static void tftp_server_process(void *data)
     SYS_LOG_FUNTION_ENTRY(TFTPS);
 
     /* If the timeout was enabled and it has now occurred. */
-    if ((tftp_server->timeout != MAX_WAIT) && (INT64CMP(current_system_tick(), tftp_server->timeout) >= 0))
+    if ((tftp_server->timeout != MAX_WAIT) && (current_system_tick() >= tftp_server->timeout))
     {
         /* If we have a connection. */
         if (tftp_server->fd != NULL)
