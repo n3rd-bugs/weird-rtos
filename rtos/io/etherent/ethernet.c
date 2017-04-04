@@ -80,7 +80,7 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
     device->net_device.suspend.timeout_enabled = FALSE;
 
     /* Set MTU for this device. */
-    net_device_set_mtu(fd, (ETH_MTU_SIZE - ETH_HRD_SIZE));
+    net_device_set_mtu(fd, ETH_MTU_SIZE);
 
     /* Initialize Ethernet driver hooks. */
     device->initialize = initialize;
@@ -300,6 +300,9 @@ static void ethernet_process(void *data)
 
                 if (status == SUCCESS)
                 {
+                    /* Pull ethernet header from the buffer. */
+                    OS_ASSERT(fs_buffer_pull(buffer, NULL, ETH_HRD_SIZE, 0) != SUCCESS);
+
                     /* Free this buffer. */
                     fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
                 }
@@ -446,7 +449,7 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
     ETH_DEVICE *device = (ETH_DEVICE *)buffer->fd;
     int32_t status = SUCCESS;
     HDR_GEN_MACHINE hdr_machine;
-    uint32_t iface_addr, subnet;
+    uint32_t iface_addr, subnet, orig_len = buffer->total_length;
     uint16_t proto = 0;
 #ifdef NET_IPV4
     uint32_t dst_ip;
@@ -551,6 +554,13 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
 
         /* This buffer is now in device transmission queue. */
         status = NET_BUFFER_CONSUMED;
+    }
+
+    /* If we added partial header on the buffer. */
+    else if (buffer->total_length > orig_len)
+    {
+        /* Pull any excess data from the buffer. */
+        OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - orig_len), 0) != SUCCESS);
     }
 
     /* Return status to the caller. */

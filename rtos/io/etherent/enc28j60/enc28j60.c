@@ -217,7 +217,7 @@ static void enc28j60_initialize(void *data)
         if (status == SUCCESS)
         {
             /* Set MAMXFLL/MAMXFLH to configured MTU. */
-            status = enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, ((net_device_get_mtu(fd) + ETH_HRD_SIZE) & 0xFFFF));
+            status = enc28j60_write_word(device, ENC28J60_ADDR_MAMXFLL, ((net_device_get_mtu(fd) + ETH_HRD_SIZE + ENC28J60_CRC_LEN) & 0xFFFF));
         }
 
         if (status == SUCCESS)
@@ -731,7 +731,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
             packet_status = (uint16_t)((receive_header[5] << 8) | receive_header[4]);
 
             /* If a packet was successfully received. */
-            if ((packet_status & ENC28J60_RX_RXOK) && (packet_length > ENC28J60_RX_CRC_LEN) && (packet_length <= (net_device_get_mtu(fd) + ETH_HRD_SIZE)))
+            if ((packet_status & ENC28J60_RX_RXOK) && (packet_length > ENC28J60_CRC_LEN) && (packet_length <= (net_device_get_mtu(fd) + ETH_HRD_SIZE + ENC28J60_CRC_LEN)))
             {
                 /* Pull a buffer list from the file descriptor. */
                 buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
@@ -740,7 +740,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
                 if (buffer != NULL)
                 {
                     /* Don't copy the trailing CRC. */
-                    packet_length = (uint16_t)(packet_length - ENC28J60_RX_CRC_LEN);
+                    packet_length = (uint16_t)(packet_length - ENC28J60_CRC_LEN);
 
                     /* While we have some data to copy. */
                     while (packet_length > 0)
@@ -794,7 +794,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
                     /* If we were not able to receive a complete packet due to
                      * unavailability of buffer, or ethernet stack did not consume
                      * this buffer. */
-                    if ((packet_length != 0) || (buffer->total_length < ETH_HRD_SIZE) || (ethernet_buffer_receive(buffer) != NET_BUFFER_CONSUMED))
+                    if ((packet_length != 0) || (buffer->total_length < (ETH_HRD_SIZE + ENC28J60_CRC_LEN)) || (ethernet_buffer_receive(buffer) != NET_BUFFER_CONSUMED))
                     {
                         /* Free the buffers that we allocated. */
                         fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);

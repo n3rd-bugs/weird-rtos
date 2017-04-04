@@ -42,8 +42,8 @@
 /* Ethernet definitions. */
 #define ETH_ADDR_LEN        (6)
 #define ETH_PROTO_LEN       (2)
-#define ETH_HRD_SIZE        (18)
-#define ETH_MTU_SIZE        (1518)
+#define ETH_HRD_SIZE        ((ETH_ADDR_LEN * 2) + ETH_PROTO_LEN)
+#define ETH_MTU_SIZE        (1500)
 
 /* Ethernet MAC address definitions. */
 #define ETH_MAC_OUI         (0x02)

@@ -65,7 +65,6 @@
 
 /* ENC28J60 receive packet definitions. */
 #define ENC28J60_RX_HEAD_SIZE       (6)
-#define ENC28J60_RX_CRC_LEN         (4)
 #define ENC28J60_RX_RXLONGEVDROPEV  (0x0001)
 #define ENC28J60_RX_CARRIEREV       (0x0004)
 #define ENC28J60_RX_CRCERROR        (0x0010)
@@ -85,6 +84,7 @@
 #define ENC28J60_TX_MIN_BUF_SIZE    (ETH_MTU_SIZE + ENC28J60_TX_HEAD_SIZE)
 
 /* ENC28J60 RX/TX FIFO configuration. */
+#define ENC28J60_CRC_LEN            (4)
 #define ENC28J60_FIFO_SIZE          (0x2000)
 #define ENC28J60_RX_START           (0)
 #define ENC28J60_RX_END             (((ENC28J60_FIFO_SIZE - ENC28J60_TX_MIN_BUF_SIZE) & 0xFFFE) - 1)
