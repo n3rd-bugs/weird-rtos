@@ -16,6 +16,9 @@
 
 #ifdef CONFIG_SLEEP
 
+/* Global variable definitions. */
+static TASK_LIST sleep_task_list = {NULL, NULL};
+
 /*
  * sleep_task_sort
  * @node: Existing task in the sleeping task list.
@@ -49,11 +52,10 @@ static uint8_t sleep_task_sort(void *node, void *task)
 
 /*
  * sleep_process_system_tick
- * @return: If not NULL returns the task that is needed to be scheduled next.
- * This function is called by scheduler to see if there is a task that is needed
- * to wake-up at a given system tick.
+ * This function is will be called at each system tick to see if we need to
+ * resume any of the sleeping tasks.
  */
-static TASK *sleep_process_system_tick(void)
+void sleep_process_system_tick()
 {
     TASK *tcb = NULL;
     TASK *tcb_break = NULL;
@@ -61,11 +63,11 @@ static TASK *sleep_process_system_tick(void)
     for (;;)
     {
         /* Check if we need to schedule a sleeping task. */
-        if ( (sleep_scheduler.ready_tasks.head != tcb_break) &&
-             (current_system_tick() >= sleep_scheduler.ready_tasks.head->tick_sleep) )
+        if ( (sleep_task_list.head != tcb_break) &&
+             (INT32CMP(current_system_tick(), sleep_task_list.head->tick_sleep) >= 0) )
         {
             /* Schedule this sleeping task. */
-            tcb = (TASK *)sll_pop(&sleep_scheduler.ready_tasks, OFFSETOF(TASK, next_sleep));
+            tcb = (TASK *)sll_pop(&sleep_task_list, OFFSETOF(TASK, next_sleep));
 
             /* Task is already resumed. */
             if (tcb->status != TASK_SUSPENDED)
@@ -75,7 +77,7 @@ static TASK *sleep_process_system_tick(void)
 
                 /* Put back this task on the scheduler list at the end. */
                 /* We will remove it from this list when we will resume. */
-                sll_append(&sleep_scheduler.ready_tasks, tcb, OFFSETOF(TASK, next_sleep));
+                sll_append(&sleep_task_list, tcb, OFFSETOF(TASK, next_sleep));
 
                 /* Save the task at which we will need to break the search. */
                 tcb_break = tcb;
@@ -92,42 +94,16 @@ static TASK *sleep_process_system_tick(void)
                 tcb->tick_sleep = 0;
                 tcb->status = TASK_RESUME_SLEEP;
                 tcb->flags |= TASK_RESUMED;
+
+                /* Yield this task. */
+                scheduler_task_yield(tcb, YIELD_SYSTEM);
             }
         }
 
         break;
     }
 
-    /* Return the task that is needed to be scheduled. */
-    return (tcb);
-
 } /* sleep_process_system_tick */
-
-/*
- * sleep_task_re_enqueue
- * @tcb: Task's control block that is needed to be put back in the sleeping
- *  tasks list as there is a higher priority task that is needed to run before
- *  this task.
- * @from: From where this function was called.
- * This scheduler's yield function, for now this only called by scheduler API's
- * when a task is needed to put back in the scheduler list as there is an other
- * higher priority task.
- */
-static void sleep_task_re_enqueue(TASK *tcb, uint8_t from)
-{
-    /* Process all the cases from a task can be re/scheduled. */
-    switch (from)
-    {
-    /* Nothing to do here. */
-    default:
-
-        /* Remove some compiler warnings. */
-        UNUSED_PARAM(tcb);
-
-        break;
-    }
-
-} /* sleep_task_re_enqueue */
 
 /*
  * sleep_add_to_list
@@ -146,7 +122,7 @@ void sleep_add_to_list(TASK *tcb, uint32_t ticks)
 
     /* Put this task on the list of sleeping tasks. */
     /* This will also schedule this task. */
-    sll_insert(&sleep_scheduler.ready_tasks, tcb, &sleep_task_sort, OFFSETOF(TASK, next_sleep));
+    sll_insert(&sleep_task_list, tcb, &sleep_task_sort, OFFSETOF(TASK, next_sleep));
 
 } /* sleep_add_to_list */
 
@@ -160,7 +136,7 @@ void sleep_add_to_list(TASK *tcb, uint32_t ticks)
 void sleep_remove_from_list(TASK *tcb)
 {
     /* Remove this task from the list of sleeping tasks. */
-    sll_remove(&sleep_scheduler.ready_tasks, tcb, OFFSETOF(TASK, next_sleep));
+    sll_remove(&sleep_task_list, tcb, OFFSETOF(TASK, next_sleep));
 
 } /* sleep_remove_from_list */
 
@@ -228,21 +204,5 @@ void sleep_hw_ticks(uint64_t ticks)
     }
 
 } /* sleep_hw_ticks */
-
-/* This defines members for sleep scheduling class. */
-SCHEDULER sleep_scheduler =
-{
-    /* List of tasks that are enqueued to run. */
-    .ready_tasks    = {NULL, NULL},
-
-    /* Function that will return the next task that is needed to run. */
-    .get_task       = &sleep_process_system_tick,
-
-    /* Function that will re-enqueue a given task. */
-    .yield          = &sleep_task_re_enqueue,
-
-    /* Priority for this scheduler, this should be less than aperiodic tasks. */
-    .priority       = CONFIG_SLEEP_PIORITY
-};
 
 #endif /* CONFIG_SLEEP */

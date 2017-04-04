@@ -162,12 +162,8 @@ ISR_FUN isr_sysclock_handle(void)
             /* Save the current task pointer. */
             last_task = current_task;
 
-            /* If current task has a scheduler defined. */
-            if (current_task->scheduler != NULL)
-            {
-                /* Re-enqueue/schedule this task in the scheduler. */
-                ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_SYSTEM);
-            }
+            /* Re-enqueue/schedule this task in the scheduler. */
+            scheduler_task_yield(current_task, YIELD_SYSTEM);
 
             /* Get the task that should run next. */
             current_task = scheduler_get_next_task();

@@ -33,16 +33,6 @@ typedef void TASK_ENTRY (void *argv);
 typedef struct _task TASK;
 struct _task
 {
-    /* This holds scheduler parameters for this task. */
-    uint64_t    scheduler_data_1;
-    uint64_t    scheduler_data_2;
-
-
-#ifdef CONFIG_TASK_STATS
-    /* Number of times this task was scheduled. */
-    uint64_t    scheduled;
-#endif /* CONFIG_TASK_STATS */
-
     /* Task entry function. */
     TASK_ENTRY  *entry;
 
@@ -52,53 +42,45 @@ struct _task
     /* Task list member. */
     TASK        *next;
 
-#ifdef CONFIG_SLEEP
-    /* Link list member for sleeping tasks. */
-    TASK        *next_sleep;
-#endif /* CONFIG_SLEEP */
-
 #ifdef CONFIG_TASK_STATS
+    /* Number of times this task was scheduled. */
+    uint32_t    scheduled;
+
     /* Global task list member. */
     TASK        *next_global;
+
+    /* This is start of the stack pointer for this task. */
+    uint8_t     *stack_start;
+
+    /* Task stack size. */
+    uint32_t    stack_size;
+
+    /* Name for this task. */
+    char        name[8];
 #endif /* CONFIG_TASK_STATS */
 
     /* This holds current stack pointer of this task. */
     uint8_t     *tos;
 
-     /* Task scheduling information. */
-    void        *scheduler;
-
     /* If suspended this will hold task suspension data. */
     void        *suspend_data;
 
-#ifdef CONFIG_TASK_STATS
-    /* This is start of the stack pointer for this task. */
-    uint8_t     *stack_start;
-
-    /* Name for this task. */
-    char        name[8];
-
     /* This defines task priority. */
     uint32_t    priority;
-#endif /* CONFIG_TASK_STATS */
 
     /* Number of wait conditions on which this task is waiting. */
     uint32_t    num_conditions;
 
-    /* Current task status. */
-    int32_t     status;
 #ifdef CONFIG_SLEEP
+    /* Link list member for sleeping tasks. */
+    TASK        *next_sleep;
 
-#ifdef CONFIG_TASK_STATS
-    /* Task stack size. */
-    uint32_t    stack_size;
-#endif /* CONFIG_TASK_STATS */
     /* The system tick at which this task is needed to be rescheduled. */
     uint32_t    tick_sleep;
 #endif /* CONFIG_SLEEP */
 
-    /* Task scheduler class identifier. */
-    uint8_t     class;
+    /* Current task status. */
+    int32_t     status;
 
     /* Task flags as configured by scheduler. */
     uint8_t     flags;
@@ -109,10 +91,8 @@ struct _task
     /* Lock count, how much nested interrupt locks have we acquired. */
     uint8_t     interrupt_lock_count;
 
-#ifndef CONFIG_SLEEP
-    /* Padding variable (needs to be 64-bit aligned). */
-    uint8_t     pad2[4];
-#endif
+    /* Structure padding. */
+    uint8_t     pad[1];
 };
 
 /* This defines a task list. */

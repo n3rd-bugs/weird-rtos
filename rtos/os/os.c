@@ -12,6 +12,7 @@
  */
 #include <os.h>
 #include <os_target.h>
+#include <sleep.h>
 
 /* This will hold the control block for the currently running. */
 TASK *current_task = NULL;
@@ -69,19 +70,14 @@ void task_yield()
             interrupt_level = GET_INTERRUPT_LEVEL();
             DISABLE_INTERRUPTS();
 
-            /* If current task has a scheduler defined, and we have not already
-             * yielded it. */
-            if (current_task->scheduler != NULL)
-            {
-                /* Task is being suspending. */
-                current_task->status = TASK_SUSPENDED;
+            /* Task is being suspending. */
+            current_task->status = TASK_SUSPENDED;
 
-                /* Task was yielded. */
-                current_task->flags |= TASK_YIELD;
+            /* Task was yielded. */
+            current_task->flags |= TASK_YIELD;
 
-                /* Re-enqueue/schedule this task in the scheduler. */
-                ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_MANUAL);
-            }
+            /* Re-enqueue/schedule this task in the scheduler. */
+            scheduler_task_yield(current_task, YIELD_MANUAL);
 
             /* Schedule next task and enable interrupts. */
             CONTROL_TO_SYSTEM();

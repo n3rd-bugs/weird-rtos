@@ -78,12 +78,8 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
     /* Check if we can actually preempt the current task. */
     if (current_task->lock_count == 0)
     {
-        /* If current task has a scheduler defined. */
-        if (current_task->scheduler != NULL)
-        {
-            /* Re-enqueue/schedule this task in the scheduler. */
-            ((SCHEDULER *)current_task->scheduler)->yield(current_task, YIELD_SYSTEM);
-        }
+        /* Re-enqueue/schedule this task in the scheduler. */
+        scheduler_task_yield(current_task, YIELD_SYSTEM);
 
         /* Get and set the task that should run next. */
         set_current_task(scheduler_get_next_task());

@@ -12,41 +12,16 @@
  */
 #include <scheduler.h>
 #include <sll.h>
-#include <sch_aperiodic.h>
-#include <sch_periodic.h>
 #include <sleep.h>
 #include <string.h>
 #include <idle.h>
 
 /* A list of all the tasks in the system. */
 TASK_LIST sch_task_list;
+TASK_LIST sch_ready_task_list = {NULL, NULL};
 
-/* This is the list of schedulers sorted on their priority. */
-static SCHEDULER_LIST scheduler_list;
-
-/*
- * scheduler_sort
- * @node: Existing scheduling class in the list.
- * @scheduler: New scheduling class that is needed to be added in the list.
- * @return: TRUE if new scheduling class is needed to be placed before the given
- *  list node, otherwise FALSE will be returned.
- * This is sorting function called by SLL routines to sort scheduler list.
- */
-static uint8_t scheduler_sort(void *node, void *scheduler)
-{
-    uint8_t higher_priority = FALSE;
-
-    /* Check if scheduler has higher priority than the node. */
-    if (((SCHEDULER *)node)->priority > ((SCHEDULER *)scheduler)->priority)
-    {
-        /* We need to insert the scheduler before the given node. */
-        higher_priority = TRUE;
-    }
-
-    /* Return if scheduler is of higher priority than the given node. */
-    return (higher_priority);
-
-} /* scheduler_sort */
+/* Internal function prototypes. */
+static uint8_t scheduler_task_sort(void *, void *);
 
 /*
  * scheduler_init
@@ -56,28 +31,38 @@ static uint8_t scheduler_sort(void *node, void *scheduler)
 void scheduler_init()
 {
     /* Clear the schedule lists. */
-    memset(&scheduler_list, 0, sizeof(scheduler_list));
     memset(&sch_task_list, 0, sizeof(sch_task_list));
-
-#ifdef CONFIG_APERIODIC_TASK
-    /* Add aperiodic scheduler. */
-    sll_insert(&scheduler_list, &aperiodic_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
-#endif /* CONFIG_APERIODIC_TASK */
-
-#ifdef CONFIG_PERIODIC_TASK
-    /* Add periodic scheduler. */
-    sll_insert(&scheduler_list, &periodic_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
-#endif /* CONFIG_PERIODIC_TASK */
-
-#ifdef CONFIG_SLEEP
-    /* Add scheduler for sleeping tasks. */
-    sll_insert(&scheduler_list, &sleep_scheduler, &scheduler_sort, OFFSETOF(SCHEDULER, next));
-#endif /* CONFIG_SLEEP */
 
     /* Initialize idle task. */
     idle_task_init();
 
 } /* scheduler_init */
+
+/*
+ * scheduler_task_sort
+ * @node: An existing node in the list.
+ * @task: New task that is needed to be added in the list.
+ * @return: If the new task is needed to be scheduled before the existing node
+ *  TRUE will be returned otherwise FALSE will be returned.
+ * This is task sorting function that is used by SLL routines to schedule new
+ * aperiodic tasks.
+ */
+static uint8_t scheduler_task_sort(void *node, void *task)
+{
+    uint8_t schedule = FALSE;
+
+    /* If node has low priority than the given task, then we can schedule the
+     * given task here. */
+    if (((TASK *)node)->priority > ((TASK *)task)->priority)
+    {
+        /* Schedule the given task before this node. */
+        schedule = TRUE;
+    }
+
+    /* Return if we need to schedule this task before the given node. */
+    return (schedule);
+
+} /* scheduler_task_sort */
 
 /*
  * scheduler_get_next_task
@@ -87,69 +72,24 @@ void scheduler_init()
  */
 TASK *scheduler_get_next_task()
 {
-    SCHEDULER *scheduler = scheduler_list.head;
-    TASK *tcb = NULL, *tcb_hp = NULL;
+    TASK *tcb = NULL;
 
-    /* Try to get a new task to run from registered schedulers. */
-    while (scheduler != NULL)
-    {
-        /* Get the task that will run next on this scheduler. */
-        tcb = scheduler->get_task();
+    /* Resume any of the sleeping tasks. */
+    sleep_process_system_tick();
 
-        /* If this scheduler has a task to run. */
-        if (tcb != NULL)
-        {
-            /* If we have not yet selected a task to run. */
-            if ( (tcb_hp == NULL) ||
+    /* Get the task that will run next on this scheduler. */
+    tcb = scheduler_get_task();
 
-                 /* If this scheduler has a higher priority task. */
-                 (tcb->priority < tcb_hp->priority) ||
-
-                 /* If this tasks have same priority but the scheduler has higher priority. */
-                 ( (tcb->priority == tcb_hp->priority) &&
-                   (scheduler->priority < ((SCHEDULER *)tcb_hp->scheduler)->priority) ) )
-            {
-                /* If we have an old task that we want to return to the
-                 * scheduler. */
-                if (tcb_hp != NULL)
-                {
-                    /* Return the previously dequeued task to the scheduler. */
-                    ((SCHEDULER *)tcb_hp->scheduler)->yield(tcb_hp, YIELD_CANNOT_RUN);
-                }
-
-                /* Run this task if possible. */
-                tcb_hp = tcb;
-            }
-            else
-            {
-                /* Put back this task to it's scheduler. */
-                ((SCHEDULER *)tcb->scheduler)->yield(tcb, YIELD_CANNOT_RUN);
-            }
-        }
-
-        /* Get the next scheduler class from the scheduler list. */
-        scheduler = scheduler->next;
-    }
-
-    /* There is no task to run. */
-    if (tcb_hp == NULL)
-    {
-        /* Just run the idle task. */
-        tcb_hp = idle_task_get();
-    }
-    else
-    {
-        /* We have now resumed this tasks, lets clear the resume flag. */
-        tcb_hp->flags &= (uint8_t)(~TASK_RESUMED);
-    }
+    /* We should always have a task to execute. */
+    OS_ASSERT(tcb == NULL);
 
 #ifdef CONFIG_TASK_STATS
     /* Increment the number of times this task was scheduled. */
-    tcb_hp->scheduled ++;
+    tcb->scheduled ++;
 #endif /* CONFIG_TASK_STATS */
 
     /* Return the task to run. */
-    return (tcb_hp);
+    return (tcb);
 
 } /* scheduler_get_next_task */
 
@@ -158,48 +98,24 @@ TASK *scheduler_get_next_task()
  * @tcb: Task control block that is needed to be added in the system.
  * @class: Scheduling class that is needed to be used for this task.
  * @priority: Priority for this task.
- * @param: Scheduling parameter if any.
  *  In case of periodic task this defines the task period in system ticks.
  * This function adds a task in the system, the task must be initialized before
  * adding.
  */
-void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t param)
+void scheduler_task_add(TASK *tcb, uint32_t priority)
 {
-    SCHEDULER *scheduler;
     uint32_t interrupt_level;
 
     /* Disable interrupts. */
     interrupt_level = GET_INTERRUPT_LEVEL();
     DISABLE_INTERRUPTS();
 
-    /* Get the first scheduler from the scheduler list. */
-    scheduler = scheduler_list.head;
+    /* Update the task control block. */
+    tcb->priority   = priority;
+    tcb->status     = TASK_SUSPENDED;
 
-    /* Try to find the scheduler for which this task is being added. */
-    while (scheduler != NULL)
-    {
-        /* If this is the required scheduler class. */
-        if (scheduler->class == class)
-        {
-            /* Update the task control block. */
-            tcb->scheduler          = scheduler;
-            tcb->class              = class;
-            tcb->priority           = priority;
-            tcb->scheduler_data_1   = param;
-            tcb->status             = TASK_SUSPENDED;
-
-            /* Enqueue this task in the required scheduler. */
-            scheduler->yield(tcb, YIELD_INIT);
-
-            /* Break out of this loop. */
-            break;
-        }
-        else
-        {
-            /* Get the next scheduler class from the list. */
-            scheduler = scheduler->next;
-        }
-    }
+    /* Enqueue this task in the required scheduler. */
+    scheduler_task_yield(tcb, YIELD_INIT);
 
 #ifdef CONFIG_TASK_STATS
     /* Append this task to the global task list. */
@@ -212,29 +128,76 @@ void scheduler_task_add(TASK *tcb, uint8_t class, uint32_t priority, uint64_t pa
 } /* scheduler_task_add */
 
 /*
+ * scheduler_task_yield
+ * @tcb: The task's control block that is needed to be scheduled in the
+ *  aperiodic scheduler.
+ * @from: From where this task is being scheduled.
+ * This is yield function required by a scheduling class, this is called when a
+ * task is needed to be scheduled in the aperiodic scheduler.
+ */
+void scheduler_task_yield(TASK *tcb, uint8_t from)
+{
+    /* Process all the cases from a task can be re/scheduled. */
+    switch (from)
+    {
+    case YIELD_INIT:
+    case YIELD_MANUAL:
+    case YIELD_SYSTEM:
+        /* Schedule the task being yielded/re-enqueued. */
+        sll_insert(&sch_ready_task_list, tcb, &scheduler_task_sort, OFFSETOF(TASK, next));
+
+        break;
+
+    case YIELD_CANNOT_RUN:
+        /* Just put back this task on the scheduler list. */
+        sll_push(&sch_ready_task_list, tcb, OFFSETOF(TASK, next));
+
+        break;
+
+    default:
+        break;
+    }
+
+} /* scheduler_task_yield */
+
+/*
+ * scheduler_get_task
+ * @return: Task's control block which is needed to be run from this scheduler.
+ * This function implements get task routine required by a scheduling class.
+ * This is called by scheduler to get the next task that is needed to run.
+ */
+TASK *scheduler_get_task()
+{
+    /* Get the first task in the ready list. */
+    TASK *tcb = (TASK *)sll_pop(&sch_ready_task_list, OFFSETOF(TASK, next));
+
+    /* If there is a task that can run next. */
+    if ((tcb != NULL) && ((tcb->flags & TASK_RESUMED) == 0))
+    {
+        /* Task is being resumed. */
+        tcb->status = TASK_RESUME;
+        tcb->flags |= TASK_RESUMED;
+    }
+
+    /* Return the task to be scheduled. */
+    return (tcb);
+
+} /* scheduler_get_task */
+
+
+/*
  * scheduler_task_remove
  * @tcb: Task control block that is needed to be removed.
  * This function removes a finished task from the global task list. Once
- * removed user cannot call scheduler_task_add to run a finished task.
+ * removed user can call scheduler_task_add to run a finished task.
  */
 void scheduler_task_remove(TASK *tcb)
 {
-    SCHEDULER *scheduler;
-
     /* Lock the scheduler. */
     scheduler_lock();
 
-    /* Get the scheduler from the task control block. */
-    scheduler = tcb->scheduler;
-
-    /* A scheduler must have been assigned to this task. */
-    OS_ASSERT(scheduler == NULL);
-
     /* Task should be in finished state. */
     OS_ASSERT(tcb->status != TASK_FINISHED);
-
-    /* Clear the task scheduler. */
-    tcb->scheduler = NULL;
 
 #ifdef CONFIG_TASK_STATS
     /* Remove this task from global task list. */
