@@ -59,7 +59,7 @@ int main(void)
 
     /* Create a task for SPI demo. */
     task_create(&spi_demo_task_cb, "SPI", demo_stack, 256, &spi_demo_task, (void *)(NULL), 0);
-    scheduler_task_add(&spi_demo_task_cb, TASK_APERIODIC, 5, 0);
+    scheduler_task_add(&spi_demo_task_cb, 5);
 
     /* Run scheduler. */
     os_run();

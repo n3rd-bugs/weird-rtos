@@ -84,7 +84,7 @@ int main(void)
     /* Create a task for CDC demo. */
     task_cb = (TASK *)mem_static_alloc(sizeof(TASK) + 4096);
     task_create(task_cb, "STATS", (uint8_t *)(task_cb + 1), 4096, &parser_demo_task, (void *)(NULL), 0);
-    scheduler_task_add(task_cb, TASK_APERIODIC, 5, 0);
+    scheduler_task_add(task_cb, 5);
 
     /* Run scheduler. */
     os_run();

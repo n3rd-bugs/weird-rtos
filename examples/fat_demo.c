@@ -168,7 +168,7 @@ int main(void)
 
     /* Initialize demo tasks. */
     task_create(&fat_demo_cb, "FAT", fat_demo_stack, FAT_DEMO_STACK_SIZE, &fat_demo_entry, NULL, 0);
-    scheduler_task_add(&fat_demo_cb, TASK_APERIODIC, 15, 0);
+    scheduler_task_add(&fat_demo_cb, 15);
 
     /* Run scheduler. */
     os_run();

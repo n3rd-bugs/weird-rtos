@@ -555,7 +555,7 @@ int main(void)
 #ifdef HEART_BEAT
     /* Initialize heart beat task. */
     task_create(&heartbeat_cb, "HRTBEAT", heartbeat_stack, HEARTBEAT_STACK_SIZE, &heartbeat_entry, (void *)0, TASK_NO_RETURN);
-    scheduler_task_add(&heartbeat_cb, TASK_APERIODIC, 0, 0);
+    scheduler_task_add(&heartbeat_cb, 0);
 #endif
 
     /* Run scheduler. */

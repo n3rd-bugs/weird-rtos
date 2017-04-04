@@ -189,7 +189,7 @@ int main(void)
 
     /* Create a task to test file system buffer functionality. */
     task_create(&fs_buffer_test_cb, "ECHO", fs_buffer_test_stack, DEMO_STACK_SIZE, &fs_buffer_test_task, (void *)(NULL), 0);
-    scheduler_task_add(&fs_buffer_test_cb, TASK_APERIODIC, 5, 0);
+    scheduler_task_add(&fs_buffer_test_cb, 5);
 
     /* Run scheduler. */
     os_run();

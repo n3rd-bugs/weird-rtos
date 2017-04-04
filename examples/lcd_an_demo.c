@@ -89,7 +89,7 @@ int main(void)
 
     /* Initialize LCD demo task. */
     task_create(&lcd_demo_cb, "LCD", lcd_demo_stack, LCD_DEMO_TASK_STACK_SIZE, &lcd_demo_entry, (void *)0, TASK_NO_RETURN);
-    scheduler_task_add(&lcd_demo_cb, TASK_APERIODIC, 0, 0);
+    scheduler_task_add(&lcd_demo_cb, 0);
 
     /* Run scheduler. */
     os_run();

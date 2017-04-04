@@ -79,7 +79,7 @@ int main(void)
 
     /* Create a task for TCP demo. */
     task_create(&tcp_task_cb, "TCP", tcp_task_stack, DEMO_STACK_SIZE, &tcp_server_task, (void *)(NULL), 0);
-    scheduler_task_add(&tcp_task_cb, TASK_APERIODIC, 5, 0);
+    scheduler_task_add(&tcp_task_cb, 5);
 
     /* Run scheduler. */
     os_run();

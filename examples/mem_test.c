@@ -152,7 +152,7 @@ void stat_task(void *argv)
         }
         printf("\r\n");
 
-        task_yield();
+        sleep_ms(500);
     }
 }
 
@@ -179,13 +179,13 @@ int main(void)
     {
         ctx_task_cb[i] = (TASK *)mem_static_alloc(sizeof(TASK) + DEMO_STACK_SIZE);
         task_create(ctx_task_cb[i], "CTX_TSK", (uint8_t *)(ctx_task_cb[i] + 1), DEMO_STACK_SIZE, &ctx_sample_task, (void *)(&ctx_time[i]));
-        scheduler_task_add(ctx_task_cb[i], TASK_APERIODIC, 2, 0);
+        scheduler_task_add(ctx_task_cb[i], 2);
     }
 
     /* Create a stat task. */
     stat_task_cb = (TASK *)mem_static_alloc(sizeof(TASK) + 4096);
     task_create(stat_task_cb, "STATS", (uint8_t *)(stat_task_cb + 1), 4096, &stat_task, (void *)(ctx_time));
-    scheduler_task_add(stat_task_cb, TASK_PERIODIC, 1, 100);
+    scheduler_task_add(stat_task_cb, 1);
 
     /* Run scheduler. */
     os_run();

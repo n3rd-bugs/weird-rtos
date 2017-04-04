@@ -103,7 +103,7 @@ int main(void)
 
     /* Create a task for UDP echo demo. */
     task_create(&udp_echo_task_cb, "ECHO", udp_echo_task_stack, DEMO_STACK_SIZE, &udp_echo_task, (void *)(NULL), 0);
-    scheduler_task_add(&udp_echo_task_cb, TASK_APERIODIC, 5, 0);
+    scheduler_task_add(&udp_echo_task_cb, 5);
 
     /* Run scheduler. */
     os_run();
