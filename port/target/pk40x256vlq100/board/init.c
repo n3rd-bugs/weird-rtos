@@ -143,8 +143,6 @@ void sysclock_init()
  */
 void system_entry(void)
 {
-    extern uint64_t current_tick;
-
     /* Set the interrupt vector table position. */
     SCB_VTOR = (uint32_t)(&system_isr_table);
 
@@ -197,9 +195,6 @@ void system_entry(void)
 
     /* Disable watch dog timer. */
     wdt_disbale();
-
-    /* Initialize system clock. */
-    current_tick = 0;
 
     /* We are not running any task until OS initializes. */
     set_current_task(NULL);
