@@ -30,7 +30,7 @@ static void suspend_condition_remove(CONDITION **, SUSPEND **, uint32_t, CONDITI
 static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint32_t, uint32_t *);
 static uint8_t suspend_is_task_waiting(TASK *, CONDITION *);
 #ifdef CONFIG_SLEEP
-static uint64_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
+static uint32_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
 #endif
 
 /*
