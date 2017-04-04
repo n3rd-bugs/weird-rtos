@@ -847,6 +847,9 @@ int32_t fs_write(FD fd, uint8_t *buffer, int32_t nbytes)
             /* Check if a write function was registered with this descriptor. */
             if (fs->write != NULL)
             {
+                /* Get condition for this file descriptor. */
+                fs_condition_get(fs, &condition, suspend_ptr, &param, FS_BLOCK_WRITE);
+
                 /* If configured try to write on the descriptor until all the
                  * data is sent. */
                 do
@@ -859,10 +862,7 @@ int32_t fs_write(FD fd, uint8_t *buffer, int32_t nbytes)
                         ((fs->flags & FS_BLOCK) &&
                          (!(fs->flags & FS_SPACE_AVAILABLE))))
                     {
-                        /* Get condition for this file descriptor. */
-                        fs_condition_get(fs, &condition, suspend_ptr, &param, FS_BLOCK_WRITE);
-
-                        /* Suspend on data to be available to read. */
+                        /* Suspend on space to become available. */
                         status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
                     }
 
@@ -872,7 +872,7 @@ int32_t fs_write(FD fd, uint8_t *buffer, int32_t nbytes)
                         /* Transfer call to underlying API. */
                         status = fs->write((void *)fs, buffer, nbytes);
 
-                        if (status <= 0)
+                        if (status < 0)
                         {
                             break;
                         }
