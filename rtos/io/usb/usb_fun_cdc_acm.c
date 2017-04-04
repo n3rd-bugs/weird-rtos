@@ -390,7 +390,7 @@ static uint32_t usb_fun_cdc_acm_disconnected(USB_STM32F407_HANDLE *usb_device)
  */
 static uint32_t usb_fun_cdc_acm_setup(USB_STM32F407_HANDLE *usb_device, USB_SETUP_REQ *req)
 {
-    uint16_t len;
+    uint16_t len = 0;
     uint8_t *pbuf, ret = SUCCESS;
 
     switch (req->bmRequest & USB_REQ_TYPE_MASK)

@@ -320,7 +320,7 @@ uint32_t usb_fun_std_endpoint_request(USB_STM32F407_HANDLE *usb_device, USB_SETU
 static void usb_fun_get_descriptor(USB_STM32F407_HANDLE *usb_device, USB_SETUP_REQ *req)
 {
     uint16_t len = 0;
-    uint8_t *pbuf;
+    uint8_t *pbuf = NULL;
 
     switch (req->wValue >> 8)
     {
@@ -448,7 +448,7 @@ static void usb_fun_get_descriptor(USB_STM32F407_HANDLE *usb_device, USB_SETUP_R
     }
 
     /* Check if we need to send some data. */
-    if((len != 0) && (req->wLength != 0))
+    if((len != 0) && (req->wLength != 0) && (pbuf != NULL))
     {
         /* Calculate the length of data we need to send. */
         len = MIN(len, req->wLength);
