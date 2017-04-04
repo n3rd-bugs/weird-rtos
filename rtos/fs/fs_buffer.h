@@ -39,6 +39,12 @@
 #define FS_BUFFER_ID_BUFFER     0x5630A516
 #define FS_BUFFER_ID_ONE        0x98C4E319
 
+/* Week definition of a buffer structure. */
+typedef struct _fs_buffer FS_BUFFER;
+
+/* Call back definition to submit a buffer back to the caller. */
+typedef uint8_t FS_RETURN_BUFFER (void *, FS_BUFFER *);
+
 /* File system one buffer structure. */
 typedef struct _fs_buffer_one FS_BUFFER_ONE;
 struct _fs_buffer_one
@@ -59,7 +65,6 @@ struct _fs_buffer_one
 };
 
 /* File system buffer structure. */
-typedef struct _fs_buffer FS_BUFFER;
 struct _fs_buffer
 {
     /* Buffer list member. */
@@ -80,6 +85,13 @@ struct _fs_buffer
 
     /* File descriptor from which this chain was allocated. */
     FD          fd;
+
+    /* If set this function will be called to submit this buffer back to
+     * the user. */
+    FS_RETURN_BUFFER    *free;
+
+    /* Private data to be passed to the user. */
+    void        *free_data;
 
 };
 

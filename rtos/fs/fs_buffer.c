@@ -352,7 +352,7 @@ void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_
     /* Initialize file system parameter. */
     suspend->param = param;
     suspend->do_suspend = &fs_buffer_do_suspend;
-    suspend->timeout = MAX_WAIT;
+    suspend->timeout_enabled = FALSE;
 
     /* Return the condition for this file system buffer. */
     *condition = &(data->condition);
@@ -531,6 +531,7 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
     FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
     FS_BUFFER_PARAM param;
     RESUME resume;
+    uint8_t do_resume = TRUE;
 
     /* Should never happen. */
     OS_ASSERT(data == NULL);
@@ -644,41 +645,54 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         /* A one buffer should not get here. */
         OS_ASSERT(((FS_BUFFER *)buffer)->id == FS_BUFFER_ID_ONE);
 
-        /* First free any buffer still on this list. */
-        fs_buffer_add_list((FS_BUFFER *)buffer, FS_BUFFER_ONE_FREE, flags);
+        /* Check if we need to return this buffer to somebody else. */
+        if ((((FS_BUFFER *)buffer)->free != NULL) && (((FS_BUFFER *)buffer)->free(((FS_BUFFER *)buffer)->free_data, buffer) == TRUE))
+        {
+            /* No need to resume any one. */
+            do_resume = FALSE;
+        }
+        else
+        {
+            /* First free any buffer still on this list. */
+            fs_buffer_add_list((FS_BUFFER *)buffer, FS_BUFFER_ONE_FREE, flags);
 
-        /* Reinitialize this buffer. */
-        fs_buffer_init(((FS_BUFFER *)buffer), ((FS_BUFFER *)buffer)->fd);
+            /* Reinitialize this buffer. */
+            fs_buffer_init(((FS_BUFFER *)buffer), ((FS_BUFFER *)buffer)->fd);
 
-        /* Just add this buffer in the buffer list. */
-        sll_append(&data->buffers_list, buffer, OFFSETOF(FS_BUFFER, next));
+            /* Just add this buffer in the buffer list. */
+            sll_append(&data->buffers_list, buffer, OFFSETOF(FS_BUFFER, next));
 
-        /* Increment the number of buffers on buffer list. */
-        data->buffers_list.buffers ++;
+            /* Increment the number of buffers on buffer list. */
+            data->buffers_list.buffers ++;
+        }
 
         break;
     }
 
-    /* Type of buffer we are added. */
-    switch (type)
+    /* If we can resume anyone waiting on this buffer. */
+    if (do_resume == TRUE)
     {
-        /* A free buffer or a buffer list. */
-        case FS_BUFFER_ONE_FREE:
-        case FS_BUFFER_LIST:
+        /* Type of buffer we are added. */
+        switch (type)
+        {
+            /* A free buffer or a buffer list. */
+            case FS_BUFFER_ONE_FREE:
+            case FS_BUFFER_LIST:
 
-        /* Initialize resume criteria. */
-        param.num_buffers = ((type == FS_BUFFER_ONE_FREE) ? data->free_buffer_list.buffers : data->buffers_list.buffers);
-        param.type = type;
+            /* Initialize resume criteria. */
+            param.num_buffers = ((type == FS_BUFFER_ONE_FREE) ? data->free_buffer_list.buffers : data->buffers_list.buffers);
+            param.type = type;
 
-        /* Initialize resume criteria. */
-        resume.do_resume = &fs_buffer_do_resume;
-        resume.param = &param;
-        resume.status = TASK_RESUME;
+            /* Initialize resume criteria. */
+            resume.do_resume = &fs_buffer_do_resume;
+            resume.param = &param;
+            resume.status = TASK_RESUME;
 
-        /* Resume any tasks waiting on this buffer. */
-        resume_condition(&data->condition, &resume, TRUE);
+            /* Resume any tasks waiting on this buffer. */
+            resume_condition(&data->condition, &resume, TRUE);
 
-        break;
+            break;
+        }
     }
 
 #ifdef FS_BUFFER_DEBUG
