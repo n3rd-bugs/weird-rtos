@@ -64,7 +64,7 @@ typedef struct _arp_entry
     } buffer_list;
 
     /* Tick at which we will be routing this entry again. */
-    uint64_t    next_timeout;
+    uint32_t    next_timeout;
 
     /* IP address for this ARP entry. */
     uint32_t    ip;

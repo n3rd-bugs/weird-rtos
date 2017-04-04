@@ -45,7 +45,7 @@ static void dhcp_event(void *);
  */
 static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
 {
-    uint64_t system_tick = current_system_tick();
+    uint32_t system_tick = current_system_tick();
 
     SYS_LOG_FUNTION_ENTRY(DHCPC);
 
@@ -55,6 +55,9 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
 
     /* Process the state change. */
     client_data->current_timeout = (DHCP_BASE_TIMEOUT / 2);
+
+    /* Enable DHCP timer. */
+    client_data->suspend.timeout_enabled = TRUE;
 
     /* Times T1 and T2 are configurable by the server through options.
      * T1 defaults to (0.5 * duration_of_lease).
@@ -78,7 +81,7 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     }
 
     /* We should not wait more than the lease expire. */
-    if ((state != DHCP_CLI_DISCOVER) && (client_data->suspend.timeout > (client_data->lease_start + client_data->lease_time)))
+    if ((state != DHCP_CLI_DISCOVER) && (INT32CMP(client_data->suspend.timeout, (client_data->lease_start + client_data->lease_time)) > 0))
     {
         /* Lets wait till this lease expires. */
         client_data->suspend.timeout = client_data->lease_start + client_data->lease_time;
@@ -142,7 +145,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
     SYS_LOG_FUNTION_ENTRY(DHCPC);
 
     /* Add DHCP header on the buffer. */
-    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)(((uint16_t)current_system_tick() - client_data->start_time) / OS_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_RENEW) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
+    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)((uint32_t)(INT32CMP(current_system_tick(), client_data->start_time)) / OS_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_RENEW) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
 
     if (status == SUCCESS)
     {
@@ -199,7 +202,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
 static void dhcp_event(void *data)
 {
     FD fd = (FD)data, udp_fd = (FD)&dhcp_client;
-    uint64_t system_tick = current_system_tick();
+    uint32_t system_tick = current_system_tick();
     NET_DEV *net_device = net_device_get_fd(fd);
     DHCP_CLIENT_DEVICE *client_data = net_device->ipv4.dhcp_client;
     FS_BUFFER *buffer;
@@ -216,7 +219,7 @@ static void dhcp_event(void *data)
     if (buffer != NULL)
     {
         /* Our lease is no longer valid. */
-        if ((net_device->ipv4.dhcp_client->state != DHCP_CLI_DISCOVER) && (net_device->ipv4.dhcp_client->state != DHCP_CLI_REQUEST) && (system_tick >= (client_data->lease_start + client_data->lease_time)))
+        if ((net_device->ipv4.dhcp_client->state != DHCP_CLI_DISCOVER) && (net_device->ipv4.dhcp_client->state != DHCP_CLI_REQUEST) && (INT32CMP(system_tick, (client_data->lease_start + client_data->lease_time)) > 0))
         {
             /* Move to discover state. */
             dhcp_change_state(client_data, DHCP_CLI_DISCOVER);
@@ -694,7 +697,7 @@ void net_dhcp_client_start(NET_DEV *net_device)
         client_data->condition.data = fd;
 
         /* Disable timer by default. */
-        client_data->suspend.timeout = MAX_WAIT;
+        client_data->suspend.timeout_enabled = FALSE;
 
         /* Start from discover state. */
         dhcp_change_state(client_data, DHCP_CLI_DISCOVER);

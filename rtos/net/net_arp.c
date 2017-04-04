@@ -325,8 +325,8 @@ static void arp_update_timers(FD fd)
 {
     /* Get ARP data for this device. */
     ARP_DATA *arp_data = arp_get_data(fd);
-    uint32_t i;
-    uint64_t next_timeout = MAX_WAIT;
+    uint32_t i, next_timeout;
+    uint8_t timeout_enabled = FALSE;
 
     SYS_LOG_FUNTION_ENTRY(ARP);
 
@@ -341,17 +341,30 @@ static void arp_update_timers(FD fd)
             {
                 /* If this time out is smaller then the one we have previously
                  * saved. */
-                if (arp_data->entries[i].next_timeout < next_timeout)
+                if ((timeout_enabled == FALSE) || (INT32CMP(next_timeout, arp_data->entries[i].next_timeout) > 0))
                 {
                     /* Use this timeout. */
                     next_timeout = arp_data->entries[i].next_timeout;
+
+                    /* Timeout is now enabled. */
+                    timeout_enabled = TRUE;
                 }
             }
         }
     }
 
-    /* Save the timeout at which we will need to process next ARP event. */
-    arp_data->suspend.timeout = next_timeout;
+    /* If we need to enable timeout. */
+    if (timeout_enabled == TRUE)
+    {
+        /* Save the timeout at which we will need to process next ARP event. */
+        arp_data->suspend.timeout = next_timeout;
+        arp_data->suspend.timeout_enabled = TRUE;
+    }
+    else
+    {
+        /* Timeout is not enabled. */
+        arp_data->suspend.timeout_enabled = FALSE;
+    }
 
     SYS_LOG_FUNTION_EXIT(ARP);
 
@@ -418,8 +431,7 @@ static void arp_event(void *data)
 {
     FD fd = (FD)data;
     ARP_DATA *arp_data = arp_get_data(fd);
-    uint32_t i;
-    uint64_t clock = current_system_tick();
+    uint32_t i, clock = current_system_tick();
     int32_t status;
 
     SYS_LOG_FUNTION_ENTRY(ARP);
@@ -442,7 +454,7 @@ static void arp_event(void *data)
             }
 
             /* Check if we need to send a new request for this ARP entry. */
-            else if (arp_data->entries[i].next_timeout <= clock)
+            else if (INT32CMP(clock, arp_data->entries[i].next_timeout) >= 0)
             {
                 /* Try to find route for this entry. */
                 status = arp_route(fd, &arp_data->entries[i]);
@@ -611,7 +623,7 @@ void arp_set_data(FD fd, ARP_ENTRY *entry_list, uint32_t num_entries)
     device->arp.condition.data = device;
 
     /* Disable timer by default. */
-    device->arp.suspend.timeout = MAX_WAIT;
+    device->arp.suspend.timeout_enabled = FALSE;
 
     /* Add networking condition to process ARP for this device. */
     net_condition_add(&device->arp.condition, &device->arp.suspend, &arp_event, fd);

@@ -58,6 +58,6 @@ typedef struct _work_queue
 
 /* Function prototypes. */
 void net_work_init(WORK_QUEUE *);
-int32_t net_work_add(WORK_QUEUE *, WORK *, WORK_DO *, void *, uint64_t);
+int32_t net_work_add(WORK_QUEUE *, WORK *, WORK_DO *, void *, uint32_t);
 
 #endif /* CONFIG_NET */

@@ -29,7 +29,7 @@ static CONSOLE_DATA console_data;
 /* Function prototypes. */
 static void *console_open(void *, char *, uint32_t);
 static void console_unlock(void *);
-static int32_t console_lock(void *, uint64_t);
+static int32_t console_lock(void *, uint32_t);
 
 /* File system definition. */
 FS console_fs =
@@ -216,7 +216,7 @@ static void *console_open(void *priv_data, char *name, uint32_t flags)
  * @return: Success will be returned if lock was successfully acquired.
  * This function will get the lock for a given console.
  */
-static int32_t console_lock(void *fd, uint64_t timeout)
+static int32_t console_lock(void *fd, uint32_t timeout)
 {
 #ifdef CONFIG_SEMAPHORE
     /* Obtain data lock for this console. */

@@ -23,7 +23,7 @@
 /* Internal function prototypes. */
 static int32_t ethernet_buffer_transmit(FS_BUFFER *, uint8_t);
 static void ethernet_process(void *);
-static int32_t ethernet_lock(void *, uint64_t);
+static int32_t ethernet_lock(void *, uint32_t);
 static void ethernet_unlock(void *);
 
 /*
@@ -77,7 +77,7 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
     net_register_fd(&device->net_device, fd, &ethernet_buffer_transmit, &ethernet_process);
 
     /* Disable timeout. */
-    device->net_device.suspend.timeout = MAX_WAIT;
+    device->net_device.suspend.timeout_enabled = FALSE;
 
     /* Set MTU for this device. */
     net_device_set_mtu(fd, (ETH_MTU_SIZE - ETH_HRD_SIZE));
@@ -158,6 +158,9 @@ void ethernet_wdt_enable(ETH_DEVICE *device, uint32_t ticks)
     /* Enable watch dog timer for this device. */
     device->net_device.suspend.timeout = current_system_tick() + ticks;
 
+    /* Enable WDT timer. */
+    device->net_device.suspend.timeout_enabled = TRUE;
+
 } /* ethernet_wdt_enable */
 
 /*
@@ -169,7 +172,7 @@ void ethernet_wdt_enable(ETH_DEVICE *device, uint32_t ticks)
 void ethernet_wdt_disable(ETH_DEVICE *device)
 {
     /* Disable the watch dog timer. */
-    device->net_device.suspend.timeout = MAX_WAIT;
+    device->net_device.suspend.timeout_enabled = FALSE;
 
 } /* ethernet_wdt_disable */
 
@@ -179,7 +182,7 @@ void ethernet_wdt_disable(ETH_DEVICE *device)
  * @timeout: Number of ticks we need to wait for the lock.
  * This function will get the lock for a given ethernet device.
  */
-static int32_t ethernet_lock(void *fd, uint64_t timeout)
+static int32_t ethernet_lock(void *fd, uint32_t timeout)
 {
     ETH_DEVICE *device = (ETH_DEVICE *)fd;
 
@@ -251,7 +254,7 @@ static void ethernet_process(void *data)
     OS_ASSERT(fd_get_lock((FD)device) != SUCCESS);
 
     /* If watch dog interrupt was triggered for this device. */
-    if ((device->net_device.suspend.timeout != MAX_WAIT) && (device->net_device.suspend.timeout <= current_system_tick()))
+    if ((device->net_device.suspend.timeout_enabled == TRUE) && (INT32CMP(device->net_device.suspend.timeout, current_system_tick()) <= 0))
     {
         /* Disable watch dog timer. */
         ethernet_wdt_disable(device);

@@ -98,7 +98,7 @@ struct _fs
     int32_t     (*ioctl) (void *, uint32_t, void *);
 
     /* Driver operations. */
-    int32_t     (*get_lock) (void *, uint64_t);
+    int32_t     (*get_lock) (void *, uint32_t);
     void        (*release_lock) (void *);
 
     /* Condition data for a file system. */
@@ -141,13 +141,10 @@ struct _fs
     FS_BUFFER_DATA  *buffer;
 
     /* This will hold the timeout if blocking mode is used. */
-    uint64_t    timeout;
+    uint32_t    timeout;
 
     /* File system specific flags. */
     uint32_t    flags;
-
-    /* Structure padding. */
-    uint8_t     pad[4];
 };
 
 /* This holds the resumption criteria for a task waiting on a FS. */
@@ -207,7 +204,7 @@ FD fs_open(char *, uint32_t);
 void fs_close(FD *);
 
 int32_t fd_get_lock(FD);
-int32_t fd_try_get_lock(FD, uint64_t);
+int32_t fd_try_get_lock(FD, uint32_t);
 void fd_release_lock(FD);
 
 int32_t fs_read(FD, uint8_t *, int32_t);

@@ -23,7 +23,7 @@
 static PIPE_DATA pipe_data;
 
 /* Internal function prototypes. */
-static int32_t pipe_lock(void *, uint64_t);
+static int32_t pipe_lock(void *, uint32_t);
 static void pipe_unlock(void *);
 static void *pipe_open(void *, char *, uint32_t);
 
@@ -179,7 +179,7 @@ void pipe_destroy(PIPE *pipe)
  * @timeout: Number of ticks we need to wait for the lock.
  * This function will get the lock for a given pipe.
  */
-static int32_t pipe_lock(void *fd, uint64_t timeout)
+static int32_t pipe_lock(void *fd, uint32_t timeout)
 {
 #ifdef CONFIG_SEMAPHORE
     /* Obtain data lock for this pipe. */

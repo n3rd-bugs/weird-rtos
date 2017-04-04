@@ -651,7 +651,7 @@ void ipv4_fragment_set_data(FD fd, IPV4_FRAGMENT *fragments, uint32_t num)
     net_device->ipv4.fargment.num = num;
 
     /* Initialize the IPv4 fragment condition. */
-    net_device->ipv4.fargment.suspend.timeout = MAX_WAIT;
+    net_device->ipv4.fargment.suspend.timeout_enabled = FALSE;
 
     /* Add condition for this fragment in networking stack. */
     net_condition_add(&net_device->ipv4.fargment.condition, &net_device->ipv4.fargment.suspend, &ipv4_fragment_expired, net_device);
@@ -668,8 +668,9 @@ void ipv4_fragment_set_data(FD fd, IPV4_FRAGMENT *fragments, uint32_t num)
  */
 static void ipv4_fragment_update_timer(NET_DEV *net_device)
 {
-    uint64_t next_timeout = MAX_WAIT;
+    uint32_t next_timeout;
     uint32_t n;
+    uint8_t timeout_enabled = FALSE;
 
     SYS_LOG_FUNTION_ENTRY(IPV4);
 
@@ -680,16 +681,29 @@ static void ipv4_fragment_update_timer(NET_DEV *net_device)
         if (net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE)
         {
             /* If this fragment will expire before the last saved expire time. */
-            if (net_device->ipv4.fargment.list[n].timeout < next_timeout)
+            if ((timeout_enabled == FALSE) || (INT32CMP(next_timeout, net_device->ipv4.fargment.list[n].timeout) > 0))
             {
                 /* Use this fragment's timeout. */
                 next_timeout = net_device->ipv4.fargment.list[n].timeout;
+
+                /* timeout is now enabled. */
+                timeout_enabled = TRUE;
             }
         }
     }
 
-    /* Save the timeout at which we will need to expire next fragment. */
-    net_device->ipv4.fargment.suspend.timeout = next_timeout;
+    /* If we need to enable timeout for fragmentation. */
+    if (timeout_enabled == TRUE)
+    {
+        /* Save the timeout at which we will need to expire next fragment. */
+        net_device->ipv4.fargment.suspend.timeout = next_timeout;
+        net_device->ipv4.fargment.suspend.timeout_enabled = TRUE;
+    }
+    else
+    {
+        /* Disable the fragmentation timer. */
+        net_device->ipv4.fargment.suspend.timeout_enabled = FALSE;
+    }
 
     SYS_LOG_FUNTION_EXIT(IPV4);
 
@@ -704,9 +718,8 @@ static void ipv4_fragment_update_timer(NET_DEV *net_device)
 static void ipv4_fragment_expired(void *data)
 {
     NET_DEV *net_device = (NET_DEV *)data;
-    uint64_t clock = current_system_tick();
+    uint32_t n, clock = current_system_tick();
     FD buffer_fd;
-    uint32_t n;
 
     SYS_LOG_FUNTION_ENTRY(IPV4);
 
@@ -714,7 +727,7 @@ static void ipv4_fragment_expired(void *data)
     for (n = 0; n < net_device->ipv4.fargment.num; n++)
     {
         /* If this fragment is now expired. */
-        if ((net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE) && (net_device->ipv4.fargment.list[n].timeout <= clock))
+        if ((net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE) && (INT32CMP(clock, net_device->ipv4.fargment.list[n].timeout) >= 0))
         {
             /* If we do have at least one buffer on this fragment. */
             if (net_device->ipv4.fargment.list[n].buffer_list.head)

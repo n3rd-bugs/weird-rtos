@@ -158,7 +158,7 @@ void lcd_an_register(LCD_AN *lcd)
 int32_t lcd_an_wait_8bit(LCD_AN *lcd)
 {
 #if (LCD_AN_8_BIT_DELAY == 0)
-    uint64_t sys_time;
+    uint32_t sys_time;
 #endif
     int32_t status = SUCCESS;
 
@@ -177,7 +177,7 @@ int32_t lcd_an_wait_8bit(LCD_AN *lcd)
     sys_time = current_system_tick();
 
     /* Read the first 4 bit and wait for the busy bit. */
-    while ((current_system_tick() - sys_time) < (MS_TO_TICK(LCD_AN_BUSY_TIMEOUT)) &&
+    while ((INT32CMP(current_system_tick(), sys_time) < (MS_TO_TICK(LCD_AN_BUSY_TIMEOUT))) &&
            (lcd->read_data(lcd) & (1 << 3)))
     {
         lcd->clr_en(lcd);
@@ -234,7 +234,7 @@ void lcd_an_send_nibble(LCD_AN *lcd, uint8_t nibble)
 int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
 {
     uint8_t cmd_byte;
-    uint64_t sys_time = current_system_tick();
+    uint32_t sys_time = current_system_tick();
     int32_t status = SUCCESS;
 
     /* Wait for LCD. */

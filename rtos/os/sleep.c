@@ -30,7 +30,7 @@ static uint8_t sleep_task_sort(void *node, void *task)
     uint8_t schedule = FALSE;
 
     /* Check if task is needed to be scheduled before the given task . */
-    if ( (((TASK *)node)->tick_sleep > ((TASK *)task)->tick_sleep) ||
+    if ( (INT32CMP(((TASK *)node)->tick_sleep, ((TASK *)task)->tick_sleep) > 0) ||
 
          /* Check if this node task has same scheduling instance as the given task. */
          ( (((TASK *)node)->tick_sleep == ((TASK *)task)->tick_sleep) &&
@@ -139,7 +139,7 @@ static void sleep_task_re_enqueue(TASK *tcb, uint8_t from)
  * tasks list. Interrupts must be locked by caller as sleep list can be
  * modified in the context of interrupts.
  */
-void sleep_add_to_list(TASK *tcb, uint64_t ticks)
+void sleep_add_to_list(TASK *tcb, uint32_t ticks)
 {
     /* Calculate system tick at which task will be invoked. */
     tcb->tick_sleep = current_system_tick() + ticks;

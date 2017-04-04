@@ -48,7 +48,7 @@ void tftp_server_init(TFTP_SERVER *tftp_server, SOCKET_ADDRESS *socket_address, 
     fs_condition_get((FD)&tftp_server->port, &tftp_server->port_condition, &tftp_server->port_suspend, &tftp_server->port_fs_param, FS_BLOCK_READ);
 
     /* For now disable the timer. */
-    tftp_server->port_suspend.timeout = tftp_server->timeout = MAX_WAIT;
+    tftp_server->port_suspend.timeout_enabled = FALSE;
 
     /* Lets never block on this socket. */
     tftp_server->port.console.fs.flags &= (uint32_t)~(FS_BLOCK);
@@ -76,7 +76,7 @@ static void tftp_server_process(void *data)
     SYS_LOG_FUNTION_ENTRY(TFTPS);
 
     /* If the timeout was enabled and it has now occurred. */
-    if ((tftp_server->timeout != MAX_WAIT) && (current_system_tick() >= tftp_server->timeout))
+    if ((tftp_server->port_suspend.timeout_enabled == TRUE) && (INT32CMP(current_system_tick(), tftp_server->port_suspend.timeout) >= 0))
     {
         /* If we have a connection. */
         if (tftp_server->fd != NULL)
@@ -88,7 +88,8 @@ static void tftp_server_process(void *data)
         }
 
         /* Reset the current timeout. */
-        tftp_server->port_suspend.timeout = tftp_server->timeout = MAX_WAIT;
+        tftp_server->port_suspend.timeout = MAX_WAIT;
+        tftp_server->port_suspend.timeout_enabled  = FALSE;
     }
 
     /* Receive incoming data from the UDP port. */
@@ -261,7 +262,8 @@ static void tftp_server_process(void *data)
                             fs_close(&tftp_server->fd);
 
                             /* Stop the timer. */
-                            tftp_server->port_suspend.timeout = tftp_server->timeout = MAX_WAIT;
+                            tftp_server->port_suspend.timeout = MAX_WAIT;
+                            tftp_server->port_suspend.timeout_enabled = FALSE;
 
                             SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered successfully", "");
                         }
@@ -296,7 +298,8 @@ static void tftp_server_process(void *data)
                                 fs_close(&tftp_server->fd);
 
                                 /* Stop the timer. */
-                                tftp_server->port_suspend.timeout = tftp_server->timeout = MAX_WAIT;
+                                tftp_server->port_suspend.timeout = MAX_WAIT;
+                                tftp_server->port_suspend.timeout_enabled = FALSE;
 
                                 SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered successfully", "");
 
@@ -336,7 +339,8 @@ static void tftp_server_process(void *data)
                     fs_close(&tftp_server->fd);
 
                     /* Stop the timer. */
-                    tftp_server->port_suspend.timeout = tftp_server->timeout = MAX_WAIT;
+                    tftp_server->port_suspend.timeout = MAX_WAIT;
+                    tftp_server->port_suspend.timeout_enabled = FALSE;
 
                     SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered interrupted", "");
                 }
@@ -364,7 +368,8 @@ static void tftp_server_process(void *data)
             if ((tftp_server->fd != NULL) && (memcmp(&tftp_server->client_address, &tftp_server->port.last_datagram_address, sizeof(SOCKET_ADDRESS)) == 0))
             {
                 /* Reset the timer to terminate this connection. */
-                tftp_server->port_suspend.timeout = tftp_server->timeout = current_system_tick() + TFTP_CLI_TIMEOUT;
+                tftp_server->port_suspend.timeout = current_system_tick() + TFTP_CLI_TIMEOUT;
+                tftp_server->port_suspend.timeout_enabled  = TRUE;
             }
 
             /* If request was processed successfully. */
@@ -454,7 +459,8 @@ static void tftp_server_process(void *data)
                     fs_close(&tftp_server->fd);
 
                     /* Stop the timer. */
-                    tftp_server->port_suspend.timeout = tftp_server->timeout = MAX_WAIT;
+                    tftp_server->port_suspend.timeout = MAX_WAIT;
+                    tftp_server->port_suspend.timeout_enabled  = FALSE;
 
                     SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered interrupted", "");
                 }

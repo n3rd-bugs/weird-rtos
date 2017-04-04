@@ -72,11 +72,11 @@ void semaphore_create(SEMAPHORE *, uint8_t, uint8_t, uint8_t);
 void semaphore_update(SEMAPHORE *, uint8_t, uint8_t, uint8_t);
 void semaphore_set_interrupt_data(SEMAPHORE *, void *, SEM_INT_LOCK *, SEM_INT_UNLOCK *);
 void semaphore_destroy(SEMAPHORE *);
-int32_t semaphore_obtain(SEMAPHORE *, uint64_t);
+int32_t semaphore_obtain(SEMAPHORE *, uint32_t);
 void semaphore_release(SEMAPHORE *);
 
 /* Semaphore condition APIs. */
-void semaphore_condition_get(SEMAPHORE *, CONDITION **, SUSPEND *, uint64_t);
+void semaphore_condition_get(SEMAPHORE *, CONDITION **, SUSPEND *, uint32_t);
 
 #endif /* CONFIG_SEMAPHORE */
 

@@ -25,7 +25,7 @@ static void *mmc_spi_fsopen(void *, char *, uint32_t);
 static int32_t mmc_spi_fsread(void *, uint8_t *, int32_t);
 static int32_t mmc_spi_fswrite(void *, uint8_t *, int32_t);
 static void mmc_spi_fsclose(void **);
-static int32_t mmc_spi_lock(void *, uint64_t);
+static int32_t mmc_spi_lock(void *, uint32_t);
 static void mmc_spi_unlock(void *);
 #endif /* MMC_SPI_FS */
 static int32_t mmc_spi_get_csd(MMC_SPI *, uint8_t *);
@@ -399,7 +399,7 @@ static void mmc_spi_fsclose(void **fd)
  * @return: Success will be returned if MMC was successfully locked.
  * This function will acquire lock for the MMC device.
  */
-static int32_t mmc_spi_lock(void *fd, uint64_t timeout)
+static int32_t mmc_spi_lock(void *fd, uint32_t timeout)
 {
     int32_t status;
 

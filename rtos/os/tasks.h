@@ -37,10 +37,6 @@ struct _task
     uint64_t    scheduler_data_1;
     uint64_t    scheduler_data_2;
 
-#ifdef CONFIG_SLEEP
-    /* The system tick at which this task is needed to be rescheduled. */
-    uint64_t    tick_sleep;
-#endif /* CONFIG_SLEEP */
 
 #ifdef CONFIG_TASK_STATS
     /* Number of times this task was scheduled. */
@@ -91,11 +87,15 @@ struct _task
 
     /* Current task status. */
     int32_t     status;
+#ifdef CONFIG_SLEEP
 
 #ifdef CONFIG_TASK_STATS
     /* Task stack size. */
     uint32_t    stack_size;
 #endif /* CONFIG_TASK_STATS */
+    /* The system tick at which this task is needed to be rescheduled. */
+    uint32_t    tick_sleep;
+#endif /* CONFIG_SLEEP */
 
     /* Task scheduler class identifier. */
     uint8_t     class;

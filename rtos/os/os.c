@@ -139,10 +139,9 @@ TASK *get_current_task()
  * This function returns the number of system ticks elapsed from the system
  * boot.
  */
-uint64_t current_system_tick()
+uint32_t current_system_tick()
 {
-    uint64_t return_tick;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+    uint32_t return_tick, interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();

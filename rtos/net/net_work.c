@@ -46,6 +46,7 @@ void net_work_init(WORK_QUEUE *work_queue)
     work_queue->condition.lock = &net_work_lock;
     work_queue->condition.unlock = &net_work_unlock;
     work_queue->suspend.timeout = MAX_WAIT;
+    work_queue->suspend.timeout_enabled = FALSE;
 
     /* Register work queue data with networking stack. */
     net_condition_add(&work_queue->condition, &work_queue->suspend, net_work_condition_process, work_queue);
@@ -64,7 +65,7 @@ void net_work_init(WORK_QUEUE *work_queue)
  * @return: Status returned by the work
  * This function is a callback function to process any queued work.
  */
-int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data, uint64_t wait)
+int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data, uint32_t wait)
 {
     int32_t status = SUCCESS;
     WORK work_int, *work_ptr = work;
@@ -111,7 +112,19 @@ int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data
 
         /* Initialize suspend criteria. */
         memset(suspend_ptr, 0, sizeof(SUSPEND));
-        suspend_ptr->timeout = wait;
+
+        /* If we don't need to wait indefinitely. */
+        if (wait != MAX_WAIT)
+        {
+            /* Set the required timeout. */
+            suspend_ptr->timeout = current_system_tick() + wait;
+            suspend_ptr->timeout_enabled = TRUE;
+        }
+        else
+        {
+            /* Disable the timer as we are waiting indefinitely. */
+            suspend_ptr->timeout_enabled = FALSE;
+        }
 
         /* Pick the condition on which we need to wait. */
         condition = &work_ptr->condition;

@@ -459,7 +459,7 @@ int32_t fd_get_lock(FD fd)
  *  successfully acquired.
  * This function will try to acquire lock for given file descriptor.
  */
-int32_t fd_try_get_lock(FD fd, uint64_t timeout)
+int32_t fd_try_get_lock(FD fd, uint32_t timeout)
 {
     int32_t status = SUCCESS;
     FS *fs = (FS *)fd;
@@ -535,7 +535,18 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
     param->flag = flag;
     suspend->param = param;
     suspend->do_suspend = &fs_do_suspend;
-    suspend->timeout = fs->timeout;
+
+    /* If timeout is enabled for this descriptor. */
+    if (fs->timeout != MAX_WAIT)
+    {
+        /* Compute the suspend timeout. */
+        suspend->timeout = current_system_tick() + fs->timeout;
+    }
+    else
+    {
+        /* Timeout is not enabled */
+        suspend->timeout_enabled = FALSE;
+    }
 
     /* Return the condition for this file system. */
     *condition = &(fs->condition);

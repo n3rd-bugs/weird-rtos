@@ -312,20 +312,18 @@ static uint8_t suspend_is_task_waiting(TASK *task, CONDITION *check_condition)
  * This routine will calculate the timeout for which we need to wait on the
  * given conditions before returning a timeout.
  */
-static uint64_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
+static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
 {
-    uint64_t min_timeout = MAX_WAIT, this_timeout;
-    uint64_t clock = current_system_tick();
-    uint32_t n, min_index = 0;
+    uint32_t min_timeout = MAX_WAIT, this_timeout, clock = current_system_tick(), n, min_index = 0;
 
     /* For all conditions search the minimum timeout. */
     for (n = 0; n < num; n++)
     {
-        /* If we are actually using this timer. */
-        if ((*suspend)->timeout != MAX_WAIT)
+        /* If timer is enabled for this suspend condition. */
+        if ((*suspend)->timeout_enabled == TRUE)
         {
             /* Calculate the number of ticks left till it's timeout. */
-            this_timeout = (((*suspend)->timeout > clock) ? ((*suspend)->timeout - clock) : 0);
+            this_timeout = (INT32CMP((*suspend)->timeout, clock) > 0) ? (uint32_t)INT32CMP((*suspend)->timeout, clock) : 0;
 
             /* If this timer has minimum ticks left on it. */
             if (this_timeout < min_timeout)
@@ -368,8 +366,7 @@ static uint64_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
  */
 int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *num, uint8_t locked)
 {
-    uint64_t timeout;
-    uint32_t timeout_index, interrupt_level, num_conditions, return_num;
+    uint32_t timeout, timeout_index, interrupt_level, num_conditions, return_num;
     int32_t status = SUCCESS, task_status = TASK_RESUME;
     CONDITION *resume_condition = NULL;
     TASK *tcb = get_current_task();
@@ -589,7 +586,7 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 #endif /* CONFIG_SLEEP */
 
                 /* Try to reschedule this task. */
-                ((SCHEDULER *)(suspend->task->scheduler))->yield(suspend->task, YIELD_SYSTEM);
+                scheduler_task_yield(suspend->task, YIELD_SYSTEM);
 
                 /* If do have resume data. */
                 if (resume != NULL)

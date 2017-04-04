@@ -86,7 +86,7 @@ typedef struct _ipv4_fragment
     } buffer_list;
 
     /* The system tick at which this fragment will timeout. */
-    uint64_t    timeout;
+    uint32_t    timeout;
 
     /* Source address from this fragment is being received. */
     uint32_t    sa;

@@ -24,7 +24,7 @@ FD net_buff_fd = (FD)NULL;
 static NET_BUFFER_FS net_buffers_fs;
 
 /* Internal function prototypes. */
-static int32_t net_buffer_lock(void *, uint64_t);
+static int32_t net_buffer_lock(void *, uint32_t);
 static void net_buffer_unlock(void *);
 static void net_buffer_condition_callback(void *);
 static int32_t net_buffer_write(void *, uint8_t *, int32_t);
@@ -142,7 +142,7 @@ static void net_buffer_condition_callback(void *data)
  * @timeout: Number of ticks we need to wait for the lock.
  * This function will get the lock for net buffer file descriptor.
  */
-static int32_t net_buffer_lock(void *fd, uint64_t timeout)
+static int32_t net_buffer_lock(void *fd, uint32_t timeout)
 {
     int32_t status = SUCCESS;
 

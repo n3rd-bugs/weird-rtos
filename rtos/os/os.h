@@ -26,7 +26,7 @@
 #define FALSE                       (0)
 #define TRUE                        (1)
 #define PARTIAL                     (2)
-#define MAX_WAIT                    (uint64_t)(-1)
+#define MAX_WAIT                    (uint32_t)(-1)
 
 #ifdef NULL
 #undef NULL
@@ -34,11 +34,11 @@
 #define NULL                        (0)
 
 /* Number of system ticks per second. */
-#define OS_TICKS_PER_SEC            (uint64_t)(100)
-#define MS_TO_TICK(a)               ((uint64_t)(((uint64_t)(a) * OS_TICKS_PER_SEC) / (1000)))
-#define TICK_TO_MS(a)               ((uint64_t)(((uint64_t)(a) * 1000) / (OS_TICKS_PER_SEC)))
-#define US_TO_HW_TICK(a)            ((uint64_t)(((uint64_t)(a) * OS_HW_TICKS_PER_SEC) / (1000000)))
-#define HW_TICK_TO_US(a)            ((uint64_t)(((uint64_t)(a) * 1000000) / (OS_HW_TICKS_PER_SEC)))
+#define OS_TICKS_PER_SEC            (uint32_t)(100)
+#define MS_TO_TICK(a)               ((uint32_t)(((uint32_t)(a) * OS_TICKS_PER_SEC) / (1000)))
+#define TICK_TO_MS(a)               ((uint32_t)(((uint32_t)(a) * 1000) / (OS_TICKS_PER_SEC)))
+#define US_TO_HW_TICK(a)            ((uint32_t)(((uint32_t)(a) * OS_HW_TICKS_PER_SEC) / (1000000)))
+#define HW_TICK_TO_US(a)            ((uint32_t)(((uint32_t)(a) * 1000000) / (OS_HW_TICKS_PER_SEC)))
 
 /* Some useful macros. */
 #define OFFSETOF(type, field)       ((int) &(((type *) 0)->field))
@@ -49,6 +49,7 @@
 #define OS_MASK_REG32(x, clr, set)  OS_WRITE_REG32(x, (((OS_READ_REG32(x)) & (uint32_t)(~clr)) | set))
 #define MIN(a, b)                   (((a) < (b)) ? (a) : (b))
 #define MAX(a, b)                   (((a) > (b)) ? (a) : (b))
+#define INT32CMP(a, b)              ((int32_t)((a) - (b)))
 
 /* Alignment manipulation macros. */
 #define ALLIGN_SIZE                 (uint32_t)(0x8)
@@ -90,6 +91,6 @@ void os_process_system_tick();
 
 void set_current_task(TASK *);
 TASK *get_current_task();
-uint64_t current_system_tick();
+uint32_t current_system_tick();
 
 #endif /* _OS_H_ */

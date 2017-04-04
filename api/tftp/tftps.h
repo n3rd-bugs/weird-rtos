@@ -60,9 +60,6 @@ typedef struct _tftp_server
     /* Associated UDP port. */
     UDP_PORT    port;
 
-    /* Timeout for current connection. */
-    uint64_t    timeout;
-
     /* Condition data for processing requests on for this server. */
     SUSPEND     port_suspend;
     CONDITION   *port_condition;

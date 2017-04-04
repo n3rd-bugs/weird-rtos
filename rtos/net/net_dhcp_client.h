@@ -62,13 +62,13 @@ struct _dhcp_client_device
     SUSPEND     suspend;
 
     /* Time at which we acquired a lease. */
-    uint64_t    lease_start;
+    uint32_t    lease_start;
 
     /* Time at which this client started this transaction. */
-    uint64_t    start_time;
+    uint32_t    start_time;
 
     /* Life time of the lease. */
-    uint64_t    lease_time;
+    uint32_t    lease_time;
 
     /* DHCP server IP address. */
     uint32_t    server_ip;
