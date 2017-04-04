@@ -112,7 +112,7 @@ ISR_FUN cpu_interrupt(void);
 ISR_FUN nmi_interrupt(void);
 ISR_FUN hard_fault_interrupt(void);
 ISR_FUN isr_servicecall_handle(void);
-NAKED_ISR_FUN isr_pendsv_handle(void);
+NAKED_ISR_FUN isr_pendsv_handle(void) NOOPTIMIZATION;
 ISR_FUN isr_sysclock_handle(void);
 ISR_FUN isr_clock64_tick(void);
 
