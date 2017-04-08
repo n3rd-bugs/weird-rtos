@@ -11,6 +11,7 @@
  * (in any form) the author will not be liable for any legal charges.
  */
 #include <idle.h>
+#include <semaphore.h>
 
 /* Idle work definition. */
 static IDLE_WORK idle_work[IDLE_WORK_MAX];
@@ -19,7 +20,7 @@ static IDLE_WORK idle_work[IDLE_WORK_MAX];
 static void idle_task_entry(void *);
 static TASK idle_task;
 static uint8_t idle_task_stack[IDLE_TASK_STACK_SIZE];
-
+static INTLCK idle_work_lock;
 /*
  * idle_task_init
  * This will initialize the idle task.
@@ -29,6 +30,9 @@ void idle_task_init()
     /* Initialize idle task's control block and stack. */
     task_create(&idle_task, "Idle", idle_task_stack, IDLE_TASK_STACK_SIZE, &idle_task_entry, (void *)0x00, TASK_NO_RETURN);
     scheduler_task_add(&idle_task, 255);
+
+    /* Initialize IDL work lock. */
+    INTLCK_INIT(idle_work_lock);
 
 } /* idle_task_init */
 
@@ -56,9 +60,21 @@ int32_t idle_add_work(IDLE_DO *do_fun, void *priv_data)
 {
     int32_t status = IDLE_NO_SPACE;
     uint32_t i;
+    uint8_t acquired = FALSE;
 
-    /* Lock the scheduler to protect work data. */
-    scheduler_lock();
+    /* While we could not acquire the lock. */
+    while (acquired == FALSE)
+    {
+        /* Try to acquire the lock. */
+        INTLCK_TRY_GET(idle_work_lock, acquired);
+
+        /* If lock was acquired. */
+        if (acquired == FALSE)
+        {
+            /* Sleep and hope we get this lock in next try. */
+            sleep_ticks(1);
+        }
+    }
 
     /* Traverse the list of idle works. */
     for (i = 0; i < IDLE_WORK_MAX; i++)
@@ -78,8 +94,8 @@ int32_t idle_add_work(IDLE_DO *do_fun, void *priv_data)
         }
     }
 
-    /* Unlock the scheduler. */
-    scheduler_unlock();
+    /* Release the lock. */
+    INTLCK_RELEASE(idle_work_lock);
 
     /* Return status to the caller. */
     return (status);
@@ -98,9 +114,21 @@ int32_t idle_remove_work(IDLE_DO *do_fun, void *priv_data)
 {
     int32_t status = IDLE_NOT_FOUND;
     uint32_t i;
+    uint8_t acquired = FALSE;
 
-    /* Lock the scheduler to protect work data. */
-    scheduler_lock();
+    /* While we could not acquire the lock. */
+    while (acquired == FALSE)
+    {
+        /* Try to acquire the lock. */
+        INTLCK_TRY_GET(idle_work_lock, acquired);
+
+        /* If lock was acquired. */
+        if (acquired == FALSE)
+        {
+            /* Sleep and hope we get this lock in next try. */
+            sleep_ticks(1);
+        }
+    }
 
     /* Traverse the list of idle works. */
     for (i = 0; i < IDLE_WORK_MAX; i++)
@@ -119,8 +147,8 @@ int32_t idle_remove_work(IDLE_DO *do_fun, void *priv_data)
         }
     }
 
-    /* Unlock the scheduler. */
-    scheduler_unlock();
+    /* Release the lock. */
+    INTLCK_RELEASE(idle_work_lock);
 
     /* Return status to the caller. */
     return (status);
@@ -138,6 +166,7 @@ static void idle_task_entry(void *argv)
     IDLE_DO *do_fun;
     void *priv_data;
     uint32_t i;
+    uint8_t acquired;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(argv);
@@ -148,15 +177,20 @@ static void idle_task_entry(void *argv)
         /* Traverse the idle work list. */
         for (i = 0; i < IDLE_WORK_MAX; i++)
         {
-            /* Lock the scheduler to protect work data. */
-            scheduler_lock();
+            /* While we could not acquire the lock. */
+            acquired = FALSE;
+            while (acquired == FALSE)
+            {
+                /* Try to acquire the lock. */
+                INTLCK_TRY_GET(idle_work_lock, acquired);
+            }
 
             /* Save the work data. */
             do_fun = idle_work[i].do_fun;
             priv_data = idle_work[i].priv_data;
 
-            /* Unlock the scheduler. */
-            scheduler_unlock();
+            /* Release the lock. */
+            INTLCK_RELEASE(idle_work_lock);
 
             /* If we do have a valid work. */
             if (do_fun != NULL)
