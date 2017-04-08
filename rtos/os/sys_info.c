@@ -148,7 +148,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
     if (status == SUCCESS)
     {
         /* Print table header. */
-        status = fs_buffer_push(buffer, (uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n", sizeof("Name\tClass\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n") - 1, 0);
+        status = fs_buffer_push(buffer, (uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n", sizeof("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n") - 1, 0);
     }
 
     /* Print information about all the tasks in the system. */
@@ -209,12 +209,6 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 
     if (status == SUCCESS)
     {
-        snprintf(str, sizeof(str), "-\t");
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
-    }
-
-    if (status == SUCCESS)
-    {
         snprintf(str, sizeof(str), "%lu\t", (uint32_t)SYS_STACK_SIZE);
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
@@ -233,7 +227,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 
     if (status == SUCCESS)
     {
-        snprintf(str, sizeof(str), "-\t-\r\n");
+        snprintf(str, sizeof(str), "-\t-\t-\r\n");
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 #endif
