@@ -1065,7 +1065,7 @@ void usb_function_stm32f407_activate_remote_wakeup(USB_STM32F407_HANDLE *usb_dev
             if(usb_device->cfg.low_power)
             {
                 /* Un-gate USB core clock. */
-                power.d32 = OS_READ_REG32(&usb_device->regs.PCGCCTL);
+                memcpy(&power.d32, (uint32_t *)usb_device->regs.PCGCCTL, sizeof(uint32_t));
                 power.b.gatehclk = 0;
                 power.b.stoppclk = 0;
                 OS_WRITE_REG32(usb_device->regs.PCGCCTL, power.d32);
@@ -1104,7 +1104,7 @@ void usb_function_stm32f407_ungate_clock(USB_STM32F407_HANDLE *usb_device)
         if(dsts.b.suspsts == 1)
         {
             /* Un-gate USB core clock. */
-            power.d32 = OS_READ_REG32(&usb_device->regs.PCGCCTL);
+            memcpy(&power.d32, (uint32_t *)usb_device->regs.PCGCCTL, sizeof(uint32_t));
             power.b.gatehclk = 0;
             power.b.stoppclk = 0;
             OS_WRITE_REG32(usb_device->regs.PCGCCTL, power.d32);

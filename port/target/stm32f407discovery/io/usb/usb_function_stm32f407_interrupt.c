@@ -14,6 +14,7 @@
 #include <usb.h>
 
 #ifdef USB_FUNCTION
+#include <string.h>
 
 /* Internal functions. */
 /* USB interrupt handlers. */
@@ -369,7 +370,7 @@ static uint32_t usb_function_stm32f407_resume_interrupt(USB_STM32F407_HANDLE *pd
     if(pdev->cfg.low_power)
     {
         /* Un-gate USB core clock. */
-        power.d32 = OS_READ_REG32(&pdev->regs.PCGCCTL);
+        memcpy(&power.d32, (uint32_t *)pdev->regs.PCGCCTL, sizeof(uint32_t));
         power.b.gatehclk = 0;
         power.b.stoppclk = 0;
         OS_WRITE_REG32(pdev->regs.PCGCCTL, power.d32);
