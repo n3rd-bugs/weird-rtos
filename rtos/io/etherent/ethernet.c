@@ -308,8 +308,8 @@ static void ethernet_process(void *data)
                 }
                 else
                 {
-                    /* Put back this buffer on the transmission list. */
-                    fs_buffer_add(fd, buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+                    /* Put back this buffer on the head of transmission list. */
+                    fs_buffer_add(fd, buffer, FS_BUFFER_TX, (FS_BUFFER_ACTIVE | FS_BUFFER_HEAD));
                 }
             }
 
