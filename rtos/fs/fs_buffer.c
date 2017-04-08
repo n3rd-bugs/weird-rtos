@@ -523,6 +523,7 @@ void fs_buffer_add_buffer_list(FS_BUFFER *buffer, uint32_t type, uint32_t flags)
  *  FS_BUFFER_LIST: If this is a free buffer list.
  * @flags: Operation flags.
  *  FS_BUFFER_ACTIVE: Actively add the buffer and invoke the any callbacks.
+ *  FS_BUFFER_HEAD: If buffer is needed to be added on the head of a list.
  * This function will adds a buffer in the file descriptor for the required
  * type.
  */
@@ -588,8 +589,17 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
     /* A receive buffer. */
     case FS_BUFFER_RX:
 
-        /* Just add this buffer in the receive buffer list. */
-        sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        /* If we need to add this on the head. */
+        if (flags & FS_BUFFER_HEAD)
+        {
+            /* Add this buffer on the head of receive list. */
+            sll_push(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        }
+        else
+        {
+            /* Just add this buffer in the receive buffer list. */
+            sll_append(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        }
 
 #ifdef FS_BUFFER_DEBUG
         /* Increment the number of buffers on receive list. */
@@ -621,8 +631,17 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
     /* A transmit buffer. */
     case FS_BUFFER_TX:
 
-        /* Just add this buffer in the transmit buffer list. */
-        sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        /* If we need to add this on the head. */
+        if (flags & FS_BUFFER_HEAD)
+        {
+            /* Add this buffer on the head of transmit list. */
+            sll_push(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        }
+        else
+        {
+            /* Just add this buffer in the transmit buffer list. */
+            sll_append(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+        }
 
 #ifdef FS_BUFFER_DEBUG
         /* Increment the number of buffers on transmit list. */
