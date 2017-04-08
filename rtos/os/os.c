@@ -22,7 +22,7 @@ TASK *current_task = NULL;
 TASK *return_task = NULL;
 
 /* This is used for time keeping in the system. */
-uint64_t current_tick = 0;
+uint32_t current_tick = 0;
 
 /*
  * os_process_system_tick
