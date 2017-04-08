@@ -239,6 +239,10 @@ NAKED_FUN control_to_system()
     /* If we do have a task to switch. */
     if (current_task != NULL)
     {
+        /* Clear the yield flag for current task as we will now actually switching
+         * to another task. */
+        current_task->flags &= (uint8_t)~(TASK_YIELD);
+
         /* Context has already been saved, just switch to new
          * task here. */
         set_current_task((TASK *)scheduler_get_next_task());
