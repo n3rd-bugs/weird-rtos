@@ -44,6 +44,7 @@
 #define NET_INVALID_CSUM        -1012
 #define NET_INVALID_HDR         -1013
 #define NET_INVALID_FD          -1014
+#define NET_NO_RTX_AVAILABLE    -1015
 
 /* Networking port definitions. */
 #define NET_PORT_UNSPEC         0

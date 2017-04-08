@@ -24,7 +24,7 @@
 
 /* Global TCP data. */
 TCP_DATA tcp_data;
-static volatile uint32_t tcp_iss;
+static volatile uint32_t tcp_iss = 0xFFFF0000;
 
 /* Internal function prototypes. */
 static void tcp_port_initialize(TCP_PORT *);
@@ -34,17 +34,14 @@ static int32_t tcp_port_wait(TCP_PORT *, uint8_t);
 static int32_t tcp_process_options(FS_BUFFER *, TCP_PORT *, uint32_t, uint16_t);
 static int32_t tcp_add_option(FS_BUFFER *, uint8_t, uint8_t, void *, uint8_t);
 static int32_t tcp_add_options(FS_BUFFER *, TCP_PORT *, uint8_t, uint8_t *, uint8_t);
-static void tcp_rtx_timer_register(TCP_PORT *);
-static void tcp_rtx_timer_unregister(TCP_PORT *);
-static void tcp_rtx_start(TCP_PORT *);
-static void tcp_rtx_start_timeout(TCP_PORT *, uint32_t);
+static void tcp_timer_register(TCP_PORT *);
+static void tcp_timer_unregister(TCP_PORT *);
+static void tcp_timeout_update(TCP_PORT *);
 static void tcp_fast_rtx(TCP_PORT *, uint32_t);
-static void tcp_rtx_stop(TCP_PORT *);
-static void tcp_rtx_callback(void *);
-static int32_t tcp_send_segment(TCP_PORT *, SOCKET_ADDRESS *, uint32_t, uint32_t, uint16_t, uint16_t, uint8_t *, int32_t, uint8_t);
+static void tcp_timeout_callback(void *);
+static int32_t tcp_send_segment(TCP_PORT *, SOCKET_ADDRESS *, uint32_t, uint32_t, uint16_t, uint16_t, uint8_t *, int32_t, uint8_t, uint8_t);
 static uint8_t tcp_check_sequence(uint32_t, uint32_t, uint32_t, uint32_t);
 static void tcp_process_finbit(TCP_PORT *, uint32_t);
-static void tcp_window_update(TCP_PORT *, uint16_t);
 static uint8_t tcp_oo_buffer_process(void *, void *);
 static int32_t tcp_rx_buffer_merge(TCP_PORT *, FS_BUFFER *, uint16_t, uint32_t);
 static void tcp_buffer_get_ihl_flags(FS_BUFFER *, uint8_t *, uint16_t *);
@@ -52,6 +49,9 @@ static int32_t tcp_read_buffer(void *, uint8_t *, int32_t);
 static int32_t tcp_read_data(void *, uint8_t *, int32_t);
 static int32_t tcp_write_buffer(void *, uint8_t *, int32_t);
 static int32_t tcp_write_data(void *, uint8_t *, int32_t);
+static TCP_RTX_DATA *tcp_get_rtx_free(TCP_PORT *);
+static uint8_t tcp_rtx_return_buffer(void *, FS_BUFFER *);
+static uint8_t tcp_rtx_process_ack(TCP_PORT *, uint32_t);
 
 /*
  * tcp_initialize
@@ -121,7 +121,7 @@ void tcp_register(TCP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
     tcp_port_initialize(port);
 
     /* Register retransmission timer for this TCP port. */
-    tcp_rtx_timer_register(port);
+    tcp_timer_register(port);
 
 #ifndef CONFIG_SEMAPHORE
     /* Enable scheduling. */
@@ -162,7 +162,7 @@ void tcp_unregister(TCP_PORT *port)
     fs_buffer_add_buffer_list(port->buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
     /* Unregister networking condition for this TCP port. */
-    tcp_rtx_timer_unregister(port);
+    tcp_timer_unregister(port);
 
     /* Clear the TCP port structure. */
     memset(port, 0, sizeof(TCP_PORT));
@@ -191,10 +191,8 @@ static void tcp_port_initialize(TCP_PORT *port)
     /* Initialize TCP port configuration. */
     port->rcv_wnd = TCP_WND_SIZE;
     port->rcv_wnd_scale = port->snd_wnd_scale = 0;
-    port->ssthresh = TCP_INIT_SS_THRESH;
-    port->cwnd = TCP_INIT_CWND;
-    port->expboff = 1;
-    port->dack = 0;
+    port->nacks = 0;
+    port->event_timeout_enable = port->rtx_timeout_enable = FALSE;
 
     SYS_LOG_FUNTION_EXIT(TCP);
 
@@ -575,80 +573,112 @@ static int32_t tcp_add_options(FS_BUFFER *buffer, TCP_PORT *port, uint8_t opt_fl
 } /* tcp_add_options */
 
 /*
- * tcp_rtx_timer_register
- * @port: TCP port for which RTX timer is needed to be registered.
- * This function will register TCP retransmission timer for giver TCP port.
+ * tcp_timer_register
+ * @port: TCP port for which timer is needed to be registered.
+ * This function will register timer for giver TCP port.
  */
-static void tcp_rtx_timer_register(TCP_PORT *port)
+static void tcp_timer_register(TCP_PORT *port)
 {
     SYS_LOG_FUNTION_ENTRY(TCP);
 
     /* Initialize TCP retransmission condition data. */
-    port->rtx_data.condition.data = port;
+    port->timeout_suspend.condition.data = port;
 
     /* Disable retransmission timer by default. */
-    port->rtx_data.suspend.timeout = MAX_WAIT;
+    port->timeout_suspend.suspend.timeout = MAX_WAIT;
+    port->timeout_suspend.suspend.timeout_enabled = FALSE;
 
     /* Add networking condition to process retransmission timer events. */
-    net_condition_add(&port->rtx_data.condition, &port->rtx_data.suspend, &tcp_rtx_callback, (FD)port);
+    net_condition_add(&port->timeout_suspend.condition, &port->timeout_suspend.suspend, &tcp_timeout_callback, (FD)port);
 
     SYS_LOG_FUNTION_EXIT(TCP);
 
-} /* tcp_rtx_timer_register */
+} /* tcp_timer_register */
 
 /*
- * tcp_rtx_timer_unregister
- * @port: TCP port for which retransmission timer is needed to be unregistered.
- * This function will unregister retransmission timer for this TCP port.
+ * tcp_timer_unregister
+ * @port: TCP port for which timer is needed to be unregistered.
+ * This function will unregister timer for this TCP port.
  */
-static void tcp_rtx_timer_unregister(TCP_PORT *port)
+static void tcp_timer_unregister(TCP_PORT *port)
 {
+    uint32_t i;
+
     SYS_LOG_FUNTION_ENTRY(TCP);
 
     /* Remove networking condition for retransmission timer. */
-    net_condition_remove(&port->rtx_data.condition);
+    net_condition_remove(&port->timeout_suspend.condition);
+
+    /* Traverse and free all the retransmission buffers. */
+    for (i = 0; i < TCP_NUM_RTX; i++)
+    {
+        /* If this is being used. */
+        if (port->rtx[i].flags & TCP_RTX_IN_USE)
+        {
+            OS_ASSERT(port->rtx[i].buffer == NULL);
+            OS_ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
+
+            /* Lets free this buffer when required. */
+            port->rtx[i].buffer->free = NULL;
+            port->rtx[i].buffer->free_data = NULL;
+
+            /* If RTX buffer has returned. */
+            if (port->rtx[i].flags & TCP_RTX_BUFFER_RETURNED)
+            {
+                /* Free this buffer. */
+                fs_buffer_add(port->rtx[i].buffer->fd, port->rtx[i].buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            }
+
+            /* Release buffer lock. */
+            fd_release_lock(port->rtx[i].buffer->fd);
+        }
+    }
 
     SYS_LOG_FUNTION_EXIT(TCP);
 
-} /* tcp_rtx_timer_unregister */
+} /* tcp_timer_unregister */
 
 /*
- * tcp_rtx_start
- * @port: TCP port for which retransmission of a segment is needed to be
- *  scheduled.
+ * tcp_timeout_update
+ * @port: TCP port for which a timeout was updated.
  * This function will schedule next retransmission on a given TCP port.
  */
-static void tcp_rtx_start(TCP_PORT *port)
+static void tcp_timeout_update(TCP_PORT *port)
 {
+    uint32_t timeout = port->event_timeout;
+    uint8_t timeout_enabled = port->event_timeout_enable;
+
     SYS_LOG_FUNTION_ENTRY(TCP);
 
-    /* Start the RTX timer with default RTO time. */
-    tcp_rtx_start_timeout(port, TCP_RTO);
+    /* If we need to use the retransmission timer. */
+    if ((port->rtx_timeout_enable == TRUE) && ((timeout_enabled == FALSE) || (INT32CMP(timeout, port->rtx_timeout_enable) > 0)))
+    {
+        /* We need to perform the retransmission before a TCP event. */
+        timeout = port->rtx_timeout;
+        timeout_enabled = TRUE;
+    }
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    /* If we need to enable timeout. */
+    if (timeout_enabled == TRUE)
+    {
+        /* Set required next timeout. */
+        port->timeout_suspend.suspend.timeout = timeout;
 
-} /* tcp_rtx_start */
-
-/*
- * tcp_rtx_start_timeout
- * @port: TCP port for which retransmission of a segment is needed to be
- *  scheduled.
- * @timeout: Timeout after which we need to expire this timer.
- * This function will schedule next retransmission on a given TCP port.
- */
-static void tcp_rtx_start_timeout(TCP_PORT *port, uint32_t timeout)
-{
-    SYS_LOG_FUNTION_ENTRY(TCP);
-
-    /* Set required next timeout. */
-    port->rtx_data.suspend.timeout = (current_system_tick() + timeout);
+        /* Set the flag that timeout is enabled for this suspend. */
+        port->timeout_suspend.suspend.timeout_enabled = TRUE;
+    }
+    else
+    {
+        /* Timeout is not enabled. */
+        port->timeout_suspend.suspend.timeout_enabled = FALSE;
+    }
 
     /* Networking condition data has been updated. */
     net_condition_updated();
 
     SYS_LOG_FUNTION_EXIT(TCP);
 
-} /* tcp_rtx_start_timeout */
+} /* tcp_timeout_update */
 
 /*
  * tcp_fast_rtx
@@ -658,49 +688,52 @@ static void tcp_rtx_start_timeout(TCP_PORT *port, uint32_t timeout)
  */
 static void tcp_fast_rtx(TCP_PORT *port, uint32_t seq_num)
 {
+    uint32_t i;
+
     SYS_LOG_FUNTION_ENTRY(TCP);
 
-    /* If the RTX queue has the packet needed to be retransmitted. */
-    if (port->rtx_data.seq_num == seq_num)
+    /* Traverse the RTX list. */
+    for (i = 0; i < TCP_NUM_RTX; i++)
     {
-        /* Retransmit TCP segment. */
-        tcp_send_segment(port, port->rtx_data.socket_address, port->rtx_data.seq_num, port->rtx_data.ack_num, port->rtx_data.flags, port->rtx_data.wnd_size, NULL, 0, FALSE);
+        /* Test if this frame has sequence equal or  greater than the required
+         * sequence number. */
+        if ((port->rtx[i].flags & TCP_RTX_IN_USE) && (port->rtx[i].seq_num == seq_num))
+        {
+            /* If the buffer we are supposed to retransmit has returned. */
+            if (port->rtx[i].flags & TCP_RTX_BUFFER_RETURNED)
+            {
+                /* Clear the buffer returned flag. */
+                port->rtx[i].flags &= (uint8_t)~(TCP_RTX_BUFFER_RETURNED);
+
+                /* Lock the buffer descriptor. */
+                OS_ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
+
+                /* Retransmit a TCP buffer. */
+                net_device_buffer_transmit(port->rtx[i].buffer, NET_PROTO_IPV4, 0);
+
+                /* Release the buffer lock. */
+                fd_release_lock(port->rtx[i].buffer->fd);
+            }
+        }
     }
+
+    /* Update timeout for this port. */
+    tcp_timeout_update(port);
 
     SYS_LOG_FUNTION_EXIT(TCP);
 
 } /* tcp_fast_rtx */
 
 /*
- * tcp_rtx_stop
- * @port: TCP port for which retransmission of a segment is needed to be
- *  stopped.
- * This function will stop retransmission of a segment for given TCP port.
- */
-static void tcp_rtx_stop(TCP_PORT *port)
-{
-    SYS_LOG_FUNTION_ENTRY(TCP);
-
-    /* Disable the RTX timer. */
-    port->rtx_data.suspend.timeout = MAX_WAIT;
-
-    /* Networking condition data has been updated. */
-    net_condition_updated();
-
-    SYS_LOG_FUNTION_EXIT(TCP);
-
-} /* tcp_rtx_stop */
-
-/*
- * tcp_rtx_callback
+ * tcp_timeout_callback
  * @data: TCP port data for this timer.
- * This function is networking condition callback for a TCP retransmission
- * timer.
+ * This function is networking condition callback for a TCP timer.
  */
-static void tcp_rtx_callback(void *data)
+static void tcp_timeout_callback(void *data)
 {
     TCP_PORT *port = (TCP_PORT *)data;
-    uint64_t next_timeout;
+    int32_t i, least_rtx = -1;
+    uint8_t rtx_picked = FALSE;
 
     SYS_LOG_FUNTION_ENTRY(TCP);
 
@@ -716,7 +749,8 @@ static void tcp_rtx_callback(void *data)
             port->state = TCP_SOCK_COLSED;
 
             /* Stop the port timer. */
-            next_timeout = MAX_WAIT;
+            port->event_timeout = MAX_WAIT;
+            port->event_timeout_enable = FALSE;
 
             /* Resume any tasks waiting for state change. */
             tcp_resume_socket(port, (FS_BLOCK_READ | FS_BLOCK_WRITE));
@@ -725,76 +759,122 @@ static void tcp_rtx_callback(void *data)
 
         default:
 
-            /* Retransmit a TCP segment. */
-            tcp_send_segment(port, port->rtx_data.socket_address, port->rtx_data.seq_num, port->rtx_data.ack_num, port->rtx_data.flags, port->rtx_data.wnd_size, port->rtx_data.data, port->rtx_data.data_len, FALSE);
-
-            switch (port->state)
+            /* If a retransmission is needed to be performed. */
+            if (INT32CMP(current_system_tick(), port->rtx_timeout) >= 0)
             {
-            /* If we have sent a SYN. */
-            case TCP_SOCK_SYN_SENT:
-
-            /* If we are in SYN received state. */
-            case TCP_SOCK_SYN_RCVD:
-
-            /* If we are waiting for last ACK. */
-            case TCP_SOCK_LAST_ACK:
-
-            /* If we are in FIN-WAIT-1 state. */
-            case TCP_SOCK_FIN_WAIT_1:
-
-            /* If we are in closing state. */
-            case TCP_SOCK_CLOSING:
-
-                /* Next time out will be at RTO. */
-                next_timeout = TCP_RTO;
-
-                break;
-
-            /* If we are in established state. */
-            case TCP_SOCK_ESTAB:
-
-                /* (ExpBoff > 1) AND (ExpBoff < 64) ? */
-                if ((port->expboff > 1) && (port->expboff < 64))
+                /* Traverse the RTX list and try to find the least sequence
+                 * number for this tick. */
+                for (i = 0; i < TCP_NUM_RTX; i++)
                 {
-                    /* ExpBoff := ExpBoff × 2. */
-                    port->expboff = (uint8_t)(port->expboff * 2);
+                    /* If this entry is enabled. */
+                    if (port->rtx[i].flags & TCP_RTX_IN_USE)
+                    {
+                        /* If this entry has the least sequence number. */
+                        if ((rtx_picked == FALSE) || (INT32CMP(port->rtx[least_rtx].seq_num, port->rtx[i].seq_num) >= 0))
+                        {
+                            /* Flag that we just picked a retransmission structure and save it's index. */
+                            rtx_picked = TRUE;
+                            least_rtx = i;
+                        }
+                    }
                 }
 
-                /* SET (ExpBoff × RTO, REXMT) */
-                next_timeout = (uint32_t)(port->expboff * TCP_RTO);
+                /* If we have an retransmission to be invoked. */
+                if ((rtx_picked == TRUE) && (least_rtx >= 0))
+                {
+                    /* If the buffer we are supposed to retransmit has returned. */
+                    if (port->rtx[least_rtx].flags & TCP_RTX_BUFFER_RETURNED)
+                    {
+                        /* Clear the buffer returned flag. */
+                        port->rtx[least_rtx].flags &= (uint8_t)~(TCP_RTX_BUFFER_RETURNED);
 
-                /* SSthresh := max (SND.WND/2, 2) */
-                port->ssthresh = (uint16_t)MAX((port->snd_wnd/2), 2);
+                        OS_ASSERT(fd_get_lock(port->rtx[least_rtx].buffer->fd));
 
-                /* CWND := MSS */
-                port->cwnd = port->mss;
+                        /* Retransmit a TCP buffer. */
+                        net_device_buffer_transmit(port->rtx[least_rtx].buffer, NET_PROTO_IPV4, 0);
 
-                break;
+                        /* Release the buffer lock. */
+                        fd_release_lock(port->rtx[least_rtx].buffer->fd);
+                    }
 
-            default:
+                    switch (port->state)
+                    {
+                    /* If we have sent a SYN. */
+                    case TCP_SOCK_SYN_SENT:
 
-                /* Should never happen. */
+                    /* If we are in SYN received state. */
+                    case TCP_SOCK_SYN_RCVD:
 
-                /* Stop the port timer. */
-                next_timeout = MAX_WAIT;
+                    /* If we are waiting for last ACK. */
+                    case TCP_SOCK_LAST_ACK:
 
-                break;
+                    /* If we are in FIN-WAIT-1 state. */
+                    case TCP_SOCK_FIN_WAIT_1:
+
+                    /* If we are in closing state. */
+                    case TCP_SOCK_CLOSING:
+
+                        /* Next time out will be at RTO. */
+                        port->rtx_timeout = current_system_tick() + TCP_RTO;
+
+                        break;
+
+                    /* If we are in established state. */
+                    case TCP_SOCK_ESTAB:
+
+                        /* Double the retransmission timer. */
+                        port->rtx_time = port->rtx_time * 2;
+
+                        /* If we exceeded the maximum value. */
+                        if (port->rtx_time > TCP_MAX_RTO)
+                        {
+                            /* Use the maximum value. */
+                            port->rtx_time = TCP_MAX_RTO;
+                        }
+
+                        /* Adjust the retransmission timer. */
+                        port->rtx_timeout = current_system_tick() + port->rtx_time;
+
+                        break;
+
+                    default:
+
+                        /* Should never happen. */
+
+                        /* If we do have a buffer. */
+                        if(port->rtx[least_rtx].buffer != NULL)
+                        {
+                            OS_ASSERT(fd_get_lock(port->rtx[least_rtx].buffer->fd));
+
+                            /* Lets free this buffer when required. */
+                            port->rtx[least_rtx].buffer->free = NULL;
+                            port->rtx[least_rtx].buffer->free_data = NULL;
+
+                            /* If RTX buffer has returned. */
+                            if (port->rtx[least_rtx].flags & TCP_RTX_BUFFER_RETURNED)
+                            {
+                                /* Free this buffer. */
+                                fs_buffer_add(port->rtx[least_rtx].buffer->fd, port->rtx[least_rtx].buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                            }
+
+                            /* Release buffer lock. */
+                            fd_release_lock(port->rtx[least_rtx].buffer->fd);
+                        }
+
+                        /* Stop the port timer. */
+                        port->rtx[least_rtx].flags = 0;
+
+                        break;
+                    }
+                }
+
             }
 
             break;
         }
 
-        /* If we don't want to stop this port timer. */
-        if (next_timeout != MAX_WAIT)
-        {
-            /* Schedule next time out. */
-            port->rtx_data.suspend.timeout = (current_system_tick() + next_timeout);
-        }
-        else
-        {
-            /* Stop this timer. */
-            port->rtx_data.suspend.timeout = MAX_WAIT;
-        }
+        /* Update timeout for this port. */
+        tcp_timeout_update(port);
 
         /* Release lock for this TCP port. */
         fd_release_lock((FD)port);
@@ -802,7 +882,7 @@ static void tcp_rtx_callback(void *data)
 
     SYS_LOG_FUNTION_EXIT(TCP);
 
-} /* tcp_rtx_callback */
+} /* tcp_timeout_callback */
 
 /*
  * tcp_send_segment
@@ -818,46 +898,114 @@ static void tcp_rtx_callback(void *data)
  *  members passed to this function must remain valid until the life time of
  *  retransmission. Any previous segment queued for retransmission will be
  *  removed.
+ * @buffer_flags: Buffer flags to be used.
  * @return: A success status will be returned if a TCP segment was successfully
- *  sent.
+ *  sent, NET_NO_RTX_AVAILABLE will be returned if a free retransmission
+ *  structure was not found, FS_BUFFER_NO_SPACE will be returned if we ran out
+ *  of buffers, NET_INVALID_FD will be returned if a valid device was not found
+ *  to send this frame.
  * This function will send a TCP segment on the networking interface.
  */
-static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, uint32_t seq_num, uint32_t ack_num, uint16_t flags, uint16_t wnd_size, uint8_t *data, int32_t data_len, uint8_t rtx_on)
+static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, uint32_t seq_num, uint32_t ack_num, uint16_t flags, uint16_t wnd_size, uint8_t *data, int32_t data_len, uint8_t rtx_on, uint8_t buffer_flags)
 {
     NET_DEV *net_device;
-    FS_BUFFER *buffer;
+    FS_BUFFER *buffer = NULL;
     int32_t status = SUCCESS;
     FD buffer_fd;
     uint8_t opt_size = 0, opt_flags;
     uint16_t csum;
+    TCP_RTX_DATA *rtx = NULL;
 
     SYS_LOG_FUNTION_ENTRY(TCP);
+
+    /* Keep updating the ISS we are using for each sequence number
+     * we increment. */
+    if (tcp_iss < port->snd_nxt)
+    {
+        /* Next TCP ISS should be greater than our last segment's
+         * sequence number. */
+        tcp_iss = port->snd_nxt;
+    }
 
     /* Get the local networking interface descriptor. */
     net_device = ipv4_get_source_device(socket_address->local_ip);
 
     /* If we have a valid networking device. */
-    if (net_device != NULL)
+    if ((status == SUCCESS) && (net_device != NULL))
     {
         SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "will be using %s for %d.%d.%d.%d", ((FS *)net_device->fd)->name, SYS_LOG_IP(socket_address->local_ip));
 
         /* Save the device descriptor. */
         buffer_fd = net_device->fd;
 
+        /* Release lock for the port. */
+        fd_release_lock(port);
+
         /* Obtain lock for buffer file descriptor. */
         OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Get a buffer keeping threshold buffers on the descriptor. */
-        buffer = fs_buffer_get(buffer_fd, FS_BUFFER_LIST, FS_BUFFER_TH);
+        buffer = fs_buffer_get(buffer_fd, FS_BUFFER_LIST, buffer_flags);
 
         /* If buffer was not allocated. */
         if (buffer != NULL)
         {
+            /* If we need to retransmit this frame. */
+            if (rtx_on == TRUE)
+            {
+                /* Release lock for buffer descriptor. */
+                fd_release_lock(buffer_fd);
+
+                /* Lock the TCP port. */
+                OS_ASSERT(fd_get_lock(port));
+
+                /* Get a free retransmission structure. */
+                rtx = tcp_get_rtx_free(port);
+
+                /* If a free retransmission structure was found. */
+                if (rtx != NULL)
+                {
+                    /* Lets return this buffer to us if required. */
+                    buffer->free = &tcp_rtx_return_buffer;
+                    buffer->free_data = rtx;
+
+                    /* Save the buffer we will retransmit. */
+                    rtx->buffer = buffer;
+
+                    /* Save the port for which we will do a retransmission. */
+                    rtx->port = port;
+
+                    /* Save the segment length and the sequence number of this buffer. */
+                    rtx->seq_num = seq_num;
+                    rtx->seg_len = (uint16_t)data_len;
+
+                    /* If retransmission timer is not already running. */
+                    if (port->rtx_timeout_enable == FALSE)
+                    {
+                        /* Save the tick at which we want this buffer to be retransmitted. */
+                        port->rtx_timeout = (current_system_tick() + TCP_RTO);
+                        port->rtx_timeout_enable = TRUE;
+                        port->rtx_time = TCP_RTO;
+                    }
+                }
+                else
+                {
+                    /* Return an error. */
+                    status = NET_NO_RTX_AVAILABLE;
+                }
+
+                /* Release lock for the port. */
+                fd_release_lock(port);
+
+                /* Obtain lock for buffer file descriptor. */
+                OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+            }
+
             /* If we do have some data to attach on this segment. */
-            if (data != NULL)
+            if ((status == SUCCESS) && (data != NULL))
             {
                 /* Add given data on the buffer. */
-                status = fs_buffer_push(buffer, data, (uint32_t)data_len, FS_BUFFER_TH);
+                status = fs_buffer_push(buffer, data, (uint32_t)data_len, buffer_flags);
             }
 
             /* If segment data was successfully added on the buffer. */
@@ -866,6 +1014,12 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                 /* If SYN is being sent. */
                 if (flags & TCP_HDR_FLAG_SYN)
                 {
+                    /* Release lock for buffer descriptor. */
+                    fd_release_lock(buffer_fd);
+
+                    /* Lock the TCP port. */
+                    OS_ASSERT(fd_get_lock(port));
+
                     /* If we are not ACKing the options sent by remote. */
                     if ((flags & TCP_HDR_FLAG_ACK) == 0)
                     {
@@ -879,62 +1033,101 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                     }
 
                     /* Add TCP configuration options. */
-                    status = tcp_add_options(buffer, port, opt_flags, &opt_size, 0);
+                    status = tcp_add_options(buffer, port, opt_flags, &opt_size, (buffer_flags & (uint8_t)(~FS_BUFFER_SUSPEND)));
+
+                    /* Release lock for the port. */
+                    fd_release_lock(port);
+
+                    /* Obtain lock for buffer file descriptor. */
+                    OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
                 }
             }
 
             if (status == SUCCESS)
             {
-                /* Keep updating the ISS we are using for each sequence number
-                 * we increment. */
-                if (tcp_iss < port->snd_nxt)
-                {
-                    /* Next TCP ISS should be greater than out last segment's
-                     * sequence number. */
-                    tcp_iss = port->snd_nxt;
-                }
-
                 /* Add TCP header with ACK and SYN flag. */
-                status = tcp_header_add(buffer, socket_address, seq_num, ack_num, flags, wnd_size, opt_size, 0);
+                status = tcp_header_add(buffer, socket_address, seq_num, ack_num, flags, wnd_size, opt_size, buffer_flags);
             }
 
             /* If TCP header was successfully added. */
             if (status == SUCCESS)
             {
                 /* Calculate checksum for TCP header. */
-                status = net_pseudo_csum_calculate(buffer, socket_address->local_ip, socket_address->foreign_ip, IP_PROTO_TCP, (uint16_t)buffer->total_length, 0, 0, &csum);
+                status = net_pseudo_csum_calculate(buffer, socket_address->local_ip, socket_address->foreign_ip, IP_PROTO_TCP, (uint16_t)buffer->total_length, 0, buffer_flags, &csum);
 
                 /* If checksum was successfully calculated. */
                 if (status == SUCCESS)
                 {
                     /* Push the TCP checksum on the buffer. */
-                    status = fs_buffer_push_offset(buffer, &csum, 2, TCP_HRD_CSUM_OFFSET, (uint8_t)(flags | FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+                    status = fs_buffer_push_offset(buffer, &csum, 2, TCP_HRD_CSUM_OFFSET, (uint8_t)(buffer_flags | FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
                 }
             }
 
             if (status == SUCCESS)
             {
                 /* Add IP header on this buffer. */
-                status = ipv4_header_add(buffer, IP_PROTO_TCP, socket_address->local_ip, socket_address->foreign_ip, 0);
+                status = ipv4_header_add(buffer, IP_PROTO_TCP, socket_address->local_ip, socket_address->foreign_ip, buffer_flags);
             }
 
             /* If IP header was successfully added. */
             if (status == SUCCESS)
             {
+                /* If we want retransmission of this segment. */
+                if (rtx != NULL)
+                {
+                    /* Lets return this buffer to us if required. */
+                    buffer->free = &tcp_rtx_return_buffer;
+                    buffer->free_data = rtx;
+                }
+
                 /* Transmit this TCP packet. */
-                status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, 0);
+                status = net_device_buffer_transmit(buffer, NET_PROTO_IPV4, buffer_flags);
+            }
+
+            /* If a frame was transmitted but was not consumed. */
+            if (status == SUCCESS)
+            {
+                /* If retransmission is enabled. */
+                if (rtx != NULL)
+                {
+                    /* Release lock for buffer descriptor. */
+                    fd_release_lock(buffer_fd);
+
+                    /* Lock the TCP port. */
+                    OS_ASSERT(fd_get_lock(port));
+
+                    /* Buffer was not consumed. */
+                    rtx->flags |= TCP_RTX_BUFFER_RETURNED;
+
+                    /* Release lock for the port. */
+                    fd_release_lock(port);
+
+                    /* Obtain lock for buffer file descriptor. */
+                    OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+                }
             }
 
             /* If buffer was consumed. */
-            if (status == NET_BUFFER_CONSUMED)
+            else if (status == NET_BUFFER_CONSUMED)
             {
                 /* Reset the status. */
                 status = SUCCESS;
             }
             else
             {
+                /* Clear the free data. */
+                buffer->free = NULL;
+                buffer->free_data = 0;
+
                 /* Add the allocated buffer back to the descriptor. */
                 fs_buffer_add_buffer_list(buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            }
+
+            /* If segment was not sent and we allocated a retransmission structure. */
+            if ((status != SUCCESS) && (rtx != NULL))
+            {
+                /* Clear the RTX flags to free it. */
+                rtx->flags = 0;
             }
         }
         else
@@ -946,23 +1139,20 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
         /* Release lock for buffer descriptor. */
         fd_release_lock(buffer_fd);
 
-        /* If we might need to retransmit this segment. */
-        if (rtx_on == TRUE)
-        {
-            /* Save the retransmission data. */
-            port->rtx_data.socket_address = socket_address;
-            port->rtx_data.data = data;
-            port->rtx_data.data_len = data_len;
-            port->rtx_data.seq_num = seq_num;
-            port->rtx_data.ack_num = ack_num;
-            port->rtx_data.wnd_size = wnd_size;
-            port->rtx_data.flags = flags;
+        /* Lock the TCP port. */
+        OS_ASSERT(fd_get_lock(port));
 
-            /* Schedule retransmission of this segment. */
-            tcp_rtx_start(port);
+        if (status == SUCCESS)
+        {
+            /* If retransmission is enabled. */
+            if (rtx != NULL)
+            {
+                /* TCP port timer has been updated. */
+                tcp_timeout_update(port);
+            }
         }
     }
-    else
+    else if (net_device == NULL)
     {
         SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_WARN, "unable to find a suitable device for %d.%d.%d.%d", SYS_LOG_IP(socket_address->local_ip));
 
@@ -1016,7 +1206,7 @@ static uint8_t tcp_check_sequence(uint32_t seg_seq, uint32_t seg_len, uint32_t r
         if (seg_len == 0)
         {
             /* (RCV.NXT =< SEG.SEQ < RCV.NXT+RCV.WND) ? */
-            if ((rcv_nxt <= seg_seq) && (seg_seq < (rcv_nxt + rcv_wnd)))
+            if ((INT32CMP(rcv_nxt, seg_seq) <= 0) && (INT32CMP(seg_seq, (rcv_nxt + rcv_wnd)) < 0))
             {
                 /* Received sequence is acceptable. */
                 seq_ok = TRUE;
@@ -1026,7 +1216,7 @@ static uint8_t tcp_check_sequence(uint32_t seg_seq, uint32_t seg_len, uint32_t r
         /* (RCV.NXT =< SEG.SEQ < RCV.NXT+RCV.WND)
          * OR
          * (RCV.NXT =< SEG.SEQ+SEG.LEN-1 < RCV.NXT+RCV.WND) ? */
-        else if (((rcv_nxt <= seg_seq) && (seg_seq < (rcv_nxt + rcv_wnd))) || ((rcv_nxt <= (seg_seq + (seg_len - 1))) && ((seg_seq + (seg_len - 1)) < (rcv_nxt + rcv_wnd))))
+        else if (((INT32CMP(rcv_nxt, seg_seq) <= 0) && (INT32CMP(seg_seq, (rcv_nxt + rcv_wnd)) < 0)) || ((INT32CMP(rcv_nxt, (seg_seq + (seg_len - 1))) <= 0) && (INT32CMP((seg_seq + (seg_len - 1)), (rcv_nxt + rcv_wnd)) < 0)))
         {
             /* Received sequence is acceptable. */
             seq_ok = TRUE;
@@ -1054,7 +1244,7 @@ static void tcp_process_finbit(TCP_PORT *port, uint32_t fin_seq)
     port->rcv_nxt = fin_seq + 1;
 
     /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=ACK). */
-    tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK | TCP_HDR_FLAG_FIN), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+    tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK | TCP_HDR_FLAG_FIN), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE, FS_BUFFER_TH);
 
     /* FIN was sent. */
     port->snd_nxt = (port->snd_una + 1);
@@ -1062,46 +1252,6 @@ static void tcp_process_finbit(TCP_PORT *port, uint32_t fin_seq)
     SYS_LOG_FUNTION_EXIT(TCP);
 
 } /* tcp_process_finbit */
-
-/*
- * tcp_window_update
- * @port: TCP port on which window is needed to be updated.
- * @seg_len: Length of received segment.
- * This function updates the TCP window according to the received segment.
- */
-static void tcp_window_update(TCP_PORT *port, uint16_t seg_len)
-{
-    SYS_LOG_FUNTION_ENTRY(TCP);
-
-    SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "using CONG_WND: %d, SSTHRESH: %d", port->cwnd, port->ssthresh);
-
-    /* If we have sent more than one duplicate ACKs. */
-    if (port->dack > 0)
-    {
-        /* CWND := SSthresh */
-        port->cwnd = port->ssthresh;
-    }
-
-    else
-    {
-        /* If congestion window is less than slow start threshold. */
-        if (port->cwnd <= port->ssthresh)
-        {
-            /* Double the congestion window. */
-            port->cwnd = (uint16_t)(port->cwnd * 2);
-        }
-        else
-        {
-            /* CWND := CWND + SEGLEN */
-            port->cwnd = (uint16_t)(port->cwnd + seg_len);
-        }
-    }
-
-    SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "updated CONG_WND: %d, SSTHRESH: %d", port->cwnd, port->ssthresh);
-
-    SYS_LOG_FUNTION_EXIT(TCP);
-
-} /* tcp_window_update */
 
 /*
  * tcp_oo_buffer_process
@@ -1282,7 +1432,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
         }
 
         /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=ACK) */
-        tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+        tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE, FS_BUFFER_TH);
     }
 
     SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
@@ -1495,85 +1645,269 @@ static int32_t tcp_write_data(void *fd, uint8_t *buffer, int32_t size)
 {
     TCP_PORT *port = (TCP_PORT *)fd;
     int32_t nbytes = 0, status = SUCCESS;
+    int32_t sent = 0;
 
     SYS_LOG_FUNTION_ENTRY(TCP);
 
     /* We will only send data in established state. */
     if (port->state == TCP_SOCK_ESTAB)
     {
-        /* Verify that we don't have a non-ACKed segment on the port, or remote
-         * window is zero or MSS value is zero. */
-        if ((port->snd_nxt == port->snd_una) || (port->snd_wnd == 0) || (port->mss == 0))
-        {
-            /* If we need to send more data then we can send in a single segment. */
-            if (size > port->mss)
-            {
-                /* Only send data that can be sent in a single segment. */
-                nbytes = port->mss;
-            }
+        SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "SND_NXT: %ld, SND_UNA: %ld, SND_WND: %ld, MSS: %d", port->snd_nxt, port->snd_una, port->snd_wnd, port->mss);
 
-            /* If we need to send more data then we can send in send window. */
-            else if (size > (int32_t)port->snd_wnd)
+        /* While we have something to transmit. */
+        while ((status == SUCCESS) && (size > 0))
+        {
+            /* Verify that we do have space in the send window to send some data. */
+            if ((port->snd_wnd != 0) && (port->mss != 0))
             {
-                /* Only send data that can be sent in a send window. */
-                nbytes = (int32_t)port->snd_wnd;
+                /* If we need to send more data then we can send in a single segment. */
+                if (size > port->mss)
+                {
+                    /* Only send data that can be sent in a single segment. */
+                    nbytes = port->mss;
+                }
+
+                /* If we need to send more data then we can send in send window. */
+                else if (size > (int32_t)port->snd_wnd)
+                {
+                    /* Only send data that can be sent in a send window. */
+                    nbytes = (int32_t)port->snd_wnd;
+                }
+                else
+                {
+                    /* Send number of bytes we can send. */
+                    nbytes = size;
+                }
+
+                if (nbytes > 0)
+                {
+                    /* Send a TCP segment with required data. */
+                    status = tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), buffer, nbytes, TRUE, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+
+                    if (status == FS_BUFFER_NO_SPACE)
+                    {
+                        while (1);
+                    }
+
+                    /* If a success status was not returned. */
+                    else if (status != SUCCESS)
+                    {
+                        /* Return this status to the caller. */
+                        sent = status;
+                    }
+
+                    if (status == SUCCESS)
+                    {
+                        /* SND.NXT := SND.NXT + SEG.LEN */
+                        port->snd_nxt = (uint32_t)(port->snd_nxt + (uint32_t)nbytes);
+
+                        /* If we have space on the send window. */
+                        if (port->snd_wnd > (uint32_t)nbytes)
+                        {
+                            /* We just sent a segment adjust the send window. */
+                            port->snd_wnd -= (uint32_t)nbytes;
+                        }
+                        else
+                        {
+                            /* No space on the send window. */
+                            port->snd_wnd = 0;
+                        }
+
+                        /* Add the number of bytes sent. */
+                        sent += nbytes;
+
+                        /* If there is space on the send window to send some data. */
+                        if (port->snd_wnd == 0)
+                        {
+                            /* Space is now consumed for this fd. */
+                            fd_space_consumed(fd);
+                        }
+
+                        /* Wait for this segment to be ACKed by waiting on window space. */
+                        //tcp_port_wait(port, FS_BLOCK_WRITE);
+                    }
+
+                    if (status == SUCCESS)
+                    {
+                        /* Move ahead the buffer pointer. */
+                        buffer += nbytes;
+                        size -= nbytes;
+                    }
+                }
             }
             else
             {
-                /* Send number of bytes we can send. */
-                nbytes = size;
+                /* Set flag that we don't have any more space in this TCP port. */
+                fd_space_consumed(fd);
+
+                break;
             }
-
-            if (nbytes > 0)
-            {
-                /* Send a TCP segment with required data. */
-                status = tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), buffer, nbytes, TRUE);
-
-                /* If we don't have any buffers to send this segment we will
-                 * retry sending this again later. */
-                if (status == FS_BUFFER_NO_SPACE)
-                {
-                    status = SUCCESS;
-                }
-
-                /* If a success status was not returned. */
-                else if (status != SUCCESS)
-                {
-                    /* Return this status to the caller. */
-                    nbytes = status;
-                }
-
-                if (status == SUCCESS)
-                {
-                    /* SND.NXT := SND.NXT + SEG.LEN */
-                    port->snd_nxt = (uint32_t)(port->snd_nxt + (uint32_t)nbytes);
-
-                    /* Space is now consumed for this fd. */
-                    fd_space_consumed(fd);
-
-                    /* Wait for this segment to be ACKed by waiting on window space. */
-                    tcp_port_wait(port, FS_BLOCK_WRITE);
-                }
-            }
-        }
-        else
-        {
-            /* Set flag that we don't have any more space in this TCP port. */
-            fd_space_consumed(fd);
         }
     }
     else
     {
         /* We cannot write data on this socket, return an error. */
-        nbytes = NET_CLOSED;
+        status = sent = NET_CLOSED;
     }
 
     SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
 
     /* Return number of bytes sent. */
-    return (nbytes);
+    return (sent);
 
 } /* tcp_write_data */
+
+/*
+ * tcp_get_rtx_free
+ * @port: Port for which retransmission structure is required.
+ * This function will allocate and return a free retransmission structure.
+ */
+static TCP_RTX_DATA *tcp_get_rtx_free(TCP_PORT *port)
+{
+    uint32_t i;
+    TCP_RTX_DATA *rtx = NULL;
+
+    /* Traverse the retransmission list. */
+    for (i = 0; i < TCP_NUM_RTX; i++)
+    {
+        /* If this is a free retransmission structure. */
+        if ((port->rtx[i].flags & TCP_RTX_IN_USE) == 0)
+        {
+            rtx = &port->rtx[i];
+
+            /* Set the flag this is being used. */
+            rtx->flags |= TCP_RTX_IN_USE;
+
+            break;
+        }
+    }
+
+    /* Return the free retransmission structure. */
+    return (rtx);
+
+} /* tcp_get_rtx_free */
+
+/*
+ * tcp_rtx_return_buffer
+ * @data: Retransmission structure to which we need to return this frame.
+ * @return: True will be returned if the buffer was successfully returned,
+ *  otherwise false will be returned.
+ * This function will return a buffer to a TCP socket for retransmission.
+ */
+static uint8_t tcp_rtx_return_buffer(void *data, FS_BUFFER *buffer)
+{
+    TCP_RTX_DATA *rtx = (TCP_RTX_DATA *)data;
+    uint8_t returned = TRUE;
+
+    fd_release_lock(buffer->fd);
+
+    /* Lock the required TCP port. */
+    if (fd_get_lock(rtx->port) == SUCCESS)
+    {
+        /* If we are still using this retransmission structure. */
+        if (rtx->flags & TCP_RTX_IN_USE)
+        {
+            /* Set the flag that buffer has returned. */
+            rtx->flags |= TCP_RTX_BUFFER_RETURNED;
+        }
+        else
+        {
+            /* We don't want this buffer. */
+            returned = FALSE;
+        }
+
+        /* Release the port lock. */
+        fd_release_lock(rtx->port);
+    }
+
+    /* Again lock the buffer descriptor. */
+    OS_ASSERT(fd_get_lock(buffer->fd));
+
+    /* Return if buffer was successfully returned. */
+    return (returned);
+
+} /* tcp_rtx_return_buffer */
+
+/*
+ * tcp_rtx_process_ack
+ * @port: Port for which an ACK is needed to be processed.
+ * @ack_num: Received ACK number.
+ * @return: True will be returned if this ACK has removed a segment from the
+ * retransmission list, otherwise false will be returned.
+ * This function will process a received ACK and remove any segments from
+ * retransmission list.
+ */
+static uint8_t tcp_rtx_process_ack(TCP_PORT *port, uint32_t ack_num)
+{
+    uint8_t freed = FALSE, do_rtx = FALSE;
+    uint32_t i;
+
+    /* Traverse the retransmission list. */
+    for (i = 0; i < TCP_NUM_RTX; i++)
+    {
+        /* If this entry is in use. */
+        if (port->rtx[i].flags & TCP_RTX_IN_USE)
+        {
+            /* If remote has ACKed this segment */
+            if (INT32CMP(port->rtx[i].seq_num + port->rtx[i].seg_len, ack_num) <= 0)
+            {
+                OS_ASSERT(port->rtx[i].buffer == NULL);
+                OS_ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
+
+                /* Free this buffer when required. */
+                port->rtx[i].buffer->free = NULL;
+                port->rtx[i].buffer->free_data = NULL;
+
+                /* If RTX buffer has returned. */
+                if (port->rtx[i].flags & TCP_RTX_BUFFER_RETURNED)
+                {
+                    /* Free this buffer. */
+                    fs_buffer_add(port->rtx[i].buffer->fd, port->rtx[i].buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                }
+
+                /* Free this retransmission structure as free. */
+                port->rtx[i].flags = 0;
+
+                /* Release buffer lock. */
+                fd_release_lock(port->rtx[i].buffer->fd);
+
+                /* We just freed a segment. */
+                freed = TRUE;
+            }
+            else
+            {
+                /* We do have an entry for which we will need to do
+                 * retransmission. */
+                do_rtx = TRUE;
+            }
+        }
+    }
+
+    /* If retransmission is needed to be performed. */
+    if (do_rtx == TRUE)
+    {
+        /* Enable the retransmission timer. */
+        port->rtx_timeout = current_system_tick() + TCP_RTO;
+        port->rtx_time = TCP_RTO;
+        port->rtx_timeout_enable = TRUE;
+    }
+    else
+    {
+        /* Disable the retransmission timer. */
+        port->rtx_timeout_enable = FALSE;
+    }
+
+    /* If we did free a segment or need to perform retransmission. */
+    if ((freed == TRUE) || (do_rtx == TRUE))
+    {
+        /* Update timer for this port. */
+        tcp_timeout_update(port);
+    }
+
+    /* Return if we did free a segment. */
+    return (freed);
+
+} /* tcp_rtx_process_ack */
 
 /*
  * net_process_tcp
@@ -1603,7 +1937,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     TCP_PORT *port;
     uint32_t seg_ack, seg_seq;
     uint16_t seg_wnd, seg_len;
-    uint8_t resume_task = FALSE, resume_flags = 0, flush_rtx = FALSE, invalid_ack = FALSE;
+    uint8_t resume_task = FALSE, resume_flags = 0, stop_timer = FALSE, invalid_ack = FALSE;
 
     SYS_LOG_FUNTION_ENTRY(TCP);
 
@@ -1714,7 +2048,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                     {
                         /* Send a RST in response. */
                         /* Segment (SEQ=SEG.ACK, CTL=RST) */
-                        tcp_send_segment(port, &port_param.socket_address, seg_ack, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+                        tcp_send_segment(port, &port_param.socket_address, seg_ack, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE, FS_BUFFER_TH);
                     }
 
                     /* A connection request is identified by a SYN request. */
@@ -1753,7 +2087,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                     {
                         /* Is ACK acceptable. */
                         /* (SEG.ACK >= SND.UNA) AND (SEG.ACK <= SND.NXT) ? */
-                        if ((seg_ack >= port->snd_una) && (seg_ack <= port->snd_nxt))
+                        if ((INT32CMP(seg_ack, port->snd_una) >= 0) && (INT32CMP(seg_ack, port->snd_nxt) <= 0))
                         {
                             /* If RST is on. */
                             if (flags & TCP_HDR_FLAG_RST)
@@ -1761,8 +2095,8 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                 /* Move to the closed state. */
                                 port->state = TCP_SOCK_COLSED;
 
-                                /* Flush Rexmt Queue and indicate state change.  */
-                                flush_rtx = TRUE;
+                                /* Stop the TCP timer.  */
+                                stop_timer = TRUE;
                                 resume_task = TRUE;
                                 resume_flags = (FS_BLOCK_READ);
                             }
@@ -1790,6 +2124,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                                 /* Don't use window scale for both receive and send. */
                                                 port->snd_wnd_scale = port->rcv_wnd_scale = 0;
                                             }
+
                                             /* RCV.NXT := SEG.SEQ + 1 */
                                             port->rcv_nxt = seg_seq + 1;
 
@@ -1797,10 +2132,10 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                             port->snd_una = seg_ack;
 
                                             /* Reset the duplicate ACK counter. */
-                                            port->dack = 0;
+                                            port->nacks = 0;
 
                                             /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=ACK) */
-                                            tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+                                            tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE, FS_BUFFER_TH);
 
                                             /* Move to the established state. */
                                             port->state = TCP_SOCK_ESTAB;
@@ -1817,14 +2152,14 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                         {
                                             /* Send a RST in response. */
                                             /* Segment (SEQ=SEG.ACK, CTL=RST) */
-                                            tcp_send_segment(port, &port_param.socket_address, seg_ack, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+                                            tcp_send_segment(port, &port_param.socket_address, seg_ack, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE, FS_BUFFER_TH);
 
                                             /* Move to the closed state. */
                                             port->state = TCP_SOCK_COLSED;
                                         }
 
-                                        /* Flush Rexmt Queue and indicate state change.  */
-                                        flush_rtx = TRUE;
+                                        /* Stop the TCP timer.  */
+                                        stop_timer = TRUE;
                                         resume_task = TRUE;
                                         resume_flags |= (FS_BLOCK_READ);
                                     }
@@ -1837,7 +2172,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                         {
                             /* Send a RST in response. */
                             /* Segment (SEQ=SND.NXT, CTL=RST) */
-                            tcp_send_segment(port, &port->socket_address, port->snd_nxt, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+                            tcp_send_segment(port, &port->socket_address, port->snd_nxt, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE, FS_BUFFER_TH);
                         }
 
                     }
@@ -1884,8 +2219,8 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                             /* Move to close state. */
                             port->state = TCP_SOCK_COLSED;
 
-                            /* Flush Rexmt Queue and indicate state change.  */
-                            flush_rtx = TRUE;
+                            /* Stop the TCP timer.  */
+                            stop_timer = TRUE;
                             resume_task = TRUE;
                             resume_flags = (FS_BLOCK_READ | FS_BLOCK_WRITE);
                         }
@@ -1895,13 +2230,13 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                         {
                             /* Send a RST in response. */
                             /* Segment (SEQ=SND.NXT, CTL=RST) */
-                            tcp_send_segment(port, &port->socket_address, port->snd_nxt, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+                            tcp_send_segment(port, &port->socket_address, port->snd_nxt, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE, FS_BUFFER_TH);
 
                             /* Move to closed state. */
                             port->state = TCP_SOCK_COLSED;
 
-                            /* Flush Rexmt Queue and indicate state change.  */
-                            flush_rtx = TRUE;
+                            /* Stop the TCP timer.  */
+                            stop_timer = TRUE;
                             resume_task = TRUE;
                             resume_flags = (FS_BLOCK_READ | FS_BLOCK_WRITE);
                         }
@@ -1919,7 +2254,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
                                 /* Match the SEG.ACK number. */
                                 /* SND.UNA =< SEG.ACK =< SND.NXT ? */
-                                if ((port->snd_una <= seg_ack) && (seg_ack <= port->snd_nxt))
+                                if ((INT32CMP(port->snd_una, seg_ack) <= 0) && (INT32CMP(seg_ack, port->snd_nxt) <= 0))
                                 {
                                     /* Connection is now established. */
                                     port->state = TCP_SOCK_ESTAB;
@@ -1928,7 +2263,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                     port->snd_una = seg_ack;
 
                                     /* Reset the duplicate ACK counter. */
-                                    port->dack = 0;
+                                    port->nacks = 0;
 
                                     /* Upon receiving a <SYN> segment with a Window Scale
                                      * option containing shift.cnt = S, a TCP MUST set
@@ -1949,8 +2284,8 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                         port->rcv_wnd_scale = port->snd_wnd_scale = 0;
                                     }
 
-                                    /* Flush Rexmt Queue and indicate state change.  */
-                                    flush_rtx = TRUE;
+                                    /* Stop the TCP timer.  */
+                                    stop_timer = TRUE;
                                     resume_task = TRUE;
                                     resume_flags = (FS_BLOCK_READ);
 
@@ -1982,13 +2317,13 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                 {
                                     /* Send a RST in response. */
                                     /* Segment (SEQ=SND.NXT, CTL=RST). */
-                                    tcp_send_segment(port, &port->socket_address, port->snd_nxt, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+                                    tcp_send_segment(port, &port->socket_address, port->snd_nxt, 0, (TCP_HDR_FLAG_RST), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE, FS_BUFFER_TH);
 
                                     /* Connection was not accepted, move to closed state. */
                                     port->state = TCP_SOCK_COLSED;
 
-                                    /* Flush Rexmt Queue and indicate state change.  */
-                                    flush_rtx = TRUE;
+                                    /* Stop the TCP timer.  */
+                                    stop_timer = TRUE;
                                     resume_task = TRUE;
                                     resume_flags = (FS_BLOCK_READ | FS_BLOCK_WRITE);
                                 }
@@ -2006,35 +2341,24 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
                                 /* Match the SEG.ACK number. */
                                 /* SND.UNA < SEG.ACK =< SND.NXT ? */
-                                if ((port->snd_una < seg_ack) && (seg_ack <= port->snd_nxt))
+                                if ((INT32CMP(port->snd_una, seg_ack) < 0) && (INT32CMP(seg_ack, port->snd_nxt) <= 0))
                                 {
-                                    /* Update TCP window configurations. */
-                                    tcp_window_update(port, seg_len);
-
-                                    SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "SND_WND: %ld, CONG_WND: %d", port->snd_wnd, port->cwnd);
-
-                                    /* SND.WND := min (CWND, SEG.WND) */
-                                    port->snd_wnd = MIN(port->cwnd, port->snd_wnd);
-
                                     /* SND.UNA := SEG.ACK. */
                                     port->snd_una = seg_ack;
 
-                                    /* ExpBoff := 1. */
-                                    port->expboff = 1;
-
                                     /* Reset the duplicate ACK counter. */
-                                    port->dack = 0;
+                                    port->nacks = 0;
 
-                                    /* If remote has ACKed the segment we were
-                                     * sending. */
-                                    if (seg_ack == port->snd_nxt)
+                                    /* Process and see if we have more space on this TCP socket. */
+                                    if (tcp_rtx_process_ack(port, seg_ack) == TRUE)
                                     {
-                                        /* Release REXMT Timer. */
-                                        tcp_rtx_stop(port);
-
-                                        /* We can now send more data on this port. */
-                                        resume_task = TRUE;
-                                        resume_flags = (FS_BLOCK_WRITE);
+                                        /* If we have space on the send window. */
+                                        if (port->snd_wnd > 0)
+                                        {
+                                            /* We can now send more data on this port. */
+                                            resume_task = TRUE;
+                                            resume_flags = (FS_BLOCK_WRITE);
+                                        }
                                     }
                                 }
 
@@ -2049,41 +2373,33 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                     /* SEG.ACK = SND.UNA ? */
                                     if (port->snd_una == seg_ack)
                                     {
-                                        /* dACK := dACK+1. */
-                                        port->dack = (uint8_t)(port->dack + 1);
+                                        /* If we have not received 3 ACKs. */
+                                        if (port->nacks < 3)
+                                        {
+                                            /* dACK := dACK+1. */
+                                            port->nacks = (uint8_t)(port->nacks + 1);
+                                        }
+
+                                        /* First ACK. */
+                                        if (port->nacks == 1)
+                                        {
+                                            SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "First ACK", "");
+                                        }
 
                                         /* Second ACK. */
-                                        if (port->dack == 2)
+                                        else if (port->nacks == 2)
                                         {
                                             SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "First duplicate ACK", "");
                                         }
 
                                         /* Third ACK. */
-                                        else if (port->dack == 3)
+                                        else if (port->nacks == 3)
                                         {
                                             SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "Second duplicate ACK", "");
 
                                             /* Fart retransmit the segment in the RTX queue. */
                                             /* Segment (SEQ=SEG.ACK, ACK=[?], CTL =[?]) */
-                                            tcp_fast_rtx(port, seg_seq);
-
-                                            /* SSthresh := max(2, min (CWND, SND.WND/2)) */
-                                            port->ssthresh = (uint16_t)MAX(2, MIN(port->cwnd, (port->snd_wnd / 2)));
-
-                                            /* CWND := SSthresh + 3 */
-                                            port->cwnd = (uint16_t)(port->ssthresh + 3);
-
-                                            SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "updated CONG_WND: %d", port->cwnd);
-                                        }
-
-                                        else
-                                        {
-                                            /* Release REXMT Timer. */
-                                            tcp_rtx_stop(port);
-
-                                            /* We should start sending more data on this port. */
-                                            resume_task = TRUE;
-                                            resume_flags = (FS_BLOCK_WRITE);
+                                            tcp_fast_rtx(port, seg_ack);
                                         }
                                     }
                                     else
@@ -2111,6 +2427,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
                                     /* If we are in established state. */
                                     case TCP_SOCK_ESTAB:
+
                                         /* SEG.FIN is on ? */
                                         if (flags & TCP_HDR_FLAG_FIN)
                                         {
@@ -2138,8 +2455,10 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                                 /* FIN bit Processing (SND.NXT, RCV.NXT, SEG.SEQ) */
                                                 tcp_process_finbit(port, (seg_seq + seg_len));
 
-                                                /* Use the RTX timer for time wait. */
-                                                tcp_rtx_start_timeout(port, (2 * TCP_MSL));
+                                                /* Enable the event timer. */
+                                                port->event_timeout = current_system_tick() + (2 * TCP_MSL);
+                                                port->event_timeout_enable = TRUE;
+                                                tcp_timeout_update(port);
 
                                                 /* Move to the TIME-WAIT state. */
                                                 port->state = TCP_SOCK_TIME_WAIT;
@@ -2174,8 +2493,10 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                             /* FIN bit Processing (SND.NXT, RCV.NXT, SEG.SEQ) */
                                             tcp_process_finbit(port, (seg_seq + seg_len));
 
-                                            /* Use the RTX timer for time wait. */
-                                            tcp_rtx_start_timeout(port, (2 * TCP_MSL));
+                                            /* Enable the event timer. */
+                                            port->event_timeout = current_system_tick() + (2 * TCP_MSL);
+                                            port->event_timeout_enable = TRUE;
+                                            tcp_timeout_update(port);
 
                                             /* Move to the TIME-WAIT state. */
                                             port->state = TCP_SOCK_TIME_WAIT;
@@ -2198,7 +2519,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
                                 /* Match the SEG.ACK number. */
                                 /* SND.UNA < SEG.ACK =< SND.NXT ? */
-                                if ((port->snd_una < seg_ack) && (seg_ack <= port->snd_nxt))
+                                if ((INT32CMP(port->snd_una, seg_ack) < 0) && (INT32CMP(seg_ack, port->snd_nxt) <= 0))
                                 {
                                     /* Our FIN has been ACKed? */
                                     if (seg_ack == port->snd_nxt)
@@ -2211,8 +2532,8 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                             /* Move to the closed state. */
                                             port->state = TCP_SOCK_COLSED;
 
-                                            /* Flush Rexmt Queue and indicate state change.  */
-                                            flush_rtx = TRUE;
+                                            /* Stop the TCP timer.  */
+                                            stop_timer = TRUE;
                                             resume_task = TRUE;
                                             resume_flags = (FS_BLOCK_READ | FS_BLOCK_WRITE);
 
@@ -2224,8 +2545,10 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                         /* If we are in time wait state. */
                                         case TCP_SOCK_TIME_WAIT:
 
-                                            /* Use the RTX timer for time wait. */
-                                            tcp_rtx_start_timeout(port, (2 * TCP_MSL));
+                                            /* Enable the event timer. */
+                                            port->event_timeout = current_system_tick() + (2 * TCP_MSL);
+                                            port->event_timeout_enable = TRUE;
+                                            tcp_timeout_update(port);
 
                                             /* Move to the TIME-WAIT state. */
                                             port->state = TCP_SOCK_TIME_WAIT;
@@ -2246,18 +2569,22 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                         {
                             /* Send an ACK. */
                             /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=ACK). */
-                            tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE);
+                            tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE, FS_BUFFER_TH);
                         }
                     }
 
                     break;
                 }
 
-                /* If we need to flush Rexmt Queue. */
-                if (flush_rtx == TRUE)
+                /* If we need to stop the event timer. */
+                if (stop_timer == TRUE)
                 {
-                    /* Stop retransmission of any segment. */
-                    tcp_rtx_stop(port);
+                    /* Stop any event timer on the port. */
+                    port->event_timeout = MAX_WAIT;
+                    port->event_timeout_enable = FALSE;
+
+                    /* Update TCP timeout. */
+                    tcp_timeout_update(port);
                 }
 
                 /* if we need to indicate status change. */
@@ -2415,7 +2742,7 @@ int32_t tcp_connect(TCP_PORT *port)
 
             /* Send SYN-ACK in response with our TCP options. */
             /* Segment (SEQ=ISS, CTL=SYN) */
-            status = tcp_send_segment(port, &port->socket_address, iss, 0, (TCP_HDR_FLAG_SYN), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, TRUE);
+            status = tcp_send_segment(port, &port->socket_address, iss, 0, (TCP_HDR_FLAG_SYN), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, TRUE, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
         }
         else
         {
@@ -2582,7 +2909,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
 
                         /* Send SYN-ACK in response with our TCP options. */
                         /* Segment (SEQ=ISS, ACK=RCV.NXT, CTL=SYN,ACK) */
-                        tcp_send_segment(client_port, &client_port->socket_address, iss, client_port->rcv_nxt, (TCP_HDR_FLAG_ACK | TCP_HDR_FLAG_SYN), (uint16_t)(client_port->rcv_wnd >> client_port->rcv_wnd_scale), NULL, 0, TRUE);
+                        tcp_send_segment(client_port, &client_port->socket_address, iss, client_port->rcv_nxt, (TCP_HDR_FLAG_ACK | TCP_HDR_FLAG_SYN), (uint16_t)(client_port->rcv_wnd >> client_port->rcv_wnd_scale), NULL, 0, TRUE, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
 
                         /* Obtain lock for buffer file descriptor. */
                         OS_ASSERT(fd_get_lock(buffer->fd));
@@ -2680,7 +3007,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
  */
 void tcp_close(TCP_PORT *port)
 {
-    int32_t status = SUCCESS;
+    int32_t status = SUCCESS, i;
 
     SYS_LOG_FUNTION_ENTRY(TCP);
 
@@ -2714,7 +3041,7 @@ void tcp_close(TCP_PORT *port)
             if (status == SUCCESS)
             {
                 /* Segment (SEQ=SND.NXT, ACK=RCV.NXT, CTL=FIN,ACK) */
-                status = tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_FIN | TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, TRUE);
+                status = tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_FIN | TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, TRUE, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
             }
 
             if (status == SUCCESS)
@@ -2739,6 +3066,31 @@ void tcp_close(TCP_PORT *port)
             {
                 /* Flush the port state. */
                 fd_data_flushed(port);
+            }
+        }
+
+        /* Traverse and free all the retransmission buffers. */
+        for (i = 0; i < TCP_NUM_RTX; i++)
+        {
+            /* If this is being used. */
+            if (port->rtx[i].flags & TCP_RTX_IN_USE)
+            {
+                OS_ASSERT(port->rtx[i].buffer == NULL);
+                OS_ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
+
+                /* Lets free this buffer when required. */
+                port->rtx[i].buffer->free = NULL;
+                port->rtx[i].buffer->free_data = NULL;
+
+                /* If RTX buffer has returned. */
+                if (port->rtx[i].flags & TCP_RTX_BUFFER_RETURNED)
+                {
+                    /* Free this buffer. */
+                    fs_buffer_add(port->rtx[i].buffer->fd, port->rtx[i].buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                }
+
+                /* Release buffer lock. */
+                fd_release_lock(port->rtx[i].buffer->fd);
             }
         }
 

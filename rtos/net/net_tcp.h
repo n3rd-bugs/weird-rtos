@@ -24,10 +24,11 @@
 /* TCP configuration. */
 #define TCP_WND_SIZE                (1024)
 #define TCP_WND_SCALE               (2)
-#define TCP_RTO                     (1 * OS_TICKS_PER_SEC)
+#define TCP_RTO                     (OS_TICKS_PER_SEC / 4)
+#define TCP_MAX_RTO                 (5)
 #define TCP_MSL                     (60 * OS_TICKS_PER_SEC)
-#define TCP_INIT_SS_THRESH          (512)
-#define TCP_INIT_CWND               (128)
+#define TCP_NUM_RTX                 (16)
+#define TCP_MAX_CONG_WINDOW         (0xFFFF)
 
 /* TCP header definitions. */
 #define TCP_HRD_SIZE                (20)
@@ -82,6 +83,10 @@
 /* TCP out-of-order parameter flags. */
 #define TCP_FLAG_SEG_CONFLICT       (0x01)
 
+/* TCP RTX data flags. */
+#define TCP_RTX_IN_USE              (0x01)
+#define TCP_RTX_BUFFER_RETURNED     (0x04)
+
 /* Parameter that will be used to process the out-of-order buffer list. */
 typedef struct _tcp_oo_param
 {
@@ -98,47 +103,47 @@ typedef struct _tcp_oo_param
 } TCP_OO_PARAM;
 
 /* TCP retransmission packet structure. */
-typedef struct _tcp_rtx
+typedef struct _tcp_timeout_suspend
 {
     /* Networking condition data for this TCP socket. */
     CONDITION       condition;
     SUSPEND         suspend;
 
-    /* Packet data, for now we only support retransmission of one segment at a
-     * time. */
-    /* Socket address on which this packet is needed to be sent. */
-    SOCKET_ADDRESS  *socket_address;
+} TCP_TIMEOUT_SUSPEND;
 
-    /* Data needed to be sent with this segment. */
-    uint8_t         *data;
-    int32_t         data_len;
+/* TCP retransmission data. */
+typedef struct _tcp_port TCP_PORT;
+typedef struct _tcp_rtx_data TCP_RTX_DATA;
+struct _tcp_rtx_data
+{
+    /* Associated port with this retransmission structure. */
+    TCP_PORT        *port;
 
-    /* Sequence number to be sent. */
+    /* Buffer need to be retransmitted. */
+    FS_BUFFER       *buffer;
+
+    /* List member. */
+    TCP_RTX_DATA    *next;
+
+    /* Sequence number associated with this packet. */
     uint32_t        seq_num;
 
-    /* Sequence number to be ACKed. */
-    uint32_t        ack_num;
+    /* Segment length. */
+    uint16_t        seg_len;
 
-    /* TCP flags. */
-    uint16_t        flags;
+    /* Structure flags to maintain state. */
+    uint8_t         flags;
 
-    /* TCP window size to be sent. */
-    uint16_t        wnd_size;
+    /* Structure padding. */
+    uint8_t         pad[5];
 
-} TCP_RTX;
+};
 
 /* TCP port structure. */
-typedef struct _tcp_port TCP_PORT;
 struct _tcp_port
 {
     /* Console structure for this TCP port. */
-    CONSOLE         console;
-
-    /* Retransmission data. */
-    TCP_RTX         rtx_data;
-
-    /* TCP port list member. */
-    TCP_PORT        *next;
+    CONSOLE             console;
 
     /* TCP buffer lists. */
     struct _tcp_port_buffer_list
@@ -153,8 +158,8 @@ struct _tcp_port
         /* TCP out of order buffer lists. */
         struct _tcp_port_oorx_list
         {
-            FS_BUFFER       *head;
-            FS_BUFFER       *tail;
+            FS_BUFFER   *head;
+            FS_BUFFER   *tail;
         } oorx_list;
 
         /* TCP accumulated received buffer. */
@@ -162,46 +167,59 @@ struct _tcp_port
     } rx_buffer;
 
     /* TCP socket address. */
-    SOCKET_ADDRESS  socket_address;
+    SOCKET_ADDRESS      socket_address;
 
     /* These variables maintain the socket state and configurations. */
 
+    /* TCP timeout data. */
+    TCP_TIMEOUT_SUSPEND timeout_suspend;
+
+    /* Retransmission lists. */
+    TCP_RTX_DATA        rtx[TCP_NUM_RTX];
+
+    /* Tick at which a TCP event is needed to be processed. */
+    uint32_t            event_timeout;
+
+    /* Tick at which a TCP retransmission is needed to be performed. */
+    uint32_t            rtx_timeout;
+
+    /* Current retransmission time. */
+    uint32_t            rtx_time;
+
+    /* TCP port list member. */
+    TCP_PORT            *next;
+
     /* Receive sequence numbers. */
-    uint32_t        rcv_nxt;
-    uint32_t        rcv_wnd;
+    uint32_t            rcv_nxt;
+    uint32_t            rcv_wnd;
 
     /* Send sequence numbers. */
-    uint32_t        snd_nxt;
-    uint32_t        snd_una;
-    uint32_t        snd_wnd;
+    uint32_t            snd_nxt;
+    uint32_t            snd_una;
+    uint32_t            snd_wnd;
 
     /* Maximum segment size. */
-    uint16_t        mss;
-
-    /* Slow start threshold. */
-    uint16_t        ssthresh;
-
-    /* Congestion window size. */
-    uint16_t        cwnd;
+    uint16_t            mss;
 
     /* TCP window configuration. */
-    uint8_t         rcv_wnd_scale;
-    uint8_t         snd_wnd_scale;
+    uint8_t             rcv_wnd_scale;
+    uint8_t             snd_wnd_scale;
 
     /* TCP socket state. */
-    uint8_t         state;
+    uint8_t             state;
 
     /* TCP socket flags. */
-    uint8_t         flags;
+    uint8_t             flags;
 
-    /* Duplicate ACK counter. */
-    uint8_t         dack;
+    /* ACK counter. */
+    uint8_t             nacks;
 
-    /* Exponential back off value. */
-    uint8_t         expboff;
+    /* Flags to specify if the event or/and the retransmission timers are enabled. */
+    uint8_t             event_timeout_enable;
+    uint8_t             rtx_timeout_enable;
 
     /* Structure padding. */
-    uint8_t         pad[4];
+    uint8_t             pad[3];
 };
 
 /* TCP global data. */
@@ -216,7 +234,7 @@ typedef struct _tcp_data
 
 #ifdef CONFIG_SEMAPHORE
     /* Data lock to protect global TCP data. */
-    SEMAPHORE   lock;
+    SEMAPHORE       lock;
 #endif
 
 } TCP_DATA;
