@@ -45,7 +45,7 @@ void udp_initialize()
 
 #ifdef CONFIG_SEMAPHORE
     /* Create the semaphore to protect global UDP data. */
-    semaphore_create(&udp_data.lock, 1, 1, 0);
+    semaphore_create(&udp_data.lock, 1, 1, FALSE);
 #endif
 
     SYS_LOG_FUNTION_EXIT(UDP);

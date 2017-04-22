@@ -49,7 +49,7 @@ void usb_cdc_console_register(CDC_CONSOLE *cdc_cons, void *usb_device)
 
 #ifdef CONFIG_SEMAPHORE
     /* This is interrupt accessible console. */
-    semaphore_update(&cdc_cons->console.lock, 1, 1, (SEMAPHORE_INT));
+    semaphore_update(&cdc_cons->console.lock, 1, 1, TRUE);
 #else
     /* For this console we require interrupt lock. */
     cdc_cons->console.fs.get_lock = &usb_cdc_console_lock;

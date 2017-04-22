@@ -27,25 +27,24 @@ static uint8_t semaphore_do_resume(void *, void *);
  * @semaphore: Semaphore control block to be initialized.
  * @count: Initial count to be set for this semaphore.
  * @max_count: Maximum count for this semaphore.
- * @type: Type flags for this semaphore.
- *  SEMAPHORE_INT: This semaphore will also be accessed by interrupts.
+ * @interrupt_protected: Flag to specify if this is an interrupt protected lock.
  * This routine initializes a semaphore control block. After this the semaphore
  * can be used to protect shared resources.
  */
-void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t type)
+void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t interrupt_protected)
 {
     /* Clear semaphore memory. */
     memset(semaphore, 0,  sizeof(SEMAPHORE));
 
     /* If this is interrupt accessible max count should be 1. */
-    OS_ASSERT(((type & SEMAPHORE_INT) == TRUE) && (max_count != 1));
+    OS_ASSERT((interrupt_protected == TRUE) && (max_count != 1));
 
     /* Initialize semaphore count. */
     semaphore->count = count;
     semaphore->max_count = max_count;
 
-    /* Initialize semaphore type. */
-    semaphore->type = type;
+    /* Set if this is an interrupt protected lock. */
+    semaphore->interrupt_protected = interrupt_protected;
 
     /* Initialize condition structure. */
     semaphore->condition.data = semaphore;
@@ -57,11 +56,10 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
  * @semaphore: Semaphore control block to be updated.
  * @count: New initial count to be set for this semaphore.
  * @max_count: New maximum count for this semaphore.
- * @type: Type flags for this semaphore.
- *  SEMAPHORE_INT: This semaphore will also be accessed by interrupts.
+ * @interrupt_protected: Flag to specify if this is an interrupt protected lock.
  * This routine will update the semaphore parameters.
  */
-void semaphore_update(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t type)
+void semaphore_update(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t interrupt_protected)
 {
     /* Lock the scheduler. */
     scheduler_lock();
@@ -74,7 +72,7 @@ void semaphore_update(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
     semaphore->max_count = max_count;
 
     /* Update semaphore type. */
-    semaphore->type = type;
+    semaphore->interrupt_protected = interrupt_protected;
 
     /* Enable scheduling. */
     scheduler_unlock();
@@ -98,7 +96,7 @@ void semaphore_set_interrupt_data(SEMAPHORE *semaphore, void *data, SEM_INT_LOCK
 
     /* Semaphore must not have been obtained. */
     OS_ASSERT(semaphore->count != semaphore->max_count);
-    OS_ASSERT((semaphore->type & SEMAPHORE_INT) == FALSE);
+    OS_ASSERT(semaphore->interrupt_protected == FALSE);
 
     /* Set semaphore interrupt data. */
     semaphore->interrupt_lock = lock;
@@ -243,17 +241,17 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     CONDITION *condition;
     TASK *tcb;
 
+    /* Should never happen. */
+    OS_ASSERT((semaphore->interrupt_protected == TRUE) && (semaphore->interrupt_lock == NULL));
+
     /* Save the current task pointer. */
     tcb = get_current_task();
-
-    /* Should never happen. */
-    OS_ASSERT((tcb) && ((tcb->interrupt_lock_count > 0) && (semaphore->type & SEMAPHORE_INT)));
 
     /* Lock the scheduler. */
     scheduler_lock();
 
     /* If this is interrupt accessible semaphore. */
-    if (semaphore->type & SEMAPHORE_INT)
+    if (semaphore->interrupt_protected == TRUE)
     {
         /* Disable global interrupts. */
         DISABLE_INTERRUPTS();
@@ -262,9 +260,6 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     /* Check if this semaphore is not available. */
     if (semaphore->count == 0)
     {
-        /* Should never happen. */
-        OS_ASSERT((semaphore->type & SEMAPHORE_INT) && (semaphore->interrupt_lock == NULL));
-
         /* Check if we need to wait for semaphore to be free. */
         if ((wait > 0) && (tcb != NULL))
         {
@@ -289,32 +284,10 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         OS_ASSERT(semaphore->count == 0);
 
         /* Check if we have interrupt lock registered for this semaphore. */
-        if (semaphore->type & SEMAPHORE_INT)
+        if (semaphore->interrupt_protected == TRUE)
         {
-            /* If we need to lock out specific interrupt. */
-            if (semaphore->interrupt_lock != NULL)
-            {
-                /* Lock the required interrupt. */
-                semaphore->interrupt_lock(semaphore->interrupt_data);
-
-                /* Restore old interrupt level. */
-                SET_INTERRUPT_LEVEL(interrupt_level);
-            }
-            else
-            {
-                /* If we are in a task. */
-                if (tcb != NULL)
-                {
-                    /* Should never happen. */
-                    OS_ASSERT(tcb->interrupt_lock_count == SCHEDULER_MAX_INT_LOCK);
-
-                    /* Increment the interrupt lock count. */
-                    tcb->interrupt_lock_count++;
-                }
-
-                /* Save the interrupt level and scheduler state. */
-                semaphore->int_status = interrupt_level;
-            }
+            /* Lock the required interrupt. */
+            semaphore->interrupt_lock(semaphore->interrupt_data);
         }
 
         /* Save the owner for this semaphore. */
@@ -323,23 +296,16 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
         /* Decrease the semaphore count. */
         semaphore->count --;
     }
-    else
+
+    /* If this is interrupt accessible lock. */
+    if (semaphore->interrupt_protected == TRUE)
     {
-        /* If this is interrupt accessible lock. */
-        if (semaphore->type & SEMAPHORE_INT)
-        {
-            /* Restore old interrupt level. */
-            SET_INTERRUPT_LEVEL(interrupt_level);
-        }
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
     }
 
-    /* If this is not an interrupt accessible semaphore or we locked specific
-     * interrupt. */
-    if ((status != SUCCESS) || ((semaphore->type & SEMAPHORE_INT) == 0) || (semaphore->interrupt_lock != NULL))
-    {
-        /* Enable scheduling. */
-        scheduler_unlock();
-    }
+    /* Enable scheduling. */
+    scheduler_unlock();
 
     /* Return status to the caller. */
     return (status);
@@ -355,18 +321,12 @@ void semaphore_release(SEMAPHORE *semaphore)
 {
     SEMAPHORE_PARAM param;
     RESUME resume;
-    TASK *tcb = get_current_task();
 
     /* Semaphore double release. */
     OS_ASSERT(semaphore->count >= semaphore->max_count);
 
-    /* If this is not an interrupt accessible semaphore or we locked specific
-     * interrupt. */
-    if (((semaphore->type & SEMAPHORE_INT) == 0) || (semaphore->interrupt_lock != NULL))
-    {
-        /* Lock the scheduler. */
-        scheduler_lock();
-    }
+    /* Lock the scheduler. */
+    scheduler_lock();
 
     /* Increment the semaphore count. */
     semaphore->count ++;
@@ -386,33 +346,10 @@ void semaphore_release(SEMAPHORE *semaphore)
     resume_condition(&semaphore->condition, &resume, TRUE);
 
     /* If this is interrupt accessible semaphore. */
-    if (semaphore->type & SEMAPHORE_INT)
+    if (semaphore->interrupt_protected == TRUE)
     {
-        /* Check if we have interrupt unlock registered for this semaphore. */
-        if (semaphore->interrupt_unlock != NULL)
-        {
-            /* Unlock the required interrupt. */
-            semaphore->interrupt_unlock(semaphore->interrupt_data);
-        }
-        else
-        {
-            /* If we have a task. */
-            if (tcb != NULL)
-            {
-                /* Should never happen. */
-                OS_ASSERT(tcb->interrupt_lock_count == 0);
-
-                /* Decrement the interrupt lock count. */
-                tcb->interrupt_lock_count--;
-            }
-
-            /* If we are not suspending. */
-            if ((tcb == NULL) || ((tcb->status != TASK_WILL_SUSPENDED) && (tcb->interrupt_lock_count == 0)))
-            {
-                /* Restore the interrupt level. */
-                SET_INTERRUPT_LEVEL(semaphore->int_status);
-            }
-        }
+        /* Unlock the required interrupt. */
+        semaphore->interrupt_unlock(semaphore->interrupt_data);
     }
 
     /* Enable scheduling. */

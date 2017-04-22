@@ -50,7 +50,7 @@ void fatfs_init()
 
 #ifdef CONFIG_SEMAPHORE
     /* Create lock to protect FAT file system layer. */
-    semaphore_create(&fat_lock, 1, 1, 0);
+    semaphore_create(&fat_lock, 1, 1, FALSE);
 #endif
 
     /* Initialize file system for all the files. */

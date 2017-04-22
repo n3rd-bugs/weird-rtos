@@ -22,12 +22,9 @@
 #define SEMAPHORE_BUSY          -700
 #define SEMAPHORE_DELETED       -701
 
-/* Semaphore type flags. */
-#define SEMAPHORE_INT           (0x01)
-
 /* Semaphore interrupt lock/unlock APIs. */
-typedef void SEM_INT_LOCK (void *data);
-typedef void SEM_INT_UNLOCK (void *data);
+typedef void SEM_INT_LOCK (void *);
+typedef void SEM_INT_UNLOCK (void *);
 
 /* Semaphore resume parameter. */
 typedef struct _semaphore_param
@@ -49,18 +46,15 @@ typedef struct _semaphore
     SEM_INT_UNLOCK  *interrupt_unlock;
     void        *interrupt_data;
 
-    /* If semaphore is interrupt accessible this will store the interrupt
-     * status when this semaphore was acquired. */
-    uint32_t    int_status;
-
     /* Current semaphore count. */
     uint8_t     count;
 
     /* Maximum semaphore count there can be. */
     uint8_t     max_count;
 
-    /* Type of this semaphore. */
-    uint8_t     type;
+    /* Flag to specify if this is an interrupt
+     * protected lock. */
+    uint8_t     interrupt_protected;
 
     /* Padding variable. */
     uint8_t     pad[1];

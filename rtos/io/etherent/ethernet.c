@@ -59,7 +59,7 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect this device. */
     memset(&device->lock, 0, sizeof(SEMAPHORE));
-    semaphore_create(&device->lock, 1, 1, (((interrupt == NULL) || (int_poll != NULL)) ? 0 : SEMAPHORE_INT));
+    semaphore_create(&device->lock, 1, 1, (((interrupt == NULL) || (int_poll != NULL)) ? FALSE : TRUE));
 #endif
 
     /* Initialize file system condition. */

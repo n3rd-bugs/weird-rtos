@@ -438,9 +438,6 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         /* Unlock all the conditions so they can be resumed. */
         suspend_unlock_condition(condition, num_conditions, NULL);
 
-        /* Should never happen. */
-        OS_ASSERT(tcb->interrupt_lock_count > 0);
-
         /* Task is being suspended. */
         tcb->status = TASK_SUSPENDED;
 

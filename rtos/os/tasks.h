@@ -88,11 +88,8 @@ struct _task
     /* Lock count, how much nested scheduler locks have we acquired. */
     uint8_t     lock_count;
 
-    /* Lock count, how much nested interrupt locks have we acquired. */
-    uint8_t     interrupt_lock_count;
-
     /* Structure padding. */
-    uint8_t     pad[1];
+    uint8_t     pad[2];
 };
 
 /* This defines a task list. */

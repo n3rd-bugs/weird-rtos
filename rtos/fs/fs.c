@@ -41,7 +41,7 @@ void fs_init()
 
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect global file system data. */
-    semaphore_create(&file_data.lock, 1, 1, 0);
+    semaphore_create(&file_data.lock, 1, 1, FALSE);
 #endif
 
 #ifdef FS_CONSOLE
