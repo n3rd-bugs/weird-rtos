@@ -77,8 +77,8 @@ TASK *scheduler_get_next_task()
     /* Resume any of the sleeping tasks. */
     sleep_process_system_tick();
 
-    /* Get the task that will run next on this scheduler. */
-    tcb = scheduler_get_task();
+    /* Get the task we need to run */
+    tcb = (TASK *)sll_pop(&sch_ready_task_list, OFFSETOF(TASK, next));
 
     /* We should always have a task to execute. */
     OS_ASSERT(tcb == NULL);
@@ -159,30 +159,6 @@ void scheduler_task_yield(TASK *tcb, uint8_t from)
     }
 
 } /* scheduler_task_yield */
-
-/*
- * scheduler_get_task
- * @return: Task's control block which is needed to be run from this scheduler.
- * This function implements get task routine required by a scheduling class.
- * This is called by scheduler to get the next task that is needed to run.
- */
-TASK *scheduler_get_task()
-{
-    /* Get the first task in the ready list. */
-    TASK *tcb = (TASK *)sll_pop(&sch_ready_task_list, OFFSETOF(TASK, next));
-
-    /* If there is a task that can run next. */
-    if ((tcb != NULL) && ((tcb->flags & TASK_RESUMED) == 0))
-    {
-        /* Task is being resumed. */
-        tcb->status = TASK_RESUME;
-        tcb->flags |= TASK_RESUMED;
-    }
-
-    /* Return the task to be scheduled. */
-    return (tcb);
-
-} /* scheduler_get_task */
 
 
 /*

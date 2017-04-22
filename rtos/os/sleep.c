@@ -69,8 +69,13 @@ void sleep_process_system_tick()
             /* Schedule this sleeping task. */
             tcb = (TASK *)sll_pop(&sleep_task_list, OFFSETOF(TASK, next_sleep));
 
-            /* Task is already resumed. */
-            if (tcb->status != TASK_SUSPENDED)
+            /* Task is not resumed. */
+            if (tcb->status == TASK_SUSPENDED)
+            {
+                /* Yield this task. */
+                scheduler_task_yield(tcb, YIELD_SLEEP);
+            }
+            else
             {
                 /* Lets not get this task out of sleep any time soon. */
                 tcb->tick_sleep = MAX_WAIT;
@@ -87,16 +92,6 @@ void sleep_process_system_tick()
 
                 /* Check if we can resume the next task. */
                 continue;
-            }
-            else
-            {
-                /* Task is being resumed from sleep. */
-                tcb->tick_sleep = 0;
-                tcb->status = TASK_RESUME_SLEEP;
-                tcb->flags |= TASK_RESUMED;
-
-                /* Yield this task. */
-                scheduler_task_yield(tcb, YIELD_SYSTEM);
             }
         }
 
