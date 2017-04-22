@@ -207,8 +207,15 @@ void avr_stack_init(void)
     wdt_disable();
 
 #ifdef CONFIG_BOOTLOAD
-    /* Perform boot load operation. */
-    BOOTLOAD();
+    /* Initialize boot loader condition. */
+    BOOTLOAD_COND_INIT;
+
+    /* If boot condition meets. */
+    if (BOOTLOAD_COND)
+    {
+        /* Perform boot load operation. */
+        BOOTLOAD();
+    }
 #endif
 
 } /* avr_stack_init */

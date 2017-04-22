@@ -124,64 +124,57 @@ void bootload_atmega644p()
 {
     int32_t status = SUCCESS;
 
-    /* Initialize boot loader condition. */
-    BOOTLOAD_COND_INIT;
+    /* Disable interrupts. */
+    DISABLE_INTERRUPTS();
 
-    /* If boot condition meets. */
-    if (BOOTLOAD_COND)
-    {
-        /* Disable interrupts. */
-        DISABLE_INTERRUPTS();
-
-        /* Switch to boot loader vector table. */
-        MCUCR = (1 << IVCE);
-        MCUCR = (1 << IVSEL);
+    /* Switch to boot loader vector table. */
+    MCUCR = (1 << IVCE);
+    MCUCR = (1 << IVSEL);
 
 #ifdef BOOTLOAD_STK
-        /* Initialize the serial interface. */
-        /* Set the configured baud-rate. */
-        UBRR0H = UBRRH_VALUE;
-        UBRR0L = UBRRL_VALUE;
+    /* Initialize the serial interface. */
+    /* Set the configured baud-rate. */
+    UBRR0H = UBRRH_VALUE;
+    UBRR0L = UBRRL_VALUE;
 
 #if USE_2X
-        UCSR0A |= (1 << U2X0);
+    UCSR0A |= (1 << U2X0);
 #else
-        UCSR0A &= ~(1 << U2X0);
+    UCSR0A &= ~(1 << U2X0);
 #endif
 
-        /* Enable RX and TX. */
-        UCSR0B = (1 << RXEN0)  | (1 << TXEN0);
-        UCSR0C = (1 << USBS0) | (3 << UCSZ00);
+    /* Enable RX and TX. */
+    UCSR0B = (1 << RXEN0)  | (1 << TXEN0);
+    UCSR0C = (1 << USBS0) | (3 << UCSZ00);
 #endif /* BOOTLOAD_STK */
 
-        /* Configure the progress and error LEDs. */
-        DDRC |= (1 << 3);
-        PORTC |= (1 << 3);
+    /* Configure the progress and error LEDs. */
+    DDRC |= (1 << 3);
+    PORTC |= (1 << 3);
 
 #ifdef BOOTLOAD_MMC
-        /* Perform MMC boatload. */
-        status = bootload_mmc();
+    /* Perform MMC boatload. */
+    status = bootload_mmc();
 #endif
 #if (defined(BOOTLOAD_MMC) || defined(BOOTLOAD_STK))
-        /* If MMC was not successful. */
-        if (status != BOOTLOAD_COMPLETE)
+    /* If MMC was not successful. */
+    if (status != BOOTLOAD_COMPLETE)
 #endif /* (defined(BOOTLOAD_MMC) || defined(BOOTLOAD_STK)) */
-        {
+    {
 #ifdef BOOTLOAD_STK
-            /* Perform STK boatload. */
-            status = bootload_stk();
+        /* Perform STK boatload. */
+        status = bootload_stk();
 #endif
-        }
+    }
 
-        /* Turn off the progress LED. */
-        PORTC &= (uint8_t)~(1 << 3);
+    /* Turn off the progress LED. */
+    PORTC &= (uint8_t)~(1 << 3);
 
-        /* If boot loader is now complete. */
-        if (status == BOOTLOAD_COMPLETE)
-        {
-            /* Start the application. */
-            bootload_application();
-        }
+    /* If boot loader is now complete. */
+    if (status == BOOTLOAD_COMPLETE)
+    {
+        /* Start the application. */
+        bootload_application();
     }
 
 } /* bootload_atmega644p */

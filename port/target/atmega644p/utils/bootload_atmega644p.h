@@ -32,7 +32,6 @@
 #define BOOTLOAD_SECTION    __attribute__ ((section (".boot")))
 #define BOOTVECTOR_SECTION  __attribute__ ((section (".boot_vector")))
 #define BOOTLOAD_RESET      0x1f000
-#define APPLICATION_RESET   0x00000
 
 /* Defines the condition when we need to perform boot load operation. */
 #define BOOTLOAD_COND_INIT  (DDRD &= ((uint8_t)~(1 << 3)))
