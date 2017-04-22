@@ -23,14 +23,13 @@
 #define YIELD_INIT                  (0x00)
 #define YIELD_SYSTEM                (0x01)
 #define YIELD_MANUAL                (0x02)
-#define YIELD_CANNOT_RUN            (0x03)
+#define YIELD_SLEEP                 (0x03)
 
 /* Some task resume status. */
 #define TASK_SUSPENDED              (0)
-#define TASK_WILL_SUSPENDED         (1)
-#define TASK_RESUME                 (2)
+#define TASK_RESUME                 (1)
+#define TASK_RESUME_SLEEP           (2)
 #define TASK_FINISHED               (3)
-#define TASK_RESUME_SLEEP           (4)
 
 /* Global task list. */
 extern TASK_LIST sch_task_list;

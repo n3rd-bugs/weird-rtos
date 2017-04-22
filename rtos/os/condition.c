@@ -431,10 +431,6 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         }
 #endif /* CONFIG_SLEEP */
 
-        /* Task is going to suspended. This will release the lock without
-         * enabling interrupts. */
-        tcb->status = TASK_WILL_SUSPENDED;
-
         /* Unlock all the conditions so they can be resumed. */
         suspend_unlock_condition(condition, num_conditions, NULL);
 
@@ -458,8 +454,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
         /* Enable preemption. */
         scheduler_unlock();
 
-        /* Lock all conditions, if we did not resume normally or timeout
-         * don't lock the one for which we resumed as we did not lock it.  */
+        /* Lock all conditions except the one which caused an error.  */
         suspend_lock_condition(condition, num_conditions, ((task_status != TASK_RESUME) && (task_status != TASK_RESUME_SLEEP)) ? resume_condition : NULL);
 
         /* Check if we are resumed due to a timeout. */
@@ -548,6 +543,9 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
     /* Resume all the tasks waiting on this condition. */
     do
     {
+        /* Should never happen. */
+        OS_ASSERT((resume != NULL) && (resume->status == TASK_SUSPENDED));
+
         /* If a parameter was given. */
         if ((resume != NULL) && (resume->param != NULL))
         {
@@ -582,9 +580,6 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
                 sleep_remove_from_list(suspend->task);
 #endif /* CONFIG_SLEEP */
 
-                /* Try to reschedule this task. */
-                scheduler_task_yield(suspend->task, YIELD_SYSTEM);
-
                 /* If do have resume data. */
                 if (resume != NULL)
                 {
@@ -599,6 +594,9 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 
                 /* Save the condition for which this task is resuming. */
                 suspend->task->suspend_data = condition;
+
+                /* Try to reschedule this task. */
+                scheduler_task_yield(suspend->task, YIELD_SYSTEM);
 
                 /* Try to yield the current task. */
                 task_yield();

@@ -137,20 +137,22 @@ void scheduler_task_add(TASK *tcb, uint32_t priority)
  */
 void scheduler_task_yield(TASK *tcb, uint8_t from)
 {
-    /* Process all the cases from a task can be re/scheduled. */
+    /* Adjust the task control block as required. */
     switch (from)
     {
     case YIELD_INIT:
     case YIELD_MANUAL:
-    case YIELD_SYSTEM:
-        /* Schedule the task being yielded/re-enqueued. */
-        sll_insert(&sch_ready_task_list, tcb, &scheduler_task_sort, OFFSETOF(TASK, next));
+
+        /* Task is resuming normally. */
+        tcb->status = TASK_RESUME;
 
         break;
 
-    case YIELD_CANNOT_RUN:
-        /* Just put back this task on the scheduler list. */
-        sll_push(&sch_ready_task_list, tcb, OFFSETOF(TASK, next));
+    case YIELD_SLEEP:
+
+        /* Task is being resumed from sleep. */
+        tcb->tick_sleep = 0;
+        tcb->status = TASK_RESUME_SLEEP;
 
         break;
 
@@ -158,8 +160,10 @@ void scheduler_task_yield(TASK *tcb, uint8_t from)
         break;
     }
 
-} /* scheduler_task_yield */
+    /* Schedule the task being yielded/re-enqueued. */
+    sll_insert(&sch_ready_task_list, tcb, &scheduler_task_sort, OFFSETOF(TASK, next));
 
+} /* scheduler_task_yield */
 
 /*
  * scheduler_task_remove

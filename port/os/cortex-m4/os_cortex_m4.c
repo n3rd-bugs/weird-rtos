@@ -159,7 +159,7 @@ ISR_FUN isr_sysclock_handle(void)
             last_task = current_task;
 
             /* Re-enqueue/schedule this task in the scheduler. */
-            scheduler_task_yield(current_task, YIELD_SYSTEM);
+            scheduler_task_yield(current_task, YIELD_MANUAL);
 
             /* Get the task that should run next. */
             current_task = scheduler_get_next_task();

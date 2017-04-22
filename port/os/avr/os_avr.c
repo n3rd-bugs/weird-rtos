@@ -89,7 +89,7 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
     if (current_task->lock_count == 0)
     {
         /* Re-enqueue/schedule this task in the scheduler. */
-        scheduler_task_yield(current_task, YIELD_SYSTEM);
+        scheduler_task_yield(current_task, YIELD_MANUAL);
 
         /* Get and set the task that should run next. */
         set_current_task(scheduler_get_next_task());
