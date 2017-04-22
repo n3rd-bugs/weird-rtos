@@ -23,8 +23,8 @@
 #include <net_csum.h>
 
 /* Global TCP data. */
-TCP_DATA tcp_data;
-static volatile uint32_t tcp_iss = 0xFFFF0000;
+static TCP_DATA tcp_data;
+volatile uint32_t tcp_iss;
 
 /* Internal function prototypes. */
 static void tcp_port_initialize(TCP_PORT *);
@@ -60,9 +60,6 @@ static uint8_t tcp_rtx_process_ack(TCP_PORT *, uint32_t);
 void tcp_initialize()
 {
     SYS_LOG_FUNTION_ENTRY(TCP);
-
-    /* Clear the global TCP data. */
-    memset(&tcp_data, 0, sizeof(TCP_DATA));
 
 #ifdef CONFIG_SEMAPHORE
     /* Create the semaphore to protect global TCP data. */
