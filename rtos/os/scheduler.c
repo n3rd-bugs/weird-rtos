@@ -112,8 +112,7 @@ void scheduler_task_add(TASK *tcb, uint32_t priority)
     DISABLE_INTERRUPTS();
 
     /* Update the task control block. */
-    tcb->priority   = priority;
-    tcb->status     = TASK_SUSPENDED;
+    tcb->priority = priority;
 
     /* Enqueue this task in the required scheduler. */
     scheduler_task_yield(tcb, YIELD_INIT);
