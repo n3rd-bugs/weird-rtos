@@ -39,9 +39,6 @@ typedef struct _fat_file
     /* Flags to specify file state. */
     uint32_t    flags;
 
-    /* Structure padding. */
-    uint8_t     pad[4];
-
 } FAT_FILE;
 
 /* Function prototypes. */

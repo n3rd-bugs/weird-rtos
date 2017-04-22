@@ -61,9 +61,6 @@ typedef struct _cdc_console
     uint32_t    int_status;
 #endif
 
-    /* Structure padding. */
-    uint8_t     pad[4];
-
 } CDC_CONSOLE;
 
 /* Function prototypes. */

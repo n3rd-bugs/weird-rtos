@@ -49,9 +49,6 @@ typedef struct _dhcp_client_data
     /* File system parameter to process data for DHCP client. */
     FS_PARAM    fs_param;
 
-    /* Structure padding. */
-    uint8_t     pad[4];
-
 } DHCP_CLIENT_DATA;
 
 /* DHCP client device data. */

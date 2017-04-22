@@ -158,9 +158,6 @@ struct _enc28j60_device
     /* Device flags. */
     uint8_t     flags;
 
-    /* Structure padding. */
-    uint8_t     pad[4];
-
 };
 
 /* Function prototypes. */

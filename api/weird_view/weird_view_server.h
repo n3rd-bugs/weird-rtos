@@ -76,9 +76,6 @@ typedef struct _weird_view_server
     WEIRD_VIEW_PLUGIN   *plugin;
     uint32_t            num_plugin;
 
-    /* Structure padding. */
-    uint8_t             pad[4];
-
 } WEIRD_VIEW_SERVER;
 
 void weird_view_server_init(WEIRD_VIEW_SERVER *, SOCKET_ADDRESS *, char *, WEIRD_VIEW_PLUGIN *, uint32_t);
