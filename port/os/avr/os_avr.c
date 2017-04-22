@@ -237,21 +237,8 @@ void avr_sys_stack_pointer_save(void)
  */
 NAKED_FUN control_to_system()
 {
-    /* If we are in a task. */
-    if (avr_in_isr == FALSE)
-    {
-        /* Save the context on the current task's stack. */
-        /* This will also disable global interrupts. */
-        SAVE_CONTEXT();
-
-        /* Load system stack. */
-        LOAD_SYSTEM_STACK();
-    }
-    else
-    {
-        /* In interrupt save the context on the system stack. */
-        SAVE_STACK();
-    }
+    /* Save context for either a task or an ISR. */
+    SAVE_CONTEXT_CTS();
 
     /* If we do have a task to switch. */
     if (current_task != NULL)

@@ -95,58 +95,100 @@ extern uint8_t avr_in_isr;
     asm volatile("out   __SP_L__,   r28");                  \
     asm volatile("out   __SP_H__,   r29");
 
-/* This macro saves a task's context on the stack. */
-#define SAVE_CONTEXT()                                      \
-    asm volatile (                                          \
-                    "push   r16                     \n\t"   \
-                    "in     r16, __SREG__           \n\t"   \
-                    "cli                            \n\t"   \
-                    "push   r16                     \n\t"   \
-                    "push   r1                      \n\t"   \
-                    "clr    r1                      \n\t"   \
-                    "push   r2                      \n\t"   \
-                    "push   r3                      \n\t"   \
-                    "push   r4                      \n\t"   \
-                    "push   r5                      \n\t"   \
-                    "push   r6                      \n\t"   \
-                    "push   r7                      \n\t"   \
-                    "push   r8                      \n\t"   \
-                    "push   r9                      \n\t"   \
-                    "push   r10                     \n\t"   \
-                    "push   r11                     \n\t"   \
-                    "push   r12                     \n\t"   \
-                    "push   r13                     \n\t"   \
-                    "push   r14                     \n\t"   \
-                    "push   r15                     \n\t"   \
-                    "push   r0                      \n\t"   \
-                    "push   r17                     \n\t"   \
-                    "push   r18                     \n\t"   \
-                    "push   r19                     \n\t"   \
-                    "push   r20                     \n\t"   \
-                    "push   r21                     \n\t"   \
-                    "push   r22                     \n\t"   \
-                    "push   r23                     \n\t"   \
-                    "push   r24                     \n\t"   \
-                    "push   r25                     \n\t"   \
-                    "push   r26                     \n\t"   \
-                    "push   r27                     \n\t"   \
-                    "push   r28                     \n\t"   \
-                    "push   r29                     \n\t"   \
-                    "push   r30                     \n\t"   \
-                    "push   r31                     \n\t"   \
-                    "lds    r14, sys_interrupt_level\n\t"   \
-                    "push   r14                     \n\t"   \
-                    "lds    r14, current_task       \n\t"   \
-                    "lds    r15, current_task + 1   \n\t"   \
-                    "movw   r26, r14                \n\t"   \
-                    "ldi    r18, %[tos_offset]      \n\t"   \
-                    "add    r26, r18                \n\t"   \
-                    "adc    r27, __zero_reg__       \n\t"   \
-                    "in     r0, __SP_L__            \n\t"   \
-                    "st     x+, r0                  \n\t"   \
-                    "in     r0, __SP_H__            \n\t"   \
-                    "st     x+, r0                  \n\t"   \
-                    :: [tos_offset] "M" (OFFSETOF(TASK, tos))    \
+/* This macro saves either a task's or an ISR's context on the stack. */
+#define SAVE_CONTEXT_CTS()                                              \
+    asm volatile (                                                      \
+                    "push   r16                                 \n\t"   \
+                    "lds    r16,        avr_in_isr              \n\t"   \
+                    "sbrs   r16,        0                       \n\t"   \
+                    "rjmp   save_task                           \n\t"   \
+                    "push   r1                                  \n\t"   \
+                    "clr    r1                                  \n\t"   \
+                    "push   r2                                  \n\t"   \
+                    "push   r3                                  \n\t"   \
+                    "push   r4                                  \n\t"   \
+                    "push   r5                                  \n\t"   \
+                    "push   r6                                  \n\t"   \
+                    "push   r7                                  \n\t"   \
+                    "push   r8                                  \n\t"   \
+                    "push   r9                                  \n\t"   \
+                    "push   r10                                 \n\t"   \
+                    "push   r11                                 \n\t"   \
+                    "push   r12                                 \n\t"   \
+                    "push   r13                                 \n\t"   \
+                    "push   r14                                 \n\t"   \
+                    "push   r15                                 \n\t"   \
+                    "push   r0                                  \n\t"   \
+                    "push   r17                                 \n\t"   \
+                    "push   r18                                 \n\t"   \
+                    "push   r19                                 \n\t"   \
+                    "push   r20                                 \n\t"   \
+                    "push   r21                                 \n\t"   \
+                    "push   r22                                 \n\t"   \
+                    "push   r23                                 \n\t"   \
+                    "push   r24                                 \n\t"   \
+                    "push   r25                                 \n\t"   \
+                    "push   r26                                 \n\t"   \
+                    "push   r27                                 \n\t"   \
+                    "push   r28                                 \n\t"   \
+                    "push   r29                                 \n\t"   \
+                    "push   r30                                 \n\t"   \
+                    "push   r31                                 \n\t"   \
+                    "rjmp   skip_save_task                      \n\t"   \
+                    "save_task:                                 \n\t"   \
+                    "in     r16,        __SREG__                \n\t"   \
+                    "cli                                        \n\t"   \
+                    "push   r16                                 \n\t"   \
+                    "push   r1                                  \n\t"   \
+                    "clr    r1                                  \n\t"   \
+                    "push   r2                                  \n\t"   \
+                    "push   r3                                  \n\t"   \
+                    "push   r4                                  \n\t"   \
+                    "push   r5                                  \n\t"   \
+                    "push   r6                                  \n\t"   \
+                    "push   r7                                  \n\t"   \
+                    "push   r8                                  \n\t"   \
+                    "push   r9                                  \n\t"   \
+                    "push   r10                                 \n\t"   \
+                    "push   r11                                 \n\t"   \
+                    "push   r12                                 \n\t"   \
+                    "push   r13                                 \n\t"   \
+                    "push   r14                                 \n\t"   \
+                    "push   r15                                 \n\t"   \
+                    "push   r0                                  \n\t"   \
+                    "push   r17                                 \n\t"   \
+                    "push   r18                                 \n\t"   \
+                    "push   r19                                 \n\t"   \
+                    "push   r20                                 \n\t"   \
+                    "push   r21                                 \n\t"   \
+                    "push   r22                                 \n\t"   \
+                    "push   r23                                 \n\t"   \
+                    "push   r24                                 \n\t"   \
+                    "push   r25                                 \n\t"   \
+                    "push   r26                                 \n\t"   \
+                    "push   r27                                 \n\t"   \
+                    "push   r28                                 \n\t"   \
+                    "push   r29                                 \n\t"   \
+                    "push   r30                                 \n\t"   \
+                    "push   r31                                 \n\t"   \
+                    "lds    r14,        sys_interrupt_level     \n\t"   \
+                    "push   r14                                 \n\t"   \
+                    "lds    r14,        current_task            \n\t"   \
+                    "lds    r15,        current_task + 1        \n\t"   \
+                    "movw   r26,        r14                     \n\t"   \
+                    "ldi    r18,        %[tos_offset]           \n\t"   \
+                    "add    r26,        r18                     \n\t"   \
+                    "adc    r27,        __zero_reg__            \n\t"   \
+                    "in     r0,         __SP_L__                \n\t"   \
+                    "st     x+,         r0                      \n\t"   \
+                    "in     r0,         __SP_H__                \n\t"   \
+                    "st     x+,         r0                      \n\t"   \
+                    "lds    r28,        system_stack_end        \n\t"   \
+                    "lds    r29,        system_stack_end + 1    \n\t"   \
+                    "out    __SP_L__,   r28                     \n\t"   \
+                    "out    __SP_H__,   r29                     \n\t"   \
+                    "skip_save_task:                            \n\t"   \
+                    :: [tos_offset] "M" (OFFSETOF(TASK, tos))           \
                   );
 
 /* This macro saves a task's context on the stack and saves the SREG after
@@ -264,43 +306,6 @@ extern uint8_t avr_in_isr;
                     :: [tos_offset] "M" (OFFSETOF(TASK, tos))    \
                  );
 
-/* This macro saves a function's context on the stack. */
-#define SAVE_STACK()                                        \
-    asm volatile (                                          \
-                    "push   r0                      \n\t"   \
-                    "push   r1                      \n\t"   \
-                    "push   r2                      \n\t"   \
-                    "push   r3                      \n\t"   \
-                    "push   r4                      \n\t"   \
-                    "push   r5                      \n\t"   \
-                    "push   r6                      \n\t"   \
-                    "push   r7                      \n\t"   \
-                    "push   r8                      \n\t"   \
-                    "push   r9                      \n\t"   \
-                    "push   r10                     \n\t"   \
-                    "push   r11                     \n\t"   \
-                    "push   r12                     \n\t"   \
-                    "push   r13                     \n\t"   \
-                    "push   r14                     \n\t"   \
-                    "push   r15                     \n\t"   \
-                    "push   r16                     \n\t"   \
-                    "push   r17                     \n\t"   \
-                    "push   r18                     \n\t"   \
-                    "push   r19                     \n\t"   \
-                    "push   r20                     \n\t"   \
-                    "push   r21                     \n\t"   \
-                    "push   r22                     \n\t"   \
-                    "push   r23                     \n\t"   \
-                    "push   r24                     \n\t"   \
-                    "push   r25                     \n\t"   \
-                    "push   r26                     \n\t"   \
-                    "push   r27                     \n\t"   \
-                    "push   r28                     \n\t"   \
-                    "push   r29                     \n\t"   \
-                    "push   r30                     \n\t"   \
-                    "push   r31                     \n\t"   \
-                );
-
 /* This macro loads a function's context from the stack. */
 #define RESTORE_STACK()                                     \
     asm volatile (                                          \
@@ -319,7 +324,7 @@ extern uint8_t avr_in_isr;
                     "pop    r19                     \n\t"   \
                     "pop    r18                     \n\t"   \
                     "pop    r17                     \n\t"   \
-                    "pop    r16                     \n\t"   \
+                    "pop    r0                      \n\t"   \
                     "pop    r15                     \n\t"   \
                     "pop    r14                     \n\t"   \
                     "pop    r13                     \n\t"   \
@@ -335,7 +340,7 @@ extern uint8_t avr_in_isr;
                     "pop    r3                      \n\t"   \
                     "pop    r2                      \n\t"   \
                     "pop    r1                      \n\t"   \
-                    "pop    r0                      \n\t"   \
+                    "pop    r16                     \n\t"   \
                 );
 
 /* This macro is responsible for switching context for time. */
