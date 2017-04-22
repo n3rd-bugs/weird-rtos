@@ -15,6 +15,43 @@
 
 #include <os.h>
 
+/* Interrupt protected lock structure. */
+typedef volatile uint8_t INTLCK;
+
+/* Initializes an interrupt protected lock. */
+#define INTLCK_INIT(lock)                           \
+    {                                               \
+        uint32_t int_status = GET_INTERRUPT_LEVEL();\
+        DISABLE_INTERRUPTS();                       \
+        lock = 0;                                   \
+        SET_INTERRUPT_LEVEL(int_status);            \
+    }
+
+/* Try to acquire an interrupt protected lock. */
+#define INTLCK_TRY_GET(lock, acquired)              \
+    {                                               \
+        uint32_t int_status = GET_INTERRUPT_LEVEL();\
+        acquired = FALSE;                           \
+        DISABLE_INTERRUPTS();                       \
+        if (lock == 0)                              \
+        {                                           \
+            lock++;                                 \
+            SET_INTERRUPT_LEVEL(int_status);        \
+            acquired = TRUE;                        \
+        }                                           \
+        else                                        \
+            SET_INTERRUPT_LEVEL(int_status);        \
+    }
+
+/* Release an interrupt protected lock. */
+#define INTLCK_RELEASE(lock)                        \
+    {                                               \
+        uint32_t int_status = GET_INTERRUPT_LEVEL();\
+        DISABLE_INTERRUPTS();                       \
+        lock--;                                     \
+        SET_INTERRUPT_LEVEL(int_status);            \
+    }
+
 #ifdef CONFIG_SEMAPHORE
 #include <condition.h>
 
@@ -73,37 +110,4 @@ void semaphore_release(SEMAPHORE *);
 void semaphore_condition_get(SEMAPHORE *, CONDITION **, SUSPEND *, uint32_t);
 
 #endif /* CONFIG_SEMAPHORE */
-
-/* Interrupt lock structure. */
-typedef volatile uint8_t INTLCK;
-
-#define INTLCK_INIT(lock)                           \
-    {                                               \
-        uint32_t int_status = GET_INTERRUPT_LEVEL();\
-        DISABLE_INTERRUPTS();                       \
-        lock = 0;                                   \
-        SET_INTERRUPT_LEVEL(int_status);            \
-    }
-#define INTLCK_TRY_GET(lock, acquired)              \
-    {                                               \
-        uint32_t int_status = GET_INTERRUPT_LEVEL();\
-        acquired = FALSE;                           \
-        DISABLE_INTERRUPTS();                       \
-        if (lock == 0)                              \
-        {                                           \
-            lock++;                                 \
-            SET_INTERRUPT_LEVEL(int_status);        \
-            acquired = TRUE;                        \
-        }                                           \
-        else                                        \
-            SET_INTERRUPT_LEVEL(int_status);        \
-    }
-#define INTLCK_RELEASE(lock)                        \
-    {                                               \
-        uint32_t int_status = GET_INTERRUPT_LEVEL();\
-        DISABLE_INTERRUPTS();                       \
-        lock--;                                     \
-        SET_INTERRUPT_LEVEL(int_status);            \
-    }
-
 #endif /* _SEMAPHORE_H_ */
