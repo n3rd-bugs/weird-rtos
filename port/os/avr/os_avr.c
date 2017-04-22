@@ -35,8 +35,10 @@ uint8_t avr_in_isr = FALSE;
  * This function will stub out any rogue interrupts, and
  * will reset the system if triggered.
  */
-ISR(__vector_default)
+ISR(__vector_default, ISR_NAKED)
 {
+    CPU_ISR_ENTER();
+
     /* Disable interrupts. */
     DISABLE_INTERRUPTS();
 
@@ -49,10 +51,18 @@ ISR(__vector_default)
 #else
     /* Trigger a soft reset using watch dog timer. */
     wdt_enable(WDTO_15MS);
+
+    /* Wait for WDT interrupt to trigger. */
+    while ((WDTCSR & (1 << WDIF)) == 0);
+
+    /* Enable interrupts to handle WDT interrupt. */
+    ENABLE_INTERRUPTS();
 #endif
 
     /* We should never return from this function. */
     while(1) ;
+
+    CPU_ISR_EXIT();
 
 } /* ISR(__vector_default) */
 
