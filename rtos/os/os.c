@@ -63,18 +63,15 @@ void task_yield()
     /* Check if we can actually yield the current task. */
     if (current_task->lock_count == 0)
     {
-        /* If current task was not already yielded. */
-        if ((current_task->flags & TASK_YIELD) == 0)
-        {
-            /* Disable interrupts. */
-            interrupt_level = GET_INTERRUPT_LEVEL();
-            DISABLE_INTERRUPTS();
+        /* Disable interrupts. */
+        interrupt_level = GET_INTERRUPT_LEVEL();
+        DISABLE_INTERRUPTS();
 
-            /* Task is being suspending. */
-            current_task->status = TASK_SUSPENDED;
+        /* Re-enqueue/schedule this task in the scheduler. */
+        scheduler_task_yield(current_task, YIELD_MANUAL);
 
-            /* Task was yielded. */
-            current_task->flags |= TASK_YIELD;
+        /* Schedule next task and enable interrupts. */
+        CONTROL_TO_SYSTEM();
 
             /* Re-enqueue/schedule this task in the scheduler. */
             scheduler_task_yield(current_task, YIELD_MANUAL);

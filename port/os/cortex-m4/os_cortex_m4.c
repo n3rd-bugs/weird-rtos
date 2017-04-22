@@ -112,10 +112,6 @@ void control_to_system()
     /* If we have not already scheduled a context switch. */
     if (last_task == NULL)
     {
-        /* Clear the yield flag for current task as we will now actually switching
-         * to another task. */
-        current_task->flags &= (uint8_t)~(TASK_YIELD);
-
         /* Save the task from which we will be switching. */
         last_task = current_task;
 
