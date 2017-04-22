@@ -133,27 +133,6 @@ void fs_unregister(FS *file_system)
 } /* fs_unregister */
 
 /*
- * fs_data_watcher_set
- * @fd: File descriptor for which data is needed to be monitored.
- * @watcher: Data watcher needed to be registered.
- * This function will add a data watcher for the given file system.
- */
-void fs_data_watcher_set(FD fd, FS_DATA_WATCHER *watcher)
-{
-    FS *fs = (FS *)fd;
-
-    /* Get lock for this file descriptor. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
-
-    /* Add this watcher is the watcher list. */
-    sll_append(&fs->data_watcher_list, watcher, OFFSETOF(FS_DATA_WATCHER, next));
-
-    /* Release lock for this file descriptor. */
-    fd_release_lock(fd);
-
-} /* fs_data_watcher_set */
-
-/*
  * fs_connection_watcher_set
  * @fd: File descriptor for which connection is needed to be monitored.
  * @watcher: Connection watcher needed to be registered.
@@ -1012,41 +991,15 @@ void fd_data_available(void *fd)
 {
     FS *fs = (FS *)fd;
     FS_PARAM fs_param;
-    FS_DATA_WATCHER *watcher = fs->data_watcher_list.head;
 
     /* Set flag that some data is available. */
     fs->flags |= FS_DATA_AVAILABLE;
 
-    /* Call the consumer, this can be called from an interrupt so locks
-     * must not be used here, also if called from user space appropriate
-     * locks are already acquired. */
+    /* Initialize criteria. */
+    fs_param.flag = FS_BLOCK_READ;
 
-    /* While we have a watcher to process. */
-    while ( (watcher != NULL) &&
-
-            /* While we still have some data. */
-            (fs->flags & FS_DATA_AVAILABLE))
-    {
-        /* If we have a watcher for received data. */
-        if (watcher->data_available != NULL)
-        {
-            /* Call the watcher function. */
-            watcher->data_available(fd, watcher->data);
-        }
-
-        /* Pick the next watcher. */
-        watcher = watcher->next;
-    }
-
-    /* If we still have some data available, resume any tasks waiting on it. */
-    if (fs->flags & FS_DATA_AVAILABLE)
-    {
-        /* Initialize criteria. */
-        fs_param.flag = FS_BLOCK_READ;
-
-        /* Resume a task if any waiting on read on this file descriptor. */
-        fd_handle_criteria(fd, &fs_param, TASK_RESUME);
-    }
+    /* Resume a task if any waiting on read on this file descriptor. */
+    fd_handle_criteria(fd, &fs_param, TASK_RESUME);
 
 } /* fd_data_available */
 
@@ -1075,41 +1028,15 @@ void fd_space_available(void *fd)
 {
     FS *fs = (FS *)fd;
     FS_PARAM fs_param;
-    FS_DATA_WATCHER *watcher = fs->data_watcher_list.head;
 
     /* Set flag that some data is available. */
     fs->flags |= FS_SPACE_AVAILABLE;
 
-    /* Call the consumer, this can be called from an interrupt so locks
-     * must not be used here, also if called from user space appropriate
-     * locks are already acquired. */
+    /* Initialize criteria. */
+    fs_param.flag = FS_BLOCK_WRITE;
 
-    /* While we have a watcher to process. */
-    while ( (watcher != NULL) &&
-
-            /* While we still have some data. */
-            (fs->flags & FS_SPACE_AVAILABLE))
-    {
-        /* If we have somebody waiting for space on this file descriptor. */
-        if (watcher->space_available != NULL)
-        {
-            /* Call the watcher function. */
-            watcher->space_available(fd, watcher->data);
-        }
-
-        /* Pick the next watcher. */
-        watcher = watcher->next;
-    }
-
-    /* If there is still some space available. */
-    if (fs->flags & FS_SPACE_AVAILABLE)
-    {
-        /* Initialize criteria. */
-        fs_param.flag = FS_BLOCK_WRITE;
-
-        /* Resume a task if any waiting on write for this file descriptor. */
-        fd_handle_criteria(fd, &fs_param, TASK_RESUME);
-    }
+    /* Resume a task if any waiting on write for this file descriptor. */
+    fd_handle_criteria(fd, &fs_param, TASK_RESUME);
 
 } /* fd_space_available */
 

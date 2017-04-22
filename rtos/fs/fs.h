@@ -54,19 +54,6 @@ typedef void *FD;
 #define FS_CREATE           0x04
 #define FS_APPEND           0x08
 
-/* Data watcher data. */
-typedef struct _fs_data_watcher FS_DATA_WATCHER;
-struct _fs_data_watcher
-{
-    /* List next. */
-    FS_DATA_WATCHER *next;
-
-    /* Watcher data. */
-    void        (*space_available) (void *, void *);
-    void        (*data_available) (void *, void *);
-    void        *data;
-};
-
 /* Connection watcher data. */
 typedef struct _fs_connection_watcher FS_CONNECTION_WATCHER;
 struct _fs_connection_watcher
@@ -103,13 +90,6 @@ struct _fs
 
     /* Condition data for a file system. */
     CONDITION   condition;
-
-    /* Data hook for this file descriptor. */
-    struct _fs_rx_watcher_list
-    {
-        FS_DATA_WATCHER   *head;
-        FS_DATA_WATCHER   *tail;
-    } data_watcher_list;
 
     /* Connection watcher hooks. */
     struct _fs_connection_watcher_list
@@ -211,7 +191,6 @@ int32_t fs_read(FD, uint8_t *, int32_t);
 int32_t fs_write(FD, uint8_t *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 
-void fs_data_watcher_set(FD, FS_DATA_WATCHER *);
 void fs_connection_watcher_set(FD, FS_CONNECTION_WATCHER *);
 void fs_connected(FD);
 void fs_disconnected(FD);
