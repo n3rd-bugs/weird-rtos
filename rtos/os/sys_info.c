@@ -107,7 +107,7 @@ void util_print_sys_info()
     stack_free = util_system_calc_free_stack();
 
     /* Print system stack information. */
-    printf("SYSTEM\t-\t%lu\t%lu\t%lu\t-\t-\r\n",
+    printf("SYSTEM\t%lu\t%lu\t%lu\t-\t-\t-\r\n",
            (uint32_t)SYS_STACK_SIZE,
            stack_free,
            SYS_STACK_SIZE - stack_free);
