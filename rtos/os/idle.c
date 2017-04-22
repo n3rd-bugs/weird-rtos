@@ -13,14 +13,16 @@
 #include <idle.h>
 #include <semaphore.h>
 
+#if (IDLE_WORK_MAX >  0)
 /* Idle work definition. */
 static IDLE_WORK idle_work[IDLE_WORK_MAX];
+static INTLCK idle_work_lock;
+#endif
 
 /* Definitions for idle task. */
 static void idle_task_entry(void *);
 static TASK idle_task;
 static uint8_t idle_task_stack[IDLE_TASK_STACK_SIZE];
-static INTLCK idle_work_lock;
 /*
  * idle_task_init
  * This will initialize the idle task.
@@ -31,8 +33,10 @@ void idle_task_init()
     task_create(&idle_task, "Idle", idle_task_stack, IDLE_TASK_STACK_SIZE, &idle_task_entry, (void *)0x00, TASK_NO_RETURN);
     scheduler_task_add(&idle_task, 255);
 
+#if (IDLE_WORK_MAX > 0)
     /* Initialize IDL work lock. */
     INTLCK_INIT(idle_work_lock);
+#endif
 
 } /* idle_task_init */
 
@@ -59,8 +63,9 @@ TASK *idle_task_get()
 int32_t idle_add_work(IDLE_DO *do_fun, void *priv_data)
 {
     int32_t status = IDLE_NO_SPACE;
-    uint32_t i;
+#if (IDLE_WORK_MAX >  0)
     uint8_t acquired = FALSE;
+    uint32_t i;
 
     /* While we could not acquire the lock. */
     while (acquired == FALSE)
@@ -96,6 +101,12 @@ int32_t idle_add_work(IDLE_DO *do_fun, void *priv_data)
 
     /* Release the lock. */
     INTLCK_RELEASE(idle_work_lock);
+#else
+
+    /* Remove compiler warnings. */
+    UNUSED_PARAM(do_fun);
+    UNUSED_PARAM(priv_data);
+#endif /* (IDLE_WORK_MAX >  0) */
 
     /* Return status to the caller. */
     return (status);
@@ -113,8 +124,9 @@ int32_t idle_add_work(IDLE_DO *do_fun, void *priv_data)
 int32_t idle_remove_work(IDLE_DO *do_fun, void *priv_data)
 {
     int32_t status = IDLE_NOT_FOUND;
-    uint32_t i;
+#if (IDLE_WORK_MAX >  0)
     uint8_t acquired = FALSE;
+    uint32_t i;
 
     /* While we could not acquire the lock. */
     while (acquired == FALSE)
@@ -149,6 +161,13 @@ int32_t idle_remove_work(IDLE_DO *do_fun, void *priv_data)
 
     /* Release the lock. */
     INTLCK_RELEASE(idle_work_lock);
+#else
+
+    /* Remove compiler warnings. */
+    UNUSED_PARAM(do_fun);
+    UNUSED_PARAM(priv_data);
+
+#endif /* (IDLE_WORK_MAX >  0) */
 
     /* Return status to the caller. */
     return (status);
@@ -163,10 +182,12 @@ int32_t idle_remove_work(IDLE_DO *do_fun, void *priv_data)
  */
 static void idle_task_entry(void *argv)
 {
+#if (IDLE_WORK_MAX >  0)
     IDLE_DO *do_fun;
     void *priv_data;
     uint32_t i;
     uint8_t acquired;
+#endif /* (IDLE_WORK_MAX >  0) */
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(argv);
@@ -174,6 +195,7 @@ static void idle_task_entry(void *argv)
     /* Indefinitely perform idle work. */
     for (;;)
     {
+#if (IDLE_WORK_MAX >  0)
         /* Traverse the idle work list. */
         for (i = 0; i < IDLE_WORK_MAX; i++)
         {
@@ -199,6 +221,7 @@ static void idle_task_entry(void *argv)
                 do_fun(priv_data);
             }
         }
+#endif /* (IDLE_WORK_MAX >  0) */
     }
 
 } /* idle_task_entry */
