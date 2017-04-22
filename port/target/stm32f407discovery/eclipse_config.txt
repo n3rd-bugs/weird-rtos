@@ -1,4 +1,6 @@
 C Includes:
+"${workspace_loc:/${ProjName}/3rdparty/fatfs}"
+"${workspace_loc:/${ProjName}/api/tftp}"
 "${workspace_loc:/${ProjName}/api/weird_view}"
 "${workspace_loc:/${ProjName}/rtos/os}"
 "${workspace_loc:/${ProjName}/rtos/utils}"
@@ -6,6 +8,9 @@ C Includes:
 "${workspace_loc:/${ProjName}/rtos/console}"
 "${workspace_loc:/${ProjName}/rtos/net}"
 "${workspace_loc:/${ProjName}/rtos/fs}"
+"${workspace_loc:/${ProjName}/rtos/io/adc}"
+"${workspace_loc:/${ProjName}/rtos/io/lcd}"
+"${workspace_loc:/${ProjName}/rtos/io/mmc}"
 "${workspace_loc:/${ProjName}/rtos/io/usb}"
 "${workspace_loc:/${ProjName}/rtos/io/spi}"
 "${workspace_loc:/${ProjName}/rtos/io/ppp}"
