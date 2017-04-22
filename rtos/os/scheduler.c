@@ -18,7 +18,7 @@
 
 /* A list of all the tasks in the system. */
 TASK_LIST sch_task_list;
-TASK_LIST sch_ready_task_list = {NULL, NULL};
+TASK_LIST sch_ready_task_list;
 
 /* Internal function prototypes. */
 static uint8_t scheduler_task_sort(void *, void *);
@@ -31,7 +31,8 @@ static uint8_t scheduler_task_sort(void *, void *);
 void scheduler_init()
 {
     /* Clear the schedule lists. */
-    memset(&sch_task_list, 0, sizeof(sch_task_list));
+    memset(&sch_task_list, 0, sizeof(TASK_LIST));
+    memset(&sch_ready_task_list, 0, sizeof(TASK_LIST));
 
     /* Initialize idle task. */
     idle_task_init();
