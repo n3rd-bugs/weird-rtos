@@ -20,7 +20,7 @@
 
 /* ENC28J60 device configuration. */
 #define ENC28J60_ATMEGA644P_RESET_DELAY     (100)
-#define ENC28J60_USE_SPI_BB                 (TRUE)
+#define ENC28J60_USE_SPI_BB                 (FALSE)
 
 /* Function prototypes. */
 void enc28j60_atmega644p_init();
