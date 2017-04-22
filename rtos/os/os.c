@@ -73,15 +73,8 @@ void task_yield()
         /* Schedule next task and enable interrupts. */
         CONTROL_TO_SYSTEM();
 
-            /* Re-enqueue/schedule this task in the scheduler. */
-            scheduler_task_yield(current_task, YIELD_MANUAL);
-
-            /* Schedule next task and enable interrupts. */
-            CONTROL_TO_SYSTEM();
-
-            /* Restore old interrupt level. */
-            SET_INTERRUPT_LEVEL(interrupt_level);
-        }
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
     }
 
     else
