@@ -26,7 +26,7 @@
 /* Definitions to communicate with other side. */
 #define DEVICE_NAME         "Smart Switch Over"
 
-#define ADC_SAMPLES         100
+#define ADC_SAMPLES         50
 
 /* Function prototypes. */
 int32_t weird_view_demo_task_stats(uint16_t, FS_BUFFER *);
@@ -68,15 +68,15 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 #define CONTROL_TASK_STACK_SIZE         128
 uint8_t control_stack[CONTROL_TASK_STACK_SIZE];
 TASK    control_cb;
-void control_entry(void *argv); //NOOPTIMIZATION;
+void control_entry(void *argv);
 
 /* ADC configuration and data. */
 #define ADC_PRESCALE            ((uint32_t)125)
 #define ADC_WAVE_FREQ           ((uint32_t)100)
-#define ADC_ATIMER_PRESCALE     ((uint32_t)64)
+#define ADC_ATIMER_PRESCALE     ((uint32_t)8)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
 
-#define ADC_CHANNEL_DELAY       (OS_TICKS_PER_SEC / 50)
+#define ADC_CHANNEL_DELAY       (OS_TICKS_PER_SEC / 20)
 
 static uint16_t adc_sample[ADC_SAMPLES];
 static CONDITION adc_condition;
@@ -352,8 +352,15 @@ void control_entry(void *argv)
         /* Check if button is pressed. */
         if (!(IN_AUTO_SEL & (1 << PIN_AUTO_SEL)))
         {
-            /* Toggle the auto start. */
-            auto_start ^= 0x01;
+            /* Wait for sometime. */
+            sleep_ms(DEBOUNCE_DELAY);
+
+            /* Is button is still pressed. */
+            if (!(IN_AUTO_SEL & (1 << PIN_AUTO_SEL)))
+            {
+                /* Toggle the auto start. */
+                auto_start ^= 0x01;
+            }
         }
 
         /* If we need to auto start the generator. */
