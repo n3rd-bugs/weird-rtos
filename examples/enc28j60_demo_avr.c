@@ -30,10 +30,12 @@ uint8_t udp_echo_task_stack[DEMO_STACK_SIZE];
 UDP_PORT udp_port;
 SOCKET_ADDRESS socket_address;
 
-void udp_echo_process(void *data)
+void udp_echo_process(void *data, int32_t status)
 {
     int32_t     received;
     FS_BUFFER   *rx_buffer;
+
+    UNUSED_PARAM(status);
 
     /* Receive some data from the UDP port. */
     received = fs_read(&udp_port, (uint8_t *)&rx_buffer, sizeof(FS_BUFFER));

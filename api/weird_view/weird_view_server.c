@@ -17,7 +17,7 @@
 #include <string.h>
 
 /* Internal function prototypes. */
-static void weird_view_server_process(void *);
+static void weird_view_server_process(void *, int32_t);
 static WEIRD_VIEW_PLUGIN *weird_view_get_plugin(WEIRD_VIEW_SERVER *, uint16_t);
 
 /*
@@ -95,9 +95,10 @@ static WEIRD_VIEW_PLUGIN *weird_view_get_plugin(WEIRD_VIEW_SERVER *weird_server,
 /*
  * weird_view_server_process
  * @data: Weird view server data for which a request is needed to be processed.
+ * @status: Resumption status.
  * This is callback function to process a request for a wired view server.
  */
-static void weird_view_server_process(void *data)
+static void weird_view_server_process(void *data, int32_t status)
 {
     WEIRD_VIEW_SERVER *weird_view = (WEIRD_VIEW_SERVER *)data;
     WEIRD_VIEW_PLUGIN *plugin;
@@ -106,6 +107,9 @@ static void weird_view_server_process(void *data)
     int32_t received;
     uint16_t id;
     uint8_t state;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(status);
 
     /* Receive incoming data from the UDP port. */
     received = fs_read(&weird_view->port, (uint8_t *)&rx_buffer, sizeof(FS_BUFFER));

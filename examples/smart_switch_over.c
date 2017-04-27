@@ -179,7 +179,7 @@ static uint8_t auto_start = FALSE;
 
 /* ADC APIs. */
 void adc_data_callback(uint32_t);
-void adc_sample_process(void *);
+void adc_sample_process(void *, int32_t);
 
 void generator_self()
 {
@@ -692,16 +692,18 @@ void adc_data_callback(uint32_t data)
 /*
  * adc_sample_process
  * @data: For now unused.
+ * @status: For now unused.
  * This is callback to process an ADC sample. This will be called in the
  * context of networking condition task.
  */
-void adc_sample_process(void *data)
+void adc_sample_process(void *data, int32_t status)
 {
     uint32_t i, v_int = 0;
     uint32_t interrupt_level;
 
     /* Remove some compiler warning. */
     UNUSED_PARAM(data);
+    UNUSED_PARAM(status);
 
 #if (ENABLE_WDT == TRUE)
     /* Reset watch dog timer. */

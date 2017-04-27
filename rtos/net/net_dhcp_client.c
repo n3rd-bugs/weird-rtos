@@ -33,8 +33,8 @@ DHCP_CLIENT_DATA dhcp_client;
 /* Internal function prototypes. */
 static void dhcp_change_state(DHCP_CLIENT_DEVICE *, uint8_t);
 static int32_t net_dhcp_client_build(FD *, FS_BUFFER *, DHCP_CLIENT_DEVICE *, uint8_t);
-static void net_dhcp_client_process(void *);
-static void dhcp_event(void *);
+static void net_dhcp_client_process(void *, int32_t);
+static void dhcp_event(void *, int32_t);
 
 /*
  * dhcp_change_state
@@ -197,15 +197,19 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
 /*
  * dhcp_event
  * @data: File descriptor associated with the DHCP client.
+ * @status: Resumption status.
  * This function will process an event for a DHCP client.
  */
-static void dhcp_event(void *data)
+static void dhcp_event(void *data, int32_t status)
 {
     FD fd = (FD)data, udp_fd = (FD)&dhcp_client;
     uint32_t system_tick = current_system_tick();
     NET_DEV *net_device = net_device_get_fd(fd);
     DHCP_CLIENT_DEVICE *client_data = net_device->ipv4.dhcp_client;
     FS_BUFFER *buffer;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(status);
 
     SYS_LOG_FUNTION_ENTRY(DHCPC);
 
@@ -348,9 +352,10 @@ static void dhcp_event(void *data)
 /*
  * net_dhcp_client_process
  * @data: DHCP client data.
+ * @resume_status: Resumption status.
  * This function will process data for DHCP client.
  */
-static void net_dhcp_client_process(void *data)
+static void net_dhcp_client_process(void *data, int32_t resume_status)
 {
     uint32_t xid, cli_addr, your_addr, serv_addr, dhcp_serv_addr, lease_time, network = 0;
     FS_BUFFER *buffer;
@@ -359,6 +364,9 @@ static void net_dhcp_client_process(void *data)
     DHCP_CLIENT_DEVICE *client_data;
     int32_t status = SUCCESS;
     uint8_t bootp_op, opt_type, opt_length, dhcp_type, hw_addr[ETH_ADDR_LEN];
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(resume_status);
 
     SYS_LOG_FUNTION_ENTRY(DHCPC);
 

@@ -170,7 +170,7 @@ void ppp_process_modem_chat(void *, PPP *);
 void ppp_configuration_process(PPP *, FS_BUFFER *, PPP_PROTO *);
 void ppp_process_frame(void *, PPP *);
 int32_t net_ppp_transmit(FS_BUFFER *, uint8_t);
-void net_ppp_receive(void *);
+void net_ppp_receive(void *, int32_t);
 int32_t ppp_transmit_buffer_instance(PPP *, FS_BUFFER *, uint16_t, uint8_t);
 
 /* Include PPP supported configuration protocol definitions. */

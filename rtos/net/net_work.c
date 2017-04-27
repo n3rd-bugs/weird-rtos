@@ -21,7 +21,7 @@
 #include <sll.h>
 
 /* Internal function prototypes. */
-static void net_work_condition_process(void *);
+static void net_work_condition_process(void *, int32_t);
 static void net_work_lock(void *);
 static void net_work_unlock(void *);
 
@@ -190,14 +190,18 @@ static void net_work_unlock(void *fd)
 /*
  * net_work_condition_process
  * @data: Work queue needed to be proceed.
+ * @resume_status: Resumption status.
  * This function is a callback function to process any queued work.
  */
-static void net_work_condition_process(void *data)
+static void net_work_condition_process(void *data, int32_t resume_status)
 {
     int32_t status;
     RESUME resume;
     WORK_QUEUE *work_queue = (WORK_QUEUE *)data;
     WORK *work;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(resume_status);
 
     SYS_LOG_FUNTION_ENTRY(NET_WORK);
 

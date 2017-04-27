@@ -114,7 +114,7 @@ static uint32_t vsamples[NUM_ADC_CHANNELS];
 
 /* ADC APIs. */
 void adc_data_callback(uint32_t);
-void adc_sample_process(void *);
+void adc_sample_process(void *, int32_t);
 
 
 #ifdef HEART_BEAT
@@ -367,15 +367,17 @@ void adc_data_callback(uint32_t data)
 /*
  * adc_sample_process
  * @data: For now unused.
+ * @status: For now unused.
  * This is callback to process an ADC sample. This will be called in the
  * context of networking condition task.
  */
-void adc_sample_process(void *data)
+void adc_sample_process(void *data, int32_t status)
 {
     uint32_t i, j, v_int = 0, num_samples;
 
     /* Remove some compiler warning. */
     UNUSED_PARAM(data);
+    UNUSED_PARAM(status);
 
     /* Were we waiting for ADC channel to stabilize. */
     if (adc_suspend.timeout != MAX_WAIT)

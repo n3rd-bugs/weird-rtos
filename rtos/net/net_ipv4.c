@@ -36,7 +36,7 @@
 /* Internal function prototypes. */
 #ifdef IPV4_ENABLE_FRAG
 static void ipv4_fragment_update_timer(NET_DEV *);
-static void ipv4_fragment_expired(void *);
+static void ipv4_fragment_expired(void *, int32_t);
 static uint8_t ipv4_frag_sort(void *, void *);
 static int32_t ipv4_frag_add(FS_BUFFER *, uint16_t);
 static int32_t ipv4_frag_merge(IPV4_FRAGMENT *, FS_BUFFER *);
@@ -713,13 +713,17 @@ static void ipv4_fragment_update_timer(NET_DEV *net_device)
  * ipv4_fragment_expired
  * @data: Networking device for which IPv4 fragments are needed to be
  * processed.
+ * @status: Resumption status.
  * This function will called when we timeout receiving data for a fragment.
  */
-static void ipv4_fragment_expired(void *data)
+static void ipv4_fragment_expired(void *data, int32_t status)
 {
     NET_DEV *net_device = (NET_DEV *)data;
     uint32_t n, clock = current_system_tick();
     FD buffer_fd;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(status);
 
     SYS_LOG_FUNTION_ENTRY(IPV4);
 

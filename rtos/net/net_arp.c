@@ -30,7 +30,7 @@ static void arp_free_entry(ARP_ENTRY *);
 static ARP_ENTRY *arp_find_entry(FD, uint32_t);
 static void arp_update_timers(FD);
 static int32_t arp_route(FD, ARP_ENTRY *);
-static void arp_event(void *);
+static void arp_event(void *, int32_t);
 
 /*
  * arp_process_prologue_ipv4
@@ -425,14 +425,18 @@ static int32_t arp_route(FD fd, ARP_ENTRY *entry)
 /*
  * arp_event
  * @data: Ethernet device file descriptor.
+ * @resume_status: Resumption status.
  * This function will process an ARP event.
  */
-static void arp_event(void *data)
+static void arp_event(void *data, int32_t resume_status)
 {
     FD fd = (FD)data;
     ARP_DATA *arp_data = arp_get_data(fd);
     uint32_t i, clock = current_system_tick();
     int32_t status;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(resume_status);
 
     SYS_LOG_FUNTION_ENTRY(ARP);
 

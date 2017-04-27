@@ -668,11 +668,15 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
 /*
  * net_ppp_receive
  * @data: File descriptor on which data was received.
+ * @status: Resumption status.
  * Function that will be called to receive packets on PPP device.
  */
-void net_ppp_receive(void *data)
+void net_ppp_receive(void *data, int32_t status)
 {
     PPP *ppp = ppp_get_instance_fd((FD)data);
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(status);
 
     /* Get lock for the PPP. */
     OS_ASSERT(fd_get_lock(ppp->fd) != SUCCESS);

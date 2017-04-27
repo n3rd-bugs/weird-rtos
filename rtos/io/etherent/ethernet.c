@@ -22,7 +22,7 @@
 
 /* Internal function prototypes. */
 static int32_t ethernet_buffer_transmit(FS_BUFFER *, uint8_t);
-static void ethernet_process(void *);
+static void ethernet_process(void *, int32_t);
 static int32_t ethernet_lock(void *, uint32_t);
 static void ethernet_unlock(void *);
 
@@ -240,15 +240,19 @@ static void ethernet_unlock(void *fd)
 /*
  * ethernet_process
  * @data: Ethernet device for which an event is needed to be processed.
+ * @resume_status: Resumption status.
  * This function will process an ethernet event, this responsible for
  * initializing a device and any other device specific event.
  */
-static void ethernet_process(void *data)
+static void ethernet_process(void *data, int32_t resume_status)
 {
     ETH_DEVICE *device = (ETH_DEVICE *)data;
     FD fd = (FD)data;
     FS_BUFFER *buffer;
     int32_t status = SUCCESS;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(resume_status);
 
     /* Acquire lock for this device. */
     OS_ASSERT(fd_get_lock((FD)device) != SUCCESS);

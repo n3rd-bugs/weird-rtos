@@ -18,7 +18,7 @@
 #include <string.h>
 
 /* Internal function definition. */
-static void tftp_server_process(void *);
+static void tftp_server_process(void *, int32_t);
 
 /*
  * tftp_server_init
@@ -61,9 +61,10 @@ void tftp_server_init(TFTP_SERVER *tftp_server, SOCKET_ADDRESS *socket_address, 
 /*
  * tftp_server_process
  * @data: TFTP server data for which a request is needed to be processed.
+ * @resume_status: Resumption status.
  * This is callback function to process a request for a TFTP server.
  */
-static void tftp_server_process(void *data)
+static void tftp_server_process(void *data, int32_t resume_status)
 {
     TFTP_SERVER *tftp_server = (TFTP_SERVER *)data;
     FS_BUFFER *rx_buffer;
@@ -72,6 +73,9 @@ static void tftp_server_process(void *data)
     uint16_t opcode, block;
     uint8_t last_block = FALSE, data_buffer[TFTP_BUFFER_SIZE];
     FD fd;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(resume_status);
 
     SYS_LOG_FUNTION_ENTRY(TFTPS);
 
