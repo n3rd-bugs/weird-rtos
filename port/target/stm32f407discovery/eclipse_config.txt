@@ -11,7 +11,6 @@ C Includes:
 "${workspace_loc:/${ProjName}/rtos/io/adc}"
 "${workspace_loc:/${ProjName}/rtos/io/lcd}"
 "${workspace_loc:/${ProjName}/rtos/io/mmc}"
-"${workspace_loc:/${ProjName}/rtos/io/usb}"
 "${workspace_loc:/${ProjName}/rtos/io/spi}"
 "${workspace_loc:/${ProjName}/rtos/io/ppp}"
 "${workspace_loc:/${ProjName}/rtos/io/etherent}"
@@ -24,7 +23,6 @@ C Includes:
 "${workspace_loc:/${ProjName}/port/target/stm32f407discovery/board}"
 "${workspace_loc:/${ProjName}/port/target/stm32f407discovery/generic}"
 "${workspace_loc:/${ProjName}/port/target/stm32f407discovery/io/serial}"
-"${workspace_loc:/${ProjName}/port/target/stm32f407discovery/io/usb}"
 "${workspace_loc:/${ProjName}/port/target/stm32f407discovery/io/spi}"
 
 Extra Linker Flags:
@@ -32,6 +30,3 @@ Extra Linker Flags:
 
 Linker Script:
 "${workspace_loc:/${ProjName}/port/target/stm32f407discovery/STM32F407.ld}"
-
-Exclude:
-"${workspace_loc:/${ProjName}/port/target/stm32f407discovery/io/usb/excluded}"

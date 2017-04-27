@@ -116,9 +116,6 @@ NAKED_ISR_FUN isr_pendsv_handle(void) NOOPTIMIZATION;
 ISR_FUN isr_sysclock_handle(void);
 ISR_FUN isr_clock64_tick(void);
 
-#ifdef CONFIG_USB
-ISR_FUN usb_otg_interrupt(void);
-#endif
 #ifdef CONFIG_ETHERNET
 ISR_FUN exti2_interrupt(void);
 #endif

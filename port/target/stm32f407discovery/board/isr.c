@@ -106,11 +106,7 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x40  CAN2 RX0              */
         (isr)&cpu_interrupt,        /*  0x41  CAN2 RX1              */
         (isr)&cpu_interrupt,        /*  0x42  CAN2 SCE              */
-#ifdef CONFIG_USB
-        (isr)&usb_otg_interrupt,    /*  0x43  USB OTG FS            */
-#else
         (isr)&cpu_interrupt,        /*  0x43  USB OTG FS            */
-#endif
         (isr)&cpu_interrupt,        /*  0x44  DMA2 Stream 5         */
         (isr)&cpu_interrupt,        /*  0x45  DMA2 Stream 6         */
         (isr)&cpu_interrupt,        /*  0x46  DMA2 Stream 7         */

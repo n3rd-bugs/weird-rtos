@@ -15,7 +15,6 @@
 #include <mem.h>
 #include <fs.h>
 #include <net.h>
-#include <usb.h>
 #include <ppp.h>
 #include <net_udp.h>
 
@@ -90,9 +89,6 @@ int main(void)
 
     /* Initialize networking stack. */
     net_init();
-
-    /* Initialize USB stack. */
-    usb_init();
 
     /* Create a task for UDP echo demo. */
     udp_echo_task_cb = (TASK *)mem_static_alloc(sizeof(TASK) + 4096);
