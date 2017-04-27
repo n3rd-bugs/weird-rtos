@@ -225,8 +225,17 @@ static void net_work_condition_process(void *data, int32_t resume_status)
             /* Clear the resume structure. */
             memset(&resume, 0, sizeof(RESUME));
 
-            /* Return the status of the work to the caller. */
-            resume.status = status;
+            /* If work competed successfully. */
+            if (status == SUCCESS)
+            {
+                /* Resume the task normally. */
+                resume.status = TASK_RESUME;
+            }
+            else
+            {
+                /* Return the status of the work to the caller. */
+                resume.status = status;
+            }
 
             /* Lock the scheduler. */
             scheduler_lock();
