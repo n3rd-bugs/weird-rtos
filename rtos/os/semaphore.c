@@ -117,12 +117,17 @@ void semaphore_set_interrupt_data(SEMAPHORE *semaphore, void *data, SEM_INT_LOCK
 void semaphore_destroy(SEMAPHORE *semaphore)
 {
     uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+    RESUME resume;
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
 
-    /* No one should be waiting on this lock. */
-    OS_ASSERT(semaphore->condition.suspend_list.head != NULL);
+    /* Resume any tasks waiting on this semaphore. */
+    memset(&resume, 0, sizeof(RESUME));
+    resume.status = SEMAPHORE_DELETED;
+
+    /* Resume tasks waiting on this semaphore. */
+    resume_condition(&semaphore->condition, &resume, TRUE);
 
     /* Clear the semaphore memory. */
     memset(semaphore, 0,  sizeof(SEMAPHORE));
