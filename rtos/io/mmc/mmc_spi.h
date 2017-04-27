@@ -108,6 +108,9 @@ typedef struct _mmc_spi
     /* Semaphore to protect access to this MMC device. */
     SEMAPHORE   lock;
 
+    /* Structure padding. */
+    uint32_t    pad32[1];
+
     /* Current offset in the flash. */
     uint64_t    offset;
 
@@ -122,7 +125,7 @@ typedef struct _mmc_spi
     uint16_t    flags;
 
     /* Structure padding. */
-    uint8_t     pad[2];
+    uint8_t     pad8[2];
 } MMC_SPI;
 
 /* Function prototypes. */
