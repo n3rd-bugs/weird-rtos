@@ -27,7 +27,6 @@
 //#define CONFIG_NET
 
 /* Device IO. */
-//#define CONFIG_USB
 //#define CONFIG_SPI
 //#define CONFIG_MMC
 //#define CONFIG_ADC
