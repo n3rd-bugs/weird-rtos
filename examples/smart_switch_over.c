@@ -65,7 +65,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 };
 
 /* Control task definitions. */
-#define CONTROL_TASK_STACK_SIZE         128
+#define CONTROL_TASK_STACK_SIZE         192
 uint8_t control_stack[CONTROL_TASK_STACK_SIZE];
 TASK    control_cb;
 void control_entry(void *argv);
@@ -76,7 +76,7 @@ void control_entry(void *argv);
 #define ADC_ATIMER_PRESCALE     ((uint32_t)8)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
 
-#define ADC_CHANNEL_DELAY       (OS_TICKS_PER_SEC / 20)
+#define ADC_CHANNEL_DELAY       (OS_TICKS_PER_SEC / 10)
 
 static uint16_t adc_sample[ADC_SAMPLES];
 static CONDITION adc_condition;
@@ -88,8 +88,10 @@ static SUSPEND adc_suspend;
 
 #define VOLTAGE_THRESHOLD       (15000)
 #define POWER_ON_DELAY          (500)
-#define STATE_DELAY             (250)
+#define LED_TOGGLE_DELAY        (250)
+#define STATE_DELAY             (50)
 #define DEBOUNCE_DELAY          (20)
+#define KEY_GEN_OFF_DELAY       (750)
 #define GENERATOR_SELF_DELAY    (1500)
 #define GENERATOR_SELF_DEL_INC  (750)
 #define GENERATOR_ON_DELAY      (10000)
@@ -286,6 +288,40 @@ void generator_self()
 } /* generator_self */
 
 /*
+ * toggle_auto_start
+ * @auto_start: Auto start state.
+ * @force_off: If we need to forcefully stop the auto start.
+ * This function will toggle the auto start state.
+ */
+void toggle_auto_start(uint8_t *auto_start, uint8_t force_off)
+{
+    /* If we need to forcefully stop the auto start. */
+    if (force_off == TRUE)
+    {
+        /* Disable auto start. */
+        *auto_start = FALSE;
+    }
+    else
+    {
+        /* Toggle the auto start. */
+        (*auto_start) ^= 0x01;
+    }
+
+    /* If we need to auto start the generator. */
+    if (*auto_start == TRUE)
+    {
+        /* We will be auto starting the generator. */
+        PORT_SELFON_IND |= (1 << PIN_SELFON_IND);
+    }
+    else
+    {
+        /* Generator will not be auto started. */
+        PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
+    }
+
+} /* toggle_auto_start */
+
+/*
  * control_entry
  * @argv: Task argument.
  * This is main entry function for smart switch control task.
@@ -293,6 +329,7 @@ void generator_self()
 void control_entry(void *argv)
 {
     uint32_t interrupt_level, switch_count = 0;
+    uint32_t gen_off_count, switch_over_count = 0;
 #if ENABLE_LOG
     uint32_t gen_volt_tmp, main_volt_tmp;
 #endif
@@ -300,6 +337,7 @@ void control_entry(void *argv)
     uint8_t generator_selfed = FALSE;
     uint8_t generator_switched_on = FALSE;
     uint8_t supply_gen = FALSE;
+    uint8_t do_gen_off = FALSE;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(argv);
@@ -359,8 +397,54 @@ void control_entry(void *argv)
             if (!(IN_AUTO_SEL & (1 << PIN_AUTO_SEL)))
             {
                 /* Toggle the auto start. */
-                auto_start ^= 0x01;
+                toggle_auto_start(&auto_start, FALSE);
             }
+        }
+
+        /* Reset the generator off count. */
+        gen_off_count = 0;
+
+        /* Wait for key to be released. */
+        while (!(IN_AUTO_SEL & (1 << PIN_AUTO_SEL)))
+        {
+            /* Increment the generator off count. */
+            gen_off_count ++;
+
+            /* See if user wants to turn off the generator. */
+            if (gen_off_count > (KEY_GEN_OFF_DELAY / DEBOUNCE_DELAY))
+            {
+                /* Toggle back the auto start. */
+                toggle_auto_start(&auto_start, TRUE);
+
+                /* Lets turn off the generator. */
+                do_gen_off = TRUE;
+
+                /* Reset switch count. */
+                gen_off_count = 0;
+
+                /* Again wait for key to be released. */
+                while (!(IN_AUTO_SEL & (1 << PIN_AUTO_SEL)))
+                {
+                    if (gen_off_count > (LED_TOGGLE_DELAY / DEBOUNCE_DELAY))
+                    {
+                        gen_off_count = 0;
+
+                        /* Toggle LED to show generator will be turned off. */
+                        PORT_SELFON_IND ^= (1 << PIN_SELFON_IND);
+                    }
+                    else
+                    {
+                        gen_off_count ++;
+                    }
+
+                    sleep_ms(DEBOUNCE_DELAY);
+                }
+
+                break;
+            }
+
+            /* Sleep for de-bounce of the key. */
+            sleep_ms(DEBOUNCE_DELAY);
         }
 
         /* If we need to auto start the generator. */
@@ -373,12 +457,6 @@ void control_entry(void *argv)
         {
             /* Generator will not be auto started. */
             PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
-        }
-
-        /* Wait for key to be released. */
-        while (!(IN_AUTO_SEL & (1 << PIN_AUTO_SEL)))
-        {
-            sleep_ms(DEBOUNCE_DELAY);
         }
 
         /* Get system interrupt level. */
@@ -435,28 +513,40 @@ void control_entry(void *argv)
             /* If we were on generator. */
             if (supply_gen == TRUE)
             {
-                /* Get system interrupt level. */
-                interrupt_level = GET_INTERRUPT_LEVEL();
+                /* Increment switch over count. */
+                switch_over_count ++;
 
-                /* Disable global interrupts. */
-                DISABLE_INTERRUPTS();
+                /* If we have waited long enough to turn off the switch over. */
+                if (switch_over_count >= (SWITCH_DELAY / STATE_DELAY))
+                {
+                    /* Get system interrupt level. */
+                    interrupt_level = GET_INTERRUPT_LEVEL();
 
-                /* Toggle the switch over. */
+                    /* Disable global interrupts. */
+                    DISABLE_INTERRUPTS();
+
+                    /* Toggle the switch over. */
 #if ENABLE_LOG
-                printf("SW->OFF\r\n");
+                    printf("SW->OFF\r\n");
 #endif
-                PORT_SWITCH_OVER &= ((uint8_t)~(1 << PIN_SWITCH_OVER));
+                    PORT_SWITCH_OVER &= ((uint8_t)~(1 << PIN_SWITCH_OVER));
 
-                /* Supply is no longer on the generator. */
-                supply_gen = FALSE;
+                    /* Supply is no longer on the generator. */
+                    supply_gen = FALSE;
 
-                /* Restore old interrupt level. */
-                SET_INTERRUPT_LEVEL(interrupt_level);
+                    /* Restore old interrupt level. */
+                    SET_INTERRUPT_LEVEL(interrupt_level);
+                }
             }
         }
+        else
+        {
+            /* Reset the switch over count. */
+            switch_over_count = 0;
+        }
 
-        /* Check if main is on. */
-        if (main_on == TRUE)
+        /* Check if main is on or we need to turn off the generator. */
+        if ((main_on == TRUE) || (do_gen_off == TRUE))
         {
             /* If generator is still on. */
             if ((generator_on == TRUE) || (generator_switched_on == TRUE))
@@ -464,8 +554,9 @@ void control_entry(void *argv)
                 /* We have detected an update in state. */
                 switch_count ++;
 
-                /* If we have waited long enough to process this state. */
-                if (switch_count > (SWITCH_DELAY / STATE_DELAY))
+                /* If we have waited long enough to process this state or we
+                 * need to turn off the generator forcefully. */
+                if ((switch_count > (SWITCH_DELAY / STATE_DELAY)) || (do_gen_off == TRUE))
                 {
                     /* Turn off the generator. */
 #if ENABLE_LOG
@@ -486,6 +577,9 @@ void control_entry(void *argv)
                 /* Reset the switch count. */
                 switch_count = 0;
             }
+
+            /* Clear the generator off flag. */
+            do_gen_off = FALSE;
         }
 
         else
