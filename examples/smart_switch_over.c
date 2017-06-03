@@ -1,5 +1,5 @@
 /*
- * smart_switch_over.c
+ * smart_change_over.c
  *
  * Copyright (c) 2016 Usama Masood <mirzaon@gmail.com>
  *
@@ -24,7 +24,7 @@
 #include <lcd_an.h>
 
 /* Definitions to communicate with other side. */
-#define DEVICE_NAME         "Smart Switch Over"
+#define DEVICE_NAME         "Smart Change Over"
 
 #define ADC_SAMPLES         50
 
@@ -131,9 +131,9 @@ static SUSPEND adc_suspend;
 #define PORT_GENSELF_ON         PORTB
 #define PIN_GENSELF_ON          2
 
-#define DDR_SWITCH_OVER         DDRD
-#define PORT_SWITCH_OVER        PORTD
-#define PIN_SWITCH_OVER         3
+#define DDR_CHANGE_OVER         DDRD
+#define PORT_CHANGE_OVER        PORTD
+#define PIN_CHANGE_OVER         3
 
 #define DDR_AUTO_SEL            DDRA
 #define PORT_AUTO_SEL           PORTA
@@ -164,9 +164,9 @@ static SUSPEND adc_suspend;
 #define PORT_GENSELF_ON         PORTB
 #define PIN_GENSELF_ON          2
 
-#define DDR_SWITCH_OVER         DDRD
-#define PORT_SWITCH_OVER        PORTD
-#define PIN_SWITCH_OVER         3
+#define DDR_CHANGE_OVER         DDRD
+#define PORT_CHANGE_OVER        PORTD
+#define PIN_CHANGE_OVER         3
 
 #define DDR_AUTO_SEL            DDRA
 #define PORT_AUTO_SEL           PORTA
@@ -329,7 +329,7 @@ void toggle_auto_start(uint8_t *auto_start, uint8_t force_off)
 void control_entry(void *argv)
 {
     uint32_t interrupt_level, switch_count = 0;
-    uint32_t gen_off_count, switch_over_count = 0;
+    uint32_t gen_off_count, change_over_count = 0;
 #if ENABLE_LOG
     uint32_t gen_volt_tmp, main_volt_tmp;
 #endif
@@ -362,8 +362,8 @@ void control_entry(void *argv)
     PORT_GENPWR_ON &= (uint8_t)(~(1 << PIN_GENPWR_ON));
     PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
 
-    /* Turn off the switch over. */
-    PORT_SWITCH_OVER &= (uint8_t)(~(1 << PIN_SWITCH_OVER));
+    /* Turn off the change over. */
+    PORT_CHANGE_OVER &= (uint8_t)(~(1 << PIN_CHANGE_OVER));
 
     /* TURN on the connected LED. */
     PORT_CONNECTED |= (1 << PIN_CONNECTED);
@@ -513,11 +513,11 @@ void control_entry(void *argv)
             /* If we were on generator. */
             if (supply_gen == TRUE)
             {
-                /* Increment switch over count. */
-                switch_over_count ++;
+                /* Increment change over count. */
+                change_over_count ++;
 
                 /* If we have waited long enough to turn off the switch over. */
-                if (switch_over_count >= (SWITCH_DELAY / STATE_DELAY))
+                if (change_over_count >= (SWITCH_DELAY / STATE_DELAY))
                 {
                     /* Get system interrupt level. */
                     interrupt_level = GET_INTERRUPT_LEVEL();
@@ -525,11 +525,11 @@ void control_entry(void *argv)
                     /* Disable global interrupts. */
                     DISABLE_INTERRUPTS();
 
-                    /* Toggle the switch over. */
+                    /* Toggle the change over. */
 #if ENABLE_LOG
                     printf("SW->OFF\r\n");
 #endif
-                    PORT_SWITCH_OVER &= ((uint8_t)~(1 << PIN_SWITCH_OVER));
+                    PORT_CHANGE_OVER &= ((uint8_t)~(1 << PIN_CHANGE_OVER));
 
                     /* Supply is no longer on the generator. */
                     supply_gen = FALSE;
@@ -541,8 +541,8 @@ void control_entry(void *argv)
         }
         else
         {
-            /* Reset the switch over count. */
-            switch_over_count = 0;
+            /* Reset the change over count. */
+            change_over_count = 0;
         }
 
         /* Check if main is on or we need to turn off the generator. */
@@ -568,13 +568,13 @@ void control_entry(void *argv)
                     generator_switched_on = FALSE;
                     generator_selfed = FALSE;
 
-                    /* Reset the switch count. */
+                    /* Reset the change count. */
                     switch_count = 0;
                 }
             }
             else
             {
-                /* Reset the switch count. */
+                /* Reset the change count. */
                 switch_count = 0;
             }
 
@@ -602,13 +602,13 @@ void control_entry(void *argv)
                     /* Generator is turned on. */
                     generator_switched_on = TRUE;
 
-                    /* Reset the switch count. */
+                    /* Reset the change count. */
                     switch_count = 0;
                 }
             }
             else
             {
-                /* Reset the switch count. */
+                /* Reset the change count. */
                 switch_count = 0;
             }
 
@@ -625,11 +625,11 @@ void control_entry(void *argv)
                 /* Turn off the self LED. */
                 PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
 
-                /* Turn off the switch over. */
+                /* Turn off the change over. */
 #if ENABLE_LOG
                 printf("SW->OFF\r\n");
 #endif
-                PORT_SWITCH_OVER &= ((uint8_t)~(1 << PIN_SWITCH_OVER));
+                PORT_CHANGE_OVER &= ((uint8_t)~(1 << PIN_CHANGE_OVER));
                 supply_gen = FALSE;
 
                 /* Restore old interrupt level. */
@@ -655,7 +655,7 @@ void control_entry(void *argv)
 #if ENABLE_LOG
                 printf("SW->ON\r\n");
 #endif
-                PORT_SWITCH_OVER |= (1 << PIN_SWITCH_OVER);
+                PORT_CHANGE_OVER |= (1 << PIN_CHANGE_OVER);
 
                 /* Supply is no longer on the generator. */
                 supply_gen = TRUE;
@@ -913,9 +913,9 @@ int main(void)
     DDR_GENSELF_ON |= (1 << PIN_GENSELF_ON);
     PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
 
-    /* Configure and turn off the switch over. */
-    DDR_SWITCH_OVER |= (1 << PIN_SWITCH_OVER);
-    PORT_SWITCH_OVER &= (uint8_t)(~(1 << PIN_SWITCH_OVER));
+    /* Configure and turn off the change over. */
+    DDR_CHANGE_OVER |= (1 << PIN_CHANGE_OVER);
+    PORT_CHANGE_OVER &= (uint8_t)(~(1 << PIN_CHANGE_OVER));
 
     /* Configure connected LED. */
     DDR_CONNECTED |= (1 << PIN_CONNECTED);
