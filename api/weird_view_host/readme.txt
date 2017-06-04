@@ -1,0 +1,1 @@
+pyuic5 [input file name].ui > [output file name].py
