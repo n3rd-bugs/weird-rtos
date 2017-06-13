@@ -15,7 +15,6 @@
 #include <mem.h>
 
 #ifdef MEMGR_STATIC
-#include <os_target.h>
 #include <string.h>
 
 /*

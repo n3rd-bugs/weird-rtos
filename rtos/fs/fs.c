@@ -22,6 +22,7 @@
 #include <fs.h>
 #include <console.h>
 #include <pipe.h>
+#include <fs_target.h>
 
 /* Global variables. */
 static FS_DATA file_data;

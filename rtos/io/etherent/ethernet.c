@@ -20,6 +20,7 @@
 #include <net_buffer.h>
 #include <header.h>
 #include <idle.h>
+#include <ethernet_target.h>
 
 /* Internal function prototypes. */
 static int32_t ethernet_buffer_transmit(FS_BUFFER *, uint8_t);

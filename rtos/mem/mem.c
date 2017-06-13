@@ -15,7 +15,6 @@
 
 #ifdef CONFIG_MEMGR
 #include <mem.h>
-#include <os_target.h>
 
 #ifdef MEMGR_STATIC
 MEM_STATIC mem_static_pool;

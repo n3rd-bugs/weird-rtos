@@ -70,8 +70,6 @@ typedef int32_t ETH_TRANSMIT (void *, FS_BUFFER *);
 typedef void ETH_WDT (void *);
 typedef void ETH_INT_POLL (void *);
 
-/* Include ethernet target configurations. */
-#include <ethernet_target.h>
 #ifdef NET_ARP
 #include <net_arp.h>
 #endif
