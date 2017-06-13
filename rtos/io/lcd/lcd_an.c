@@ -15,11 +15,21 @@
 
 #ifdef CONFIG_LCD_AN
 #include <lcd_an.h>
+#include <lcd_an_target.h>
 
 #ifdef LCD_AN_DEBUG
 /* Alphanumeric LCD debug file descriptor. */
 FD lcd_an_fd;
 #endif
+
+/* Internal function prototypes. */
+static int32_t lcd_an_wait_8bit(LCD_AN *);
+static void lcd_an_send_nibble(LCD_AN *, uint8_t);
+static int32_t lcd_an_write_register(LCD_AN *, uint8_t, uint8_t);
+static int32_t lcd_an_read_register(LCD_AN *, uint8_t, uint8_t *);
+static int32_t lcd_an_create_custom_char(LCD_AN *, uint8_t, uint8_t *);
+static int32_t lcd_an_write(void *, uint8_t *, int32_t);
+static int32_t lcd_an_ioctl(void *, uint32_t, void *);
 
 /*
  * lcd_an_init
@@ -156,7 +166,7 @@ void lcd_an_register(LCD_AN *lcd)
  *  LCD_TIME_OUT will be returned if we timed out waiting for LCD.
  * This function sends a nibble to the LCD.
  */
-int32_t lcd_an_wait_8bit(LCD_AN *lcd)
+static int32_t lcd_an_wait_8bit(LCD_AN *lcd)
 {
 #if (LCD_AN_8_BIT_DELAY == 0)
     uint32_t sys_time;
@@ -208,7 +218,7 @@ int32_t lcd_an_wait_8bit(LCD_AN *lcd)
  * @cmd: Nibble needed to be sent.
  * This function sends a nibble to the LCD.
  */
-void lcd_an_send_nibble(LCD_AN *lcd, uint8_t nibble)
+static void lcd_an_send_nibble(LCD_AN *lcd, uint8_t nibble)
 {
     /* Put nibble value. */
     lcd->put_data(lcd, nibble);
@@ -232,7 +242,7 @@ void lcd_an_send_nibble(LCD_AN *lcd, uint8_t nibble)
  *  LCD_AN_TIME_OUT will be returned if timed out waiting for LCD.
  * This function write a register to the LCD.
  */
-int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
+static int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
 {
     uint8_t cmd_byte;
     uint32_t sys_time = current_system_tick();
@@ -300,7 +310,7 @@ int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
  * @return: Always return success.
  * This function send a command to the LCD.
  */
-int32_t lcd_an_read_register(LCD_AN *lcd, uint8_t rs, uint8_t *byte)
+static int32_t lcd_an_read_register(LCD_AN *lcd, uint8_t rs, uint8_t *byte)
 {
     uint8_t ret_byte;
 
@@ -358,7 +368,7 @@ int32_t lcd_an_read_register(LCD_AN *lcd, uint8_t rs, uint8_t *byte)
  * @bitmap: Character bitmap array.
  * This function creates/overwrites an custom character on the given LCD.
  */
-int32_t lcd_an_create_custom_char(LCD_AN *lcd, uint8_t index, uint8_t *bitmap)
+static int32_t lcd_an_create_custom_char(LCD_AN *lcd, uint8_t index, uint8_t *bitmap)
 {
     int32_t status;
     uint8_t i;
@@ -399,7 +409,7 @@ int32_t lcd_an_create_custom_char(LCD_AN *lcd, uint8_t index, uint8_t *bitmap)
  *  LCD_AN_COLUMN_FULL will be returned if there is more column left on the LCD.
  * This function prints a string on the LCD.
  */
-int32_t lcd_an_write(void *priv_data, uint8_t *buf, int32_t nbytes)
+static int32_t lcd_an_write(void *priv_data, uint8_t *buf, int32_t nbytes)
 {
     LCD_AN *lcd = (LCD_AN *)priv_data;
     int32_t to_print = nbytes;
@@ -559,7 +569,7 @@ int32_t lcd_an_write(void *priv_data, uint8_t *buf, int32_t nbytes)
  *  FS_INVALID_COMMAND will be returned if an unknown command was requested.
  * This function executes a special command on the LCD.
  */
-int32_t lcd_an_ioctl(void *priv_data, uint32_t cmd, void *param)
+static int32_t lcd_an_ioctl(void *priv_data, uint32_t cmd, void *param)
 {
     LCD_AN *lcd = (LCD_AN *)priv_data;
     LCD_AN_IOCTL_DATA *data;

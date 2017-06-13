@@ -98,20 +98,9 @@ typedef struct _lcd_an_ioctl_data
     void        *param;
 } LCD_AN_IOCTL_DATA;
 
-/* Include LCD target configuration. */
-#include <lcd_an_target.h>
-
 /* Function prototypes. */
 void lcd_an_init();
 void lcd_an_register(LCD_AN *);
-int32_t lcd_an_wait_8bit(LCD_AN *);
-void lcd_an_send_nibble(LCD_AN *, uint8_t);
-int32_t lcd_an_write_register(LCD_AN *, uint8_t, uint8_t);
-int32_t lcd_an_read_register(LCD_AN *, uint8_t, uint8_t *);
-int32_t lcd_an_is_busy(LCD_AN *);
-int32_t lcd_an_create_custom_char(LCD_AN *, uint8_t, uint8_t *);
-int32_t lcd_an_write(void *, uint8_t *, int32_t);
-int32_t lcd_an_ioctl(void *, uint32_t, void *);
 
 #endif /* CONFIG_LCD_AN */
 
