@@ -11,7 +11,6 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-
 #ifndef _ETHERNET_TARGET_H_
 #define _ETHERNET_TARGET_H_
 
@@ -24,5 +23,4 @@
 #define ETHERENET_TGT_INIT  ethernet_stm32f407_init
 
 #endif /* CONFIG_ETHERNET */
-
 #endif /* _ETHERNET_TARGET_H_ */
