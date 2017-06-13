@@ -20,6 +20,7 @@
 #include <ppp.h>
 #include <net.h>
 #include <ppp_packet.h>
+#include <ppp_target.h>
 
 /* PPP global data. */
 PPP_DATA ppp_data;
@@ -32,6 +33,11 @@ void ppp_init()
 {
     /* Clear the global data. */
     memset(&ppp_data, 0, sizeof(PPP_DATA));
+
+#ifdef PPP_TGT_INIT
+    /* Initialize PPP target. */
+    PPP_TGT_INIT();
+#endif
 
 } /* ppp_init */
 
@@ -57,20 +63,8 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
     /* Assign the file descriptor with which this PPP instance is registered. */
     ppp->fd = fd;
 
-    /* For now we need at least (1500 / 64 * 2) buffers as a threshold. */
-    fs->buffer->threshold_buffers = 48;
-    fs->buffer->threshold_lists = 16;
-
-    /* Initialize connection watcher. */
-    ppp->connection_watcher.data = ppp;
-    ppp->connection_watcher.connected = &ppp_connection_established;
-    ppp->connection_watcher.disconnected = &ppp_connection_terminated;
-
-    /* Register connection watcher. */
-    fs_connection_watcher_set(fd, &ppp->connection_watcher);
-
     /* Assume that we are already connected. */
-    ppp->state = PPP_STATE_CONNECTED;
+    ppp->state = PPP_STATE_INIT;
     ppp->state_data.lcp_id = 0;
 
     if (dedicated == TRUE)
@@ -128,40 +122,6 @@ PPP *ppp_get_instance_fd(FD fd)
 } /* ppp_get_instance_fd */
 
 /*
- * ppp_connection_established
- * @fd: File descriptor for which connection is established.
- * @ppp: PPP file descriptor data.
- * This function will be called whenever a connection is established for a
- * registered file descriptor.
- */
-void ppp_connection_established(void *fd, void *ppp)
-{
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(fd);
-
-    /* Link layer is now connected. */
-    ((PPP *)ppp)->state = PPP_STATE_CONNECTED;
-
-} /* ppp_connection_established */
-
-/*
- * ppp_connection_terminated
- * @fd: File descriptor for which connection was terminated.
- * @ppp: PPP file descriptor data.
- * This function will be called whenever a connection is terminated for a
- * registered file descriptor.
- */
-void ppp_connection_terminated(void *fd, void *ppp)
-{
-    /* Link layer is now disconnected. */
-    ((PPP *)ppp)->state = PPP_STATE_DISCONNECTED;
-
-    /* Set link-down for the associated networking device. */
-    net_device_link_down(fd);
-
-} /* ppp_connection_terminated */
-
-/*
  * ppp_process_modem_chat
  * @fd: File descriptor on which this packet was received.
  * @ppp: PPP private data.
@@ -170,11 +130,11 @@ void ppp_connection_terminated(void *fd, void *ppp)
  */
 void ppp_process_modem_chat(void *fd, PPP *ppp)
 {
-    FS_BUFFER_ONE *buffer;
+    FS_BUFFER *buffer;
     int32_t status;
 
     /* Peek a packet from the receive list. */
-    buffer = fs_buffer_one_get(fd, FS_BUFFER_RX, FS_BUFFER_INPLACE);
+    buffer = fs_buffer_get(fd, FS_BUFFER_RX, FS_BUFFER_INPLACE);
 
     /* If we do have a buffer. */
     if (buffer)
@@ -187,8 +147,8 @@ void ppp_process_modem_chat(void *fd, PPP *ppp)
         if ( (ppp->flags & PPP_DEDICATED_FD) || (status == SUCCESS) || (status != MODEM_CHAT_IGNORE))
         {
             /* Remove the buffer from the receive list and free it. */
-            OS_ASSERT(fs_buffer_one_get(fd, FS_BUFFER_RX, 0) != buffer);
-            fs_buffer_add(fd, buffer, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
+            OS_ASSERT(fs_buffer_get(fd, FS_BUFFER_RX, 0) != buffer);
+            fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
         }
 
         /* If modem initialization was completed successfully. */
@@ -377,6 +337,12 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
                 {
                     /* Send a PPP configuration packet in reply. */
                     status = ppp_transmit_buffer_instance(ppp, tx_buffer, proto->protocol, 0);
+
+                    if (status == SUCCESS)
+                    {
+                        /* TX buffer is no longer required. */
+                        tx_buffer = NULL;
+                    }
                 }
             }
         }
@@ -393,8 +359,12 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
         }
     }
 
-    /* Free the buffer list allocated before and any buffers still left on it. */
-    fs_buffer_add(tx_buffer->fd, tx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    /* If we still have TX buffer. */
+    if (tx_buffer != NULL)
+    {
+        /* Free the TX buffer. */
+        fs_buffer_add(tx_buffer->fd, tx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    }
 
 } /* ppp_configuration_process */
 
@@ -408,129 +378,103 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
  */
 void ppp_process_frame(void *fd, PPP *ppp)
 {
-    FS_BUFFER_ONE *buffer, *new_buffer;
+    FS_BUFFER *buffer, *new_buffer;
+    FS_BUFFER_ONE *buffer_one, *tmp_buffer_one, *new_buffer_one;
     PPP_PROTO *proto;
-    int32_t status = SUCCESS;
+    int32_t status = PPP_PARTIAL_READ;
     uint32_t this_length;
     uint16_t protocol;
-    uint8_t num_flags, this_flag = 0;
-    uint8_t *flag_ptr[2];
+    uint8_t chr, *flag_ptr;
 
     /* Get the buffer from the receive list. */
-    buffer = fs_buffer_one_get(fd, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+    buffer = fs_buffer_get(fd, FS_BUFFER_RX, 0);
 
     /* If a buffer was removed from the file descriptor. */
     if (buffer)
     {
         if (ppp->rx_buffer == NULL)
         {
-            /* Get a buffer list. */
-            ppp->rx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
+            /* Check if we have PPP FLAG on the head. */
+            fs_buffer_pull(buffer, &chr, 1, FS_BUFFER_INPLACE);
 
-            /* Should never happen. */
-            OS_ASSERT(ppp->rx_buffer == NULL);
-        }
-
-        /* If we are not waiting for a partial packet we need two flag to parse
-         * next packet otherwise we need 1 flag. */
-        num_flags = (ppp->rx_buffer->list.head == NULL) + 1;
-
-        /* Start from the buffer head. */
-        flag_ptr[this_flag] = memchr(buffer->buffer, PPP_FLAG, buffer->length);
-
-        /* While we have a flag. */
-        while (flag_ptr[this_flag] != NULL)
-        {
-            /* Increment number of flags we have encountered. */
-            this_flag++;
-
-            /* If we have required amount of flags. */
-            if (this_flag == num_flags)
+            /* If we have required flag on the head. */
+            if (chr == PPP_FLAG)
             {
-                /* Stop processing any more flags. */
-                break;
-            }
-
-            /* Search in this buffer and see if we have another flag. */
-            flag_ptr[this_flag] = memchr(flag_ptr[this_flag - 1] + 1, PPP_FLAG, (uint32_t)((buffer->buffer + buffer->length) - (flag_ptr[this_flag - 1] + 1)));
-        }
-
-        /* Check if we have required amount of flags. */
-        if (this_flag == num_flags)
-        {
-            /* Reset the flag count. */
-            this_flag = 0;
-
-            /* If we were not waiting for a buffer. */
-            if (num_flags == 2)
-            {
-                /* First check if we have some data before the first flag. */
-                if (flag_ptr[this_flag] != buffer->buffer)
-                {
-                    /* Pull the junk data before the flag. */
-                    fs_buffer_one_pull(buffer, NULL, (uint32_t)(flag_ptr[this_flag] - buffer->buffer), 0);
-                }
-
-                this_flag ++;
-            }
-
-            /* Check if there is still some data after the last flag. */
-            if (flag_ptr[this_flag] != &buffer->buffer[buffer->length - 1])
-            {
-                /* If data after the flag is another flag. */
-                if ((flag_ptr[this_flag])[1] == PPP_FLAG)
-                {
-                    /* Calculate the number of bytes still valid in this buffer. */
-                    this_length = (uint32_t)((flag_ptr[this_flag] + 1) - buffer->buffer);
-
-                    /* Divide this buffer into two buffers. */
-                    OS_ASSERT(fs_buffer_one_divide(fd, buffer, &new_buffer, 0, this_length) != SUCCESS);
-
-                    /* Silently add new buffer on the receive list of the
-                     * file descriptor we have received the data. */
-                    fs_buffer_add(fd, new_buffer, FS_BUFFER_RX, 0);
-                }
-                else
-                {
-                    /* Free any existing buffers on the received buffer. */
-                    fs_buffer_add_list(ppp->rx_buffer, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
-
-                    /* Silently add the received buffer on the RX list we will
-                     * process it again. */
-                    fs_buffer_add(fd, buffer, FS_BUFFER_RX, 0);
-                    buffer = NULL;
-
-                    /* We don't have a buffer to continue. */
-                    status = PPP_PARTIAL_READ;
-                }
-            }
-
-            /* If we do have a buffer. */
-            if (buffer)
-            {
-                /* Add this complete or partial received buffer on the receive buffer. */
-                fs_buffer_add_one(ppp->rx_buffer, buffer, 0);
-            }
-        }
-
-        /* We will wait to receive required amount of flags so that we can
-         * process a frame. */
-        else
-        {
-            /* If we required 2 flags and we did not even get a single flag. */
-            if ((num_flags == 2) && (this_flag == 0))
-            {
-                /* There is only junk in the buffer, so free it. */
-                fs_buffer_add(fd, buffer, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
+                /* Use this buffer to receive incoming frames. */
+                ppp->rx_buffer = buffer;
             }
             else
             {
-                /* Add this partial received buffer on the receive buffer. */
-                fs_buffer_add_one(ppp->rx_buffer, buffer, 0);
+                /* We must have lost the sequence, free this buffer. */
+                fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            }
+        }
+        else
+        {
+            /* Check if we have a flag in this buffer. */
+            for (buffer_one = buffer->list.head; buffer_one != NULL; buffer_one = buffer_one->next)
+            {
+                /* Check if we have a flag in this buffer. */
+                flag_ptr = memchr(buffer_one->buffer, PPP_FLAG, buffer_one->length);
+
+                /* If this is the end of a frame. */
+                if (flag_ptr != NULL)
+                {
+                    /* Calculate the number of bytes still valid in this buffer. */
+                    this_length = (uint32_t)((flag_ptr + 1) - buffer_one->buffer);
+
+                    /* If this is not at the end on this buffer. */
+                    if ((buffer_one->length > this_length) || (buffer_one->next != NULL))
+                    {
+                        /* Get a buffer list. */
+                        new_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
+
+                        /* If we have some data in the current buffer. */
+                        if (buffer_one->length > this_length)
+                        {
+                            /* Divide this buffer into two buffers. */
+                            OS_ASSERT(fs_buffer_one_divide(fd, buffer_one, &new_buffer_one, 0, this_length) != SUCCESS);
+
+                            /* Add this buffer on the new buffer. */
+                            fs_buffer_add_one(new_buffer, new_buffer_one, 0);
+                        }
+
+                        /* Update the buffer list. */
+                        tmp_buffer_one = buffer_one->next;
+                        buffer_one->next = NULL;
+                        buffer->total_length -= (buffer_one->length - this_length);
+
+                        /* Now add remaining one buffers in the buffer list. */
+                        for (buffer_one = tmp_buffer_one; buffer_one != NULL; buffer_one = buffer_one->next)
+                        {
+                            /* Update the buffer list. */
+                            buffer->total_length -= buffer_one->length;
+
+                            /* Add this buffer on the new buffer. */
+                            fs_buffer_add_one(new_buffer, buffer_one, 0);
+                        }
+
+                        /* Add new buffer on the receive list. */
+                        fs_buffer_add(fd, new_buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+                    }
+
+                    /* We have successfully read a complete buffer. */
+                    status = SUCCESS;
+
+                    /* Break out of this loop. */
+                    break;
+                }
             }
 
-            /* We don't have a buffer to continue. */
-            status = PPP_PARTIAL_READ;
+            /* Again traverse the buffer list. */
+            for (buffer_one = buffer->list.head; buffer_one != NULL; buffer_one = buffer_one->next)
+            {
+                /* Append data from this one buffer to the RX buffer. */
+                fs_buffer_push(ppp->rx_buffer, buffer_one->data, buffer_one->length, 0);
+            }
+
+            /* Free the old buffer. */
+            fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
         }
 
         /* If we have a complete buffer to process a frame. */
@@ -653,12 +597,25 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
         {
             /* Transmit this PPP buffer. */
             status = ppp_transmit_buffer_instance(ppp, buffer, protocol, flags);
+
+            if (status == SUCCESS)
+            {
+                /* Buffer is no longer required. */
+                buffer = NULL;
+            }
         }
     }
     else
     {
         /* Return an error to the caller. */
         status = PPP_INVALID_FD;
+    }
+
+    /* If we still have the buffer. */
+    if (buffer != NULL)
+    {
+        /* Free the TX buffer. */
+        fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
     }
 
     /* Return status to the caller. */
@@ -685,8 +642,8 @@ void net_ppp_receive(void *data, int32_t status)
     /* Process the received buffer according to the PPP state. */
     switch (ppp->state)
     {
-    /* If physical medium is connected. */
-    case PPP_STATE_CONNECTED:
+    /* If we are at initialization state. */
+    case PPP_STATE_INIT:
 
         /* Link layer is connected, and we are expecting some modem
          * initialization before formally start handling PPP packets. */
@@ -707,8 +664,6 @@ void net_ppp_receive(void *data, int32_t status)
         /* Break out of this switch. */
         break;
 
-    /* If physical medium not connected. */
-    case PPP_STATE_DISCONNECTED:
     default:
         /* Nothing to do here. */
 
@@ -735,6 +690,7 @@ void net_ppp_receive(void *data, int32_t status)
 int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER *buffer, uint16_t proto, uint8_t flags)
 {
     int32_t status;
+    FD fd = buffer->fd;
 
     /* Add PPP protocol. */
     status = ppp_packet_protocol_add(buffer, proto, PPP_IS_PFC_VALID(ppp), flags);
@@ -749,8 +705,14 @@ int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER *buffer, uint16_t proto
     /* If HDLC header was successfully added. */
     if (status == SUCCESS)
     {
-        /* Add this buffer to the transmit list of the provided file descriptor. */
-        fs_buffer_add_list(buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+        /* Release lock for file descriptor. */
+        fd_release_lock(fd);
+
+        /* Add a transmit buffer. */
+        fs_write(fd, (uint8_t *)buffer, sizeof(buffer));
+
+        /* Acquire file descriptor lock. */
+        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
     }
 
     /* Return status to the caller. */

@@ -29,25 +29,31 @@
  *  MODEM_CHAT_IGNORE is returned if data was not recognized.
  * This function will process modem initialization.
  */
-int32_t modem_chat_process(FD fd, FS_BUFFER_ONE *rx_buffer)
+int32_t modem_chat_process(FD fd, FS_BUFFER *rx_buffer)
 {
-    FS_BUFFER_ONE *tx_buffer;
+    FS_BUFFER *tx_buffer;
     int32_t status = SUCCESS;
 
     /* For now we will just wait for the "CLIENT" string from the other end. */
-    if (((rx_buffer)->length == (sizeof("CLIENT") - 1)) &&
-        (memcmp((rx_buffer)->buffer, "CLIENT", sizeof("CLIENT") - 1) == 0))
+    if (((rx_buffer)->total_length == (sizeof("CLIENT") - 1)) &&
+        (memcmp((rx_buffer)->list.head->data, "CLIENT", sizeof("CLIENT") - 1) == 0))
     {
         /* Get a free buffer so that it can be populate with response. */
-        tx_buffer = fs_buffer_one_get(fd, FS_BUFFER_ONE_FREE, (FS_BUFFER_ACTIVE));
+        tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, (FS_BUFFER_ACTIVE));
 
         if (tx_buffer)
         {
             /* Initialize response. */
-            OS_ASSERT(fs_buffer_one_push(tx_buffer, "CLIENTSERVER", (sizeof("CLIENTSERVER") - 1), 0) != SUCCESS);
+            OS_ASSERT(fs_buffer_push(tx_buffer, "CLIENTSERVER", (sizeof("CLIENTSERVER") - 1), 0) != SUCCESS);
+
+            /* Release lock for file descriptor. */
+            fd_release_lock(fd);
 
             /* Add a transmit buffer. */
-            fs_buffer_add(fd, tx_buffer, FS_BUFFER_TX, FS_BUFFER_ACTIVE);
+            fs_write(fd, (uint8_t *)tx_buffer, sizeof(tx_buffer));
+
+            /* Acquire file descriptor lock. */
+            OS_ASSERT(fd_get_lock(fd) != SUCCESS);
         }
     }
     else

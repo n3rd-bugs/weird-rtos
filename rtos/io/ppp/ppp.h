@@ -42,11 +42,10 @@
 #define PPP_INTERNAL_ERROR          -910
 
 /* PPP instance states. */
-#define PPP_STATE_CONNECTED         1
+#define PPP_STATE_INIT              1
 #define PPP_STATE_LCP               2
 #define PPP_STATE_IPCP              3
 #define PPP_STATE_NETWORK           4
-#define PPP_STATE_DISCONNECTED      5
 
 /* PPP configuration flags. */
 #define PPP_FLAG_ACFC               0x01
@@ -94,9 +93,6 @@ struct _ppp
 
     /* Networking device structure. */
     NET_DEV     net_device;
-
-    /* File system watchers. */
-    FS_CONNECTION_WATCHER   connection_watcher;
 
     /* PPP instance state. */
     uint32_t    state;
@@ -183,5 +179,4 @@ int32_t ppp_transmit_buffer_instance(PPP *, FS_BUFFER *, uint16_t, uint8_t);
 #endif
 
 #endif /* CONFIG_PPP */
-
 #endif /* _PPP_H_ */

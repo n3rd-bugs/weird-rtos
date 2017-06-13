@@ -324,7 +324,7 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
             /* Move the generated buffer back to the original buffer. */
             fs_buffer_move(buffer, destination);
 
-            /* Free the destination buffer and free it. */
+            /* Free the destination buffer. */
             fs_buffer_add(buffer->fd, destination, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
 
             /* Add start flag. */

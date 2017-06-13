@@ -355,6 +355,12 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
             {
                 /* Send this buffer. */
                 status = ppp_transmit_buffer_instance(ppp, tx_buffer, PPP_PROTO_LCP, 0);
+
+                if (status == SUCCESS)
+                {
+                    /* TX buffer is no longer required. */
+                    tx_buffer = NULL;
+                }
             }
         }
     }
@@ -385,11 +391,15 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
         ppp_lcp_state_initialize(ppp);
 
         /* Move to the connected state. */
-        ppp->state = PPP_STATE_CONNECTED;
+        ppp->state = PPP_STATE_INIT;
     }
 
-    /* Free the buffer list allocated before and any buffers still left on it. */
-    fs_buffer_add(tx_buffer->fd, tx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    /* If we still have TX buffer. */
+    if (tx_buffer != NULL)
+    {
+        /* Free the TX buffer. */
+        fs_buffer_add(tx_buffer->fd, tx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    }
 
     /* Return status to the caller. */
     return (status);
