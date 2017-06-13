@@ -14,6 +14,7 @@
 #include <os.h>
 #include <isr.h>
 #include <enc28j60.h>
+#include <serial.h>
 
 /* Initial vector table definition. */
 __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
@@ -77,7 +78,11 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x22  I2C2 Error            */
         (isr)&cpu_interrupt,        /*  0x23  SPI1                  */
         (isr)&cpu_interrupt,        /*  0x24  SPI2                  */
+#ifdef SERIAL_INTERRUPT_MODE
+        (isr)&usart1_interrupt,     /*  0x25  USART1                */
+#else
         (isr)&cpu_interrupt,        /*  0x25  USART1                */
+#endif
         (isr)&cpu_interrupt,        /*  0x26  USART2                */
         (isr)&cpu_interrupt,        /*  0x27  USART3                */
         (isr)&cpu_interrupt,        /*  0x28  External Line[15:10]s     */

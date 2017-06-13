@@ -15,29 +15,25 @@
 #define _USART_STM32F407_H_
 
 #include <os.h>
+#ifdef CONFIG_SERIAL
 #include <stdarg.h>
 
-/* Hook-up the STDIO printf function. */
-#ifdef printf
-#undef printf
-#endif
-#define printf  usart_stm32f407_printf
-#ifdef vprintf
-#undef vprintf
-#endif
-#define vprintf usart_stm32f407_vprintf
-
-/* Used by console file system to initialize DEBUG console. */
-#define DEBUG_CONSOLE_INIT  usart_stm32f407_init
-
 /* Some configurations. */
-#define BAUD_RATE           115200
-#define PRINTF_BUFFER_SIZE  64
+#define BAUD_RATE                       19200
+#define SERIAL_INTERRUPT_MODE
+
+/* Serial buffer configuration. */
+#define SERIAL_MAX_BUFFER_SIZE          128
+#define SERIAL_NUM_BUFFERS              128
+#define SERIAL_NUM_BUFFER_LIST          64
+#define SERIAL_THRESHOLD_BUFFER         6
+#define SERIAL_THRESHOLD_BUFFER_LIST    2
 
 /* Function prototypes. */
-int32_t usart_stm32f407_puts(void *, uint8_t *, int32_t);
-int32_t usart_stm32f407_printf(char *, ...);
-int32_t usart_stm32f407_vprintf(const char *, va_list);
-void usart_stm32f407_init();
+void serial_stm32f407_init();
+#ifdef SERIAL_INTERRUPT_MODE
+ISR_FUN usart1_interrupt();
+#endif /* SERIAL_INTERRUPT_MODE */
 
+#endif /* CONFIG_SERIAL */
 #endif /* _USART_STM32F407_H_ */

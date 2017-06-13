@@ -17,7 +17,6 @@
 
 #include <os.h>
 #include <stm32f407xx.h>
-#include <usart_stm32f407.h>
 
 /* Peripheral clock configuration. */
 #define SYS_FREQ                168000000

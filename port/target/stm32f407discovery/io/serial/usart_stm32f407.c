@@ -11,143 +11,80 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <stdio.h>
 #include <os.h>
-#include <fs.h>
-#include <console.h>
+#ifdef CONFIG_SERIAL
+#include <usart_stm32f407.h>
+#include <serial.h>
 
-#ifdef FS_CONSOLE
+#ifdef SERIAL_INTERRUPT_MODE
+#ifndef FS_CONSOLE
+#error "Console is required for interrupt mode serial."
+#endif /* FS_CONSOLE */
+#endif /* SERIAL_INTERRUPT_MODE */
 
-/* Console data. */
-static CONSOLE usart_1 =
-{
-    .fs =
-    {
-        /* Name of this port. */
-        .name = "usart1",
+/* Internal function prototypes. */
+static int32_t usart_stm32f407_init(void *);
+#ifdef SERIAL_INTERRUPT_MODE
+static void usart1_handle_tx_interrupt();
+static void usart1_handle_rx_interrupt();
+static void usart_stm32f407_enable_interrupt(void *);
+#endif /* SERIAL_INTERRUPT_MODE */
+static void usart_stm32f407_disable_interrupt(void *);
+static int32_t usart_stm32f407_puts(void *, void *, uint8_t *, int32_t, uint32_t);
+static int32_t usart_stm32f407_gets(void *, void *, uint8_t *, int32_t, uint32_t);
 
-        /* Console manipulation APIs. */
-        .write = &usart_stm32f407_puts,
-
-        /* Space is available on this descriptor. */
-        .flags = FS_SPACE_AVAILABLE,
-    }
-};
-#endif
-
-/*
- * usart_stm32f407_puts
- * @priv_data: For now it is unused.
- * @buf: String needed to be printed.
- * @nbytes: Number of bytes to be printed from the string.
- * This function prints a string on the UART1.
- */
-int32_t usart_stm32f407_puts(void *priv_data, uint8_t *buf, int32_t nbytes)
-{
-    int32_t to_print = nbytes;
-
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(priv_data);
-
-    /* While we have some data to be printed. */
-    while (nbytes > 0)
-    {
-        /* If needed wait for transmission of the last byte. */
-        while (!(USART1->SR & USART_SR_TC))
-        {
-            ;
-        }
-
-        /* Put a byte on USART. */
-        USART1->DR = ((uint32_t)*buf) & 0xFF;
-
-        /* Decrement number of bytes remaining. */
-        nbytes --;
-
-        /* Move forward in the buffer. */
-        buf++;
-    }
-
-    /* Return number of bytes printed. */
-    return (to_print - nbytes);
-
-} /* usart_stm32f407_puts */
+/* Target serial port. */
+static SERIAL usart1;
+#ifdef SERIAL_INTERRUPT_MODE
+static FS_BUFFER_DATA usart1_buffer_data;
+static uint8_t usart1_buffer_space[SERIAL_MAX_BUFFER_SIZE * SERIAL_NUM_BUFFERS];
+static FS_BUFFER_ONE usart1_buffer_ones[SERIAL_NUM_BUFFERS];
+static FS_BUFFER usart1_buffer_lists[SERIAL_NUM_BUFFER_LIST];
+#endif /* SERIAL_INTERRUPT_MODE */
 
 /*
- * usart_stm32f407_printf
- * @format: Formated string to be printed on UART.
- * This function prints a formated string on the UART1.
+ * serial_stm32f407_init
+ * This will initialize serial interface(s) for this target.
  */
-int32_t usart_stm32f407_printf(char *format, ...)
+void serial_stm32f407_init()
 {
-    int32_t n = 0;
-    uint8_t buf[PRINTF_BUFFER_SIZE];
-    va_list vl;
+    /* Initialize serial device data. */
+    usart1.device.init = &usart_stm32f407_init;
+    usart1.device.puts = &usart_stm32f407_puts;
+    usart1.device.gets = &usart_stm32f407_gets;
+#ifdef SERIAL_INTERRUPT_MODE
+    usart1.device.int_lock = &usart_stm32f407_disable_interrupt;
+    usart1.device.int_unlock = &usart_stm32f407_enable_interrupt;
+#endif /* SERIAL_INTERRUPT_MODE */
+    usart1.device.data = &usart1;
 
-    /* Arguments start from the format. */
-    va_start(vl, format);
-
-    /* Process the given string and save the result in a temporary buffer. */
-    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
-
-#ifdef FS_CONSOLE
-    /* Assert if debug FD is not yet initialized. */
-    OS_ASSERT(debug_fd == NULL);
-
-    /* Use the debug FD. */
-    n = fs_write(debug_fd, buf, n);
+#ifdef SERIAL_INTERRUPT_MODE
+    /* Register this serial device. */
+    usart1_buffer_data.buffer_space = usart1_buffer_space;
+    usart1_buffer_data.buffer_size = SERIAL_MAX_BUFFER_SIZE;
+    usart1_buffer_data.buffer_ones = usart1_buffer_ones;
+    usart1_buffer_data.num_buffer_ones = SERIAL_NUM_BUFFERS;
+    usart1_buffer_data.buffer_lists = usart1_buffer_lists;
+    usart1_buffer_data.num_buffer_lists = SERIAL_NUM_BUFFER_LIST;
+    usart1_buffer_data.threshold_buffers = SERIAL_THRESHOLD_BUFFER;
+    usart1_buffer_data.threshold_lists = SERIAL_THRESHOLD_BUFFER_LIST;
+    serial_register(&usart1, "usart1", &usart1_buffer_data, (SERIAL_DEBUG | SERIAL_INT));
 #else
-    /* Print the result on the UART. */
-    n = usart_stm32f407_puts(NULL, buf, n);
-#endif
+    serial_register(&usart1, "usart1", NULL, (SERIAL_DEBUG));
+#endif /* SERIAL_INTERRUPT_MODE */
 
-    /* Destroy the argument list. */
-    va_end(vl);
-
-    /* Return number of bytes printed on UART. */
-    return (n);
-
-} /* usart_stm32f407_printf */
-
-/*
- * usart_stm32f407_vprintf
- * @format: Formated string to be printed on USART.
- * This function prints a formated log message on the console.
- */
-int32_t usart_stm32f407_vprintf(const char *format, va_list vl)
-{
-    int32_t n;
-    uint8_t buf[PRINTF_BUFFER_SIZE];
-
-    /* Process the given string and save the result in a temporary buffer. */
-    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
-
-    if (n > 0)
-    {
-#ifdef FS_CONSOLE
-        /* Assert if debug FD is not yet initialized. */
-        OS_ASSERT(debug_fd == NULL);
-
-        /* Use the debug FD. */
-        n = fs_write(debug_fd, buf, n);
-#else
-        /* Print the result on the UART. */
-        n = usart_stm32f407_puts(NULL, buf, n);
-#endif
-    }
-
-    /* Return number of bytes printed on UART. */
-    return (n);
-
-} /* usart_stm32f407_vprintf */
+} /* serial_stm32f407_init */
 
 /*
  * usart_stm32f407_init
  * This function initializes UART1 for STM32F407.
  */
-void usart_stm32f407_init()
+static int32_t usart_stm32f407_init(void *data)
 {
     uint32_t temp, integral, fractional;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(data);
 
     /* Enable clock for USART1. */
     RCC->APB2ENR |= 0x10;
@@ -156,19 +93,19 @@ void usart_stm32f407_init()
     RCC->AHB1ENR |= 0x02;
 
     /* Set alternate function for the PB6 (TX) and PB7 (RX). */
-    GPIOB->MODER &= ~((GPIO_MODER_MODER0 << (5 * 2)) | (GPIO_MODER_MODER0 << (6 * 2)));
-    GPIOB->MODER |= ((0x2 << (5 * 2)) | (0x2 << (6 * 2)));
+    GPIOB->MODER &= ~((GPIO_MODER_MODER0 << (6 * 2)) | (GPIO_MODER_MODER0 << (7 * 2)));
+    GPIOB->MODER |= ((0x2 << (6 * 2)) | (0x2 << (7 * 2)));
 
     /* Select 50MHz IO speed. */
-    GPIOB->OSPEEDR &= ~((GPIO_OSPEEDER_OSPEEDR0 << (5 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (6 * 2)));
-    GPIOB->OSPEEDR |= ((0x2 << (5 * 2)) | (0x2 << (6 * 2)));
+    GPIOB->OSPEEDR &= ~((GPIO_OSPEEDER_OSPEEDR0 << (6 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (7 * 2)));
+    GPIOB->OSPEEDR |= ((0x2 << (6 * 2)) | (0x2 << (7 * 2)));
 
     /* Output mode configuration. */
-    GPIOB->OTYPER  &= ~((GPIO_OTYPER_OT_0 << (5 * 2)) | (GPIO_OTYPER_OT_0 << (6 * 2)));
+    GPIOB->OTYPER  &= ~((GPIO_OTYPER_OT_0 << (6 * 2)) | (GPIO_OTYPER_OT_0 << (7 * 2)));
 
     /* Enable pull-ups on USART pins. */
-    GPIOB->PUPDR &= ~((GPIO_PUPDR_PUPDR0 << (5 * 2)) | (GPIO_PUPDR_PUPDR0 << (6 * 2)));
-    GPIOB->PUPDR |= ((0x01 << (5 * 2)) | (0x01 << (6 * 2)));
+    GPIOB->PUPDR &= ~((GPIO_PUPDR_PUPDR0 << (6 * 2)) | (GPIO_PUPDR_PUPDR0 << (7 * 2)));
+    GPIOB->PUPDR |= ((0x01 << (6 * 2)) | (0x01 << (7 * 2)));
 
     /* Select USART1 as Alternate function for these pins. */
     GPIOB->AFR[(0x6 >> 0x03)] &= ~((uint32_t)(0xF << (0x6 * 4))) ;
@@ -179,7 +116,7 @@ void usart_stm32f407_init()
     /* Enable RX and TX for this USART, also use 8-bit word length and
      * disable parity bit. */
     USART1->CR1 &= ~((USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE));
-    USART1->CR1 |= (0xC);
+    USART1->CR1 |= (USART_CR1_RE | USART_CR1_TE);
 
     /* Use one stop bit for this USART. */
     USART1->CR2 &= ~(USART_CR2_STOP);
@@ -197,14 +134,281 @@ void usart_stm32f407_init()
     /* Enable USART1. */
     USART1->CR1 |= USART_CR1_UE;
 
-#ifdef FS_CONSOLE
+    /* Enable transmission complete and receive data available interrupts. */
+    USART1->CR1 |= (USART_CR1_TCIE | USART_CR1_RXNEIE);
 
-    /* Register serial port with console. */
-    console_register(&usart_1);
+    /* Set the TX complete flag. */
+    USART1->SR |= (USART_SR_TC);
 
-    /* Set debug file descriptor. */
-    debug_fd = fs_open("\\console\\usart1", 0);
-
-#endif /* FS_CONSOLE */
+    /* Always return success. */
+    return (SUCCESS);
 
 } /* usart_stm32f407_init */
+
+#ifdef SERIAL_INTERRUPT_MODE
+/*
+ * usart1_interrupt
+ * This function is interrupt handler for USART1 interrupt.
+ */
+ISR_FUN usart1_interrupt()
+{
+    OS_ISR_ENTER();
+
+    /* If a transmission was successfully completed. */
+    if (USART1->SR & USART_SR_TC)
+    {
+        /* Handle transmission complete interrupt. */
+        usart1_handle_tx_interrupt();
+    }
+
+    /* If some data is available to read. */
+    if (USART1->SR & USART_SR_RXNE)
+    {
+        /* Handle receive data available interrupt. */
+        usart1_handle_rx_interrupt();
+    }
+
+    OS_ISR_EXIT();
+
+} /* usart1_interrupt */
+
+/*
+ * usart1_handle_tx_interrupt
+ * This function handles TX interrupt.
+ */
+static void usart1_handle_tx_interrupt()
+{
+    FS_BUFFER *buffer;
+    uint8_t chr;
+
+    /* Get a buffer to be transmitted. */
+    buffer = fs_buffer_get(&usart1, FS_BUFFER_TX, FS_BUFFER_INPLACE);
+
+    /* If we have a buffer to transmit. */
+    if (buffer != NULL)
+    {
+        /* Pull a byte from the buffer. */
+        fs_buffer_pull(buffer, &chr, 1, 0);
+
+        /* If there is nothing more to be sent from this buffer. */
+        if (buffer->total_length == 0)
+        {
+            /* Actually remove this buffer. */
+            buffer = fs_buffer_get(&usart1, FS_BUFFER_TX, 0);
+
+            /* Free this buffer. */
+            fs_buffer_add(&usart1, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        }
+
+        /* Put a byte on USART to continue TX. */
+        USART1->DR = ((uint32_t)chr) & 0xFF;
+    }
+    else
+    {
+        /* Just clear this interrupt status. */
+        USART1->SR &= (uint32_t)(~USART_SR_TC);
+
+        /* Clear the in TX flag. */
+        usart1.flags &= (uint32_t)(~SERIAL_IN_TX);
+    }
+
+} /* usart1_handle_tx_interrupt */
+
+/*
+ * usart1_handle_rx_interrupt
+ * This function handles RX interrupt.
+ */
+static void usart1_handle_rx_interrupt()
+{
+    FS_BUFFER *buffer;
+    uint8_t chr;
+
+    /* Get a RX buffer. */
+    buffer = fs_buffer_get(&usart1, FS_BUFFER_RX, FS_BUFFER_INPLACE);
+
+    /* If we don't have a buffer. */
+    if (buffer == NULL)
+    {
+        /* Get a buffer. */
+        buffer = fs_buffer_get(&usart1, FS_BUFFER_LIST, 0);
+
+        /* If we do have a buffer. */
+        if (buffer != NULL)
+        {
+            /* Add this buffer on the receive list. */
+            fs_buffer_add(&usart1, buffer, FS_BUFFER_RX, 0);
+        }
+    }
+
+    /* Read the incoming data and also clear the interrupt status. */
+    chr = (uint8_t)USART1->DR;
+
+    /* If we do have a buffer. */
+    if (buffer != NULL)
+    {
+        /* Append received byte on the buffer. */
+        fs_buffer_push(buffer, &chr, 1, 0);
+
+        /* Tell upper layers that some data is available to read. */
+        fd_data_available(&usart1);
+    }
+
+} /* usart1_handle_rx_interrupt */
+
+/*
+ * usart_stm32f407_enable_interrupt.
+ * This function will enable interrupts for the giver USART.
+ */
+static void usart_stm32f407_enable_interrupt(void *data)
+{
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(data);
+
+    /* Enable the USART1 IRQ channel. */
+    NVIC->ISER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+
+} /* usart_stm32f407_enable_interrupt */
+#endif /* SERIAL_INTERRUPT_MODE */
+
+/*
+ * usart_stm32f407_disable_interrupt.
+ * This function will disable interrupts for the giver USART.
+ */
+static void usart_stm32f407_disable_interrupt(void *data)
+{
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(data);
+
+    /* Disable the USART1 IRQ channel. */
+    NVIC->ICER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+
+} /* usart_stm32f407_disable_interrupt */
+
+/*
+ * usart_stm32f407_puts
+ * @fd: Serial file descriptor.
+ * @priv_data: USART data.
+ * @buf: Data needed to be sent over USART.
+ * @nbytes: Number of bytes to be printed from the buffer.
+ * @flags: Flags to specify the operation.
+ * This function sends a buffer on the given USART.
+ */
+static int32_t usart_stm32f407_puts(void *fd, void *priv_data, uint8_t *buf, int32_t nbytes, uint32_t flags)
+{
+    int32_t to_print = nbytes;
+    SERIAL *usart = (SERIAL *)priv_data;
+#ifdef SERIAL_INTERRUPT_MODE
+    FS_BUFFER *buffer;
+    uint8_t chr;
+#else
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+    UNUSED_PARAM(flags);
+#endif /* SERIAL_INTERRUPT_MODE */
+
+#ifdef SERIAL_INTERRUPT_MODE
+    /* If we need to put this string using interrupts. */
+    if (flags & SERIAL_INT)
+    {
+        /* Get a buffer to be transmitted. */
+        buffer = fs_buffer_get(fd, FS_BUFFER_TX, FS_BUFFER_INPLACE);
+
+        /* If we have a buffer and we are in TX. */
+        if ((buffer != NULL) && ((usart->flags & SERIAL_IN_TX) == 0))
+        {
+            /* Set the in TX flag. */
+            usart->flags |= SERIAL_IN_TX;
+
+            /* Pull a byte from the buffer. */
+            fs_buffer_pull(buffer, &chr, 1, 0);
+
+            if (buffer->total_length == 0)
+            {
+                /* Actually remove this buffer. */
+                buffer = fs_buffer_get(fd, FS_BUFFER_TX, 0);
+
+                /* Free this buffer. */
+                fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            }
+
+            /* Put a byte on USART to start TX. */
+            USART1->DR = ((uint32_t)chr) & 0xFF;
+        }
+    }
+    else
+#endif /* SERIAL_INTERRUPT_MODE */
+    {
+        /* Disable USART interrupts. */
+        usart_stm32f407_disable_interrupt(usart);
+
+        /* While we have some data to be printed. */
+        while (nbytes > 0)
+        {
+            /* Put a byte on USART. */
+            USART1->DR = ((uint32_t)*buf) & 0xFF;
+
+            /* Decrement number of bytes remaining. */
+            nbytes --;
+
+            /* Move forward in the buffer. */
+            buf++;
+
+            /* Wait for transmission of the last byte. */
+            while (!(USART1->SR & USART_SR_TC))
+            {
+                ;
+            }
+        }
+    }
+
+    /* Return number of bytes printed. */
+    return (to_print - nbytes);
+
+} /* usart_stm32f407_puts */
+
+/*
+ * usart_stm32f407_gets
+ * @fd: Serial file descriptor.
+ * @priv_data: USART data.
+ * @buf: Data received will be returned in this buffer.
+ * @nbytes: Number of bytes received on serial port.
+ * @flags: For now unused.
+ * This function receives and return data from a serial port.
+ */
+static int32_t usart_stm32f407_gets(void *fd, void *priv_data, uint8_t *buf, int32_t nbytes, uint32_t flags)
+{
+    int32_t to_read = nbytes;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+    UNUSED_PARAM(priv_data);
+    UNUSED_PARAM(flags);
+
+    /* Disable USART interrupts. */
+    usart_stm32f407_disable_interrupt(&usart1);
+
+    /* While we have some data to be printed. */
+    while (nbytes > 0)
+    {
+        /* While we have a byte to read. */
+        while (!(USART1->SR & USART_SR_RXNE))
+        {
+            ;
+        }
+
+        /* Read a byte from USART. */
+        *buf = (uint8_t)USART1->DR;
+
+        /* Decrement number of bytes remaining. */
+        nbytes --;
+
+        /* Move forward in the buffer. */
+        buf++;
+    }
+
+    /* Return number of bytes read. */
+    return (to_read - nbytes);
+
+} /* usart_stm32f407_gets */
+#endif /* CONFIG_SERIAL */
