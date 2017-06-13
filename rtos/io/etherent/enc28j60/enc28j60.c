@@ -40,7 +40,6 @@ static void enc28j60_int_poll(void *);
  */
 void enc28j60_init(ENC28J60 *device)
 {
-    uint32_t i;
     FD fd = (FD)&device->ethernet_device;
 
     SYS_LOG_FUNTION_ENTRY(ENC28J60);
@@ -53,28 +52,15 @@ void enc28j60_init(ENC28J60 *device)
     spi_init(&device->spi);
 
     /* Set the buffer data structure for this file descriptor. */
-    fs_buffer_dataset(&device->ethernet_device, &device->fs_buffer_data, ENC28J60_NUM_BUFFERS);
+    device->fs_buffer_data.buffer_space = device->buffer;
+    device->fs_buffer_data.buffer_size = ENC28J60_MAX_BUFFER_SIZE;
+    device->fs_buffer_data.buffer_lists = device->fs_buffer_list;
+    device->fs_buffer_data.num_buffer_lists = ENC28J60_NUM_BUFFER_LISTS;
+    device->fs_buffer_data.buffer_ones = device->fs_buffer;
+    device->fs_buffer_data.num_buffer_ones = ENC28J60_NUM_BUFFERS;
     device->fs_buffer_data.threshold_buffers = ENC28J60_NUM_THR_BUFFER;
-
-    /* Add buffer for this console. */
-    for (i = 0; i < ENC28J60_NUM_BUFFERS; i++)
-    {
-        /* Initialize a buffer. */
-        fs_buffer_one_init(&device->fs_buffer[i], &device->buffer[ENC28J60_MAX_BUFFER_SIZE * i], ENC28J60_MAX_BUFFER_SIZE);
-
-        /* Add this buffer to the free buffer list for this file descriptor. */
-        fs_buffer_add(fd, &device->fs_buffer[i], FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
-    }
-
-    /* Add buffer lists for this console. */
-    for (i = 0; i < ENC28J60_NUM_BUFFER_LISTS; i++)
-    {
-        /* Initialize a buffer. */
-        fs_buffer_init(&device->fs_buffer_list[i], fd);
-
-        /* Add this buffer to the free buffer list for this file descriptor. */
-        fs_buffer_add(fd, &device->fs_buffer_list[i], FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-    }
+    device->fs_buffer_data.threshold_lists = ENC28J60_NUM_THR_LIST;
+    fs_buffer_dataset(&device->ethernet_device, &device->fs_buffer_data);
 
 #if (ENC28J60_INT_POLL == TRUE)
     /* Register this ethernet device. */
@@ -747,7 +733,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
                     while (packet_length > 0)
                     {
                         /* Pull a one buffer in which we will copy the data. */
-                        one_buffer = fs_buffer_one_get(fd, FS_BUFFER_ONE_FREE, 0);
+                        one_buffer = fs_buffer_one_get(fd, 0);
 
                         /* If we do have a buffer to copy data. */
                         if (one_buffer != NULL)

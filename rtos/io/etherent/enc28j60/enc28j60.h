@@ -59,6 +59,7 @@
 #define ENC28J60_NUM_BUFFERS        (32)
 #define ENC28J60_NUM_BUFFER_LISTS   (24)
 #define ENC28J60_NUM_THR_BUFFER     (16)
+#define ENC28J60_NUM_THR_LIST       (4)
 
 /* Networking configuration for a enc28j60 device. */
 #define ENC28J60_NUM_ARP            (4)
@@ -139,11 +140,9 @@ struct _enc28j60_device
     ENC28J60_RESET          *reset;
     ENC28J60_GET_MAC        *get_mac;
 
-    /* Buffer used to manage data for this device. */
-    uint8_t     buffer[ENC28J60_MAX_BUFFER_SIZE * ENC28J60_NUM_BUFFERS];
-
     /* File system buffers. */
     FS_BUFFER_DATA  fs_buffer_data;
+    uint8_t         buffer[ENC28J60_MAX_BUFFER_SIZE * ENC28J60_NUM_BUFFERS];
     FS_BUFFER_ONE   fs_buffer[ENC28J60_NUM_BUFFERS];
     FS_BUFFER       fs_buffer_list[ENC28J60_NUM_BUFFER_LISTS];
 
