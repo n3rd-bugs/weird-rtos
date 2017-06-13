@@ -14,29 +14,23 @@
 #ifndef _USART_ATMEGA664P_H_
 #define _USART_ATMEGA664P_H_
 
-#include <stdio.h>
+#include <os.h>
+#ifdef CONFIG_SERIAL
+#include <stdarg.h>
 
-/* Hook-up the STDIO printf function. */
-#ifdef printf
-#undef printf
-#endif
-#define printf uart_atmega644p_printf
-#ifdef vprintf
-#undef vprintf
-#endif
-#define vprintf uart_atmega644p_vprintf
+/* Some configurations. */
+#define BAUD_RATE                       115200
+//#define SERIAL_INTERRUPT_MODE
 
-/* Used by console file system to initialize DEBUG console. */
-#define DEBUG_CONSOLE_INIT  usart_atmega644p_init
-
-/* Serial configurations. */
-#define BAUD_RATE           115200
-#define PRINTF_BUFFER_SIZE  64
+/* Serial buffer configuration. */
+#define SERIAL_MAX_BUFFER_SIZE          16
+#define SERIAL_NUM_BUFFERS              4
+#define SERIAL_NUM_BUFFER_LIST          4
+#define SERIAL_THRESHOLD_BUFFER         0
+#define SERIAL_THRESHOLD_BUFFER_LIST    0
 
 /* Function prototypes. */
-int32_t usart_atmega644p_puts(void *, uint8_t *, int32_t);
-int32_t uart_atmega644p_printf(const char *, ...);
-int32_t uart_atmega644p_vprintf(const char *, va_list);
-void usart_atmega644p_init();
+void serial_atmega644p_init();
 
+#endif /* CONFIG_SERIAL */
 #endif /* _USART_ATMEGA664P_H_ */

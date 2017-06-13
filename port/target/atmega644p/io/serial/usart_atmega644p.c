@@ -12,130 +12,81 @@
  * or indirect use.
  */
 #include <os.h>
-#include <avr/io.h>
+#ifdef CONFIG_SERIAL
 #include <stdio.h>
+#include <serial.h>
+#include <avr/io.h>
 #define BAUD        BAUD_RATE
 #define BAUD_TOL    10
 #include <util/setbaud.h>
-#include <fs.h>
-#include <console.h>
+#include <avr/interrupt.h>
 
-#ifdef FS_CONSOLE
+#ifdef SERIAL_INTERRUPT_MODE
+#ifndef FS_CONSOLE
+#error "Console is required for interrupt mode serial."
+#endif /* FS_CONSOLE */
+#endif /* SERIAL_INTERRUPT_MODE */
 
-/* Console data. */
-static CONSOLE usart_1 =
-{
-    .fs =
-    {
-        /* Name of this port. */
-        .name = "uart1",
+/* Internal function prototypes. */
+static int32_t usart_atmega644p_init(void *);
+#ifdef SERIAL_INTERRUPT_MODE
+void usart0_handle_tx_interrupt();
+void usart0_handle_rx_interrupt();
+static void usart_atmega644p_enable_interrupt(void *);
+#endif /* SERIAL_INTERRUPT_MODE */
+static void usart_atmega644p_disable_interrupt(void *);
+static int32_t usart_atmega644p_puts(void *, void *, uint8_t *, int32_t, uint32_t);
+static int32_t usart_atmega644p_gets(void *, void *, uint8_t *, int32_t, uint32_t);
 
-        /* Console manipulation APIs. */
-        .write = &usart_atmega644p_puts,
-    }
-};
-#endif
-
-/*
- * usart_atmega644p_puts
- * @priv_data: For now it is unused.
- * @buf: String needed to be printed.
- * @nbytes: Number of bytes to be printed from the string.
- * This function prints a string on the USART.
- */
-int32_t usart_atmega644p_puts(void *priv_data, uint8_t *buf, int32_t nbytes)
-{
-    int32_t to_print = nbytes;
-
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(priv_data);
-
-    /* While we have some data to be printed. */
-    while (nbytes > 0)
-    {
-        /* Wait for last byte to be sent. */
-        while ((UCSR0A & (1 << UDRE0)) == 0)
-        {
-            task_yield();
-        }
-
-        /* Add this byte. */
-        UDR0 = (*buf);
-
-        /* Decrement number of bytes remaining. */
-        nbytes --;
-
-        /* Move forward in the buffer. */
-        buf++;
-    }
-
-    /* Return number of bytes printed. */
-    return (to_print - nbytes);
-
-} /* usart_atmega644p_puts */
+/* Target serial port. */
+static SERIAL usart0;
+#ifdef SERIAL_INTERRUPT_MODE
+static FS_BUFFER_DATA usart0_buffer_data;
+static uint8_t usart0_buffer_space[SERIAL_MAX_BUFFER_SIZE * SERIAL_NUM_BUFFERS];
+static FS_BUFFER_ONE usart0_buffer_ones[SERIAL_NUM_BUFFERS];
+static FS_BUFFER usart0_buffer_lists[SERIAL_NUM_BUFFER_LIST];
+#endif /* SERIAL_INTERRUPT_MODE */
 
 /*
- * uart_atmega644p_printf
- * @format: Formated string to be printed on USART.
- * This function prints a formated string on the USART.
+ * serial_atmega644p_init
+ * This will initialize serial interface(s) for this target.
  */
-int32_t uart_atmega644p_printf(const char *format, ...)
+void serial_atmega644p_init()
 {
-    int32_t n;
-    va_list vl;
+    /* Initialize serial device data. */
+    usart0.device.init = &usart_atmega644p_init;
+    usart0.device.puts = &usart_atmega644p_puts;
+    usart0.device.gets = &usart_atmega644p_gets;
+#ifdef SERIAL_INTERRUPT_MODE
+    usart0.device.int_lock = &usart_atmega644p_disable_interrupt;
+    usart0.device.int_unlock = &usart_atmega644p_enable_interrupt;
+#endif /* SERIAL_INTERRUPT_MODE */
+    usart0.device.data = &usart0;
 
-    /* Arguments start from the format. */
-    va_start(vl, format);
-
-    /* Print the given string on the console. */
-    n = uart_atmega644p_vprintf(format, vl);
-
-    /* Destroy the argument list. */
-    va_end(vl);
-
-    /* Return number of bytes printed on USART. */
-    return (n);
-
-} /* uart_atmega644p_printf */
-
-/*
- * uart_atmega644p_vprintf
- * @format: Formated string to be printed on USART.
- * This function prints a formated log message on the console.
- */
-int32_t uart_atmega644p_vprintf(const char *format, va_list vl)
-{
-    int32_t n;
-    uint8_t buf[PRINTF_BUFFER_SIZE];
-
-    /* Process the given string and save the result in a temporary buffer. */
-    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
-
-    if (n > 0)
-    {
-#ifdef FS_CONSOLE
-        /* Assert if debug FD is not yet initialized. */
-        OS_ASSERT(debug_fd == NULL);
-
-        /* Use the debug FD. */
-        n = fs_write(debug_fd, buf, n);
+#ifdef SERIAL_INTERRUPT_MODE
+    /* Register this serial device. */
+    usart0_buffer_data.buffer_space = usart0_buffer_space;
+    usart0_buffer_data.buffer_size = SERIAL_MAX_BUFFER_SIZE;
+    usart0_buffer_data.buffer_ones = usart0_buffer_ones;
+    usart0_buffer_data.num_buffer_ones = SERIAL_NUM_BUFFERS;
+    usart0_buffer_data.buffer_lists = usart0_buffer_lists;
+    usart0_buffer_data.num_buffer_lists = SERIAL_NUM_BUFFER_LIST;
+    serial_register(&usart0, "usart0", &usart0_buffer_data, (SERIAL_DEBUG | SERIAL_INT));
 #else
-        /* Print the result on the UART. */
-        n = usart_atmega644p_puts(NULL, buf, n);
-#endif
-    }
+    serial_register(&usart0, "usart0", NULL, (SERIAL_DEBUG));
+#endif /* SERIAL_INTERRUPT_MODE */
 
-    /* Return number of bytes printed on USART. */
-    return (n);
-
-} /* uart_atmega644p_vprintf */
+} /* serial_atmega644p_init */
 
 /*
  * usart_atmega644p_init
- * This function initializes the AVR serial console over USART.
+ * This function initializes UART1 for ATmega644p.
  */
-void usart_atmega644p_init()
+static int32_t usart_atmega644p_init(void *data)
 {
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(data);
+
     /* Set the configured baud-rate. */
     UBRR0H = UBRRH_VALUE;
     UBRR0L = UBRRL_VALUE;
@@ -150,17 +101,276 @@ void usart_atmega644p_init()
     UCSR0B = (1 << RXEN0)  | (1 << TXEN0);
     UCSR0C = (1 << USBS0) | (3 << UCSZ00);
 
-#ifdef FS_CONSOLE
-
-    /* Register serial port with console. */
-    console_register(&usart_1);
-
-    /* There is always some space available to send data. */
-    usart_1.fs.flags |= FS_SPACE_AVAILABLE;
-
-    /* Set debug file descriptor. */
-    debug_fd = fs_open("\\console\\uart1", 0);
-
-#endif /* FS_CONSOLE */
+    /* Always return success. */
+    return (SUCCESS);
 
 } /* usart_atmega644p_init */
+
+#ifdef SERIAL_INTERRUPT_MODE
+/*
+ * ISR(USART0_TX_vect, ISR_NAKED)
+ * This is USART0 TX interrupt.
+ */
+ISR(USART0_TX_vect, ISR_NAKED)
+{
+    OS_ISR_ENTER();
+
+    /* Handle TX interrupt. */
+    usart0_handle_tx_interrupt();
+
+    OS_ISR_EXIT();
+
+} /* ISR(USART0_TX_vect, ISR_NAKED) */
+
+/*
+ * usart0_handle_tx_interrupt
+ * This function handles TX interrupt.
+ */
+void usart0_handle_tx_interrupt()
+{
+    FS_BUFFER *buffer;
+    uint8_t chr;
+
+    /* Get a buffer to be transmitted. */
+    buffer = fs_buffer_get(&usart0, FS_BUFFER_TX, FS_BUFFER_INPLACE);
+
+    /* If we have a buffer to transmit. */
+    if (buffer != NULL)
+    {
+        /* Pull a byte from the buffer. */
+        fs_buffer_pull(buffer, &chr, 1, 0);
+
+        /* If there is nothing more to be sent from this buffer. */
+        if (buffer->total_length == 0)
+        {
+            /* Actually remove this buffer. */
+            buffer = fs_buffer_get(&usart0, FS_BUFFER_TX, 0);
+
+            /* Free this buffer. */
+            fs_buffer_add(&usart0, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        }
+
+        /* Put a byte on USART to continue TX. */
+        UDR0 = ((uint32_t)chr) & 0xFF;
+    }
+    else
+    {
+        /* Clear the in TX flag. */
+        usart0.flags &= (uint32_t)(~SERIAL_IN_TX);
+    }
+
+} /* usart0_handle_tx_interrupt */
+
+/*
+ * ISR(USART0_RX_vect, ISR_NAKED)
+ * This is USART0 RX interrupt.
+ */
+ISR(USART0_RX_vect, ISR_NAKED)
+{
+    OS_ISR_ENTER();
+
+    /* Handle RX interrupt. */
+    usart0_handle_rx_interrupt();
+
+    OS_ISR_EXIT();
+
+} /* ISR(USART0_RX_vect, ISR_NAKED) */
+
+/*
+ * usart0_handle_rx_interrupt
+ * This function handles RX interrupt.
+ */
+void usart0_handle_rx_interrupt()
+{
+    FS_BUFFER *buffer;
+    uint8_t chr;
+
+    /* Get a RX buffer. */
+    buffer = fs_buffer_get(&usart0, FS_BUFFER_RX, FS_BUFFER_INPLACE);
+
+    /* If we don't have a buffer. */
+    if (buffer == NULL)
+    {
+        /* Get a buffer. */
+        buffer = fs_buffer_get(&usart0, FS_BUFFER_LIST, 0);
+
+        /* If we do have a buffer. */
+        if (buffer != NULL)
+        {
+            /* Add this buffer on the receive list. */
+            fs_buffer_add(&usart0, buffer, FS_BUFFER_RX, 0);
+        }
+    }
+
+    /* Read the incoming data and also clear the interrupt. */
+    chr = (uint8_t)UDR0;
+
+    /* If we do have a buffer. */
+    if (buffer != NULL)
+    {
+        /* Append received byte on the buffer. */
+        fs_buffer_push(buffer, &chr, 1, 0);
+
+        /* Tell upper layers that some data is available to read. */
+        fd_data_available(&usart0);
+    }
+
+} /* usart0_handle_rx_interrupt */
+
+/*
+ * usart_atmega644p_enable_interrupt.
+ * This function will enable interrupts for the giver USART.
+ */
+static void usart_atmega644p_enable_interrupt(void *data)
+{
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(data);
+
+    /* Enable the USART0 IRQ channel. */
+    UCSR0B |= ((1 << RXCIE0) | (1 << TXCIE0));
+
+} /* usart_atmega644p_enable_interrupt */
+#endif /* SERIAL_INTERRUPT_MODE */
+
+/*
+ * usart_atmega644p_disable_interrupt.
+ * This function will disable interrupts for the giver USART.
+ */
+static void usart_atmega644p_disable_interrupt(void *data)
+{
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(data);
+
+    /* Disable the USART0 IRQ channel. */
+    UCSR0B &= ((uint8_t)~((1 << RXCIE0) | (1 << TXCIE0)));
+
+} /* usart_atmega644p_disable_interrupt */
+
+/*
+ * usart_atmega644p_puts
+ * @fd: Serial file descriptor.
+ * @priv_data: USART data.
+ * @buf: Data needed to be sent over USART.
+ * @nbytes: Number of bytes to be printed from the buffer.
+ * @flags: Flags to specify the operation.
+ * This function sends a buffer on the given USART.
+ */
+static int32_t usart_atmega644p_puts(void *fd, void *priv_data, uint8_t *buf, int32_t nbytes, uint32_t flags)
+{
+    int32_t to_print = nbytes;
+    SERIAL *usart = (SERIAL *)priv_data;
+#ifdef SERIAL_INTERRUPT_MODE
+    FS_BUFFER *buffer;
+    uint8_t chr;
+#else
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+    UNUSED_PARAM(flags);
+#endif /* SERIAL_INTERRUPT_MODE */
+
+#ifdef SERIAL_INTERRUPT_MODE
+    /* If we need to put this string using interrupts. */
+    if (flags & SERIAL_INT)
+    {
+        /* Get a buffer to be transmitted. */
+        buffer = fs_buffer_get(fd, FS_BUFFER_TX, FS_BUFFER_INPLACE);
+
+        /* If we have a buffer and we are in TX. */
+        if ((buffer != NULL) && ((usart->flags & SERIAL_IN_TX) == 0))
+        {
+            /* Set the in TX flag. */
+            usart->flags |= SERIAL_IN_TX;
+
+            /* Pull a byte from the buffer. */
+            fs_buffer_pull(buffer, &chr, 1, 0);
+
+            if (buffer->total_length == 0)
+            {
+                /* Actually remove this buffer. */
+                buffer = fs_buffer_get(fd, FS_BUFFER_TX, 0);
+
+                /* Free this buffer. */
+                fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            }
+
+            /* Put a byte on USART to start TX. */
+            UDR0 = (chr);
+        }
+    }
+    else
+#endif /* SERIAL_INTERRUPT_MODE */
+    {
+        /* Disable USART interrupts. */
+        usart_atmega644p_disable_interrupt(usart);
+
+        /* While we have some data to be printed. */
+        while (nbytes > 0)
+        {
+            /* Add this byte. */
+            UDR0 = (*buf);
+
+            /* Wait for this byte to be sent. */
+            while ((UCSR0A & (1 << UDRE0)) == 0)
+            {
+                ;
+            }
+
+            /* Decrement number of bytes remaining. */
+            nbytes --;
+
+            /* Move forward in the buffer. */
+            buf++;
+        }
+    }
+
+    /* Return number of bytes printed. */
+    return (to_print - nbytes);
+
+} /* usart_atmega644p_puts */
+
+/*
+ * usart_atmega644p_gets
+ * @fd: Serial file descriptor.
+ * @priv_data: USART data.
+ * @buf: Data received will be returned in this buffer.
+ * @nbytes: Number of bytes received on serial port.
+ * @flags: For now unused.
+ * This function receives and return data from a serial port.
+ */
+static int32_t usart_atmega644p_gets(void *fd, void *priv_data, uint8_t *buf, int32_t nbytes, uint32_t flags)
+{
+    int32_t to_read = nbytes;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(fd);
+    UNUSED_PARAM(priv_data);
+    UNUSED_PARAM(flags);
+
+    /* Disable USART interrupts. */
+    usart_atmega644p_disable_interrupt(&usart0);
+
+    /* While we have some data to be printed. */
+    while (nbytes > 0)
+    {
+        /* While we have a byte to read. */
+        while ((UCSR0A & (1 << RXC0)) == 0)
+        {
+            ;
+        }
+
+        /* Read a byte from USART. */
+        *buf = (uint8_t)UDR0;
+
+        /* Decrement number of bytes remaining. */
+        nbytes --;
+
+        /* Move forward in the buffer. */
+        buf++;
+    }
+
+    /* Return number of bytes read. */
+    return (to_read - nbytes);
+
+} /* usart_atmega644p_gets */
+#endif /* CONFIG_SERIAL */
