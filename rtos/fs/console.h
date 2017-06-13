@@ -50,11 +50,6 @@ typedef struct _console_data
 
 } CONSOLE_DATA;
 
-/* This is needed to be implemented by a board port. */
-#ifndef serial_printf
-#define serial_printf(...)
-#endif
-
 /* Function prototypes. */
 void console_init();
 void console_register(CONSOLE *console);

@@ -21,9 +21,6 @@
 #include <sll.h>
 #include <console.h>
 
-/* Debug file descriptor. */
-FD debug_fd = NULL;
-
 /* Console data. */
 static CONSOLE_DATA console_data;
 
@@ -61,11 +58,6 @@ void console_init()
 
     /* Register console with file system. */
     fs_register(&console_fs);
-
-#ifdef DEBUG_CONSOLE_INIT
-    /* Initialize DEBUG console. */
-    DEBUG_CONSOLE_INIT();
-#endif
 
 } /* console_init */
 
