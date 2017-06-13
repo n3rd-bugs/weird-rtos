@@ -32,17 +32,25 @@ static int32_t fs_buffer_suspend(FD, uint32_t, uint32_t);
  * fs_buffer_dataset
  * @fd: File descriptor for which buffer data-set is needed to be set.
  * @data: Pointer to buffer data structure.
- * @num_buffers: Total number of buffers in the system.
+ * @num_buffers: Total number of buffers in this descriptor.
+ * @num_buffer_lists: Total number of buffer lists in this descriptor.
+ * @buffer_size: Size of each buffer.
+ * @threshold_buffers: Number if buffers to be left in threshold.
  * This function will set the buffer structure to be used by this file
  * descriptor also sets the flag to tell others that this will be a buffered
  * file descriptor.
  */
-void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
+void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data)
 {
     FS *fs = (FS *)fd;
+    uint32_t i;
 
     /* Should never happen. */
     OS_ASSERT(data == NULL);
+
+    OS_ASSERT(data->buffer_space == NULL);
+    OS_ASSERT(data->buffer_ones == NULL);
+    OS_ASSERT(data->buffer_lists == NULL);
 
     /* Get lock for this file descriptor. */
     OS_ASSERT(fd_get_lock(fd) != SUCCESS);
@@ -53,20 +61,31 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data, int32_t num_buffers)
     /* Set the buffer data structure provided by caller. */
     fs->buffer = data;
 
-    /* Clear the structure. */
-    memset(data, 0, sizeof(FS_BUFFER_DATA));
-
-#ifdef FS_BUFFER_DEBUG
-    data->buffers = num_buffers;
-#else
-    UNUSED_PARAM(num_buffers);
-#endif
-
     /* Initialize buffer condition data. */
     fs_buffer_condition_init(fs);
 
     /* Release lock for this file descriptor. */
     fd_release_lock(fd);
+
+    /* Add buffer for this device. */
+    for (i = 0; i < data->num_buffer_ones; i++)
+    {
+        /* Initialize a buffer. */
+        fs_buffer_one_init(&data->buffer_ones[i], &data->buffer_space[data->buffer_size * i], data->buffer_size);
+
+        /* Add this buffer to the free buffer list for this file descriptor. */
+        fs_buffer_add(fd, &data->buffer_ones[i], FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
+    }
+
+    /* Add buffer lists for this device. */
+    for (i = 0; i < data->num_buffer_lists; i++)
+    {
+        /* Initialize a buffer. */
+        fs_buffer_init(&data->buffer_lists[i], fd);
+
+        /* Add this buffer to the free buffer list for this file descriptor. */
+        fs_buffer_add(fd, &data->buffer_lists[i], FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    }
 
 } /* fs_buffer_dataset */
 
@@ -82,7 +101,6 @@ void fs_buffer_init(FS_BUFFER *buffer, FD fd)
     memset(buffer, 0, sizeof(FS_BUFFER));
 
     /* Initialize this buffer. */
-    buffer->id = FS_BUFFER_ID_BUFFER;
     buffer->fd = fd;
 
 } /* fs_buffer_init */
@@ -97,7 +115,6 @@ void fs_buffer_init(FS_BUFFER *buffer, FD fd)
 void fs_buffer_one_init(FS_BUFFER_ONE *one, void *data, uint32_t size)
 {
     /* Initialize this buffer. */
-    one->id = FS_BUFFER_ID_ONE;
     one->data = one->buffer = (uint8_t *)data;
     one->max_length = size;
 
@@ -206,7 +223,7 @@ int32_t fs_buffer_num_remaining(FD fd, uint32_t type)
     case FS_BUFFER_ONE_FREE:
 
         /* Return number of buffers remaining in the free one buffer list. */
-        ret_num = data->free_buffer_list.buffers;
+        ret_num = (int32_t)data->free_buffer_list.buffers;
 
         break;
 
@@ -214,7 +231,7 @@ int32_t fs_buffer_num_remaining(FD fd, uint32_t type)
     case FS_BUFFER_LIST:
 
         /* Return number of buffers remaining in the free buffer list. */
-        ret_num = data->buffers_list.buffers;
+        ret_num = (int32_t)data->buffers_list.buffers;
 
         break;
 
@@ -338,7 +355,7 @@ static uint8_t fs_buffer_do_resume(void *param_resume, void *param_suspend)
  * This function will return condition for this file system, and also will also
  * populate the suspend.
  */
-void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_BUFFER_PARAM *param, int32_t num_buffers, uint32_t type)
+void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_BUFFER_PARAM *param, uint32_t num_buffers, uint32_t type)
 {
     FS *fs = (FS *)fd;
     FS_BUFFER_DATA *data = fs->buffer;
@@ -553,9 +570,6 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
     /* A free buffer. */
     case FS_BUFFER_ONE_FREE:
 
-        /* A buffer should not get here. */
-        OS_ASSERT(((FS_BUFFER *)buffer)->id == FS_BUFFER_ID_BUFFER);
-
         /* Reinitialize a one buffer. */
         fs_buffer_one_init(((FS_BUFFER_ONE *)buffer), ((FS_BUFFER_ONE *)buffer)->data, ((FS_BUFFER_ONE *)buffer)->max_length);
 
@@ -564,14 +578,6 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
 
         /* Increment the number of buffers on free list. */
         data->free_buffer_list.buffers ++;
-
-#ifdef FS_BUFFER_DEBUG
-        /* Should not happen. */
-        OS_ASSERT(data->buffers == 0);
-
-        /* Decrement number of buffers in the system. */
-        data->buffers --;
-#endif
 
         /* If we are doing this actively. */
         if (flags & FS_BUFFER_ACTIVE)
@@ -605,14 +611,6 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
 #ifdef FS_BUFFER_DEBUG
         /* Increment the number of buffers on receive list. */
         data->rx_buffer_list.buffers ++;
-#endif
-
-#ifdef FS_BUFFER_DEBUG
-        /* Should not happen. */
-        OS_ASSERT(data->buffers == 0);
-
-        /* Decrement number of buffers in the system. */
-        data->buffers --;
 #endif
 
         /* If we are doing this actively. */
@@ -649,21 +647,10 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
         data->tx_buffer_list.buffers ++;
 #endif
 
-#ifdef FS_BUFFER_DEBUG
-        /* Should not happen. */
-        OS_ASSERT(data->buffers == 0);
-
-        /* Decrement number of buffers in the system. */
-        data->buffers --;
-#endif
-
         break;
 
     /* A buffer list buffer. */
     case FS_BUFFER_LIST:
-
-        /* A one buffer should not get here. */
-        OS_ASSERT(((FS_BUFFER *)buffer)->id == FS_BUFFER_ID_ONE);
 
         /* Check if we need to return this buffer to somebody else. */
         if ((((FS_BUFFER *)buffer)->free != NULL) && (((FS_BUFFER *)buffer)->free(((FS_BUFFER *)buffer)->free_data, buffer) == TRUE))
@@ -717,16 +704,16 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
 
 #ifdef FS_BUFFER_DEBUG
     /* Validate the buffer lists for this file descriptors. */
-    OS_ASSERT((int32_t)sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
-    OS_ASSERT((int32_t)sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
-    OS_ASSERT((int32_t)sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
-    OS_ASSERT((int32_t)sll_num_items(&data->buffers_list, OFFSETOF(FS_BUFFER, next)) != data->buffers_list.buffers);
+    OS_ASSERT(sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
+    OS_ASSERT(sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
+    OS_ASSERT(sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
+    OS_ASSERT(sll_num_items(&data->buffers_list, OFFSETOF(FS_BUFFER, next)) != data->buffers_list.buffers);
 #endif
 
 } /* fs_buffer_add */
 
 /*
- * fs_buffer_get_by_id
+ * fs_buffer_get
  * @fd: File descriptor from which a free buffer is needed.
  * @type: Type of buffer needed to be added.
  *  FS_BUFFER_ONE_FREE: If a free buffer is needed.
@@ -738,11 +725,10 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
  *      pointer to it.
  *  FS_BUFFER_SUSPEND: If needed suspend to wait for a buffer.
  *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
- * @id: Buffer ID we need to get.
  * This function return a buffer from a required buffer list for this file
  * descriptor.
  */
-void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
+FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
 {
     FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
     void *buffer = NULL;
@@ -760,7 +746,6 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
 
         /* Validate the input arguments. */
         OS_ASSERT(flags & FS_BUFFER_INPLACE);
-        OS_ASSERT(id != FS_BUFFER_ID_ONE);
 
         /* Check if we need to suspend. */
         if (flags & FS_BUFFER_SUSPEND)
@@ -777,7 +762,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         if (status == SUCCESS)
         {
             /* Pop a buffer from this file descriptor's free buffer list. */
-            buffer = sll_search_pop(&data->free_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next));
         }
 
         /* If we are returning a buffer. */
@@ -812,7 +797,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         else
         {
             /* Pop a buffer from this file descriptor's receive buffer list. */
-            buffer = sll_search_pop(&data->rx_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_DEBUG
             /* If we are returning a buffer. */
@@ -845,7 +830,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         else
         {
             /* Pop a buffer from this file descriptor's transmit buffer list. */
-            buffer = sll_search_pop(&data->tx_buffer_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next));
 
 #ifdef FS_BUFFER_DEBUG
             /* If we are returning a buffer. */
@@ -864,7 +849,6 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
 
         /* Validate the input arguments. */
         OS_ASSERT(flags & FS_BUFFER_INPLACE);
-        OS_ASSERT(id != FS_BUFFER_ID_BUFFER);
 
         /* Check if we need to suspend. */
         if (flags & FS_BUFFER_SUSPEND)
@@ -880,7 +864,7 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         if (status == SUCCESS)
         {
             /* Pop a buffer from this file descriptor's buffer list. */
-            buffer = sll_search_pop(&data->buffers_list, &fs_buffer_type_search, (void *)(&id), OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&data->buffers_list, OFFSETOF(FS_BUFFER, next));
         }
 
         /* If we are returning a buffer. */
@@ -896,29 +880,18 @@ void *fs_buffer_get_by_id(FD fd, uint32_t type, uint32_t flags, uint32_t id)
         break;
     }
 
-    /* If we are returning a buffer. */
-    if ( (buffer) &&
-         (type != FS_BUFFER_LIST) &&
-         ((flags & FS_BUFFER_INPLACE) == 0) )
-    {
-#ifdef FS_BUFFER_DEBUG
-        /* Increase the number of buffers in the system. */
-        data->buffers ++;
-#endif
-    }
-
 #ifdef FS_BUFFER_DEBUG
     /* Validate the buffer lists for this file descriptors. */
-    OS_ASSERT((int32_t)sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
-    OS_ASSERT((int32_t)sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
-    OS_ASSERT((int32_t)sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
-    OS_ASSERT((int32_t)sll_num_items(&data->buffers_list, OFFSETOF(FS_BUFFER, next)) != data->buffers_list.buffers);
+    OS_ASSERT(sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
+    OS_ASSERT(sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
+    OS_ASSERT(sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
+    OS_ASSERT(sll_num_items(&data->buffers_list, OFFSETOF(FS_BUFFER, next)) != data->buffers_list.buffers);
 #endif
 
     /* Return the buffer. */
     return ((void *)buffer);
 
-} /* fs_buffer_get_by_id */
+} /* fs_buffer_get */
 
 /*
  * fs_buffer_pull_offset
@@ -1192,7 +1165,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
                 if ((one == NULL) || (FS_BUFFER_SPACE(one) == 0))
                 {
                     /* Need to allocate a new buffer to be pushed on the head. */
-                    one = fs_buffer_one_get(buffer->fd, FS_BUFFER_ONE_FREE, flags);
+                    one = fs_buffer_one_get(buffer->fd, flags);
 
                     /* If a buffer was allocated. */
                     if (one)
@@ -1249,7 +1222,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
             if ((one == NULL) || (FS_BUFFER_TAIL_ROOM(one) == 0))
             {
                 /* Need to allocate a new buffer to be appended on the tail. */
-                one = fs_buffer_one_get(buffer->fd, FS_BUFFER_ONE_FREE, flags);
+                one = fs_buffer_one_get(buffer->fd, flags);
 
                 /* If a buffer was allocated. */
                 if (one)
@@ -1701,7 +1674,7 @@ int32_t fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one,
     OS_ASSERT(new_one == NULL);
 
     /* Allocate a free buffer. */
-    ret_one = fs_buffer_one_get(fd, FS_BUFFER_ONE_FREE, flags);
+    ret_one = fs_buffer_one_get(fd, flags);
 
     /* If a free buffer was allocated. */
     if (ret_one != NULL)
@@ -1767,28 +1740,5 @@ int32_t fs_buffer_hdr_push(void *buffer, uint8_t *data, uint32_t size, uint16_t 
     return (fs_buffer_push((FS_BUFFER *)buffer, data, size, (FS_BUFFER_HEAD | (uint8_t)flags)));
 
 } /* fs_buffer_hdr_push */
-
-/*
- * fs_buffer_type_search
- * @buffer: A buffer in the buffer list.
- * @param: Required type of buffer.
- * @return: True if this buffer is required, otherwise False will be returned.
- * This function return is the given buffer is of required type.
- */
-uint8_t fs_buffer_type_search(void *buffer, void *param)
-{
-    uint8_t required = FALSE;
-
-    /* Check if given ID matches the required buffer type. */
-    if (((FS_BUFFER *)buffer)->id == (*(uint32_t *)param))
-    {
-        /* We need to return this buffer. */
-        required = TRUE;
-    }
-
-    /* Return if we need to return this buffer or not. */
-    return (required);
-
-} /* fs_buffer_type_search */
 
 #endif /* CONFIG_FS */
