@@ -4,7 +4,8 @@ of this clause.
 
 This source is for educational purpose only, and should never be used for
 any other purpose. If this source is used for other than educational purpose
-(in any form) the author will not be liable for any legal charges.
+(in any form) the author will not be liable for any outcome from it's direct
+ * or indirect use.
 ____________________________________________________________________________
 The MIT License (MIT)
 
