@@ -28,6 +28,7 @@
 //#define CONFIG_NET
 
 /* Device IO. */
+#define CONFIG_SERIAL
 //#define CONFIG_SPI
 //#define CONFIG_MMC
 //#define CONFIG_ADC

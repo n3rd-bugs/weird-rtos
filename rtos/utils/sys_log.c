@@ -14,7 +14,9 @@
 #include <os.h>
 
 #ifndef SYS_LOG_NONE
+#include <serial.h>
 #include <string.h>
+#include <stdarg.h>
 
 #ifdef SYS_LOG_RUNTIME_UPDATE
 /* For each component we want to enable logging an entry must exist here. */
@@ -49,9 +51,15 @@ void sys_log(uint8_t *comp_name, const uint8_t *message, ...)
 {
     va_list vl;
 
+#ifndef CONFIG_SERIAL
+    /* Removed some compiler warnings. */
+    UNUSED_PARAM(comp_name);
+#endif
+
     /* Arguments start from the format. */
     va_start(vl, message);
 
+#ifdef CONFIG_SERIAL
     /* Print the component name. */
     printf("[%s] ", comp_name);
 
@@ -60,6 +68,7 @@ void sys_log(uint8_t *comp_name, const uint8_t *message, ...)
 
     /* Add a new line. */
     printf("\r\n");
+#endif /* CONFIG_SERIAL */
 
     /* Destroy the argument list. */
     va_end(vl);
@@ -79,9 +88,17 @@ void sys_log_hexdump(uint8_t *comp_name, const uint8_t *message, uint8_t *bytes,
 {
     va_list vl;
 
+#ifndef CONFIG_SERIAL
+    /* Removed some compiler warnings. */
+    UNUSED_PARAM(comp_name);
+    UNUSED_PARAM(message);
+    UNUSED_PARAM(bytes);
+#endif
+
     /* Arguments start from the format. */
     va_start(vl, num_bytes);
 
+#ifdef CONFIG_SERIAL
     /* Print the component name. */
     printf("[%s] ", comp_name);
 
@@ -108,6 +125,7 @@ void sys_log_hexdump(uint8_t *comp_name, const uint8_t *message, uint8_t *bytes,
 
     /* Add a new line. */
     printf("\r\n");
+#endif /* CONFIG_SERIAL */
 
     /* Destroy the argument list. */
     va_end(vl);

@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <os.h>
 #include <sys_info.h>
+#include <serial.h>
 
 #ifdef CONFIG_TASK_STATS
 #ifdef CONFIG_FS
@@ -115,6 +116,72 @@ void util_print_sys_info()
 #endif
 
 } /* util_print_sys_info */
+
+#ifdef CONFIG_SERIAL
+/*
+ * util_print_sys_info_assert
+ * This function prints generalized information about the operating system
+ * on the serial port in assert mode.
+ */
+void util_print_sys_info_assert()
+{
+    /* Get the first task. */
+    TASK *tcb = sch_task_list.head;
+    uint32_t stack_free;
+    char str[16];
+
+    /* Print current system tick. */
+    serial_assert_puts((uint8_t *)"System tick: ", 0);
+    snprintf(str, sizeof(str), "%lu", (uint32_t)current_system_tick());
+    serial_assert_puts((uint8_t *)str, 0);
+    serial_assert_puts((uint8_t *)"\r\n", 0);
+
+    /* Print table header. */
+    serial_assert_puts((uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n", 0);
+
+    /* Print information about all the tasks in the system. */
+    while (tcb != NULL)
+    {
+        /* Calculate number of bytes still intact on the task's stack. */
+        stack_free = util_task_calc_free_stack(tcb);
+
+        snprintf(str, sizeof(str), "%s\t", tcb->name);
+        serial_assert_puts((uint8_t *)str, 0);
+        snprintf(str, sizeof(str), "%lu\t", tcb->stack_size);
+        serial_assert_puts((uint8_t *)str, 0);
+        snprintf(str, sizeof(str), "%lu\t", stack_free);
+        serial_assert_puts((uint8_t *)str, 0);
+        snprintf(str, sizeof(str), "%lu\t", tcb->stack_size - stack_free);
+        serial_assert_puts((uint8_t *)str, 0);
+        snprintf(str, sizeof(str), "%li\t", tcb->status);
+        serial_assert_puts((uint8_t *)str, 0);
+        snprintf(str, sizeof(str), "%lu\t", (uint32_t)tcb->scheduled);
+        serial_assert_puts((uint8_t *)str, 0);
+        snprintf(str, sizeof(str), "%lu\r\n", (uint32_t)tcb->tick_sleep);
+        serial_assert_puts((uint8_t *)str, 0);
+
+        /* Get the next task. */
+        tcb = tcb->next_global;
+    }
+
+#ifdef SYS_STACK_SIZE
+    /* Get number of bytes free on the system stack. */
+    stack_free = util_system_calc_free_stack(tcb);
+
+    snprintf(str, sizeof(str), "SYSTEM\t");
+    serial_assert_puts((uint8_t *)str, 0);
+    snprintf(str, sizeof(str), "%lu\t", (uint32_t)SYS_STACK_SIZE);
+    serial_assert_puts((uint8_t *)str, 0);
+    snprintf(str, sizeof(str), "%lu\t", stack_free);
+    serial_assert_puts((uint8_t *)str, 0);
+    snprintf(str, sizeof(str), "%lu\t", SYS_STACK_SIZE - stack_free);
+    serial_assert_puts((uint8_t *)str, 0);
+    snprintf(str, sizeof(str), "-\t-\t-\r\n");
+    serial_assert_puts((uint8_t *)str, 0);
+#endif
+
+} /* util_print_sys_info_assert */
+#endif /* CONFIG_SERIAL */
 
 #ifdef CONFIG_FS
 /*

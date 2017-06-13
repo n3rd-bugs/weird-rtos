@@ -24,6 +24,9 @@
 /* Function prototypes. */
 uint32_t util_task_calc_free_stack(TASK *);
 void util_print_sys_info();
+#ifdef CONFIG_SERIAL
+void util_print_sys_info_assert();
+#endif
 #ifdef CONFIG_FS
 int32_t util_print_sys_info_buffer(FS_BUFFER *);
 #endif
