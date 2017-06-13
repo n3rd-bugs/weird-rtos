@@ -16,7 +16,8 @@
 #include <os.h>
 
 #ifdef CONFIG_NET
-#include <fs.h>
+#include <net.h>
+#ifdef NET_IPV4
 
 /* Number of route entries to manage. */
 #define NET_NUM_ROUTES          (4)
@@ -60,5 +61,6 @@ int32_t route_remove(FD, uint32_t, uint32_t);
 int32_t route_get(FD *, uint32_t, uint32_t *, uint32_t *, uint32_t *);
 void route_print();
 
+#endif /* NET_IPV4 */
 #endif /* CONFIG_NET */
 #endif /* _NET_ROUTE_H_ */

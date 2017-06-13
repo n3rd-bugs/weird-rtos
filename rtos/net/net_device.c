@@ -356,8 +356,10 @@ void net_device_link_down(FD fd)
     /* Release lock for networking file descriptor. */
     fd_release_lock(fd);
 
+#ifdef NET_IPV4
     /* Clear IP address for this device. */
     ipv4_set_device_address(fd, 0x0, 0x0);
+#endif
 
     /* Acquire lock for networking file descriptor. */
     OS_ASSERT(fd_get_lock(fd) != SUCCESS);

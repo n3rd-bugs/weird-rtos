@@ -15,6 +15,7 @@
 
 #ifdef CONFIG_NET
 #include <net.h>
+#ifdef NET_IPV4
 #include <net_route.h>
 
 /* Routes database. */
@@ -373,4 +374,5 @@ void route_print()
 
 } /* route_print */
 
+#endif /* NET_IPV4 */
 #endif /* CONFIG_NET */
