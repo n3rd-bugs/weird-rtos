@@ -66,7 +66,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 };
 
 /* Control task definitions. */
-#define CONTROL_TASK_STACK_SIZE         192
+#define CONTROL_TASK_STACK_SIZE         96
 uint8_t control_stack[CONTROL_TASK_STACK_SIZE];
 TASK    control_cb;
 void control_entry(void *argv);
@@ -77,7 +77,7 @@ void control_entry(void *argv);
 #define ADC_ATIMER_PRESCALE     ((uint32_t)8)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
 
-#define ADC_CHANNEL_DELAY       (OS_TICKS_PER_SEC / 10)
+#define ADC_CHANNEL_DELAY       (OS_TICKS_PER_SEC / 5)
 
 static uint16_t adc_sample[ADC_SAMPLES];
 static CONDITION adc_condition;
@@ -806,10 +806,9 @@ void adc_sample_process(void *data, int32_t status)
 #endif
 
     /* Were we waiting for ADC channel to stabilize. */
-    if (adc_suspend.timeout != MAX_WAIT)
+    if (adc_suspend.timeout_enabled != FALSE)
     {
         /* Stop the ADC timer. */
-        adc_suspend.timeout = MAX_WAIT;
         adc_suspend.timeout_enabled = FALSE;
 
         /* Start periodic ADC conversion. */
@@ -830,8 +829,10 @@ void adc_sample_process(void *data, int32_t status)
         /* Disable global interrupts. */
         DISABLE_INTERRUPTS();
 
+#ifdef PORT_SAMPLE_IND
         /* Sample was processed. */
         PORT_SAMPLE_IND ^= (1 << PIN_SAMPLE_IND);
+#endif
 
         switch (current_channel)
         {
@@ -905,8 +906,10 @@ int main(void)
     PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
     DDR_MAINON_IND |= (1 << PIN_MAINON_IND);
     PORT_MAINON_IND &= (uint8_t)(~(1 << PIN_MAINON_IND));
+#ifdef PORT_SAMPLE_IND
     DDR_SAMPLE_IND |= (1 << PIN_SAMPLE_IND);
     PORT_SAMPLE_IND &= (uint8_t)(~(1 << PIN_SAMPLE_IND));
+#endif
 
     /* Configure and turn off the generator self and power. */
     DDR_GENPWR_ON |= (1 << PIN_GENPWR_ON);
