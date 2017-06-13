@@ -343,7 +343,6 @@ int32_t route_get(FD *device, uint32_t destination, uint32_t *iface_addr, uint32
 void route_print()
 {
     int32_t i;
-    FS *net_fs;
 
     SYS_LOG_FUNTION_ENTRY(ROUTE);
 
@@ -356,13 +355,11 @@ void route_print()
             /* If we already have such route. */
             if (routes[i].flags & ROUTE_VALID)
             {
-                net_fs = (FS*)routes[i].device;
-
                 /* Print this routes information. */
-                printf("%s ", net_fs->name);
-                printf("@ 0x%08lX", routes[i].gateway);
-                printf(" 0x%08lX/", routes[i].destination);
-                printf("0x%08lX\r\n", routes[i].subnet);
+                SYS_LOG_MSG(ROUTE, SYS_LOG_DEFAULT, "%s ", ((FS*)routes[i].device)->name);
+                SYS_LOG_MSG(ROUTE, SYS_LOG_DEFAULT, "@ 0x%08lX", routes[i].gateway);
+                SYS_LOG_MSG(ROUTE, SYS_LOG_DEFAULT, " 0x%08lX/", routes[i].destination);
+                SYS_LOG_MSG(ROUTE, SYS_LOG_DEFAULT, "0x%08lX\r\n", routes[i].subnet);
             }
         }
 
