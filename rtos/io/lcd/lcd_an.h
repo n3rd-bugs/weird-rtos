@@ -98,6 +98,11 @@ typedef struct _lcd_an_ioctl_data
     void        *param;
 } LCD_AN_IOCTL_DATA;
 
+#ifdef LCD_AN_DEBUG
+/* Alphanumeric LCD debug file descriptor. */
+extern FD lcd_an_fd;
+#endif
+
 /* Function prototypes. */
 void lcd_an_init();
 void lcd_an_register(LCD_AN *);

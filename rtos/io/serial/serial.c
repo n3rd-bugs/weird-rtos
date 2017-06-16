@@ -18,6 +18,7 @@
 #include <serial.h>
 #include <serial_target.h>
 #include <net.h>
+#include <lcd_an.h>
 #include <string.h>
 
 #ifdef FS_CONSOLE
@@ -319,6 +320,14 @@ static int32_t serial_puts(uint8_t *buf, int32_t n)
     /* Print the result on the serial. */
     n = debug_serial->device.puts(serial, serial->device.data, buf, n, 0);
 #endif /* FS_CONSOLE */
+
+#ifdef LCD_AN_DEBUG
+    if (n > 0)
+    {
+        /* Print this string on the LCD-AN. */
+        n = fs_puts(lcd_an_fd, buf, n);
+    }
+#endif
 
     /* Print number of bytes printed. */
     return (n);

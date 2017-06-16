@@ -151,9 +151,6 @@ void lcd_an_register(LCD_AN *lcd)
 
 #ifdef LCD_AN_DEBUG
         lcd_an_fd = fs_open("\\console\\lcd1", 0);
-
-        /* Connect LCD with debug console. */
-        fs_connect(lcd_an_fd, debug_fd);
 #endif
     }
 
