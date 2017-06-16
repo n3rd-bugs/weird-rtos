@@ -14,7 +14,7 @@
 #include <os.h>
 #include <isr.h>
 #include <enc28j60.h>
-#include <serial.h>
+#include <usart_stm32f407.h>
 
 /* Initial vector table definition. */
 __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
