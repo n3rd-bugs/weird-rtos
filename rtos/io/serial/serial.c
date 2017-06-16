@@ -282,7 +282,7 @@ static int32_t serial_puts(uint8_t *buf, int32_t n)
  */
 int32_t serial_printf(char *format, ...)
 {
-    uint8_t print_buffer[PRINTF_BUFFER_SIZE], *buf = print_buffer;
+    uint8_t print_buffer[SERIAL_PRINTF_BUFFER_SIZE], *buf = print_buffer;
     int32_t n = 0;
     va_list vl;
 
@@ -290,7 +290,7 @@ int32_t serial_printf(char *format, ...)
     va_start(vl, format);
 
     /* Process the given string and save the result in a temporary buffer. */
-    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
+    n = vsnprintf((char *)buf, SERIAL_PRINTF_BUFFER_SIZE, format, vl);
 
     if (n > 0)
     {
@@ -309,15 +309,15 @@ int32_t serial_printf(char *format, ...)
 /*
  * serial_vprintf
  * @format: Formated string to be printed on serial debug port.
- * This function prints a formated log message on the serial debug port.
+ * This function prints a formated message on the serial debug port.
  */
 int32_t serial_vprintf(const char *format, va_list vl)
 {
     int32_t n;
-    uint8_t buf[PRINTF_BUFFER_SIZE];
+    uint8_t buf[SERIAL_PRINTF_BUFFER_SIZE];
 
     /* Process the given string and save the result in a temporary buffer. */
-    n = vsnprintf((char *)buf, PRINTF_BUFFER_SIZE, format, vl);
+    n = vsnprintf((char *)buf, SERIAL_PRINTF_BUFFER_SIZE, format, vl);
 
     if (n > 0)
     {

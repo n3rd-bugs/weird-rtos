@@ -31,12 +31,12 @@
 #define vprintf serial_vprintf
 
 /* Serial configurations. */
-#define PRINTF_BUFFER_SIZE  64
+#define SERIAL_PRINTF_BUFFER_SIZE   64
 
 /* Serial device flag definitions. */
-#define SERIAL_DEBUG        0x01
-#define SERIAL_INT          0x02
-#define SERIAL_IN_TX        0x04
+#define SERIAL_DEBUG                0x01
+#define SERIAL_INT                  0x02
+#define SERIAL_IN_TX                0x04
 
 typedef int32_t (SERIAL_INIT) (void *);
 typedef int32_t (SERIAL_PUTS) (void *, void *, uint8_t *, int32_t, uint32_t);
