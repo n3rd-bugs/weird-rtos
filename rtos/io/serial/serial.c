@@ -251,9 +251,6 @@ static int32_t serial_puts(uint8_t *buf, int32_t n)
 {
 #ifdef FS_CONSOLE
     SERIAL *serial = (SERIAL *)debug_fd;
-    FS_BUFFER *buffer;
-    int32_t status = SUCCESS;
-    uint8_t flags = FS_BUFFER_SUSPEND;
 #else
     SERIAL *serial = debug_serial;
 #endif
@@ -262,60 +259,8 @@ static int32_t serial_puts(uint8_t *buf, int32_t n)
     OS_ASSERT(serial == NULL);
 
 #ifdef FS_CONSOLE
-    /* If this is a buffered console. */
-    if (serial->flags & SERIAL_INT)
-    {
-        /* Get lock for this file descriptor. */
-        OS_ASSERT(fd_get_lock(serial) != SUCCESS);
-
-#ifdef CONFIG_NET
-        /* We should not be in the networking condition task. */
-        if (get_current_task() == &net_condition_tcb)
-        {
-            flags = 0;
-        }
-#endif
-        /* Pick a buffer. */
-        buffer = fs_buffer_get(serial, FS_BUFFER_LIST, flags);
-
-        /* If a buffer is available. */
-        if (buffer != NULL)
-        {
-            /* Push data on the buffer. */
-            if (fs_buffer_push(buffer, buf, (uint32_t)n, flags) == SUCCESS)
-            {
-                /* Pass this buffer to the serial driver. */
-                buf = (uint8_t *)buffer;
-            }
-            else
-            {
-                /* No buffer is available to transmit this buffer. */
-                status = FS_BUFFER_NO_SPACE;
-
-                /* Free this buffer. */
-                fs_buffer_add(serial, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-            }
-        }
-        else
-        {
-            /* No buffer is available to transmit this buffer. */
-            status = FS_BUFFER_NO_SPACE;
-        }
-
-        /* Release lock for this file descriptor. */
-        fd_release_lock(serial);
-    }
-
-    if (status == SUCCESS)
-    {
-        /* Use the debug FD. */
-        n = fs_write(serial, buf, n);
-    }
-    else
-    {
-        /* Return status to the caller. */
-        n = status;
-    }
+    /* Write given string on the serial port. */
+    n = fs_puts(serial, buf, n);
 #else
     /* Print the result on the serial. */
     n = debug_serial->device.puts(serial, serial->device.data, buf, n, 0);
