@@ -23,6 +23,7 @@
 #include <adc.h>
 #include <math.h>
 #include <lcd_an.h>
+#include <serial.h>
 
 /* Definitions to communicate with other side. */
 #define DEVICE_NAME         "Smart Change Over"
@@ -944,6 +945,11 @@ int main(void)
 
     /* Initialize networking stack. */
     net_init();
+
+#ifdef CONFIG_SERIAL
+    /* Initialize serial. */
+    serial_init();
+#endif
 
     /* Populate the socket structure. */
     socket_address.foreign_ip = IPV4_ADDR_UNSPEC;

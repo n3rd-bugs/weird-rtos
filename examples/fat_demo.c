@@ -20,6 +20,7 @@
 #include <math.h>
 #include <fs.h>
 #include <sys_info.h>
+#include <serial.h>
 
 /* FAT FS demo task definitions. */
 #define FAT_DEMO_STACK_SIZE     1024
@@ -166,6 +167,9 @@ int main(void)
     /* Initialize networking stack. */
     net_init();
 #endif
+
+    /* Initialize serial. */
+    serial_init();
 
     /* Initialize demo tasks. */
     task_create(&fat_demo_cb, "FAT", fat_demo_stack, FAT_DEMO_STACK_SIZE, &fat_demo_entry, NULL, 0);

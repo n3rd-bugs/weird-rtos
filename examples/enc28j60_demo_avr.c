@@ -17,6 +17,7 @@
 #include <net.h>
 #include <net_udp.h>
 #include <sys_info.h>
+#include <serial.h>
 
 /* Demo configurations. */
 #define DEMO_STACK_SIZE     384
@@ -103,6 +104,11 @@ int main(void)
 
     /* Initialize networking stack. */
     net_init();
+
+#ifdef CONFIG_SERIAL
+    /* Initialize serial. */
+    serial_init();
+#endif
 
     /* Create a task for UDP echo demo. */
     task_create(&udp_echo_task_cb, "ECHO", udp_echo_task_stack, DEMO_STACK_SIZE, &udp_echo_task, (void *)(NULL), 0);

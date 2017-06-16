@@ -18,6 +18,7 @@
 #include <sll.h>
 #include <stdlib.h>
 #include <path.h>
+#include <serial.h>
 
 #define NUM_DEMO_TASK       32
 #define DEMO_STACK_SIZE     512
@@ -171,6 +172,9 @@ int main(void)
 
     /* Initialize file system. */
     fs_init();
+
+    /* Initialize serial. */
+    serial_init();
 
     /* Allocate memory for stats. */
     ctx_time = (uint32_t *)mem_static_alloc((sizeof(uint32_t) * NUM_DEMO_TASK));

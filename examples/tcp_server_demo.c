@@ -17,6 +17,7 @@
 #include <net.h>
 #include <net_tcp.h>
 #include <sys_info.h>
+#include <serial.h>
 
 /* Demo configurations. */
 #define DEMO_STACK_SIZE     512
@@ -77,6 +78,9 @@ int main(void)
 
     /* Initialize networking stack. */
     net_init();
+
+    /* Initialize serial. */
+    serial_init();
 
     /* Create a task for TCP demo. */
     task_create(&tcp_task_cb, "TCP", tcp_task_stack, DEMO_STACK_SIZE, &tcp_server_task, (void *)(NULL), 0);

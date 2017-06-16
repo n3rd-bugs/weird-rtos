@@ -13,6 +13,7 @@
  */
 #include <os.h>
 #include <string.h>
+#include <serial.h>
 
 void cdc_demo_task(void *);
 
@@ -41,6 +42,9 @@ int main(void)
 
     /* Initialize USB stack. */
     usb_init();
+
+    /* Initialize serial. */
+    serial_init();
 
     /* Create a task for CDC demo. */
     cdc_demo_task_cb = (TASK *)mem_static_alloc(sizeof(TASK) + 4096);

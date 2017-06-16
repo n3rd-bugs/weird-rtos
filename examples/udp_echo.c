@@ -18,6 +18,7 @@
 #include <net.h>
 #include <ppp.h>
 #include <net_udp.h>
+#include <serial.h>
 
 /* Function prototypes. */
 void udp_echo_task(void *);
@@ -90,6 +91,11 @@ int main(void)
 
     /* Initialize networking stack. */
     net_init();
+
+#ifdef CONFIG_SERIAL
+    /* Initialize serial. */
+    serial_init();
+#endif
 
     /* Create a task for UDP echo demo. */
     udp_echo_task_cb = (TASK *)mem_static_alloc(sizeof(TASK) + 4096);

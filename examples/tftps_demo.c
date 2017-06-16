@@ -21,6 +21,7 @@
 #include <fs.h>
 #include <sys_info.h>
 #include <tftps.h>
+#include <serial.h>
 
 /* TFTP server instance. */
 TFTP_SERVER tftp_server;
@@ -38,6 +39,11 @@ int main(void)
 
     /* Initialize networking stack. */
     net_init();
+
+#ifdef CONFIG_SERIAL
+    /* Initialize serial. */
+    serial_init();
+#endif
 
     /* Populate the socket structure. */
     socket_address.foreign_ip = IPV4_ADDR_UNSPEC;
