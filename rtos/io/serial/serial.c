@@ -191,7 +191,7 @@ static int32_t serial_read(void *fs, uint8_t *buf, int32_t nbytes)
 {
     SERIAL *serial = (SERIAL *)fs;
     FS_BUFFER *buffer;
-    int32_t n;
+    int32_t n = nbytes;
 
     /* If this is a buffered serial port. */
     if ((serial != NULL) && (serial->flags & SERIAL_INT))
