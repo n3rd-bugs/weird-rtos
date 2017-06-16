@@ -132,10 +132,6 @@ void serial_register(SERIAL *serial, const char *name, void *buffer, uint32_t fl
             /* Unlock serial interrupts. */
             serial->device.int_unlock(serial->device.data);
         }
-        else
-        {
-            /* Hook up non-buffered write. */
-        }
 #endif
     }
 
