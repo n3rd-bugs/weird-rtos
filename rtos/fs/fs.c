@@ -15,6 +15,7 @@
 #include <os.h>
 
 #ifdef CONFIG_FS
+#include <stdio.h>
 #include <string.h>
 #include <sll.h>
 #include <path.h>
@@ -23,6 +24,7 @@
 #include <console.h>
 #include <pipe.h>
 #include <fs_target.h>
+#include <net.h>
 
 /* Global variables. */
 static FS_DATA file_data;
@@ -891,6 +893,140 @@ int32_t fs_ioctl(FD fd, uint32_t cmd, void *param)
     return (status);
 
 } /* fs_ioctl */
+
+/*
+ * fs_printf
+ * @fd: File descriptor on which we need to write.
+ * @format: Formated string to be written on the file.
+ * @return: Returns number of bytes written on the descriptor.
+ * This function writes a formated string on the given file descriptor.
+ */
+int32_t fs_printf(FD fd, char *format, ...)
+{
+    uint8_t print_buffer[FS_PRINTF_BUFFER_SIZE], *buf = print_buffer;
+    int32_t n = 0;
+    va_list vl;
+
+    /* Arguments start from the format. */
+    va_start(vl, format);
+
+    /* Process the given string and save the result in a temporary buffer. */
+    n = vsnprintf((char *)buf, FS_PRINTF_BUFFER_SIZE, format, vl);
+
+    if (n > 0)
+    {
+        /* Put this buffer on the serial port. */
+        n = fs_puts(fd, buf, n);
+    }
+
+    /* Destroy the argument list. */
+    va_end(vl);
+
+    /* Return number of bytes printed on serial port. */
+    return (n);
+
+} /* fs_printf */
+
+/*
+ * fs_vprintf
+ * @fd: File descriptor on which we need to write.
+ * @format: Formated string to be written on the file.
+ * @return: Returns number of bytes written on the descriptor.
+ * This function writes a formated string on the given file descriptor.
+ */
+int32_t fs_vprintf(FD fd, const char *format, va_list vl)
+{
+    int32_t n;
+    uint8_t buf[FS_PRINTF_BUFFER_SIZE];
+
+    /* Process the given string and save the result in a temporary buffer. */
+    n = vsnprintf((char *)buf, FS_PRINTF_BUFFER_SIZE, format, vl);
+
+    if (n > 0)
+    {
+        /* Put this buffer on the serial port. */
+        n = fs_puts(fd, buf, n);
+    }
+
+    /* Return number of bytes printed on UART. */
+    return (n);
+
+} /* fs_vprintf */
+
+/*
+ * fs_puts
+ * @fd: File descriptor on which we need to write the given string.
+ * @buf: Buffer needed to be written.
+ * @n: Number of bytes needed to be written.
+ * @return: Returns number of bytes written on the descriptor.
+ * This function writes a buffer on the given file descriptor.
+ */
+int32_t fs_puts(FD fd, uint8_t *buf, int32_t n)
+{
+    FS_BUFFER *buffer;
+    FS *fs = (FS *)fd;
+    int32_t status = SUCCESS;
+    uint8_t flags = FS_BUFFER_SUSPEND;
+
+    /* If this is a buffered console. */
+    if (fs->flags & FS_BUFFERED)
+    {
+        /* Get lock for this file descriptor. */
+        OS_ASSERT(fd_get_lock(fs) != SUCCESS);
+
+#ifdef CONFIG_NET
+        /* We should not be in the networking condition task. */
+        if (get_current_task() == &net_condition_tcb)
+        {
+            flags = 0;
+        }
+#endif
+        /* Pick a buffer. */
+        buffer = fs_buffer_get(fs, FS_BUFFER_LIST, flags);
+
+        /* If a buffer is available. */
+        if (buffer != NULL)
+        {
+            /* Push data on the buffer. */
+            if (fs_buffer_push(buffer, buf, (uint32_t)n, flags) == SUCCESS)
+            {
+                /* Pass this buffer to the serial driver. */
+                buf = (uint8_t *)buffer;
+            }
+            else
+            {
+                /* No buffer is available to transmit this buffer. */
+                status = FS_BUFFER_NO_SPACE;
+
+                /* Free this buffer. */
+                fs_buffer_add(fs, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            }
+        }
+        else
+        {
+            /* No buffer is available to transmit this buffer. */
+            status = FS_BUFFER_NO_SPACE;
+        }
+
+        /* Release lock for this file descriptor. */
+        fd_release_lock(fs);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Use the debug FD. */
+        n = fs_write(fs, buf, n);
+    }
+    else
+    {
+        /* Return status to the caller. */
+        n = status;
+    }
+
+    /* Return number of bytes written. */
+    return (n);
+
+} /* fs_puts */
 
 /*
  * fd_data_available

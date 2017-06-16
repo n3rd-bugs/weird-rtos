@@ -17,6 +17,7 @@
 #include <os.h>
 
 #ifdef CONFIG_FS
+#include <stdarg.h>
 #include <semaphore.h>
 #include <condition.h>
 
@@ -36,6 +37,9 @@ typedef void *FD;
 
 /* Include file system buffer definitions. */
 #include <fs_buffer.h>
+
+/* File system configurations. */
+#define FS_PRINTF_BUFFER_SIZE   64
 
 /* File system specific flags. */
 #define FS_DATA_AVAILABLE   0x00000001
@@ -171,6 +175,9 @@ void fd_release_lock(FD);
 int32_t fs_read(FD, uint8_t *, int32_t);
 int32_t fs_write(FD, uint8_t *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
+int32_t fs_printf(FD, char *, ...);
+int32_t fs_vprintf(FD, const char *, va_list);
+int32_t fs_puts(FD, uint8_t *, int32_t);
 
 void fs_connected(FD);
 void fs_disconnected(FD);
