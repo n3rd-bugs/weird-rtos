@@ -15,6 +15,7 @@
 #include <os.h>
 
 #ifdef MEMGR_STATS
+#include <serial.h>
 
 #ifdef MEMGR_DYNAMIC
 /*
