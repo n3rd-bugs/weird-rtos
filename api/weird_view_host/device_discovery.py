@@ -6,6 +6,7 @@ from socket import socket, AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_BROADCAST, SO_REU
 from datetime import datetime, timedelta
 from weird_view import WV_DISC, WV_DISC_REPLY, WV_LIST, WV_LIST_REPLY
 from time import sleep
+import netifaces
 
 # Seconds after which we will retry a discover request.
 DISC_TIMEOUT    = 5
@@ -94,9 +95,21 @@ class DiscoveryThread(QThread):
                     print("Sending a discover request on broadcast address.")
                 
                 try:
-                    # Broadcast discover to all listening device.
-                    self.udp_socket.sendto(bytes.fromhex(WV_DISC), ("255.255.255.255", 11000))
-                
+                    # Traverse all the network interfaces.
+                    for iface in netifaces.interfaces():
+                        
+                        # If we have IPv4 enabled on thsi interface.
+                        if netifaces.AF_INET in netifaces.ifaddresses(iface):
+                            
+                            # Traverse all the addresses on this interfrace.
+                            for addr in netifaces.ifaddresses(iface)[netifaces.AF_INET]:
+                                
+                                # If we a broadcast address on this interface.
+                                if 'broadcast' in addr:
+                                    
+                                    # Broadcast discover to all listening device.
+                                    self.udp_socket.sendto(bytes.fromhex(WV_DISC), (addr['broadcast'], 11000))
+                            
                     # Retry sending a discover request after configured time-out.
                     self.next_retry = datetime.now() + timedelta(0, DISC_TIMEOUT)
                     
