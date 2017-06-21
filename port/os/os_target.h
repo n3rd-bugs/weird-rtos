@@ -21,8 +21,7 @@
 
 /* Target platform definitions. */
 #define PLAT_ATMEGA644P     0x01
-#define PLAT_PK40X256VLQ100 0x02
-#define PLAT_STM32F407_DISC 0x03
+#define PLAT_STM32F407_DISC 0x02
 
 /* Target toolset configuration. */
 #define TOOL_AVR_GCC        0x01
@@ -54,8 +53,6 @@
 #include <os_atmega644p.h>
 #elif (PLAT_TARGET == PLAT_STM32F407_DISC)
 #include <os_stm32f407.h>
-#elif (PLAT_TARGET == PLAT_PK40X256VLQ100)
-#include <os_pk40x256vlq100.h>
 #endif
 
 #include <tasks.h>
