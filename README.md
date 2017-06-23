@@ -13,7 +13,7 @@ See [Getting Started Guide](GUIDEALL.md) for more help.
 | STM32F407Discovery | Cortex | USART, SPI, Ethernet |
 
 ## Minimum Requirements
-| Controller | RAM | RAM actual | ROM | ROM Actual |
+| Controller | ROM | ROM actual | RAM | RAM Actual |
 | ---------- | --- | ---------- | --- | ---------- |
 | AVR 8-bit | 8 KB | 4190 bytes | 2 KB | 846 bytes |
 | Cortex-M4 | 8 KB | 5028 bytes | 4 KB | 1760 bytes |
