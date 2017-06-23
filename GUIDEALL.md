@@ -37,3 +37,13 @@ Getting Started Guide
 - Idle task work scheduling for polling.
 - Centralized component based logging mechanisum.
 - Minimilistc global interrupt locking.
+
+## Usage Guides
+Weird RTOS lacks a good build system and is not yet planed, however for time 
+being smaple eclipse projects for each supported platforms are available.
+Please checkout branch for any of the required platform and import the eclipse 
+project. For more help please see following pages:
+- [AVR Eclipse Setup](docs/AVR-ECLIPSE.md)
+
+## API Documentation
+TODO
