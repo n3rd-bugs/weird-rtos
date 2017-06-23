@@ -29,18 +29,18 @@ Getting Started Guide
 ## Features
 - Basic operating system features including
   - *Semaphores* with optional specific interrupt protection
-  - *Conditionion* to create timers, events etc.
+  - *Condition* to create timers, events etc.
   - Dynamic task creation and deletion.
-  - Priority based aperiodic schedular
-- Mutiple condition suspend support to eliminate threads from system.
+  - Priority based aperiodic scheduler
+- Multiple condition suspend support to eliminate threads from system.
 - A small networking stack with IPv4, ARP, UDP, TCP.
 - Idle task work scheduling for polling.
-- Centralized component based logging mechanisum.
-- Minimilistc global interrupt locking.
+- Centralized component based logging mechanism.
+- Minimalistic global interrupt locking.
 
 ## Usage Guides
 Weird RTOS lacks a good build system and is not yet planed, however for time 
-being smaple eclipse projects for each supported platforms are available.
+being sample eclipse projects for each supported platforms are available.
 Please checkout branch for any of the required platform and import the eclipse 
 project. For more help please see following pages:
 - [AVR Eclipse Setup](docs/AVR-ECLIPSE.md)
