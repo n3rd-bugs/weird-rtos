@@ -22,13 +22,13 @@
 //#define CONFIG_MEMGR
 
 /* File system. */
-#define CONFIG_FS
+//#define CONFIG_FS
 
 /* Networking stack. */
 //#define CONFIG_NET
 
 /* Device IO. */
-#define CONFIG_SERIAL
+//#define CONFIG_SERIAL
 //#define CONFIG_SPI
 //#define CONFIG_MMC
 //#define CONFIG_ADC
