@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_ETHERNET
 #include <net_route.h>
@@ -102,7 +102,7 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
     if (int_poll != NULL)
     {
         /* Register interrupt polling work for this device. */
-        OS_ASSERT(idle_add_work(int_poll, device) != SUCCESS);
+        ASSERT(idle_add_work(int_poll, device) != SUCCESS);
     }
 
 } /* ethernet_regsiter */
@@ -257,7 +257,7 @@ static void ethernet_process(void *data, int32_t resume_status)
     UNUSED_PARAM(resume_status);
 
     /* Acquire lock for this device. */
-    OS_ASSERT(fd_get_lock((FD)device) != SUCCESS);
+    ASSERT(fd_get_lock((FD)device) != SUCCESS);
 
     /* If watch dog interrupt was triggered for this device. */
     if ((device->net_device.suspend.timeout_enabled == TRUE) && (INT32CMP(device->net_device.suspend.timeout, current_system_tick()) <= 0))
@@ -307,7 +307,7 @@ static void ethernet_process(void *data, int32_t resume_status)
                 if (status == SUCCESS)
                 {
                     /* Pull ethernet header from the buffer. */
-                    OS_ASSERT(fs_buffer_pull(buffer, NULL, ETH_HRD_SIZE, 0) != SUCCESS);
+                    ASSERT(fs_buffer_pull(buffer, NULL, ETH_HRD_SIZE, 0) != SUCCESS);
 
                     /* Free this buffer. */
                     fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
@@ -378,8 +378,8 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
     uint8_t dst_mac[ETH_ADDR_LEN];
 
     /* Pull the destination and source addresses. */
-    OS_ASSERT(fs_buffer_pull(buffer, dst_mac, (ETH_ADDR_LEN), 0) != SUCCESS);
-    OS_ASSERT(fs_buffer_pull(buffer, NULL, (ETH_ADDR_LEN), 0) != SUCCESS);
+    ASSERT(fs_buffer_pull(buffer, dst_mac, (ETH_ADDR_LEN), 0) != SUCCESS);
+    ASSERT(fs_buffer_pull(buffer, NULL, (ETH_ADDR_LEN), 0) != SUCCESS);
 
     /* If this was a broadcast frame. */
     if (memcmp(dst_mac, ETH_BCAST_ADDR, ETH_ADDR_LEN) == 0)
@@ -389,7 +389,7 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
     }
 
     /* Pull the protocol. */
-    OS_ASSERT(fs_buffer_pull(buffer, &proto, ETH_PROTO_LEN, FS_BUFFER_PACKED) != SUCCESS);
+    ASSERT(fs_buffer_pull(buffer, &proto, ETH_PROTO_LEN, FS_BUFFER_PACKED) != SUCCESS);
 
     /* Process the protocol. */
     switch(proto)
@@ -469,7 +469,7 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
     };
 
     /* Skim the protocol from the buffer. */
-    OS_ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
+    ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
 
     switch (net_proto)
     {
@@ -478,8 +478,8 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
     case NET_PROTO_IPV4:
 
         /* Pull the intended source and destination IP address. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &iface_addr, IPV4_ADDR_LEN, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &dst_ip, IPV4_ADDR_LEN, IPV4_HDR_DST_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
+        ASSERT(fs_buffer_pull_offset(buffer, &iface_addr, IPV4_ADDR_LEN, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
+        ASSERT(fs_buffer_pull_offset(buffer, &dst_ip, IPV4_ADDR_LEN, IPV4_HDR_DST_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
 
         /* Get the subnet mask for the address. */
         ipv4_get_device_address(buffer->fd, &iface_addr, &subnet);
@@ -513,7 +513,7 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
     case NET_PROTO_ARP:
 
         /* Pull the destination HW address from the ARP packet. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, dst_mac, ETH_ADDR_LEN, (ARP_HDR_PRE_LEN + ARP_HDR_TGT_HW_OFFSET), (FS_BUFFER_INPLACE)) != SUCCESS);
+        ASSERT(fs_buffer_pull_offset(buffer, dst_mac, ETH_ADDR_LEN, (ARP_HDR_PRE_LEN + ARP_HDR_TGT_HW_OFFSET), (FS_BUFFER_INPLACE)) != SUCCESS);
 
         /* If target address is not known. */
         if (memcmp(dst_mac, ETH_UNSPEC_ADDR, ETH_ADDR_LEN) == 0)
@@ -566,7 +566,7 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
     else if (buffer->total_length > orig_len)
     {
         /* Pull any excess data from the buffer. */
-        OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - orig_len), 0) != SUCCESS);
+        ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - orig_len), 0) != SUCCESS);
     }
 
     /* Return status to the caller. */

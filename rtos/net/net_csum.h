@@ -13,7 +13,7 @@
  */
 #ifndef NET_CSUM_H
 #define NET_CSUM_H
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 

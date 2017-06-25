@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #include <ethernet.h>
 
 #ifdef ETHERNET_ENC28J60
@@ -184,7 +184,7 @@ void enc28j60_stm32f407_reset(ENC28J60 *device)
     sleep_ms(ENC28J60_STM32F407_RESET_DELAY);
 
     /* Acquire lock for this device. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Set the RST, i.e. GPIOA.3. */
     GPIOA->BSRR |= (1 << 3);

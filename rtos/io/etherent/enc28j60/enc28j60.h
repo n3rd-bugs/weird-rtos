@@ -13,7 +13,7 @@
  */
 #ifndef _ENC28J60_H_
 #define _ENC28J60_H_
-#include <os.h>
+#include <kernel.h>
 #include <ethernet.h>
 
 #ifdef ETHERNET_ENC28J60
@@ -37,7 +37,7 @@
 #define ENC28J60_DISCONNECTED       -11000
 
 /* ENC28J60 watch dog configuration. */
-#define ENC28J60_WDT_TIMEOUT        (OS_TICKS_PER_SEC / 10)
+#define ENC28J60_WDT_TIMEOUT        (SOFT_TICKS_PER_SEC / 10)
 
 /* ENC28J60 CLKRDY delay configuration. */
 #define ENC28J60_CLKRDY_TIMEOUT     (100)

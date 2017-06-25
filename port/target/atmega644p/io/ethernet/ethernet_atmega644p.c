@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_ETHERNET
 #include <avr/interrupt.h>
@@ -30,7 +30,7 @@
 ISR(INT0_vect, ISR_NAKED)
 {
     /* We have entered an ISR. */
-    OS_ISR_ENTER();
+    ISR_ENTER();
 
 #ifdef ETHERNET_ENC28J60
     /* Handle enc28j60 interrupt. */
@@ -38,7 +38,7 @@ ISR(INT0_vect, ISR_NAKED)
 #endif
 
     /* We are now exiting the ISR. */
-    OS_ISR_EXIT();
+    ISR_EXIT();
 
 } /* ISR(INT0_vect, ISR_NAKED) */
 #endif

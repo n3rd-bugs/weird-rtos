@@ -15,7 +15,7 @@
 #ifndef _LCD_AN_TARGET_H_
 #define _LCD_AN_TARGET_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_LCD_AN
 #include <lcd_an_avr.h>

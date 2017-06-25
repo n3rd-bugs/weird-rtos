@@ -13,7 +13,7 @@
  */
 #ifndef _PPP_STM32F407_H_
 #define _PPP_STM32F407_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_PPP
 

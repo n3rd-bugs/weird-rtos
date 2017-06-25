@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <net.h>
@@ -114,7 +114,7 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offse
     if (num_bytes < 0)
     {
         /* Should never happen. */
-        OS_ASSERT(offset > buffer->total_length);
+        ASSERT(offset > buffer->total_length);
 
         /* Return the checksum for all the data in the buffer. */
         num_bytes = (int32_t)(buffer->total_length - offset);
@@ -122,7 +122,7 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offse
     else
     {
         /* Should never happen. */
-        OS_ASSERT((offset + (uint32_t)num_bytes) > buffer->total_length);
+        ASSERT((offset + (uint32_t)num_bytes) > buffer->total_length);
     }
 
     /* Move over the offset. */
@@ -180,7 +180,7 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offse
             if (left > 0)
             {
                 /* Add first byte in checksum. */
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
                 csum += (uint16_t)(*((uint8_t *)bytes) << 8);
 #else
                 csum += *((uint8_t *)bytes);
@@ -210,7 +210,7 @@ uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offse
         if (left == 1)
         {
             /* Add last byte in checksum. */
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
             csum += *((uint8_t *)bytes);
 #else
             csum += (uint16_t)(*((uint8_t *)bytes) << 8);

@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifndef SYS_LOG_NONE
 #include <serial.h>

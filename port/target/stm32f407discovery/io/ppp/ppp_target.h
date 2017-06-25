@@ -13,7 +13,7 @@
  */
 #ifndef _PPP_TARGET_H_
 #define _PPP_TARGET_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_PPP
 #include <ppp_stm32f407.h>

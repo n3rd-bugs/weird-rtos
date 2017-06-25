@@ -13,7 +13,7 @@
  */
 #ifndef _ETHERNET_ATMEGA644P_H_
 #define _ETHERNET_ATMEGA644P_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_ETHERNET
 

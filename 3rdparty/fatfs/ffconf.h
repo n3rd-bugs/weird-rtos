@@ -243,7 +243,7 @@
 
 #ifdef CONFIG_SEMAPHORE
 #define _FS_REENTRANT	1
-#define _FS_TIMEOUT		(OS_TICKS_PER_SEC * 10)
+#define _FS_TIMEOUT		(SOFT_TICKS_PER_SEC * 10)
 #define _SYNC_t			SEMAPHORE
 #else
 #define _FS_REENTRANT	0

@@ -12,7 +12,7 @@
  * or indirect use.
  */
 #include <stdio.h>
-#include <os.h>
+#include <kernel.h>
 #include <sys_info.h>
 #include <serial.h>
 

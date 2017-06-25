@@ -1,5 +1,5 @@
 /*
- * os_atmega644p.h
+ * atmega644p.h
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -11,8 +11,8 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#ifndef OS_ATMEGA644P_H
-#define OS_ATMEGA644P_H
+#ifndef _ATMEGA644P_H_
+#define _ATMEGA644P_H_
 
 #ifdef CONFIG_BOOTLOAD
 #include <bootload_atmega644p.h>
@@ -26,4 +26,4 @@
 
 /* Any other configuration is being managed by Eclipse plugin for avr-gcc. */
 
-#endif /* OS_ATMEGA644P_H */
+#endif /* _ATMEGA644P_H_ */

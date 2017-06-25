@@ -12,7 +12,7 @@
  * or indirect use.
  */
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 #include <stdio.h>
@@ -83,11 +83,11 @@ void fs_register(FS *file_system)
     scheduler_lock();
 #else
     /* Obtain the global data lock. */
-    OS_ASSERT(semaphore_obtain(&file_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&file_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
     /* Just a consistency check. */
-    OS_ASSERT(file_system->name[0] != '\\');
+    ASSERT(file_system->name[0] != '\\');
 
     /* Just push this file system in the list. */
     sll_push(&file_data.list, file_system, OFFSETOF(FS, next));
@@ -117,14 +117,14 @@ void fs_unregister(FS *file_system)
     scheduler_lock();
 #else
     /* Obtain the global data lock. */
-    OS_ASSERT(semaphore_obtain(&file_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&file_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
     /* This could be a file descriptor chain, so destroy it. */
     fs_destroy_chain((FD)file_system);
 
     /* Just remove this file system from the list. */
-    OS_ASSERT(sll_remove(&file_data.list, file_system, OFFSETOF(FS, next)) != file_system);
+    ASSERT(sll_remove(&file_data.list, file_system, OFFSETOF(FS, next)) != file_system);
 
 #ifdef CONFIG_SEMAPHORE
     /* Release the global data lock. */
@@ -148,13 +148,13 @@ void fs_connect(FD fd, FD fd_head)
     FS *fs = (FS *)fd;
 
     /* Get lock for this file descriptor. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Given file descriptor should not be a chain head. */
-    OS_ASSERT(fs->flags & FS_CHAIN_HEAD);
+    ASSERT(fs->flags & FS_CHAIN_HEAD);
 
     /* Given file descriptor should not be a part of a chain. */
-    OS_ASSERT(fs->fd_chain.fd_node.head != 0);
+    ASSERT(fs->fd_chain.fd_node.head != 0);
 
     /* Save the list head. */
     fs->fd_chain.fd_node.head = fd_head;
@@ -163,7 +163,7 @@ void fs_connect(FD fd, FD fd_head)
     fd_release_lock(fd);
 
     /* Get lock for head file descriptor. */
-    OS_ASSERT(fd_get_lock(fd_head) != SUCCESS);
+    ASSERT(fd_get_lock(fd_head) != SUCCESS);
 
     /* If head file descriptor is not a chain head. */
     if (!(((FS *)fd_head)->flags & FS_CHAIN_HEAD))
@@ -192,7 +192,7 @@ void fs_destroy_chain(FD fd_head)
     FS *fs, *fs_head = (FS *)fd_head;
 
     /* Get lock for this file descriptor. */
-    OS_ASSERT(fd_get_lock(fd_head) != SUCCESS);
+    ASSERT(fd_get_lock(fd_head) != SUCCESS);
 
     /* Get a file descriptor from list. */
     fs = (FS *)sll_pop(&fs_head->fd_chain.fd_list, OFFSETOF(FS, fd_chain.fd_node.next));
@@ -201,7 +201,7 @@ void fs_destroy_chain(FD fd_head)
     while (fs != NULL)
     {
         /* Get lock for head file system. */
-        OS_ASSERT(fd_get_lock(fs) != SUCCESS);
+        ASSERT(fd_get_lock(fs) != SUCCESS);
 
         /* Remove this file descriptor from the list. */
         fs->fd_chain.fd_node.head = NULL;
@@ -228,19 +228,19 @@ void fs_disconnect(FD fd)
     FS *fs = (FS *)fd;
 
     /* Get lock for this file descriptor. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Given file descriptor should not be a chain head. */
-    OS_ASSERT(fs->flags & FS_CHAIN_HEAD);
+    ASSERT(fs->flags & FS_CHAIN_HEAD);
 
     /* If we are part of a file descriptor chain. */
     if (fs->fd_chain.fd_node.head != NULL)
     {
         /* Get lock for head file descriptor. */
-        OS_ASSERT(fd_get_lock(fs->fd_chain.fd_node.head) != SUCCESS);
+        ASSERT(fd_get_lock(fs->fd_chain.fd_node.head) != SUCCESS);
 
         /* We must have removed this file descriptor from it's list. */
-        OS_ASSERT(sll_remove(&((FS *)fs->fd_chain.fd_node.head)->fd_chain.fd_list, fd, OFFSETOF(FS, fd_chain.fd_node.next)) != fd);
+        ASSERT(sll_remove(&((FS *)fs->fd_chain.fd_node.head)->fd_chain.fd_list, fd, OFFSETOF(FS, fd_chain.fd_node.next)) != fd);
 
         /* Release lock for head file descriptor. */
         fd_release_lock(fs->fd_chain.fd_node.head);
@@ -455,7 +455,7 @@ void fs_condition_lock(void *data)
     FD fd = (FD)data;
 
     /* Get lock for this file descriptor. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    ASSERT(fd_get_lock(fd) != SUCCESS);
 
 } /* fs_condition_lock */
 
@@ -561,7 +561,7 @@ FD fs_open(char *name, uint32_t flags)
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data lock. */
-    OS_ASSERT(semaphore_obtain(&file_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&file_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
     /* Initialize a search parameter. */
@@ -803,7 +803,7 @@ int32_t fs_write(FD fd, uint8_t *buffer, int32_t nbytes)
             if (fs->flags & FS_CHAIN_HEAD)
             {
                 /* We should not be in a list. */
-                OS_ASSERT(is_list == TRUE);
+                ASSERT(is_list == TRUE);
 
                 /* We are in a list. */
                 is_list = TRUE;
@@ -873,7 +873,7 @@ int32_t fs_ioctl(FD fd, uint32_t cmd, void *param)
     FS *fs = (FS *)fd;
 
     /* Get lock for this file descriptor. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* If lock was successfully obtained. */
     if (status == SUCCESS)
@@ -972,7 +972,7 @@ int32_t fs_puts(FD fd, uint8_t *buf, int32_t n)
     if (fs->flags & FS_BUFFERED)
     {
         /* Get lock for this file descriptor. */
-        OS_ASSERT(fd_get_lock(fs) != SUCCESS);
+        ASSERT(fd_get_lock(fs) != SUCCESS);
 
 #ifdef CONFIG_NET
         /* We should not be in the networking condition task. */

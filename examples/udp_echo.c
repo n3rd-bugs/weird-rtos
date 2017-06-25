@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #include <string.h>
 #include <mem.h>
 #include <fs.h>
@@ -103,7 +103,7 @@ int main(void)
     scheduler_task_add(udp_echo_task_cb, 5);
 
     /* Run scheduler. */
-    os_run();
+    kernel_run();
 
     return (0);
 

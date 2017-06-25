@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #include <ethernet.h>
 
 #ifdef ETHERNET_ENC28J60
@@ -132,7 +132,7 @@ static void enc28j60_initialize(void *data)
         }
 
         /* Acquire lock for this device. */
-        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+        ASSERT(fd_get_lock(fd) != SUCCESS);
 
         /* Decrement the number of retries. */
         max_retry --;

@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #include <ethernet.h>
 
 #ifdef ETHERNET_ENC28J60

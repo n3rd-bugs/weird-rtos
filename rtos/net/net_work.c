@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <net_work.h>
@@ -75,8 +75,8 @@ int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data
 
     SYS_LOG_FUNTION_ENTRY(NET_WORK);
 
-    OS_ASSERT(queue == NULL);
-    OS_ASSERT(work_do == NULL);
+    ASSERT(queue == NULL);
+    ASSERT(work_do == NULL);
 
     /* If caller did not allocate the work. */
     if (work_ptr == NULL)

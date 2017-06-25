@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_WEIRD_VIEW
 #include <weird_view_server.h>
@@ -119,7 +119,7 @@ static void weird_view_server_process(void *data, int32_t status)
     if (received >= (int32_t)sizeof(uint32_t))
     {
         /* Acquire lock for the buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
+        ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
 
         /* Pull the command from the buffer. */
         fs_buffer_pull(rx_buffer, &command, sizeof(uint32_t), (FS_BUFFER_PACKED));

@@ -14,7 +14,7 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef FS_CONSOLE
 

@@ -12,7 +12,7 @@
  * or indirect use.
  */
 
-#include <os.h>
+#include <kernel.h>
 #include <condition.h>
 #include <sll.h>
 
@@ -176,7 +176,7 @@ static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspen
     while (num)
     {
         /* Remove this suspend from the suspend list. */
-        OS_ASSERT(sll_remove(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next)) != *suspend);
+        ASSERT(sll_remove(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next)) != *suspend);
 
         /* Pick next condition. */
         condition++;
@@ -214,7 +214,7 @@ static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, u
         {
             /* We are no longer waiting on this condition remove this task from
              * the condition. */
-            OS_ASSERT(sll_remove(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next)) != *suspend);
+            ASSERT(sll_remove(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next)) != *suspend);
         }
 
         /* Pick next condition. */
@@ -373,7 +373,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
     TASK *tcb = get_current_task();
 
     /* Current task should not be null. */
-    OS_ASSERT(tcb == NULL);
+    ASSERT(tcb == NULL);
 
 #ifndef CONFIG_SLEEP
     /* Remove some compiler warning. */
@@ -545,13 +545,13 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
     do
     {
         /* Should never happen. */
-        OS_ASSERT((resume != NULL) && (resume->status == TASK_SUSPENDED));
+        ASSERT((resume != NULL) && (resume->status == TASK_SUSPENDED));
 
         /* If a parameter was given. */
         if ((resume != NULL) && (resume->param != NULL))
         {
             /* Should never happen. */
-            OS_ASSERT(resume->do_resume == NULL);
+            ASSERT(resume->do_resume == NULL);
 
             /* Search for a task that can be resumed. */
             suspend = (SUSPEND *)sll_search_pop(&condition->suspend_list, &suspend_sreach, resume, OFFSETOF(SUSPEND, next));

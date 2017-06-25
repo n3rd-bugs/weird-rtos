@@ -14,7 +14,7 @@
 #ifndef _PPP_FCS_H_
 #define _PPP_FCS_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_PPP
 #include <fs.h>

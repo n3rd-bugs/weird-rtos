@@ -14,7 +14,7 @@
 #ifndef FS_H
 #define FS_H
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 #include <stdarg.h>

@@ -14,7 +14,7 @@
 #ifndef ISR_H
 #define ISR_H
 
-#include <os.h>
+#include <kernel.h>
 
 /* ISR callback definition. */
 typedef void (*const isr)(void);

@@ -14,7 +14,7 @@
 #ifndef PIPE_H
 #define PIPE_H
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef FS_PIPE
 

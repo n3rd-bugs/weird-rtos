@@ -68,8 +68,8 @@ inline uint8_t sll_in_list(void *list, void *node, int offset)                  
  */
 inline void sll_push(void *list, void *node, int offset)                                \
 {                                                                                       \
-    OS_ASSERT(node == NULL);                                                            \
-    OS_ASSERT(sll_in_list(list, node, offset));                                         \
+    ASSERT(node == NULL);                                                            \
+    ASSERT(sll_in_list(list, node, offset));                                         \
     ((SLL_NODE *)((uint8_t *)node + offset))->next = ((SLL_HEAD *)list)->head;          \
     ((SLL_HEAD *)list)->head = node;                                                    \
     if (((SLL_HEAD *)list)->tail == NULL)                                               \
@@ -114,8 +114,8 @@ inline void *sll_pop(void *list, int offset)                                    
  */
 inline void sll_append(void *list, void *node, int offset)                              \
 {                                                                                       \
-    OS_ASSERT(node == NULL);                                                            \
-    OS_ASSERT(sll_in_list(list, node, offset));                                         \
+    ASSERT(node == NULL);                                                            \
+    ASSERT(sll_in_list(list, node, offset));                                         \
     ((SLL_NODE *)((uint8_t *)node + offset))->next = NULL;                              \
     if (((SLL_HEAD *)list)->tail != NULL)                                               \
     {                                                                                   \
@@ -141,8 +141,8 @@ inline void sll_append(void *list, void *node, int offset)                      
 inline void sll_insert(void *list, void *node, uint8_t (*sort)(void *, void *), int offset)                         \
 {                                                                                                                   \
     void *list_node = ((SLL_HEAD *)list)->head;                                                                     \
-    OS_ASSERT(node == NULL);                                                                                        \
-    OS_ASSERT(sll_in_list(list, node, offset));                                                                     \
+    ASSERT(node == NULL);                                                                                        \
+    ASSERT(sll_in_list(list, node, offset));                                                                     \
     if ( (list_node == NULL) ||                                                                                     \
          (sort(list_node, node)) )                                                                                  \
     {                                                                                                               \
@@ -219,7 +219,7 @@ inline void *sll_search(void *list, void **prev_node, uint8_t (*match)(void *, v
  */
 inline void sll_remove_node(void *list, void *node, void *prev_node, int offset)                                    \
 {                                                                                                                   \
-    OS_ASSERT(node == NULL);                                                                                        \
+    ASSERT(node == NULL);                                                                                        \
     if (((SLL_HEAD *)list)->head == node)                                                                           \
     {                                                                                                               \
         ((SLL_HEAD *)list)->head = ((SLL_NODE *)((uint8_t *)node + offset))->next;                                  \
@@ -269,8 +269,8 @@ inline void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *
  */
 inline void sll_add_node(void *list, void *node, void *prev_node, int offset)                                       \
 {                                                                                                                   \
-    OS_ASSERT(node == NULL);                                                                                        \
-    OS_ASSERT(sll_in_list(list, node, offset));                                                                     \
+    ASSERT(node == NULL);                                                                                        \
+    ASSERT(sll_in_list(list, node, offset));                                                                     \
     if (prev_node == NULL)                                                                                          \
     {                                                                                                               \
         ((SLL_NODE *)((uint8_t *)node + offset))->next = ((SLL_HEAD *)list)->head;                                  \
@@ -302,7 +302,7 @@ inline void sll_add_node(void *list, void *node, void *prev_node, int offset)   
 inline void *sll_remove(void *list, void *node, int offset)                             \
 {                                                                                       \
     void *list_node = ((SLL_HEAD *)list)->head;                                         \
-    OS_ASSERT(node == NULL);                                                            \
+    ASSERT(node == NULL);                                                            \
     if (list_node != NULL)                                                              \
     {                                                                                   \
         if (list_node == node)                                                          \

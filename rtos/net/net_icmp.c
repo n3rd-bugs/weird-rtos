@@ -12,7 +12,7 @@
  * or indirect use.
  */
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <net.h>
@@ -53,7 +53,7 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
     if (net_csum_calculate(buffer, -1, ihl) == 0)
     {
         /* Peek the type of the ICMP packet. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &type, 1, ihl + ICMP_HDR_TYPE_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+        ASSERT(fs_buffer_pull_offset(buffer, &type, 1, ihl + ICMP_HDR_TYPE_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
 
 #ifdef ICMP_ENABLE_PING
         /* If this is an Echo request. */
@@ -65,10 +65,10 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
             if (iface_addr == dst_addr)
             {
                 /* Pull the ID and sequence number. */
-                OS_ASSERT(fs_buffer_pull_offset(buffer, &id_seq, 4, ihl + ICMP_HDR_TRAIL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+                ASSERT(fs_buffer_pull_offset(buffer, &id_seq, 4, ihl + ICMP_HDR_TRAIL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
 
                 /* Pull the IP and ICMP packet header header. */
-                OS_ASSERT(fs_buffer_pull_offset(buffer, NULL, ihl + ICMP_HDR_PAYLOAD_OFFSET, 0, 0) != SUCCESS);
+                ASSERT(fs_buffer_pull_offset(buffer, NULL, ihl + ICMP_HDR_PAYLOAD_OFFSET, 0, 0) != SUCCESS);
 
                 /* Initialize an ICMP Echo reply. */
                 status = icmp_header_add(buffer, ICMP_ECHO_REPLY, 0, id_seq);

@@ -1,5 +1,5 @@
 /*
- * os_avr.c
+ * avr.c
  *
  * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
  *
@@ -13,8 +13,8 @@
  */
 #include <avr/interrupt.h>
 #include <avr/wdt.h>
-#include <os.h>
-#include <os_avr.h>
+#include <kernel.h>
+#include <avr.h>
 #include <string.h>
 
 /* Global interrupt level. */
@@ -84,7 +84,7 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
     sys_interrupt_level = 0;
 
     /* Process system tick. */
-    os_process_system_tick();
+    process_system_tick();
 
     /* Check if we can actually preempt the current task. */
     if (current_task->lock_count == 0)
@@ -128,7 +128,7 @@ void system_tick_Init()
 {
     /* Using 16bit timer 1 to generate the system tick. */
     TCNT1 = 0x00;
-    OCR1A = (((SYS_FREQ / OS_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
+    OCR1A = (((SYS_FREQ / SOFT_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
 
     /* Setup clock source and compare match behavior. */
     TCCR1B =  0x03 | 0x08;
@@ -139,13 +139,13 @@ void system_tick_Init()
 } /* system_tick_Init */
 
 /*
- * os_stack_init
+ * stack_init
  * @tcb: Task control block for which stack is needed to be initialized.
  * @entry: Task entry function.
  * @argv: Argument that is needed to be passed to the task.
  * This function initializes stack for a new task.
  */
-void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
+void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
 {
     /* The start of the task code will be popped off the stack last, so place
      * it on first. */
@@ -174,7 +174,7 @@ void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
     *(tcb->tos) = TRUE;                             /* Push system interrupt level for this task. */
     (tcb->tos)--;
 
-} /* os_stack_init */
+} /* stack_init */
 
 /*
  * avr_stack_fill

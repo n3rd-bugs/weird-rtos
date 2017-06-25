@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_SPI
 #include <spi.h>
@@ -27,7 +27,7 @@ void spi_bb_atmega644_init(SPI_DEVICE *device)
     SPI_BB_AVR *bb_avr = (SPI_BB_AVR *)device->data;
 
     /* Only mast mode is supported. */
-    OS_ASSERT((device->cfg_flags & SPI_CFG_MASTER) == 0);
+    ASSERT((device->cfg_flags & SPI_CFG_MASTER) == 0);
 
     /* MOSI, SCLK and SS will be output. */
     _SFR_IO8(bb_avr->ddr_mosi) |= (1 << bb_avr->pin_num_mosi);

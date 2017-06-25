@@ -13,7 +13,7 @@
  */
 #ifndef _NET_ARP_H_
 #define _NET_ARP_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <net.h>
@@ -34,9 +34,9 @@
 #define ARP_FLAG_IN_USE         0x04
 
 /* ARP configuration. */
-#define ARP_TIMEOUT             (1 * OS_TICKS_PER_SEC)
+#define ARP_TIMEOUT             (1 * SOFT_TICKS_PER_SEC)
 #define ARP_RETRY_COUNT         (3)
-#define ARP_UPDATE_TIME         (20 * OS_TICKS_PER_SEC)
+#define ARP_UPDATE_TIME         (20 * SOFT_TICKS_PER_SEC)
 
 /* ARP header definitions. */
 #define ARP_HDR_LEN             (28)

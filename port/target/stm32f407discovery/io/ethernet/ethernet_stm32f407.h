@@ -13,7 +13,7 @@
  */
 #ifndef _ETHERNET_STM32F407_H_
 #define _ETHERNET_STM32F407_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_ETHERNET
 

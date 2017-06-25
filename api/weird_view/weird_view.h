@@ -13,7 +13,7 @@
  */
 #ifndef _WEIRD_VIEW_H_
 #define _WEIRD_VIEW_H_
-#include <os.h>
+#include <kernel.h>
 
 /* Error code definitions. */
 #define WV_UNKNOWN_CMD          -20000

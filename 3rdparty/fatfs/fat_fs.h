@@ -14,7 +14,7 @@
 #ifndef _FAT_FS_H_
 #define _FAT_FS_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 #include <fs.h>

@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_PPP
 #include <string.h>
@@ -95,7 +95,7 @@ int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_
             /* Remote has same IP address. */
             else
             {
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
                 /* Copy the configured remote IP address in the PPP structure. */
                 fs_memcpy_r(&ppp->remote_ip_address, option->data, (uint32_t)(option->length - 2));
 #else
@@ -111,7 +111,7 @@ int32_t ppp_ipcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_
         /* If this is a ACK for our configuration. */
         if (rx_packet->code == PPP_CONFIG_ACK)
         {
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
             /* Copy the configured local IP address in the PPP structure. */
             fs_memcpy_r(&ppp->local_ip_address, option->data, (uint32_t)(option->length - 2));
 #else
@@ -172,7 +172,7 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
     FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
 
     /* Should never happen. */
-    OS_ASSERT(tx_buffer == NULL);
+    ASSERT(tx_buffer == NULL);
 
     /* If we are sending an NAK it means we have the required configuration
      * options and we can now send our configuration in reply. */
@@ -227,13 +227,13 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
         fd_release_lock(fd);
 
         /* Set the IPv4 address for this device. */
-        OS_ASSERT(ipv4_set_device_address(fd, ppp->local_ip_address, IPV4_SUBNET_LL) != SUCCESS);
+        ASSERT(ipv4_set_device_address(fd, ppp->local_ip_address, IPV4_SUBNET_LL) != SUCCESS);
 
         /* Add a route for remote address. */
         route_add(fd, ppp->local_ip_address, ppp->remote_ip_address, ppp->remote_ip_address, IPV4_SUBNET_LL, 0);
 
         /* Acquire lock for this file descriptor. */
-        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+        ASSERT(fd_get_lock(fd) != SUCCESS);
 
         /* Set link-up for the associated networking device. */
         net_device_link_up(fd);

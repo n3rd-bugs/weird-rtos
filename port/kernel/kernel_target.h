@@ -1,5 +1,5 @@
 /*
- * os_target.h
+ * kernel_target.h
  *
  * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
  *
@@ -11,8 +11,8 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#ifndef OS_TARGET_H
-#define OS_TARGET_H
+#ifndef _KERNEL_TARGET_H_
+#define _KERNEL_TARGET_H_
 
 /* Target processor definitions. */
 #define TARGET_AVR          0x1
@@ -34,34 +34,34 @@
 
 /* Toolset includes. */
 #if (TOOL_TARGET == TOOL_AVR_GCC)
-#include <os_avr_gcc.h>
+#include <avr_gcc.h>
 #elif (TOOL_TARGET == TOOL_ARM_GCC)
-#include <os_arm_gcc.h>
+#include <arm_gcc.h>
 #endif
 
 /* Processor includes. */
 #if (RTOS_TARGET == TARGET_AVR)
-#include <os_avr.h>
+#include <avr.h>
 #elif (RTOS_TARGET == TARGET_CORTEX_M3)
-#include <os_cortex_m3.h>
+#include <cortex_m3.h>
 #elif (RTOS_TARGET == TARGET_CORTEX_M4)
-#include <os_cortex_m4.h>
+#include <cortex_m4.h>
 #endif
 
 /* Platform includes. */
 #if (PLAT_TARGET == PLAT_ATMEGA644P)
-#include <os_atmega644p.h>
+#include <atmega644p.h>
 #elif (PLAT_TARGET == PLAT_STM32F407_DISC)
-#include <os_stm32f407.h>
+#include <stm32f407.h>
 #endif
 
 #include <tasks.h>
 
 /* Following functions must be implemented by target porting layer. */
 void system_tick_Init();
-void os_stack_init(TASK *, TASK_ENTRY *, void *);
+void stack_init(TASK *, TASK_ENTRY *, void *);
 
 /* This must be implemented by application. */
 int main(void);
 
-#endif /* OS_TARGET_H */
+#endif /* _KERNEL_TARGET_H_ */

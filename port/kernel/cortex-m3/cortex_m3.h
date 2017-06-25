@@ -1,5 +1,5 @@
 /*
- * os_cortex_m3.h
+ * cortex_m3.h
  *
  * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
  *
@@ -11,10 +11,10 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#ifndef OS_CORTEX_M3_H
-#define OS_CORTEX_M3_H
+#ifndef _CORTEX_M3_H_
+#define _CORTEX_M3_H_
 
-#include <os.h>
+#include <kernel.h>
 
 /* System interrupt level. */
 extern uint32_t sys_interrupt_level;
@@ -112,4 +112,4 @@ NAKED_ISR_FUN isr_pendsv_handle(void);
 ISR_FUN isr_sysclock_handle(void);
 ISR_FUN isr_clock64_tick(void);
 
-#endif /* OS_CORTEX_M3_H */
+#endif /* _CORTEX_M3_H_ */

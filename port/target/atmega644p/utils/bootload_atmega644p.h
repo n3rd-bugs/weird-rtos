@@ -14,7 +14,7 @@
 #ifndef _BOOTLOAD_ATMEGA644P_H_
 #define _BOOTLOAD_ATMEGA644P_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_BOOTLOAD
 #define BOOTLOADER_LOADED

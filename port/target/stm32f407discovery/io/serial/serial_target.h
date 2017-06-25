@@ -13,7 +13,7 @@
  */
 #ifndef _SERIAL_TARGET_H_
 #define _SERIAL_TARGET_H_
-#include <os.h>
+#include <kernel.h>
 #include <usart_stm32f407.h>
 
 /* Hook-up serial OS stack. */

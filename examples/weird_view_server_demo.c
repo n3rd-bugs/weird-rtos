@@ -13,7 +13,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <os.h>
+#include <kernel.h>
 #include <string.h>
 #include <fs.h>
 #include <net.h>
@@ -103,7 +103,7 @@ void heartbeat_entry(void *argv);
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
 
 #define NUM_ADC_CHANNELS        (2)
-#define ADC_CHANNEL_DELAY       (OS_TICKS_PER_SEC / 100)
+#define ADC_CHANNEL_DELAY       (SOFT_TICKS_PER_SEC / 100)
 
 static uint16_t adc_sample[DEMO_SAMPLES];
 static uint16_t adc_sample_log[DEMO_SAMPLES];
@@ -568,7 +568,7 @@ int main(void)
 #endif
 
     /* Run scheduler. */
-    os_run();
+    kernel_run();
 
     return (0);
 

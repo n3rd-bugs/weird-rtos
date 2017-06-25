@@ -12,7 +12,7 @@
  * or indirect use.
  */
 
-#include <os.h>
+#include <kernel.h>
 #include <fs.h>
 
 #ifdef FS_CONSOLE
@@ -73,7 +73,7 @@ void console_register(CONSOLE *console)
     scheduler_lock();
 #else
     /* Obtain the global data lock. */
-    OS_ASSERT(semaphore_obtain(&console_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&console_data.lock, MAX_WAIT) != SUCCESS);
 
     /* Create a semaphore to protect this console device. */
     memset(&console->lock, 0, sizeof(SEMAPHORE));
@@ -118,7 +118,7 @@ void console_unregister(CONSOLE *console)
     scheduler_lock();
 #else
     /* Obtain the global data lock. */
-    OS_ASSERT(semaphore_obtain(&console_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&console_data.lock, MAX_WAIT) != SUCCESS);
 
     /* Obtain the lock for the console needed to be unregistered. */
     if (semaphore_obtain(&console->lock, MAX_WAIT) == SUCCESS)
@@ -133,7 +133,7 @@ void console_unregister(CONSOLE *console)
 #endif
 
         /* Just remove this console from console list. */
-        OS_ASSERT(sll_remove(&console_data.list, console, OFFSETOF(CONSOLE, fs.next)) != console);
+        ASSERT(sll_remove(&console_data.list, console, OFFSETOF(CONSOLE, fs.next)) != console);
 
 #ifdef CONFIG_SEMAPHORE
     }
@@ -164,7 +164,7 @@ static void *console_open(void *priv_data, char *name, uint32_t flags)
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data lock. */
-    OS_ASSERT(semaphore_obtain(&console_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&console_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
     /* Initialize a search parameter. */

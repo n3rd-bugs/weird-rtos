@@ -13,7 +13,7 @@
  */
 #ifndef _ETHERNET_H_
 #define _ETHERNET_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_ETHERNET
 #ifndef CONFIG_NET

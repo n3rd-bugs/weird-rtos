@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #ifdef CONFIG_SERIAL
 #include <usart_stm32f407.h>
 #include <serial.h>
@@ -152,7 +152,7 @@ static int32_t usart_stm32f407_init(void *data)
  */
 ISR_FUN usart1_interrupt()
 {
-    OS_ISR_ENTER();
+    ISR_ENTER();
 
     /* If a transmission was successfully completed. */
     if (USART1->SR & USART_SR_TC)
@@ -168,7 +168,7 @@ ISR_FUN usart1_interrupt()
         usart1_handle_rx_interrupt();
     }
 
-    OS_ISR_EXIT();
+    ISR_EXIT();
 
 } /* usart1_interrupt */
 

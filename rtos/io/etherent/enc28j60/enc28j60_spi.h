@@ -13,7 +13,7 @@
  */
 #ifndef _ENC28J60_SPI_H_
 #define _ENC28J60_SPI_H_
-#include <os.h>
+#include <kernel.h>
 #include <ethernet.h>
 
 #ifdef ETHERNET_ENC28J60

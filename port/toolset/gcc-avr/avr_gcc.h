@@ -1,5 +1,5 @@
 /*
- * os_avr_gcc.h
+ * avr_gcc.h
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -14,8 +14,8 @@
 
 /* This macro is used to tell compiler to not manage stack for it. */
 
-#ifndef OS_AVR_GCC_H
-#define OS_AVR_GCC_H
+#ifndef _AVR_GCC_H_
+#define _AVR_GCC_H_
 
 #define STACK_LESS          __attribute__ ((naked))
 #define NOINLINE            __attribute__ ((noinline))
@@ -27,6 +27,6 @@
 #define NOOPTIMIZATION      __attribute__((optimize("O0")))
 #define SPEEDOPTIMIZATION   __attribute__((optimize("O3")))
 
-#define OS_LITTLE_ENDIAN
+#define LITTLE_ENDIAN
 
-#endif /* OS_AVR_GCC_H */
+#endif /* _AVR_GCC_H_ */

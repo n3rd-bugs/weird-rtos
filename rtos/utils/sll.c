@@ -12,7 +12,7 @@
  * or indirect use.
  */
 #include <sll.h>
-#include <os.h>
+#include <kernel.h>
 
 #ifndef SLL_INLINE
 /*
@@ -25,11 +25,11 @@
 void sll_push(void *list, void *node, int offset)
 {
     /* A null member should never be added. */
-    OS_ASSERT(node == NULL);
+    ASSERT(node == NULL);
 
 #ifdef SLL_DEBUG
     /* The node should not already exist in the list. */
-    OS_ASSERT(sll_in_list(list, node, offset));
+    ASSERT(sll_in_list(list, node, offset));
 #endif
 
     /* Update the node. */
@@ -89,11 +89,11 @@ void *sll_pop(void *list, int offset)
 void sll_append(void *list, void *node, int offset)
 {
     /* A null member should never be added. */
-    OS_ASSERT(node == NULL);
+    ASSERT(node == NULL);
 
 #ifdef SLL_DEBUG
     /* The node should not already exist in the list. */
-    OS_ASSERT(sll_in_list(list, node, offset));
+    ASSERT(sll_in_list(list, node, offset));
 #endif
 
     /* Update the node. */
@@ -132,11 +132,11 @@ void sll_insert(void *list, void *node, uint8_t (*sort)(void *, void *), int off
     void *list_node = ((SLL_HEAD *)list)->head;
 
     /* A null member should never be added. */
-    OS_ASSERT(node == NULL);
+    ASSERT(node == NULL);
 
 #ifdef SLL_DEBUG
     /* The node should not already exist in the list. */
-    OS_ASSERT(sll_in_list(list, node, offset));
+    ASSERT(sll_in_list(list, node, offset));
 #endif
 
     /* If this is an empty list. */
@@ -269,7 +269,7 @@ void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *param, 
 void sll_remove_node(void *list, void *node, void *prev_node, int offset)
 {
     /* A null member should never be searched. */
-    OS_ASSERT(node == NULL);
+    ASSERT(node == NULL);
 
     /* Check if we are removing a node from the list's head. */
     if (((SLL_HEAD *)list)->head == node)
@@ -314,11 +314,11 @@ void sll_remove_node(void *list, void *node, void *prev_node, int offset)
 void sll_add_node(void *list, void *node, void *prev_node, int offset)
 {
     /* A null member should never be searched. */
-    OS_ASSERT(node == NULL);
+    ASSERT(node == NULL);
 
 #ifdef SLL_DEBUG
     /* The node should not already exist in the list. */
-    OS_ASSERT(sll_in_list(list, node, offset));
+    ASSERT(sll_in_list(list, node, offset));
 #endif
 
     /* Check if we are adding a node on the list's head. */
@@ -369,7 +369,7 @@ void *sll_remove(void *list, void *node, int offset)
     void *list_node = ((SLL_HEAD *)list)->head;
 
     /* A null member should never be removed. */
-    OS_ASSERT(node == NULL);
+    ASSERT(node == NULL);
 
     /* Check if this not an empty list. */
     if (list_node != NULL)

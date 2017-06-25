@@ -13,7 +13,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <os.h>
+#include <kernel.h>
 #include <string.h>
 #include <fs.h>
 #include <net.h>
@@ -176,7 +176,7 @@ int main(void)
     scheduler_task_add(&fat_demo_cb, 15);
 
     /* Run scheduler. */
-    os_run();
+    kernel_run();
 
     return (0);
 

@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_SERIAL
 #include <stdio.h>
@@ -115,7 +115,7 @@ void serial_register(SERIAL *serial, const char *name, void *buffer, uint32_t fl
         if (flags & SERIAL_INT)
         {
             /* User should have provided the buffer data. */
-            OS_ASSERT(buffer_data == NULL);
+            ASSERT(buffer_data == NULL);
 
             /* Initialize buffer data. */
             fs_buffer_dataset(serial, buffer_data);
@@ -230,7 +230,7 @@ void serial_assert_puts(uint8_t *buffer, int32_t nbytes)
 #endif
 
     /* Assert if debug serial is not yet initialized. */
-    OS_ASSERT(serial == NULL);
+    ASSERT(serial == NULL);
 
     /* Transmit required buffer on the serial. */
     serial->device.puts(serial, serial->device.data, buffer, ((nbytes == 0) ? (int32_t)strlen((char *)buffer) : nbytes), 0);
@@ -252,7 +252,7 @@ static int32_t serial_puts(uint8_t *buf, int32_t n)
 #endif
 
     /* Assert if debug serial is not yet initialized. */
-    OS_ASSERT(serial == NULL);
+    ASSERT(serial == NULL);
 
 #ifdef FS_CONSOLE
     /* Write given string on the serial port. */

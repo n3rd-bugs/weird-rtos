@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_PPP
 #include <string.h>
@@ -123,7 +123,7 @@ int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
             else if (db_value != NULL)
             {
                 /* Copy the given value in the option buffer. */
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
                 fs_memcpy_r(option.data, db_value, (uint32_t)(opt_len - 2));
 #else
                 memcpy(option.data, db_value, (uint32_t)(opt_len - 2));
@@ -194,7 +194,7 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         if (rx_packet->code == PPP_CONFIG_ACK)
         {
             /* Save the received MRU value. */
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
             fs_memcpy_r(&(ppp->mru), option->data, (uint32_t)(option->length - 2));
 #else
             memcpy(&(ppp->mru), option->data, (uint32_t)(option->length - 2));
@@ -211,7 +211,7 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         if (rx_packet->code == PPP_CONFIG_REQ)
         {
             /* Pull the ACCM in PPP configuration as receive ACCM. */
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
             fs_memcpy_r(&(ppp->rx_accm), option->data, (uint32_t)(option->length - 2));
 #else
             memcpy(&(ppp->rx_accm), option->data, (uint32_t)(option->length - 2));
@@ -222,7 +222,7 @@ int32_t ppp_lcp_option_pocess(PPP *ppp, PPP_CONF_OPT *option, PPP_CONF_PKT *rx_p
         else if (rx_packet->code == PPP_CONFIG_ACK)
         {
             /* Pull the ACCM in PPP configuration as transmit ACCM. */
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
             fs_memcpy_r(&(ppp->tx_accm[0]), option->data, (uint32_t)(option->length - 2));
 #else
             memcpy(&(ppp->tx_accm[0]), option->data, (uint32_t)(option->length - 2));
@@ -326,7 +326,7 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
     FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
 
     /* Should never happen. */
-    OS_ASSERT(tx_buffer == NULL);
+    ASSERT(tx_buffer == NULL);
 
     /* Check if we have received a request and we have sent an ACK in
      * response, send our own configuration. */

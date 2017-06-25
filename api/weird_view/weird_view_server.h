@@ -13,7 +13,7 @@
  */
 #ifndef _WEIRD_VIEW_SERVER_H_
 #define _WEIRD_VIEW_SERVER_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_WEIRD_VIEW
 #ifndef CONFIG_NET

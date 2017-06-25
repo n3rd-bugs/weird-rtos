@@ -14,7 +14,7 @@
 #ifndef _SCHEDULER_H_
 #define _SCHEDULER_H_
 
-#include <os.h>
+#include <kernel.h>
 
 /* Scheduler lock configuration. */
 #define SCHEDULER_MAX_LOCK          (5)

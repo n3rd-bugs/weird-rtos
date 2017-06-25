@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <semaphore.h>
@@ -83,7 +83,7 @@ void net_condition_updated()
         /* Resume the networking condition task to add this new condition. */
 
         /* Get lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(net_buff_fd) != SUCCESS);
+        ASSERT(fd_get_lock(net_buff_fd) != SUCCESS);
 
         /* Set flag that new data is available on buffer file descriptor. */
         fd_data_available(net_buff_fd);
@@ -109,7 +109,7 @@ void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PRO
     SYS_LOG_FUNTION_ENTRY(NET_CONDITION);
 
     /* Should never happen. */
-    OS_ASSERT(net_condition_data.num == NET_COND_NUM_TOTAL);
+    ASSERT(net_condition_data.num == NET_COND_NUM_TOTAL);
 
     /* Add this condition to the condition list. */
     net_condition_data.condition[net_condition_data.num] = condition;
@@ -205,17 +205,17 @@ static int32_t net_condition_do_remove(void *data)
     SYS_LOG_FUNTION_ENTRY(NET_CONDITION);
 
     /* If this is not the networking task. */
-    OS_ASSERT(((!tcb) || (tcb != &net_condition_tcb)));
+    ASSERT(((!tcb) || (tcb != &net_condition_tcb)));
 
     /* Validate that we do have a condition on which we are listening. */
-    OS_ASSERT(net_condition_data.num <= 0);
+    ASSERT(net_condition_data.num <= 0);
 
     /* Get the index of the condition we need to remove. */
     index = net_condition_get_index(&net_condition_data, condition);
 
     /* Should never happen. */
-    OS_ASSERT(index < 0);
-    OS_ASSERT(index >= (int32_t)net_condition_data.num);
+    ASSERT(index < 0);
+    ASSERT(index >= (int32_t)net_condition_data.num);
 
     /* Check if we need to move the data around to keep all conditions inline. */
     if (index != (int32_t)(net_condition_data.num - 1))
@@ -259,7 +259,7 @@ static void net_condition_task_entry(void *argv)
     SYS_LOG_FUNTION_ENTRY(NET_CONDITION);
 
     /* Should never happen. */
-    OS_ASSERT(net_cond == NULL);
+    ASSERT(net_cond == NULL);
 
     /* This function should never return. */
     for (;;)

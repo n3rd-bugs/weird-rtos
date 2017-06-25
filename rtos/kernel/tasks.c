@@ -12,7 +12,7 @@
  * or indirect use.
  */
 #include <string.h>
-#include <os.h>
+#include <kernel.h>
 #include <tasks.h>
 
 /* Internal function prototypes. */
@@ -66,12 +66,12 @@ void task_create(TASK *tcb, char *name, uint8_t *stack, uint32_t stack_size, TAS
     if (tcb->flags & TASK_NO_RETURN)
     {
         /* Initialize task's stack. */
-        os_stack_init(tcb, entry, argv);
+        stack_init(tcb, entry, argv);
     }
     else
     {
         /* Initialize task's stack. */
-        os_stack_init(tcb, &task_entry_return, argv);
+        stack_init(tcb, &task_entry_return, argv);
     }
 
 } /* task_create */

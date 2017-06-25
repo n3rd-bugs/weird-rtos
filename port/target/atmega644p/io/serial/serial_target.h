@@ -13,7 +13,7 @@
  */
 #ifndef _SERIAL_TARGET_H_
 #define _SERIAL_TARGET_H_
-#include <os.h>
+#include <kernel.h>
 #include <usart_atmega644p.h>
 
 /* Hook-up serial OS stack. */

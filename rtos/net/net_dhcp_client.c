@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <net.h>
@@ -146,7 +146,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
     SYS_LOG_FUNTION_ENTRY(DHCPC);
 
     /* Add DHCP header on the buffer. */
-    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)((uint32_t)(INT32CMP(current_system_tick(), client_data->start_time)) / OS_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_RENEW) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
+    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)((uint32_t)(INT32CMP(current_system_tick(), client_data->start_time)) / SOFT_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_RENEW) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
 
     if (status == SUCCESS)
     {
@@ -215,7 +215,7 @@ static void dhcp_event(void *data, int32_t status)
     SYS_LOG_FUNTION_ENTRY(DHCPC);
 
     /* Acquire lock for this file descriptor. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Get a free buffer from the file descriptor. */
     buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
@@ -332,7 +332,7 @@ static void dhcp_event(void *data, int32_t status)
             fs_write(udp_fd, (uint8_t *)buffer, sizeof(FS_BUFFER));
 
             /* Acquire lock for this file descriptor. */
-            OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+            ASSERT(fd_get_lock(fd) != SUCCESS);
         }
 
         /* An error has occurred, free this buffer. */
@@ -379,7 +379,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
         buffer_fd = buffer->fd;
 
         /* Acquire lock for networking file descriptor. */
-        OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+        ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Initialize client data. */
         client_data = NULL;
@@ -565,7 +565,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
 
                         /* Save the lease start and validity time. */
                         client_data->lease_start = current_system_tick();
-                        client_data->lease_time = (lease_time * OS_TICKS_PER_SEC);
+                        client_data->lease_time = (lease_time * SOFT_TICKS_PER_SEC);
 
                         /* Release lock for networking file descriptor. */
                         fd_release_lock(buffer_fd);
@@ -588,7 +588,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
                         }
 
                         /* Acquire lock for networking file descriptor. */
-                        OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+                        ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
                         /* We have a lease, we will try to renew it in next state. */
                         dhcp_change_state(client_data, DHCP_CLI_RENEW);

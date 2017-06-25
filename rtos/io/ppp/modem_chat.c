@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_PPP
 #include <ppp.h>
@@ -44,7 +44,7 @@ int32_t modem_chat_process(FD fd, FS_BUFFER *rx_buffer)
         if (tx_buffer)
         {
             /* Initialize response. */
-            OS_ASSERT(fs_buffer_push(tx_buffer, "CLIENTSERVER", (sizeof("CLIENTSERVER") - 1), 0) != SUCCESS);
+            ASSERT(fs_buffer_push(tx_buffer, "CLIENTSERVER", (sizeof("CLIENTSERVER") - 1), 0) != SUCCESS);
 
             /* Release lock for file descriptor. */
             fd_release_lock(fd);
@@ -53,7 +53,7 @@ int32_t modem_chat_process(FD fd, FS_BUFFER *rx_buffer)
             fs_write(fd, (uint8_t *)tx_buffer, sizeof(tx_buffer));
 
             /* Acquire file descriptor lock. */
-            OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+            ASSERT(fd_get_lock(fd) != SUCCESS);
         }
     }
     else

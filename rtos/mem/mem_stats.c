@@ -12,7 +12,7 @@
  * or indirect use.
  */
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef MEMGR_STATS
 #include <serial.h>
@@ -31,7 +31,7 @@ void mem_dynamic_print_usage(MEM_DYNAMIC *mem_dynamic, uint32_t level)
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the memory lock. */
-    OS_ASSERT(semaphore_obtain(&mem_dynamic->lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&mem_dynamic->lock, MAX_WAIT) != SUCCESS);
 #else
     /* Lock the scheduler. */
     scheduler_lock();

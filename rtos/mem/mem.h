@@ -15,7 +15,7 @@
 #ifndef MEM_H
 #define MEM_H
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_MEMGR
 

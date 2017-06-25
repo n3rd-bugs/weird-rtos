@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_SEMAPHORE
 #include <sleep.h>
@@ -38,7 +38,7 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
     memset(semaphore, 0,  sizeof(SEMAPHORE));
 
     /* If this is interrupt accessible max count should be 1. */
-    OS_ASSERT((interrupt_protected == TRUE) && (max_count != 1));
+    ASSERT((interrupt_protected == TRUE) && (max_count != 1));
 
     /* Initialize semaphore count. */
     semaphore->count = count;
@@ -66,7 +66,7 @@ void semaphore_update(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, ui
     scheduler_lock();
 
     /* Semaphore must not have been obtained. */
-    OS_ASSERT(semaphore->count != semaphore->max_count);
+    ASSERT(semaphore->count != semaphore->max_count);
 
     /* Update semaphore count. */
     semaphore->count = count;
@@ -96,8 +96,8 @@ void semaphore_set_interrupt_data(SEMAPHORE *semaphore, void *data, SEM_INT_LOCK
     scheduler_lock();
 
     /* Semaphore must not have been obtained. */
-    OS_ASSERT(semaphore->count != semaphore->max_count);
-    OS_ASSERT(semaphore->interrupt_protected == FALSE);
+    ASSERT(semaphore->count != semaphore->max_count);
+    ASSERT(semaphore->interrupt_protected == FALSE);
 
     /* Set semaphore interrupt data. */
     semaphore->interrupt_lock = lock;
@@ -248,7 +248,7 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     TASK *tcb;
 
     /* Should never happen. */
-    OS_ASSERT((semaphore->interrupt_protected == TRUE) && (semaphore->interrupt_lock == NULL));
+    ASSERT((semaphore->interrupt_protected == TRUE) && (semaphore->interrupt_lock == NULL));
 
     /* Save the current task pointer. */
     tcb = get_current_task();
@@ -287,7 +287,7 @@ int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
     if (status == SUCCESS)
     {
         /* Should never happen. */
-        OS_ASSERT(semaphore->count == 0);
+        ASSERT(semaphore->count == 0);
 
         /* Check if we have interrupt lock registered for this semaphore. */
         if (semaphore->interrupt_protected == TRUE)
@@ -329,7 +329,7 @@ void semaphore_release(SEMAPHORE *semaphore)
     RESUME resume;
 
     /* Semaphore double release. */
-    OS_ASSERT(semaphore->count >= semaphore->max_count);
+    ASSERT(semaphore->count >= semaphore->max_count);
 
     /* Lock the scheduler. */
     scheduler_lock();

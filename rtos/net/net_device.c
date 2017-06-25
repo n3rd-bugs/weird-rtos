@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <string.h>
@@ -55,7 +55,7 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     SYS_LOG_FUNTION_ENTRY(NET_DEVICE);
 
     /* Will only work with buffered file descriptors. */
-    OS_ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
+    ASSERT((((FS *)fd)->flags & FS_BUFFERED) == 0);
 
     /* Save the file descriptor for this networking device. */
     net_device->fd = fd;
@@ -200,10 +200,10 @@ int32_t net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol, uint32_t 
         fd_release_lock(buffer->fd);
 
         /* Write this buffer to the networking buffer file descriptor. */
-        OS_ASSERT(fs_write(net_buff_fd, (uint8_t *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
+        ASSERT(fs_write(net_buff_fd, (uint8_t *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
 
         /* Again obtain lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
+        ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
     }
 
     SYS_LOG_FUNTION_EXIT_STATUS(NET_DEVICE, status);
@@ -362,7 +362,7 @@ void net_device_link_down(FD fd)
 #endif
 
     /* Acquire lock for networking file descriptor. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    ASSERT(fd_get_lock(fd) != SUCCESS);
 
     SYS_LOG_FUNTION_EXIT(NET_DEVICE);
 

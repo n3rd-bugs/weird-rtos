@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #include <mem.h>
 
 #ifdef MEMGR_STATIC
@@ -81,7 +81,7 @@ uint8_t *mem_static_alloc_region(MEM_STATIC *mem_static, uint32_t size)
 uint8_t *mem_static_dealloc_region(uint8_t *mem_ptr)
 {
     /* This should never be called. */
-    OS_ASSERT(TRUE);
+    ASSERT(TRUE);
 
     /* Return same memory as we don't support memory deallocation for
      * static memory. */

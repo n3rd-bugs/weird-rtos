@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <net.h>
@@ -40,8 +40,8 @@ int32_t net_buffer_process(FS_BUFFER *buffer)
     SYS_LOG_FUNTION_ENTRY(NET_PROCESS);
 
     /* Skim the protocol and flags from the buffer. */
-    OS_ASSERT(fs_buffer_pull(buffer, &flags, sizeof(uint32_t), 0) != SUCCESS);
-    OS_ASSERT(fs_buffer_pull(buffer, &protocol, sizeof(uint8_t), 0) != SUCCESS);
+    ASSERT(fs_buffer_pull(buffer, &flags, sizeof(uint32_t), 0) != SUCCESS);
+    ASSERT(fs_buffer_pull(buffer, &protocol, sizeof(uint8_t), 0) != SUCCESS);
 
     /* Interpret the protocol. */
     /* [TODO] In future this might be controlled by some sort of protocol plugin. */

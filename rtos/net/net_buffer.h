@@ -13,7 +13,7 @@
  */
 #ifndef _NET_BUFFER_H_
 #define _NET_BUFFER_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <fs.h>

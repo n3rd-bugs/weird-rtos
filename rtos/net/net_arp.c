@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <net.h>
@@ -100,24 +100,24 @@ static int32_t arp_process_request(FS_BUFFER *buffer)
     SYS_LOG_FUNTION_ENTRY(ARP);
 
     /* Pull the address required by the caller. */
-    OS_ASSERT(fs_buffer_pull_offset(buffer, &target_ip, IPV4_ADDR_LEN, ARP_HDR_TGT_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
+    ASSERT(fs_buffer_pull_offset(buffer, &target_ip, IPV4_ADDR_LEN, ARP_HDR_TGT_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
 
     /* Get IPv4 address assigned to the device on which we have received this
      * packet. */
     own_ip = IPV4_ADDR_UNSPEC;
-    OS_ASSERT(ipv4_get_device_address(buffer->fd, &own_ip, NULL) != SUCCESS);
+    ASSERT(ipv4_get_device_address(buffer->fd, &own_ip, NULL) != SUCCESS);
 
     /* If remote needs our target hardware address. */
     if ((own_ip != IPV4_ADDR_UNSPEC) && (own_ip == target_ip))
     {
         /* Pull the IPv4 address to which we need to send this a response. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &target_ip, IPV4_ADDR_LEN, ARP_HDR_SRC_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
+        ASSERT(fs_buffer_pull_offset(buffer, &target_ip, IPV4_ADDR_LEN, ARP_HDR_SRC_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
 
         /* Pull the ethernet address to which we need to send this a response. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &dst_mac, ETH_ADDR_LEN, ARP_HDR_SRC_HW_OFFSET, (FS_BUFFER_INPLACE)) != SUCCESS);
+        ASSERT(fs_buffer_pull_offset(buffer, &dst_mac, ETH_ADDR_LEN, ARP_HDR_SRC_HW_OFFSET, (FS_BUFFER_INPLACE)) != SUCCESS);
 
         /* Pull and discard any data still on this buffer. */
-        OS_ASSERT(fs_buffer_pull(buffer, NULL, buffer->total_length, 0) != SUCCESS);
+        ASSERT(fs_buffer_pull(buffer, NULL, buffer->total_length, 0) != SUCCESS);
 
         /* Send response for this ARP request. */
         status = arp_send_packet(buffer, ARP_OP_RESPONSE, ethernet_get_mac_address(buffer->fd), own_ip, dst_mac, target_ip);
@@ -147,7 +147,7 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
     SYS_LOG_FUNTION_ENTRY(ARP);
 
     /* Pull the IPv4 address sent by the remote. */
-    OS_ASSERT(fs_buffer_pull_offset(buffer, &src_ip, IPV4_ADDR_LEN, ARP_HDR_SRC_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
+    ASSERT(fs_buffer_pull_offset(buffer, &src_ip, IPV4_ADDR_LEN, ARP_HDR_SRC_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
 
     /* Go though all the ARP entries in the device. */
     for (i = 0; i < arp_data->num_entries; i++)
@@ -157,7 +157,7 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
         {
             /* Pull the ethernet address of the source and update it in the ARP
              * entry. */
-            OS_ASSERT(fs_buffer_pull_offset(buffer, arp_data->entries[i].mac, ETH_ADDR_LEN, ARP_HDR_SRC_HW_OFFSET, (FS_BUFFER_INPLACE)) != SUCCESS);
+            ASSERT(fs_buffer_pull_offset(buffer, arp_data->entries[i].mac, ETH_ADDR_LEN, ARP_HDR_SRC_HW_OFFSET, (FS_BUFFER_INPLACE)) != SUCCESS);
 
             /* Set this entry as up. */
             arp_data->entries[i].flags |= ARP_FLAG_UP;
@@ -388,7 +388,7 @@ static int32_t arp_route(FD fd, ARP_ENTRY *entry)
 
     /* Get IPv4 address assigned to this device. */
     src_ip = IPV4_ADDR_UNSPEC;
-    OS_ASSERT(ipv4_get_device_address(fd, &src_ip, NULL) != SUCCESS);
+    ASSERT(ipv4_get_device_address(fd, &src_ip, NULL) != SUCCESS);
 
     /* Get a free buffer that can be used to send an ARP request. */
     buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
@@ -442,7 +442,7 @@ static void arp_event(void *data, int32_t resume_status)
     SYS_LOG_FUNTION_ENTRY(ARP);
 
     /* Acquire lock for this file descriptor. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Go though all the ARP entries in the device. */
     for (i = 0; i < arp_data->num_entries; i++)
@@ -672,7 +672,7 @@ int32_t net_process_arp(FS_BUFFER *buffer)
     if (buffer->total_length > ARP_HDR_LEN)
     {
         /* Pull padding from the buffer. */
-        OS_ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - ARP_HDR_LEN), FS_BUFFER_TAIL) != SUCCESS);
+        ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - ARP_HDR_LEN), FS_BUFFER_TAIL) != SUCCESS);
     }
     else
     {
@@ -690,7 +690,7 @@ int32_t net_process_arp(FS_BUFFER *buffer)
         if (status == SUCCESS)
         {
             /* Pull the ARP operation. */
-            OS_ASSERT(fs_buffer_pull(buffer, &operation, sizeof(uint16_t), FS_BUFFER_PACKED) != SUCCESS);
+            ASSERT(fs_buffer_pull(buffer, &operation, sizeof(uint16_t), FS_BUFFER_PACKED) != SUCCESS);
 
             /* Process the ARP operation. */
             switch(operation)

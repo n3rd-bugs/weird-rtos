@@ -14,7 +14,7 @@
 #ifndef _SYS_INFO_H_
 #define _SYS_INFO_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_TASK_STATS
 #ifdef CONFIG_FS

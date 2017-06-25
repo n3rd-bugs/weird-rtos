@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #include <sys_info.h>
 #include <mem_stats.h>
 #include <string.h>
@@ -193,7 +193,7 @@ int main(void)
     scheduler_task_add(stat_task_cb, 1);
 
     /* Run scheduler. */
-    os_run();
+    kernel_run();
 
     return (0);
 

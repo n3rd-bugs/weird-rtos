@@ -15,7 +15,7 @@
 #ifndef _ADC_ATMEGA644P_H_
 #define _ADC_ATMEGA644P_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_ADC
 #include <adc.h>

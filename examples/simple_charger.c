@@ -13,7 +13,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <os.h>
+#include <kernel.h>
 #include <string.h>
 #include <fs.h>
 #include <adc.h>
@@ -36,7 +36,7 @@ void control_entry(void *argv);
 #define ADC_ATIMER_PRESCALE     ((uint32_t)8)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
 
-#define ADC_CHANNEL_DELAY       (OS_TICKS_PER_SEC / 5)
+#define ADC_CHANNEL_DELAY       (SOFT_TICKS_PER_SEC / 5)
 
 static uint16_t adc_sample[ADC_SAMPLES];
 static CONDITION adc_condition;
@@ -49,7 +49,7 @@ static SUSPEND adc_suspend;
 #define BATTERY_HIGH            53000
 #define POWER_ON_DELAY          700
 #define STATE_DELAY             500
-#define INITIAL_CHARGE_DELAY    (OS_TICKS_PER_SEC * 5 * 60)
+#define INITIAL_CHARGE_DELAY    (SOFT_TICKS_PER_SEC * 5 * 60)
 #define ENABLE_WDT              TRUE
 
 static volatile uint32_t battery_volt = 0;
@@ -331,7 +331,7 @@ int main(void)
     scheduler_task_add(&control_cb, 0);
 
     /* Run scheduler. */
-    os_run();
+    kernel_run();
 
     return (0);
 

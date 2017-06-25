@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <net.h>
@@ -85,7 +85,7 @@ void tcp_register(TCP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data semaphore. */
-    OS_ASSERT(semaphore_obtain(&tcp_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&tcp_data.lock, MAX_WAIT) != SUCCESS);
 #else
     /* Lock the scheduler. */
     scheduler_lock();
@@ -145,14 +145,14 @@ void tcp_unregister(TCP_PORT *port)
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data semaphore. */
-    OS_ASSERT(semaphore_obtain(&tcp_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&tcp_data.lock, MAX_WAIT) != SUCCESS);
 #else
     /* Lock the scheduler. */
     scheduler_lock();
 #endif
 
     /* Remove this port from the global port list. */
-    OS_ASSERT(sll_remove(&tcp_data.port_list, port, OFFSETOF(TCP_PORT, next)) != port);
+    ASSERT(sll_remove(&tcp_data.port_list, port, OFFSETOF(TCP_PORT, next)) != port);
 
 #ifndef CONFIG_SEMAPHORE
     /* Enable scheduling. */
@@ -338,7 +338,7 @@ static int32_t tcp_process_options(FS_BUFFER *buffer, TCP_PORT *port, uint32_t o
     while ((status == SUCCESS) && (opt_index < total_opt_size))
     {
         /* Pull the option type. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &opt_type, 1, (offset + opt_index), FS_BUFFER_INPLACE));
+        ASSERT(fs_buffer_pull_offset(buffer, &opt_type, 1, (offset + opt_index), FS_BUFFER_INPLACE));
         opt_index ++;
 
         /* If we are also expecting option length. */
@@ -348,7 +348,7 @@ static int32_t tcp_process_options(FS_BUFFER *buffer, TCP_PORT *port, uint32_t o
             if (opt_index < total_opt_size)
             {
                 /* Pull option length. */
-                OS_ASSERT(fs_buffer_pull_offset(buffer, &opt_len, 1, (offset + opt_index), FS_BUFFER_INPLACE));
+                ASSERT(fs_buffer_pull_offset(buffer, &opt_len, 1, (offset + opt_index), FS_BUFFER_INPLACE));
                 opt_index ++;
 
                 /* Option length must be at least 2 bytes. */
@@ -392,7 +392,7 @@ static int32_t tcp_process_options(FS_BUFFER *buffer, TCP_PORT *port, uint32_t o
                     if (opt_len == 2)
                     {
                         /* Pull maximum segment size. */
-                        OS_ASSERT(fs_buffer_pull_offset(buffer, &opt_value_16, 2, (offset + opt_index), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+                        ASSERT(fs_buffer_pull_offset(buffer, &opt_value_16, 2, (offset + opt_index), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
 
                         /* If remote has smaller maximum segment size. */
                         if (opt_value_16 < port->mss)
@@ -420,7 +420,7 @@ static int32_t tcp_process_options(FS_BUFFER *buffer, TCP_PORT *port, uint32_t o
                     if (opt_len == 1)
                     {
                         /* Pull send window scale sent by remote. */
-                        OS_ASSERT(fs_buffer_pull_offset(buffer, &port->snd_wnd_scale, 1, (offset + opt_index), FS_BUFFER_INPLACE));
+                        ASSERT(fs_buffer_pull_offset(buffer, &port->snd_wnd_scale, 1, (offset + opt_index), FS_BUFFER_INPLACE));
 
                         /* Window scale is being used. */
                         port->flags |= TCP_FLAG_WND_SCALE;
@@ -687,7 +687,7 @@ static void tcp_fast_rtx(TCP_PORT *port, uint32_t seq_num)
                 port->rtx[i].flags &= (uint8_t)~(TCP_RTX_BUFFER_RETURNED);
 
                 /* Lock the buffer descriptor. */
-                OS_ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
+                ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
 
                 /* Retransmit a TCP buffer. */
                 net_device_buffer_transmit(port->rtx[i].buffer, NET_PROTO_IPV4, 0);
@@ -789,7 +789,7 @@ static void tcp_timeout_callback(void *data, int32_t status)
                         /* Clear the buffer returned flag. */
                         port->rtx[least_rtx].flags &= (uint8_t)~(TCP_RTX_BUFFER_RETURNED);
 
-                        OS_ASSERT(fd_get_lock(port->rtx[least_rtx].buffer->fd));
+                        ASSERT(fd_get_lock(port->rtx[least_rtx].buffer->fd));
 
                         /* Retransmit a TCP buffer. */
                         net_device_buffer_transmit(port->rtx[least_rtx].buffer, NET_PROTO_IPV4, 0);
@@ -921,7 +921,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
         fd_release_lock(port);
 
         /* Obtain lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+        ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Get a buffer keeping threshold buffers on the descriptor. */
         buffer = fs_buffer_get(buffer_fd, FS_BUFFER_LIST, buffer_flags);
@@ -936,7 +936,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                 fd_release_lock(buffer_fd);
 
                 /* Lock the TCP port. */
-                OS_ASSERT(fd_get_lock(port));
+                ASSERT(fd_get_lock(port));
 
                 /* Get a free retransmission structure. */
                 rtx = tcp_get_rtx_free(port);
@@ -977,7 +977,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                 fd_release_lock(port);
 
                 /* Obtain lock for buffer file descriptor. */
-                OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+                ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
             }
 
             /* If we do have some data to attach on this segment. */
@@ -997,7 +997,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                     fd_release_lock(buffer_fd);
 
                     /* Lock the TCP port. */
-                    OS_ASSERT(fd_get_lock(port));
+                    ASSERT(fd_get_lock(port));
 
                     /* If we are not ACKing the options sent by remote. */
                     if ((flags & TCP_HDR_FLAG_ACK) == 0)
@@ -1018,7 +1018,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                     fd_release_lock(port);
 
                     /* Obtain lock for buffer file descriptor. */
-                    OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+                    ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
                 }
             }
 
@@ -1073,7 +1073,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                     fd_release_lock(buffer_fd);
 
                     /* Lock the TCP port. */
-                    OS_ASSERT(fd_get_lock(port));
+                    ASSERT(fd_get_lock(port));
 
                     /* Buffer was not consumed. */
                     rtx->flags |= TCP_RTX_BUFFER_RETURNED;
@@ -1082,7 +1082,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                     fd_release_lock(port);
 
                     /* Obtain lock for buffer file descriptor. */
-                    OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+                    ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
                 }
             }
 
@@ -1119,7 +1119,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
         fd_release_lock(buffer_fd);
 
         /* Lock the TCP port. */
-        OS_ASSERT(fd_get_lock(port));
+        ASSERT(fd_get_lock(port));
 
         if (status == SUCCESS)
         {
@@ -1251,7 +1251,7 @@ static uint8_t tcp_oo_buffer_process(void *node, void *param)
     SYS_LOG_FUNTION_ENTRY(TCP);
 
     /* Pull the sequence number for these buffers. */
-    OS_ASSERT(fs_buffer_pull(buffer, &seg_seq, 4, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+    ASSERT(fs_buffer_pull(buffer, &seg_seq, 4, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
     /* If this segment comes before the segment we need to insert. */
     if (seg_seq > oo_param->seg_seq)
@@ -1295,7 +1295,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
     SYS_LOG_FUNTION_ENTRY(TCP);
 
     /* Acquire lock for the buffer file descriptor. */
-    OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+    ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
     /* Remove all the data from the buffer except the actual TCP segment. */
     fs_buffer_pull(buffer, NULL, (buffer->total_length - seg_len), 0);
@@ -1309,7 +1309,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
         if (port->rx_buffer.buffer != NULL)
         {
             /* Should never happen. */
-            OS_ASSERT(port->rx_buffer.buffer->fd != buffer_fd);
+            ASSERT(port->rx_buffer.buffer->fd != buffer_fd);
 
             /* Move all the data from this buffer to the existing receive
              * buffer. */
@@ -1331,13 +1331,13 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
         for (buffer = port->rx_buffer.oorx_list.head; (buffer != NULL); buffer = buffer->next)
         {
             /* Pull the sequence number for this buffer. */
-            OS_ASSERT(fs_buffer_pull(buffer, &seg_seq, 4, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+            ASSERT(fs_buffer_pull(buffer, &seg_seq, 4, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
             /* If this is the anticipated next segment. */
             if (port->rcv_nxt == seg_seq)
             {
                 /* Pull and remove the sequence number we added. */
-                OS_ASSERT(fs_buffer_pull(buffer, NULL, 4, 0) != SUCCESS);
+                ASSERT(fs_buffer_pull(buffer, NULL, 4, 0) != SUCCESS);
 
                 /* RCV.NXT := HSEG.SEQ + HSEG.LEN */
                 port->rcv_nxt = seg_seq + buffer->total_length;
@@ -1368,7 +1368,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
     else
     {
         /* Should never happen. */
-        OS_ASSERT((port->rx_buffer.oorx_list.head != NULL) && (port->rx_buffer.oorx_list.head->fd != buffer->fd));
+        ASSERT((port->rx_buffer.oorx_list.head != NULL) && (port->rx_buffer.oorx_list.head->fd != buffer->fd));
 
         /* Initialize out-of-order buffer parameter. */
         oo_param.seg_seq = seg_seq;
@@ -1434,11 +1434,11 @@ static void tcp_buffer_get_ihl_flags(FS_BUFFER *buffer, uint8_t *ihl, uint16_t *
     SYS_LOG_FUNTION_ENTRY(TCP);
 
     /* Peek the version and IHL. */
-    OS_ASSERT(fs_buffer_pull_offset(buffer, ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+    ASSERT(fs_buffer_pull_offset(buffer, ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
     (*ihl) = (uint8_t)(((*ihl) & IPV4_HDR_IHL_MASK) << 2);
 
     /* Pull the TCP flags. */
-    OS_ASSERT(fs_buffer_pull_offset(buffer, flags, 2, (uint32_t)((*ihl) + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+    ASSERT(fs_buffer_pull_offset(buffer, flags, 2, (uint32_t)((*ihl) + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
 
     SYS_LOG_FUNTION_EXIT(TCP);
 
@@ -1518,7 +1518,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
     if (ret_size > 0)
     {
         /* Get lock for the buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(fs_buffer->fd) != SUCCESS);
+        ASSERT(fd_get_lock(fs_buffer->fd) != SUCCESS);
 
         /* If we need to copy more data. */
         if (size > (int32_t)fs_buffer->total_length)
@@ -1533,7 +1533,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
         }
 
         /* Pull data from the buffer into the provided buffer. */
-        OS_ASSERT(fs_buffer_pull(fs_buffer, buffer, (uint32_t)ret_size, 0) != SUCCESS);
+        ASSERT(fs_buffer_pull(fs_buffer, buffer, (uint32_t)ret_size, 0) != SUCCESS);
 
         /* If we still have some data left on this buffer. */
         if (fs_buffer->total_length != 0)
@@ -1542,7 +1542,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
             if (port->rx_buffer.buffer != NULL)
             {
                 /* Should never happen. */
-                OS_ASSERT(port->rx_buffer.buffer->fd != fs_buffer->fd);
+                ASSERT(port->rx_buffer.buffer->fd != fs_buffer->fd);
 
                 /* Move all the data from this buffer to the new receive buffer on head. */
                 fs_buffer_move_data(port->rx_buffer.buffer, fs_buffer, FS_BUFFER_HEAD);
@@ -1601,7 +1601,7 @@ static int32_t tcp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
     UNUSED_PARAM(buffer);
 
     /* Not supported. */
-    OS_ASSERT(TRUE);
+    ASSERT(TRUE);
 
     SYS_LOG_FUNTION_EXIT(TCP);
 
@@ -1796,7 +1796,7 @@ static uint8_t tcp_rtx_return_buffer(void *data, FS_BUFFER *buffer)
     }
 
     /* Again lock the buffer descriptor. */
-    OS_ASSERT(fd_get_lock(buffer->fd));
+    ASSERT(fd_get_lock(buffer->fd));
 
     /* Return if buffer was successfully returned. */
     return (returned);
@@ -1826,8 +1826,8 @@ static uint8_t tcp_rtx_process_ack(TCP_PORT *port, uint32_t ack_num)
             /* If remote has ACKed this segment */
             if (INT32CMP(port->rtx[i].seq_num + port->rtx[i].seg_len, ack_num) <= 0)
             {
-                OS_ASSERT(port->rtx[i].buffer == NULL);
-                OS_ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
+                ASSERT(port->rtx[i].buffer == NULL);
+                ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
 
                 /* Free this buffer when required. */
                 port->rtx[i].buffer->free = NULL;
@@ -1900,8 +1900,8 @@ static void tcp_rtx_free_all(TCP_PORT *port)
         /* If this is being used. */
         if (port->rtx[i].flags & TCP_RTX_IN_USE)
         {
-            OS_ASSERT(port->rtx[i].buffer == NULL);
-            OS_ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
+            ASSERT(port->rtx[i].buffer == NULL);
+            ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
 
             /* Lets free this buffer when required. */
             port->rtx[i].buffer->free = NULL;
@@ -1986,18 +1986,18 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     if (status == SUCCESS)
     {
         /* Pull the source and destination ports. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.foreign_port, 2, (ihl + TCP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.local_port, 2, (ihl + TCP_HRD_DST_PORT_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+        ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.foreign_port, 2, (ihl + TCP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+        ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.local_port, 2, (ihl + TCP_HRD_DST_PORT_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
 
         /* Save the ACK number. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &seg_ack, 4, (uint32_t)(ihl + TCP_HRD_ACK_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &seg_seq, 4, (uint32_t)(ihl + TCP_HRD_SEQ_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_pull_offset(buffer, &seg_ack, 4, (uint32_t)(ihl + TCP_HRD_ACK_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_pull_offset(buffer, &seg_seq, 4, (uint32_t)(ihl + TCP_HRD_SEQ_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Pull the TCP flags. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &flags, 2, (ihl + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+        ASSERT(fs_buffer_pull_offset(buffer, &flags, 2, (ihl + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
 
         /* Pull TCP window size. */
-        OS_ASSERT(fs_buffer_pull_offset(buffer, &seg_wnd, 2, (uint32_t)(ihl + TCP_HRD_WND_SIZE_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_pull_offset(buffer, &seg_wnd, 2, (uint32_t)(ihl + TCP_HRD_WND_SIZE_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Calculate segment length. */
         seg_len = (uint16_t)(buffer->total_length - (ihl + (uint32_t)(((flags & TCP_HDR_HDR_LEN_MSK) >> TCP_HDR_HDR_LEN_SHIFT) * 4)));
@@ -2007,7 +2007,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
 
 #ifdef CONFIG_SEMAPHORE
         /* Obtain the global data semaphore. */
-        OS_ASSERT(semaphore_obtain(&tcp_data.lock, MAX_WAIT) != SUCCESS);
+        ASSERT(semaphore_obtain(&tcp_data.lock, MAX_WAIT) != SUCCESS);
 #else
         /* Lock the scheduler. */
         scheduler_lock();
@@ -2628,7 +2628,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         }
 
         /* Obtain lock for buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
+        ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
     }
 
     SYS_LOG_FUNTION_EXIT_STATUS(TCP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
@@ -2867,7 +2867,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
                 if (status == SUCCESS)
                 {
                     /* Obtain lock for buffer file descriptor. */
-                    OS_ASSERT(fd_get_lock(buffer->fd));
+                    ASSERT(fd_get_lock(buffer->fd));
 
                     /* Get value for IHL and TCP header flags. */
                     tcp_buffer_get_ihl_flags(buffer, &ihl, &flags);
@@ -2891,16 +2891,16 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
                         /* Save the socket address for this connection request. */
 
                         /* Save the IP addresses for this socket. */
-                        OS_ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.foreign_ip, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-                        OS_ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.local_ip, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.foreign_ip, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.local_ip, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
                         /* Save the port addresses for this socket. */
-                        OS_ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.foreign_port, 2, (uint32_t)(ihl + TCP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-                        OS_ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.local_port, 2, (uint32_t)(ihl + TCP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.foreign_port, 2, (uint32_t)(ihl + TCP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.local_port, 2, (uint32_t)(ihl + TCP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
                         /* Save the remote sequence number. */
                         /* Set IRS = SEG.SEQ. */
-                        OS_ASSERT(fs_buffer_pull_offset(buffer, &irs, 4, (uint32_t)(ihl + TCP_HRD_SEQ_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        ASSERT(fs_buffer_pull_offset(buffer, &irs, 4, (uint32_t)(ihl + TCP_HRD_SEQ_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
                         /* Set RCV.NXT = SEG.SEQ + 1. */
                         client_port->rcv_nxt = (uint32_t)(irs + 1);
@@ -2933,7 +2933,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
                         tcp_send_segment(client_port, &client_port->socket_address, iss, client_port->rcv_nxt, (TCP_HDR_FLAG_ACK | TCP_HDR_FLAG_SYN), (uint16_t)(client_port->rcv_wnd >> client_port->rcv_wnd_scale), NULL, 0, TRUE, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
 
                         /* Obtain lock for buffer file descriptor. */
-                        OS_ASSERT(fd_get_lock(buffer->fd));
+                        ASSERT(fd_get_lock(buffer->fd));
                     }
 
                     /* If we are accepting client connection in a separate port. */

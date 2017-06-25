@@ -13,7 +13,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <os.h>
+#include <kernel.h>
 #include <string.h>
 #include <fs.h>
 #include <sys_info.h>
@@ -97,7 +97,7 @@ int main(void)
     scheduler_task_add(&lcd_demo_cb, 0);
 
     /* Run scheduler. */
-    os_run();
+    kernel_run();
 
     return (0);
 

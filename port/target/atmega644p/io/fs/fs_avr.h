@@ -14,7 +14,7 @@
 #ifndef _FS_AVR_H_
 #define _FS_AVR_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 

@@ -14,7 +14,7 @@
 #ifndef _SEMAPHORE_H_
 #define _SEMAPHORE_H_
 
-#include <os.h>
+#include <kernel.h>
 
 /* Interrupt protected lock structure. */
 typedef volatile uint8_t INTLCK;

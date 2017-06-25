@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_ADC
 #include <avr/interrupt.h>
@@ -36,7 +36,7 @@ ISR(TIMER0_COMPA_vect, ISR_BLOCK)
 ISR(ADC_vect, ISR_NAKED)
 {
     /* We have entered an ISR. */
-    OS_ISR_ENTER();
+    ISR_ENTER();
 
     /* If we have a callback to call when ADC conversion completes. */
     if (adc_callback != NULL)
@@ -46,7 +46,7 @@ ISR(ADC_vect, ISR_NAKED)
     }
 
     /* We are now exiting the ISR. */
-    OS_ISR_EXIT();
+    ISR_EXIT();
 
 } /* ISR(ADC_vect, ISR_NAKED) */
 

@@ -12,7 +12,7 @@
  * or indirect use.
  */
 
-#include <os.h>
+#include <kernel.h>
 #include <fs.h>
 
 #ifdef FS_PIPE
@@ -74,7 +74,7 @@ void pipe_create(PIPE *pipe, char *name, uint8_t *buffer, uint32_t size)
     scheduler_lock();
 #else
     /* Obtain the global data lock. */
-    OS_ASSERT(semaphore_obtain(&pipe_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&pipe_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
     /* First check if this node can be registered. */
@@ -144,7 +144,7 @@ void pipe_destroy(PIPE *pipe)
 #else
 
     /* Obtain the global data lock. */
-    OS_ASSERT(semaphore_obtain(&pipe_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&pipe_data.lock, MAX_WAIT) != SUCCESS);
 
     /* Obtain data lock for this pipe. */
     if (semaphore_obtain(&pipe->lock, MAX_WAIT) == SUCCESS)
@@ -159,7 +159,7 @@ void pipe_destroy(PIPE *pipe)
 #endif
 
         /* Just remove this pipe from the pipe list. */
-        OS_ASSERT(sll_remove(&pipe_data.list, pipe, OFFSETOF(PIPE, fs.next)) != pipe);
+        ASSERT(sll_remove(&pipe_data.list, pipe, OFFSETOF(PIPE, fs.next)) != pipe);
 
 #ifdef CONFIG_SEMAPHORE
     }
@@ -235,7 +235,7 @@ static void *pipe_open(void *priv_data, char *name, uint32_t flags)
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data lock. */
-    OS_ASSERT(semaphore_obtain(&pipe_data.lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&pipe_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
     /* Initialize a search parameter. */

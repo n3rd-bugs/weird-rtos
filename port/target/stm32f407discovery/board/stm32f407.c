@@ -1,5 +1,5 @@
 /*
- * os_stm32f407.c
+ * stm32f407.c
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -13,7 +13,7 @@
  */
 #include <stdio.h>
 #include <stdarg.h>
-#include <os.h>
+#include <kernel.h>
 #include <fs.h>
 
 /* Used to manage 64 bit system clock. */
@@ -27,7 +27,7 @@ uint32_t clock_64_high_32 = 0;
 void system_tick_Init()
 {
     /* Configure system tick. */
-    SysTick_Config((SYS_FREQ/OS_TICKS_PER_SEC));
+    SysTick_Config((SYS_FREQ/SOFT_TICKS_PER_SEC));
 
     /* Configure TIMER2 for 64-bit timer. */
 
@@ -63,7 +63,7 @@ void system_tick_Init()
  */
 ISR_FUN isr_clock64_tick(void)
 {
-    OS_ISR_ENTER();
+    ISR_ENTER();
 
     /* Clear the interrupt. */
     TIM2->SR = ~TIM_DIER_UIE;
@@ -71,7 +71,7 @@ ISR_FUN isr_clock64_tick(void)
     /* Timer roll over. */
     clock_64_high_32++;
 
-    OS_ISR_EXIT();
+    ISR_EXIT();
 
 } /* isr_clock64_tick */
 

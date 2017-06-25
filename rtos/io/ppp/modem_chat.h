@@ -14,7 +14,7 @@
 #ifndef _MODEM_CHAT_H_
 #define _MODEM_CHAT_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef PPP_MODEM_CHAT
 

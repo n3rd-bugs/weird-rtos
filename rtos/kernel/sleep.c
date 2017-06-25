@@ -12,7 +12,7 @@
  * or indirect use.
  */
 #include <sleep.h>
-#include <os.h>
+#include <kernel.h>
 #include <sll.h>
 
 #ifdef CONFIG_SLEEP
@@ -151,7 +151,7 @@ void sleep_ticks(uint32_t ticks)
     tcb = get_current_task();
 
     /* Current task should not be null. */
-    OS_ASSERT(tcb == NULL);
+    ASSERT(tcb == NULL);
 
     /* Lock the scheduler. */
     scheduler_lock();

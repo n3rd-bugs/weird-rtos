@@ -14,7 +14,7 @@
 #ifndef _USART_STM32F407_H_
 #define _USART_STM32F407_H_
 
-#include <os.h>
+#include <kernel.h>
 #ifdef CONFIG_SERIAL
 #include <stdarg.h>
 

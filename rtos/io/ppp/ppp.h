@@ -14,7 +14,7 @@
 #ifndef _PPP_H_
 #define _PPP_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_PPP
 #ifndef CONFIG_NET

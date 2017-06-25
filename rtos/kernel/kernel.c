@@ -1,5 +1,5 @@
 /*
- * os.c
+ * kernel.c
  *
  * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
  *
@@ -11,8 +11,8 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
-#include <os_target.h>
+#include <kernel.h>
+#include <kernel_target.h>
 #include <sleep.h>
 
 /* This will hold the control block for the currently running. */
@@ -26,15 +26,15 @@ TASK *return_task = NULL;
 uint32_t current_tick = 0;
 
 /*
- * os_process_system_tick
+ * process_system_tick
  * This function is called at each system tick.
  */
-void os_process_system_tick()
+void process_system_tick()
 {
     /* Increment system clock. */
     current_tick ++;
 
-} /* os_process_system_tick */
+} /* process_system_tick */
 
 /*
  * task_yield
@@ -52,7 +52,7 @@ void task_yield()
     if (current_task == NULL)
     {
         /* Return task should not be null. */
-        OS_ASSERT(return_task == NULL);
+        ASSERT(return_task == NULL);
 
         /* Pick the return task. */
         current_task = return_task;
@@ -145,11 +145,11 @@ uint32_t current_system_tick()
 } /* current_system_tick */
 
 /*
- * os_run
+ * kernel_run
  * This function starts the operating system. In normal operation this function
  * should never return.
  */
-void os_run()
+void kernel_run()
 {
 #ifndef SYS_LOG_NONE
     /* Initialize system logging. */
@@ -165,4 +165,4 @@ void os_run()
     /* Load/restore task's context. */
     RESTORE_CONTEXT_FIRST();
 
-} /* os_run */
+} /* kernel_run */

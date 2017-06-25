@@ -14,7 +14,7 @@
 
 #ifndef _IDLE_H_
 #define _IDLE_H_
-#include <os.h>
+#include <kernel.h>
 
 /* Idle work configurations. */
 #define IDLE_WORK_MAX           (5)

@@ -15,7 +15,7 @@
 #ifndef MEM_DYNAMIC_H
 #define MEM_DYNAMIC_H
 
-#include <os.h>
+#include <kernel.h>
 #include <mem.h>
 
 #ifdef MEMGR_DYNAMIC

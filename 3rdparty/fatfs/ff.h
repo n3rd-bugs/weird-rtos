@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 #ifdef FS_FAT

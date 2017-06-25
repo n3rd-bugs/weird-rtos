@@ -13,7 +13,7 @@
  */
 #ifndef FS_BUFFER_H
 #define FS_BUFFER_H
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 

@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #include <string.h>
 #include <fs.h>
 
@@ -74,7 +74,7 @@ void fs_buffer_test_task(void *argv)
 
     /* Pull a buffer from this file descriptor. */
     buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
-    OS_ASSERT(buffer == NULL);
+    ASSERT(buffer == NULL);
 
     /* Push test data on the buffer normally. */
     fs_buffer_push(buffer, (uint8_t *)test_data, (TEST_NUM_BUFFER * TEST_BUFFER_SIZE), 0);
@@ -84,7 +84,7 @@ void fs_buffer_test_task(void *argv)
     fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, 0);
 
     /* Check if we have anticipated data. */
-    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+    ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
 
     /* Push test data on the buffer on head. */
     fs_buffer_push(buffer, (uint8_t *)test_data, (TEST_NUM_BUFFER * TEST_BUFFER_SIZE), FS_BUFFER_HEAD);
@@ -94,7 +94,7 @@ void fs_buffer_test_task(void *argv)
     fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, 0);
 
     /* Check if we have anticipated data. */
-    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+    ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
 
     /* Push test data on the buffer but treat it as packed. */
     fs_buffer_push(buffer, (uint8_t *)test_data, (TEST_NUM_BUFFER * TEST_BUFFER_SIZE), FS_BUFFER_PACKED);
@@ -104,7 +104,7 @@ void fs_buffer_test_task(void *argv)
     fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, FS_BUFFER_PACKED);
 
     /* Check if we have anticipated data. */
-    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+    ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
 
     /* Push test data on the buffer but treat it as packed and used head scheme. */
     fs_buffer_push(buffer, (uint8_t *)test_data, (TEST_NUM_BUFFER * TEST_BUFFER_SIZE), (FS_BUFFER_PACKED | FS_BUFFER_HEAD));
@@ -114,7 +114,7 @@ void fs_buffer_test_task(void *argv)
     fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, FS_BUFFER_PACKED);
 
     /* Check if we have anticipated data. */
-    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+    ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
 
     /* Push test data on the buffer on head. */
     fs_buffer_push(buffer, (uint8_t *)test_data, (TEST_NUM_BUFFER * TEST_BUFFER_SIZE), FS_BUFFER_HEAD);
@@ -124,7 +124,7 @@ void fs_buffer_test_task(void *argv)
     fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, (FS_BUFFER_INPLACE));
 
     /* Check if we have anticipated data. */
-    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+    ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
 
     for (i = 0; i < (TEST_BUFFER_SIZE * TEST_NUM_BUFFER); i ++)
     {
@@ -136,7 +136,7 @@ void fs_buffer_test_task(void *argv)
         fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, (FS_BUFFER_INPLACE));
 
         /* Check if we have anticipated data. */
-        OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+        ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
     }
 
     /* Pull all the data that we pushed on this buffer. */
@@ -144,7 +144,7 @@ void fs_buffer_test_task(void *argv)
     fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, 0);
 
     /* Check if we have anticipated data. */
-    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+    ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
 
     /* Push test data on the buffer on head as packet. */
     fs_buffer_push(buffer, (uint8_t *)test_data, (TEST_NUM_BUFFER * TEST_BUFFER_SIZE), (FS_BUFFER_PACKED | FS_BUFFER_HEAD));
@@ -154,7 +154,7 @@ void fs_buffer_test_task(void *argv)
     fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE));
 
     /* Check if we have anticipated data. */
-    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+    ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
 
     for (i = 1; i < (TEST_BUFFER_SIZE * TEST_NUM_BUFFER); i ++)
     {
@@ -166,7 +166,7 @@ void fs_buffer_test_task(void *argv)
         fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE));
 
         /* Check if we have anticipated data. */
-        OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+        ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
     }
 
     /* Pull all the data that we pushed on this buffer. */
@@ -174,7 +174,7 @@ void fs_buffer_test_task(void *argv)
     fs_buffer_pull(buffer, test_cmp_buffer, buffer->total_length, (FS_BUFFER_PACKED));
 
     /* Check if we have anticipated data. */
-    OS_ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
+    ASSERT(memcmp(test_cmp_buffer, test_data, (TEST_BUFFER_SIZE * TEST_NUM_BUFFER)) != 0);
 
 }
 
@@ -193,7 +193,7 @@ int main(void)
     scheduler_task_add(&fs_buffer_test_cb, 5);
 
     /* Run scheduler. */
-    os_run();
+    kernel_run();
 
     return (0);
 

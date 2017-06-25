@@ -1,5 +1,5 @@
 /*
- * os_avr.h
+ * avr.h
  *
  * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
  *
@@ -12,8 +12,8 @@
  * or indirect use.
  */
 
-#ifndef OS_AVR_H
-#define OS_AVR_H
+#ifndef _AVR_H_
+#define _AVR_H_
 
 #include <avr/io.h>
 #include <tasks.h>
@@ -27,7 +27,7 @@
 #define SYS_FREQ                (OSC_FREQ / SYS_CLK_DIV)
 #define PCLK_FREQ               SYS_FREQ
 #define AVR_HARD_RESET          FALSE
-#define OS_HW_TICKS_PER_SEC     (PCLK_FREQ / 64)
+#define HW_TICKS_PER_SEC        (PCLK_FREQ / 64)
 #define SYS_STACK_SIZE          (system_stack_end - (&__heap_start))
 #define SYSTEM_STACK            (&__heap_start)
 
@@ -359,8 +359,8 @@ extern uint8_t avr_in_isr;
 
 /* Function prototypes. */
 void system_tick_Init();
-void os_stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv);
+void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv);
 NAKED_FUN control_to_system();
 uint64_t current_hardware_tick();
 
-#endif /* OS_AVR_H */
+#endif /* _AVR_H_ */

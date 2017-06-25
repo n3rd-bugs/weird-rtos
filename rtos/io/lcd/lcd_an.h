@@ -15,7 +15,7 @@
 #ifndef _LCD_AN_H_
 #define _LCD_AN_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 #include <fs.h>

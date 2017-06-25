@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #ifdef CONFIG_SERIAL
 #include <stdio.h>
 #include <serial.h>
@@ -113,12 +113,12 @@ static int32_t usart_atmega644p_init(void *data)
  */
 ISR(USART0_TX_vect, ISR_NAKED)
 {
-    OS_ISR_ENTER();
+    ISR_ENTER();
 
     /* Handle TX interrupt. */
     usart0_handle_tx_interrupt();
 
-    OS_ISR_EXIT();
+    ISR_EXIT();
 
 } /* ISR(USART0_TX_vect, ISR_NAKED) */
 
@@ -167,12 +167,12 @@ void usart0_handle_tx_interrupt()
  */
 ISR(USART0_RX_vect, ISR_NAKED)
 {
-    OS_ISR_ENTER();
+    ISR_ENTER();
 
     /* Handle RX interrupt. */
     usart0_handle_rx_interrupt();
 
-    OS_ISR_EXIT();
+    ISR_EXIT();
 
 } /* ISR(USART0_RX_vect, ISR_NAKED) */
 

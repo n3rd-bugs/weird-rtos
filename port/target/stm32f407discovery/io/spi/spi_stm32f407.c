@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_SPI
 #include <spi.h>
@@ -92,7 +92,7 @@ void spi_stm32f407_init(SPI_DEVICE *device)
 
     default:
         /* Invalid SPI device. */
-        OS_ASSERT(TRUE);
+        ASSERT(TRUE);
 
         break;
     }

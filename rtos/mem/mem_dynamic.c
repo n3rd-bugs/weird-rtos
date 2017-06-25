@@ -49,7 +49,7 @@
  *  same allocation size if he wants the memory to be evenly allocated.
  */
 
-#include <os.h>
+#include <kernel.h>
 #include <mem.h>
 
 #ifdef MEMGR_DYNAMIC
@@ -292,7 +292,7 @@ static uint8_t mem_dynamic_match_size(void *node, void *param)
 
 #ifdef MEM_ID_CHECK
     /* Verify the free memory id. */
-    OS_ASSERT(((MEM_DESC *)node)->id != MEM_FREE_ID);
+    ASSERT(((MEM_DESC *)node)->id != MEM_FREE_ID);
 #endif
 
     /* Check if this memory matches the requirement. */
@@ -318,7 +318,7 @@ static uint8_t mem_dynamic_get_max(void *node, void *param)
 {
 #ifdef MEM_ID_CHECK
     /* Verify the free memory id. */
-    OS_ASSERT(((MEM_DESC *)node)->id != MEM_FREE_ID);
+    ASSERT(((MEM_DESC *)node)->id != MEM_FREE_ID);
 #endif
 
     /* Check if this memory has larger free memory. */
@@ -359,7 +359,7 @@ uint8_t *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 
 #ifdef CONFIG_SEMAPHORE
     /* Acquire the memory lock. */
-    OS_ASSERT(semaphore_obtain(&mem_dynamic->lock, MAX_WAIT) != SUCCESS);
+    ASSERT(semaphore_obtain(&mem_dynamic->lock, MAX_WAIT) != SUCCESS);
 #else
     /* Lock the scheduler. */
     scheduler_lock();
@@ -394,7 +394,7 @@ uint8_t *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
         {
 #ifdef MEM_ID_CHECK
             /* Verify the free memory id. */
-            OS_ASSERT(mem_free->descriptor.id != MEM_FREE_ID);
+            ASSERT(mem_free->descriptor.id != MEM_FREE_ID);
 #endif
 
 #ifdef MEM_FREE_CHECK
@@ -404,7 +404,7 @@ uint8_t *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 
             while (mem_loc < mem_end)
             {
-                OS_ASSERT(*mem_loc != MEM_FREE_PATTERN);
+                ASSERT(*mem_loc != MEM_FREE_PATTERN);
                 mem_loc ++;
             }
 #endif
@@ -554,7 +554,7 @@ uint8_t *mem_dynamic_dealloc_region(uint8_t *mem_ptr)
 
 #ifdef CONFIG_SEMAPHORE
         /* Acquire the memory lock. */
-        OS_ASSERT(semaphore_obtain(&((MEM_ALOC *)mem_free)->page->mem_region->lock, MAX_WAIT) != SUCCESS);
+        ASSERT(semaphore_obtain(&((MEM_ALOC *)mem_free)->page->mem_region->lock, MAX_WAIT) != SUCCESS);
 
         /* Enable scheduling. */
         scheduler_unlock();
@@ -562,7 +562,7 @@ uint8_t *mem_dynamic_dealloc_region(uint8_t *mem_ptr)
 
 #ifdef MEM_ID_CHECK
         /* Validate free memory id. */
-        OS_ASSERT(mem_free->descriptor.id != MEM_ALLOCATED_ID);
+        ASSERT(mem_free->descriptor.id != MEM_ALLOCATED_ID);
 #endif
 
         /* Get memory page information from free memory descriptor. */
@@ -570,8 +570,8 @@ uint8_t *mem_dynamic_dealloc_region(uint8_t *mem_ptr)
 
 #ifdef MEM_BNDRY_CHECK
         /* Verify that memory boundary patterns are intact. */
-        OS_ASSERT(memcmp(mem_ptr, MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH));
-        OS_ASSERT(memcmp(mem_ptr + (mem_free->descriptor.size - (MEM_BNDRY_LENGTH + sizeof(MEM_ALOC))), MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH));
+        ASSERT(memcmp(mem_ptr, MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH));
+        ASSERT(memcmp(mem_ptr + (mem_free->descriptor.size - (MEM_BNDRY_LENGTH + sizeof(MEM_ALOC))), MEM_BNDRY_PATTERN, MEM_BNDRY_LENGTH));
 #endif
         /* Check if next memory can also be merged in this memory. */
         neighbor = (MEM_FREE *)((uint8_t *)mem_free + mem_free->descriptor.size);
@@ -584,11 +584,11 @@ uint8_t *mem_dynamic_dealloc_region(uint8_t *mem_ptr)
         {
 #ifdef MEM_ID_CHECK
             /* Verify that this is a free memory. */
-            OS_ASSERT(neighbor->descriptor.id != MEM_FREE_ID);
+            ASSERT(neighbor->descriptor.id != MEM_FREE_ID);
 #endif
 
             /* Remove neighbor from the free memory list. */
-            OS_ASSERT(sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next)) != neighbor);
+            ASSERT(sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next)) != neighbor);
 
             /* Append neighbor to given memory. */
             mem_free->descriptor.size += neighbor->descriptor.size;
@@ -619,11 +619,11 @@ uint8_t *mem_dynamic_dealloc_region(uint8_t *mem_ptr)
         {
 #ifdef MEM_ID_CHECK
             /* Verify free id for this memory. */
-            OS_ASSERT(neighbor->descriptor.id != MEM_FREE_ID);
+            ASSERT(neighbor->descriptor.id != MEM_FREE_ID);
 #endif
 
             /* Remove the neighbor from the free memory list. */
-            OS_ASSERT(sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next)) != neighbor);
+            ASSERT(sll_remove(&mem_page->free_list, neighbor, OFFSETOF(MEM_FREE, next)) != neighbor);
 
             /* If we need to update the next memory. */
             if ( ((uint8_t *)mem_free + mem_free->descriptor.size) < mem_page->base_end )

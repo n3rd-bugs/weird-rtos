@@ -1,5 +1,5 @@
 /*
- * os_stm32f407.h
+ * stm32f407.h
  *
  * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
  *
@@ -12,10 +12,10 @@
  * or indirect use.
  */
 
-#ifndef OS_STM32F407_H
-#define OS_STM32F407_H
+#ifndef _STM32F407_H_
+#define _STM32F407_H_
 
-#include <os.h>
+#include <kernel.h>
 #include <stm32f407xx.h>
 
 /* Peripheral clock configuration. */
@@ -45,4 +45,4 @@ void system_entry(void);
 void sysclock_init();
 void wdt_disbale();
 
-#endif /* OS_STM32F407_H */
+#endif /* _STM32F407_H_ */

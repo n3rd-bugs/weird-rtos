@@ -13,7 +13,7 @@
  */
 #ifndef _SPI_STM32F407_H_
 #define _SPI_STM32F407_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_SPI
 #include <spi.h>

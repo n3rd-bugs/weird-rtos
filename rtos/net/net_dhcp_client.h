@@ -13,7 +13,7 @@
  */
 #ifndef _NET_DHCP_CLIENT_H_
 #define _NET_DHCP_CLIENT_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <net.h>
@@ -26,8 +26,8 @@
 #include <net_udp.h>
 
 /* DHCP client configuration. */
-#define DHCP_BASE_TIMEOUT       (2 * OS_TICKS_PER_SEC)
-#define DHCP_MAX_TIMEOUT        (64 * OS_TICKS_PER_SEC)
+#define DHCP_BASE_TIMEOUT       (2 * SOFT_TICKS_PER_SEC)
+#define DHCP_MAX_TIMEOUT        (64 * SOFT_TICKS_PER_SEC)
 #define DHCP_MAX_RETRY          (4)
 #define DHCP_CLIENT_HOSTNAME    "weird-rtos"
 

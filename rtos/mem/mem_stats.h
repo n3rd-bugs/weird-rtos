@@ -15,7 +15,7 @@
 #ifndef MEM_STATS_H
 #define MEM_STATS_H
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef MEMGR_STATIC
 

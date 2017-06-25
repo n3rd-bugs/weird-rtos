@@ -13,7 +13,7 @@
  */
 #ifndef _SERIAL_H_
 #define _SERIAL_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_SERIAL
 #include <fs.h>

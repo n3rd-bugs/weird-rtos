@@ -15,7 +15,7 @@
 #ifndef _ASSERT_H_
 #define _ASSERT_H_
 
-#include <os.h>
+#include <kernel.h>
 
 /* Assert configuration. */
 //#define ASSERT_NONE
@@ -23,11 +23,11 @@
 
 /* Error handling. */
 #ifdef ASSERT_NONE
-#define OS_ASSERT(raise)                    ((void)(raise));
-#define OS_ASSERT_INFO(raise, file, line)   ((void)(raise)); ((void)(file)); ((void)(line));
+#define ASSERT(raise)                    ((void)(raise));
+#define ASSERT_INFO(raise, file, line)   ((void)(raise)); ((void)(file)); ((void)(line));
 #else
 #ifdef ASSERT_FILE_INFO
-#define OS_ASSERT(raise)        {                                               \
+#define ASSERT(raise)           {                                               \
                                     if ((raise) != FALSE)                       \
                                     {                                           \
                                         system_assert((raise),                  \
@@ -35,7 +35,7 @@
                                                       NULL);                    \
                                     }                                           \
                                 }
-#define OS_ASSERT_INFO(raise, file, line)                                       \
+#define ASSERT_INFO(raise, file, line)                                          \
                                 {                                               \
                                     if ((raise) != FALSE)                       \
                                     {                                           \
@@ -45,14 +45,14 @@
                                     }                                           \
                                 }
 #else
-#define OS_ASSERT(raise)        {                                               \
+#define ASSERT(raise)           {                                               \
                                     if ((raise) != FALSE)                       \
                                     {                                           \
                                         system_assert((raise), "", 0,           \
                                                       NULL);                    \
                                     }                                           \
                                 }
-#define OS_ASSERT_INFO(raise, file, line)                                       \
+#define ASSERT_INFO(raise, file, line)                                          \
                                 {                                               \
                                     if ((raise) != FALSE)                       \
                                     {                                           \

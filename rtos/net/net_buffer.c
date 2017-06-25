@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <string.h>
@@ -124,7 +124,7 @@ static void net_buffer_condition_callback(void *data, int32_t status)
         /* Obtain lock for the file descriptor on which this semaphore was
          * received, this is required as the buffer will return it's
          * segments to the original file descriptor when applicable. */
-        OS_ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+        ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Process this buffer. */
         if (net_buffer_process(buffer) != NET_BUFFER_CONSUMED)

@@ -14,7 +14,7 @@
 #ifndef _SLEEP_H_
 #define _SLEEP_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_SLEEP
 

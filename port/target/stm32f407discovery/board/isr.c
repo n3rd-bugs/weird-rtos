@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #include <isr.h>
 #include <enc28j60.h>
 #include <usart_stm32f407.h>

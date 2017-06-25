@@ -14,7 +14,7 @@
 #ifndef _NET_TCP_H_
 #define _NET_TCP_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_NET
 #include <net.h>
@@ -25,9 +25,9 @@
 /* TCP configuration. */
 #define TCP_WND_SIZE                (1024)
 #define TCP_WND_SCALE               (2)
-#define TCP_RTO                     ((OS_TICKS_PER_SEC * 3)/ 4)
-#define TCP_MAX_RTO                 (OS_TICKS_PER_SEC * 5)
-#define TCP_MSL                     (60 * OS_TICKS_PER_SEC)
+#define TCP_RTO                     ((SOFT_TICKS_PER_SEC * 3)/ 4)
+#define TCP_MAX_RTO                 (SOFT_TICKS_PER_SEC * 5)
+#define TCP_MSL                     (60 * SOFT_TICKS_PER_SEC)
 #define TCP_NUM_RTX                 (16)
 #define TCP_MAX_CONG_WINDOW         (0xFFFF)
 

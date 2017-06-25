@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_PPP
 #include <sll.h>
@@ -55,7 +55,7 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
     FS *fs = (FS *)fd;
 
     /* Will only work with buffered file descriptors. */
-    OS_ASSERT((fs->flags & FS_BUFFERED) == 0);
+    ASSERT((fs->flags & FS_BUFFERED) == 0);
 
     /* Clear the PPP instance. */
     memset(ppp, 0, sizeof(PPP));
@@ -147,7 +147,7 @@ void ppp_process_modem_chat(void *fd, PPP *ppp)
         if ( (ppp->flags & PPP_DEDICATED_FD) || (status == SUCCESS) || (status != MODEM_CHAT_IGNORE))
         {
             /* Remove the buffer from the receive list and free it. */
-            OS_ASSERT(fs_buffer_get(fd, FS_BUFFER_RX, 0) != buffer);
+            ASSERT(fs_buffer_get(fd, FS_BUFFER_RX, 0) != buffer);
             fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
         }
 
@@ -177,7 +177,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
     int32_t status;
 
     /* Should never happen. */
-    OS_ASSERT(tx_buffer == NULL);
+    ASSERT(tx_buffer == NULL);
 
     /* Clear the packet structure and transmit buffers. */
     memset(&rx_packet, 0, sizeof(PPP_CONF_PKT));
@@ -433,7 +433,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                         if (buffer_one->length > this_length)
                         {
                             /* Divide this buffer into two buffers. */
-                            OS_ASSERT(fs_buffer_one_divide(fd, buffer_one, &new_buffer_one, 0, this_length) != SUCCESS);
+                            ASSERT(fs_buffer_one_divide(fd, buffer_one, &new_buffer_one, 0, this_length) != SUCCESS);
 
                             /* Add this buffer on the new buffer. */
                             fs_buffer_add_one(new_buffer, new_buffer_one, 0);
@@ -576,7 +576,7 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
     if (ppp != NULL)
     {
         /* Skim the protocol from the buffer. */
-        OS_ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
+        ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
 
         switch (net_proto)
         {
@@ -637,7 +637,7 @@ void net_ppp_receive(void *data, int32_t status)
     UNUSED_PARAM(status);
 
     /* Get lock for the PPP. */
-    OS_ASSERT(fd_get_lock(ppp->fd) != SUCCESS);
+    ASSERT(fd_get_lock(ppp->fd) != SUCCESS);
 
     /* Process the received buffer according to the PPP state. */
     switch (ppp->state)
@@ -712,7 +712,7 @@ int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER *buffer, uint16_t proto
         fs_write(fd, (uint8_t *)buffer, sizeof(buffer));
 
         /* Acquire file descriptor lock. */
-        OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+        ASSERT(fd_get_lock(fd) != SUCCESS);
     }
 
     /* Return status to the caller. */

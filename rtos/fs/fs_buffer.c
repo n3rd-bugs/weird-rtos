@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 #include <string.h>
@@ -46,14 +46,14 @@ void fs_buffer_dataset(FD fd, FS_BUFFER_DATA *data)
     uint32_t i;
 
     /* Should never happen. */
-    OS_ASSERT(data == NULL);
+    ASSERT(data == NULL);
 
-    OS_ASSERT(data->buffer_space == NULL);
-    OS_ASSERT(data->buffer_ones == NULL);
-    OS_ASSERT(data->buffer_lists == NULL);
+    ASSERT(data->buffer_space == NULL);
+    ASSERT(data->buffer_ones == NULL);
+    ASSERT(data->buffer_lists == NULL);
 
     /* Get lock for this file descriptor. */
-    OS_ASSERT(fd_get_lock(fd) != SUCCESS);
+    ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* This is a buffer file system. */
     fs->flags |= FS_BUFFERED;
@@ -214,7 +214,7 @@ int32_t fs_buffer_num_remaining(FD fd, uint32_t type)
     int32_t ret_num;
 
     /* Should never happen. */
-    OS_ASSERT(data == NULL);
+    ASSERT(data == NULL);
 
     /* Type of buffer we need to check. */
     switch (type)
@@ -361,7 +361,7 @@ void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_
     FS_BUFFER_DATA *data = fs->buffer;
 
     /* Should never happen. */
-    OS_ASSERT(data == NULL);
+    ASSERT(data == NULL);
 
     /* Initialize buffer suspend parameter. */
     param->num_buffers = num_buffers;
@@ -397,7 +397,7 @@ static int32_t fs_buffer_suspend(FD fd, uint32_t type, uint32_t flags)
 
 #ifdef CONFIG_NET
     /* We should not be in the networking condition task. */
-    OS_ASSERT(get_current_task() == &net_condition_tcb);
+    ASSERT(get_current_task() == &net_condition_tcb);
 #endif
 
     /* Get buffer condition. */
@@ -553,14 +553,14 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
     uint8_t do_resume = TRUE;
 
     /* Should never happen. */
-    OS_ASSERT(data == NULL);
+    ASSERT(data == NULL);
 
 #ifdef FS_BUFFER_DEBUG
     /* Check if this node already exists on any of the file descriptor lists. */
-    OS_ASSERT(sll_in_list(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
-    OS_ASSERT(sll_in_list(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
-    OS_ASSERT(sll_in_list(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
-    OS_ASSERT(sll_in_list(&data->buffers_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
+    ASSERT(sll_in_list(&data->rx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
+    ASSERT(sll_in_list(&data->tx_buffer_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
+    ASSERT(sll_in_list(&data->free_buffer_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
+    ASSERT(sll_in_list(&data->buffers_list, buffer, OFFSETOF(FS_BUFFER, next)) == TRUE);
 #endif
 
     /* Type of buffer we are adding. */
@@ -704,10 +704,10 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
 
 #ifdef FS_BUFFER_DEBUG
     /* Validate the buffer lists for this file descriptors. */
-    OS_ASSERT(sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
-    OS_ASSERT(sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
-    OS_ASSERT(sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
-    OS_ASSERT(sll_num_items(&data->buffers_list, OFFSETOF(FS_BUFFER, next)) != data->buffers_list.buffers);
+    ASSERT(sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
+    ASSERT(sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
+    ASSERT(sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
+    ASSERT(sll_num_items(&data->buffers_list, OFFSETOF(FS_BUFFER, next)) != data->buffers_list.buffers);
 #endif
 
 } /* fs_buffer_add */
@@ -735,7 +735,7 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
     int32_t status = SUCCESS;
 
     /* Should never happen. */
-    OS_ASSERT(data == NULL);
+    ASSERT(data == NULL);
 
     /* Type of buffer we need. */
     switch (type)
@@ -745,7 +745,7 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
     case FS_BUFFER_ONE_FREE:
 
         /* Validate the input arguments. */
-        OS_ASSERT(flags & FS_BUFFER_INPLACE);
+        ASSERT(flags & FS_BUFFER_INPLACE);
 
         /* Check if we need to suspend. */
         if (flags & FS_BUFFER_SUSPEND)
@@ -848,7 +848,7 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
     case FS_BUFFER_LIST:
 
         /* Validate the input arguments. */
-        OS_ASSERT(flags & FS_BUFFER_INPLACE);
+        ASSERT(flags & FS_BUFFER_INPLACE);
 
         /* Check if we need to suspend. */
         if (flags & FS_BUFFER_SUSPEND)
@@ -882,10 +882,10 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
 
 #ifdef FS_BUFFER_DEBUG
     /* Validate the buffer lists for this file descriptors. */
-    OS_ASSERT(sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
-    OS_ASSERT(sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
-    OS_ASSERT(sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
-    OS_ASSERT(sll_num_items(&data->buffers_list, OFFSETOF(FS_BUFFER, next)) != data->buffers_list.buffers);
+    ASSERT(sll_num_items(&data->rx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->rx_buffer_list.buffers);
+    ASSERT(sll_num_items(&data->tx_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->tx_buffer_list.buffers);
+    ASSERT(sll_num_items(&data->free_buffer_list, OFFSETOF(FS_BUFFER, next)) != data->free_buffer_list.buffers);
+    ASSERT(sll_num_items(&data->buffers_list, OFFSETOF(FS_BUFFER, next)) != data->buffers_list.buffers);
 #endif
 
     /* Return the buffer. */
@@ -915,13 +915,13 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
     FS_BUFFER_ONE *one = NULL;
     int32_t status = SUCCESS;
     uint32_t this_size, this_offset = offset;
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
     uint8_t reverse = (uint8_t)((flags & FS_BUFFER_PACKED) != 0);
 #endif
     uint8_t *to;
 
     /* Head flag should not be used with pull. */
-    OS_ASSERT(flags & FS_BUFFER_HEAD);
+    ASSERT(flags & FS_BUFFER_HEAD);
 
     /* Validate that we do have enough space on this buffer. */
     if (buffer->total_length >= (size + offset))
@@ -930,7 +930,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
         if (offset != 0)
         {
             /* We should not be removing the data. */
-            OS_ASSERT((flags & FS_BUFFER_INPLACE) == 0);
+            ASSERT((flags & FS_BUFFER_INPLACE) == 0);
         }
 
         /* If we are pulling data in place. */
@@ -961,7 +961,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
             }
 
             /* We should have a buffer here. */
-            OS_ASSERT(one == NULL);
+            ASSERT(one == NULL);
         }
     }
     else
@@ -993,10 +993,10 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
             }
 
             /* There is data in the buffer so we must have a one buffer. */
-            OS_ASSERT(one == NULL);
+            ASSERT(one == NULL);
 
             /* There should not be a zero length buffer. */
-            OS_ASSERT(one->length == 0);
+            ASSERT(one->length == 0);
 
             /* Check if we need to do a partial read of this buffer. */
             if ((size + this_offset) >= one->length)
@@ -1014,7 +1014,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
             /* Pick the destination pointer. */
             to = (uint8_t *)data;
 
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
             /* If we need to copy data MSB first. */
             if ((data != NULL) && (reverse == TRUE))
             {
@@ -1026,13 +1026,13 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
             /* Pull data from this buffer. */
             /* We have already verified that we have enough length on the buffer,
              * so we should never get an error here. */
-            OS_ASSERT(fs_buffer_one_pull_offset(one, to, this_size, this_offset, flags) != SUCCESS);
+            ASSERT(fs_buffer_one_pull_offset(one, to, this_size, this_offset, flags) != SUCCESS);
 
             /* If there is no more valid data on this buffer. */
             if (one->length == 0)
             {
                 /* We no longer need this one buffer on our buffer. */
-                OS_ASSERT(sll_remove(&buffer->list, one, OFFSETOF(FS_BUFFER_ONE, next)) != one);
+                ASSERT(sll_remove(&buffer->list, one, OFFSETOF(FS_BUFFER_ONE, next)) != one);
 
                 /* Actively free this buffer. */
                 fs_buffer_add(buffer->fd, one, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
@@ -1043,7 +1043,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
 
             /* If we are returning the data. */
             if ( (data != NULL)
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
                  && (reverse == FALSE)
 #endif
                 )
@@ -1099,7 +1099,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
     int32_t status = SUCCESS;
     FS_BUFFER_ONE *one = NULL;
     uint32_t this_size, this_offset = offset;
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
     uint8_t reverse = (uint8_t)(((flags & FS_BUFFER_PACKED) != 0) ^ (((flags & FS_BUFFER_HEAD) != 0) && ((flags & FS_BUFFER_UPDATE) == 0) && (offset == 0)));
 #endif
     uint8_t *from;
@@ -1108,14 +1108,14 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
     if (offset != 0)
     {
         /* We should be updating the existing data. */
-        OS_ASSERT((flags & FS_BUFFER_UPDATE) == 0);
+        ASSERT((flags & FS_BUFFER_UPDATE) == 0);
     }
 
     /* If we are updating the existing data. */
     if (flags & FS_BUFFER_UPDATE)
     {
         /* The buffer should already have the data we need to update. */
-        OS_ASSERT(buffer->total_length < (size + offset));
+        ASSERT(buffer->total_length < (size + offset));
 
         /* If we are not updating the data on the head. */
         if ((flags & FS_BUFFER_HEAD) == 0)
@@ -1171,7 +1171,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
                     if (one)
                     {
                         /* Use all the space in this buffer as head room. */
-                        OS_ASSERT(fs_buffer_one_add_head(one, one->length) != SUCCESS);
+                        ASSERT(fs_buffer_one_add_head(one, one->length) != SUCCESS);
 
                         /* Add this one buffer on the head of the buffer. */
                         sll_push(&buffer->list, one, OFFSETOF(FS_BUFFER_ONE, next));
@@ -1215,7 +1215,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
             one = buffer->list.tail;
 
             /* We should not be updating the existing value. */
-            OS_ASSERT(flags & FS_BUFFER_UPDATE);
+            ASSERT(flags & FS_BUFFER_UPDATE);
 
             /* Either we don't have a one buffer in the or there is no space
              * in the tail buffer. */
@@ -1256,7 +1256,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
             /* Pick the source pointer. */
             from = (uint8_t *)data;
 
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
             /* If we need to copy data MSB first. */
             if ((data != NULL) && (reverse == TRUE))
             {
@@ -1266,7 +1266,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
 #endif
 
             /* Push data on the buffer we have selected. */
-            OS_ASSERT(fs_buffer_one_push_offset(one, from, this_size, this_offset, flags) != SUCCESS);
+            ASSERT(fs_buffer_one_push_offset(one, from, this_size, this_offset, flags) != SUCCESS);
 
             /* If we are not updating the existing value. */
             if ((flags & FS_BUFFER_UPDATE) == 0)
@@ -1280,7 +1280,7 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
 
             /* If we are copying data normally. */
             if ( (data != NULL)
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
                  && (reverse == FALSE)
 #endif
                 )
@@ -1327,7 +1327,7 @@ int32_t fs_buffer_divide(FS_BUFFER *buffer, uint32_t flags, uint32_t data_len)
     uint32_t this_len = data_len;
 
     /* Should never happen. */
-    OS_ASSERT(buffer->total_length <= data_len);
+    ASSERT(buffer->total_length <= data_len);
 
     /* Find the one buffer we need to divide. */
     one = buffer->list.head;
@@ -1359,7 +1359,7 @@ int32_t fs_buffer_divide(FS_BUFFER *buffer, uint32_t flags, uint32_t data_len)
     }
 
     /* Should never happen. */
-    OS_ASSERT(one == NULL);
+    ASSERT(one == NULL);
 
     /* Get a new buffer to store the remaining data for this buffer. */
     new_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, flags);
@@ -1371,7 +1371,7 @@ int32_t fs_buffer_divide(FS_BUFFER *buffer, uint32_t flags, uint32_t data_len)
         if (new_one == NULL)
         {
             /* Remove the extra data from this one buffer to a new buffer. */
-            OS_ASSERT(fs_buffer_one_divide(buffer->fd, one, &new_one, flags, this_len) != SUCCESS);
+            ASSERT(fs_buffer_one_divide(buffer->fd, one, &new_one, flags, this_len) != SUCCESS);
 
             /* Initialize the new one buffers. */
             new_one->next = one->next;
@@ -1420,7 +1420,7 @@ int32_t fs_buffer_one_add_head(FS_BUFFER_ONE *one, uint32_t size)
     int32_t status = SUCCESS;
 
     /* An empty buffer should not come here. */
-    OS_ASSERT(one->data == NULL);
+    ASSERT(one->data == NULL);
 
     /* Validate that there is enough space on the buffer. */
     if (FS_BUFFER_SPACE(one) >= size)
@@ -1472,7 +1472,7 @@ int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *one, void *data, uint32_t size,
     if (offset != 0)
     {
         /* We should not be removing the data. */
-        OS_ASSERT((flags & FS_BUFFER_INPLACE) == 0);
+        ASSERT((flags & FS_BUFFER_INPLACE) == 0);
     }
 
     /* Validate if we do have required amount of data on the buffer. */
@@ -1500,7 +1500,7 @@ int32_t fs_buffer_one_pull_offset(FS_BUFFER_ONE *one, void *data, uint32_t size,
         /* If we need to actually need to return the pulled data. */
         if (data != NULL)
         {
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
             if (flags & FS_BUFFER_PACKED)
             {
                 /* Copy the last byte first. */
@@ -1554,13 +1554,13 @@ int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, void *data, uint32_t size,
     uint8_t *to;
 
     /* An empty buffer should not come here. */
-    OS_ASSERT(one->data == NULL);
+    ASSERT(one->data == NULL);
 
     /* If an offset was given. */
     if (offset != 0)
     {
         /* We should be updating the existing data. */
-        OS_ASSERT((flags & FS_BUFFER_UPDATE) == 0);
+        ASSERT((flags & FS_BUFFER_UPDATE) == 0);
     }
 
     /* If we do have enough space on the buffer. */
@@ -1621,7 +1621,7 @@ int32_t fs_buffer_one_push_offset(FS_BUFFER_ONE *one, void *data, uint32_t size,
         /* If we actually need to push some data. */
         if (data != NULL)
         {
-#ifdef OS_LITTLE_ENDIAN
+#ifdef LITTLE_ENDIAN
             if (flags & FS_BUFFER_PACKED)
             {
                 /* Copy data from the provided buffer last byte first. */
@@ -1670,8 +1670,8 @@ int32_t fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one,
     int32_t status = SUCCESS;
 
     /* Should never happen. */
-    OS_ASSERT(data_len >= one->length);
-    OS_ASSERT(new_one == NULL);
+    ASSERT(data_len >= one->length);
+    ASSERT(new_one == NULL);
 
     /* Allocate a free buffer. */
     ret_one = fs_buffer_one_get(fd, flags);
@@ -1680,7 +1680,7 @@ int32_t fs_buffer_one_divide(FD fd, FS_BUFFER_ONE *one, FS_BUFFER_ONE **new_one,
     if (ret_one != NULL)
     {
         /* Check if the new buffer has enough space to copy the data. */
-        OS_ASSERT(ret_one->max_length < data_len);
+        ASSERT(ret_one->max_length < data_len);
 
         /* Set the number of bytes valid in this buffer. */
         ret_one->length = (one->length - data_len);

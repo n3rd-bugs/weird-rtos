@@ -13,7 +13,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
-#include <os.h>
+#include <kernel.h>
 #include <string.h>
 #include <fs.h>
 #include <net.h>
@@ -78,7 +78,7 @@ void control_entry(void *argv);
 #define ADC_ATIMER_PRESCALE     ((uint32_t)8)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
 
-#define ADC_CHANNEL_DELAY       (OS_TICKS_PER_SEC / 5)
+#define ADC_CHANNEL_DELAY       (SOFT_TICKS_PER_SEC / 5)
 
 static uint16_t adc_sample[ADC_SAMPLES];
 static CONDITION adc_condition;
@@ -984,7 +984,7 @@ int main(void)
     scheduler_task_add(&control_cb, 0);
 
     /* Run scheduler. */
-    os_run();
+    kernel_run();
 
     return (0);
 

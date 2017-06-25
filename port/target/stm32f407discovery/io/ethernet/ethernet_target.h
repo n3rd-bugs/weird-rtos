@@ -14,7 +14,7 @@
 #ifndef _ETHERNET_TARGET_H_
 #define _ETHERNET_TARGET_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_ETHERNET
 #include <ethernet_stm32f407.h>

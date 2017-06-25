@@ -1,5 +1,5 @@
 /*
- * os_cortex_m3.c
+ * cortex_m3.c
  *
  * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
  *
@@ -12,7 +12,7 @@
  * or indirect use.
  */
 
-#include <os.h>
+#include <kernel.h>
 
 /* Global interrupt level. */
 /* TRUE: Interrupt Enabled
@@ -27,13 +27,13 @@ static TASK *last_task;
 extern TASK *current_task;
 
 /*
- * os_stack_init
+ * stack_init
  * @tcb: Task control block needed to be initialized.
  * @task_entry: Task entry function.
  * @argv: Arguments to be passed to the entry function.
  * This function is responsible for initializing stack for a tack.
  */
-void os_stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
+void stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
 {
     hardware_stack_farme *init_stack_frame;
 
@@ -55,7 +55,7 @@ void os_stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
     /* Push a dummy software stack frame. */
     tcb->tos -= sizeof(software_stack_farme);
 
-} /* os_stack_init */
+} /* stack_init */
 
 /*
  * run_first_task
@@ -92,7 +92,7 @@ void run_first_task()
     ENABLE_INTERRUPTS();
 
     /* Should never get here. */
-    OS_ASSERT(TRUE);
+    ASSERT(TRUE);
 
 } /* run_first_task */
 
@@ -139,7 +139,7 @@ ISR_FUN isr_sysclock_handle(void)
     DISABLE_INTERRUPTS();
 
     /* Process system tick. */
-    os_process_system_tick();
+    process_system_tick();
 
     /* If we have not already scheduled a context switch. */
     if (last_task == NULL)
@@ -237,7 +237,7 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
 ISR_FUN cpu_interrupt(void)
 {
     /* Assert the system. */
-    OS_ASSERT(TRUE);
+    ASSERT(TRUE);
 
 } /* cpu_interrupt */
 
@@ -248,7 +248,7 @@ ISR_FUN cpu_interrupt(void)
 ISR_FUN nmi_interrupt(void)
 {
     /* Assert the system. */
-    OS_ASSERT(TRUE);
+    ASSERT(TRUE);
 
 } /* nmi_interrupt */
 
@@ -259,6 +259,6 @@ ISR_FUN nmi_interrupt(void)
 ISR_FUN hard_fault_interrupt(void)
 {
     /* Assert the system. */
-    OS_ASSERT(TRUE);
+    ASSERT(TRUE);
 
 } /* hard_fault_interrupt */

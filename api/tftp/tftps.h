@@ -13,7 +13,7 @@
  */
 #ifndef _TFTPS_H_
 #define _TFTPS_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_TFTPS
 #ifndef CONFIG_NET
@@ -53,7 +53,7 @@
 
 #define TFTP_BUFFER_SIZE        (32)
 #define TFTP_BLOCK_SIZE         (512)
-#define TFTP_CLI_TIMEOUT        (OS_TICKS_PER_SEC)
+#define TFTP_CLI_TIMEOUT        (SOFT_TICKS_PER_SEC)
 
 /* TFTP server structure. */
 typedef struct _tftp_server

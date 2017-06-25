@@ -83,7 +83,7 @@ TASK *scheduler_get_next_task()
     tcb = (TASK *)sll_pop(&sch_ready_task_list, OFFSETOF(TASK, next));
 
     /* We should always have a task to execute. */
-    OS_ASSERT(tcb == NULL);
+    ASSERT(tcb == NULL);
 
 #ifdef CONFIG_TASK_STATS
     /* Increment the number of times this task was scheduled. */
@@ -175,7 +175,7 @@ void scheduler_task_remove(TASK *tcb)
     scheduler_lock();
 
     /* Task should be in finished state. */
-    OS_ASSERT(tcb->status != TASK_FINISHED);
+    ASSERT(tcb->status != TASK_FINISHED);
 
 #ifdef CONFIG_TASK_STATS
     /* Remove this task from global task list. */
@@ -200,7 +200,7 @@ void scheduler_lock()
     if (tcb != NULL)
     {
         /* Should never happen. */
-        OS_ASSERT(tcb->lock_count >= SCHEDULER_MAX_LOCK);
+        ASSERT(tcb->lock_count >= SCHEDULER_MAX_LOCK);
 
         /* Increment the lock count for this task. */
         tcb->lock_count ++;
@@ -221,7 +221,7 @@ void scheduler_unlock()
     if (tcb != NULL)
     {
         /* Should never happen. */
-        OS_ASSERT(tcb->lock_count == 0);
+        ASSERT(tcb->lock_count == 0);
 
         /* Decrement the lock count for this task. */
         tcb->lock_count --;

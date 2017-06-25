@@ -9,7 +9,7 @@
 extern "C" {
 #endif
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 #include <fs.h>

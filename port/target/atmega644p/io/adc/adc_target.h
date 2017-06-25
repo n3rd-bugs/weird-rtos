@@ -15,7 +15,7 @@
 #ifndef _ADC_TARGET_H_
 #define _ADC_TARGET_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_ADC
 #include <adc_atmega644p.h>

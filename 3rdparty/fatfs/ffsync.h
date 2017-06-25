@@ -14,7 +14,7 @@
 #ifndef _FFSYNC_H_
 #define _FFSYNC_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 #include <fs.h>

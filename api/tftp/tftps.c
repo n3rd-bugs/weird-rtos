@@ -12,7 +12,7 @@
  * or indirect use.
  */
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_TFTPS
 #include <tftps.h>
@@ -104,7 +104,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
     if (received >= (int32_t)sizeof(uint32_t))
     {
         /* Acquire lock for the buffer file descriptor. */
-        OS_ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
+        ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
 
         /* Pull the opcode from the buffer. */
         status = fs_buffer_pull(rx_buffer, &opcode, sizeof(uint16_t), (FS_BUFFER_PACKED));
@@ -183,7 +183,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                         }
 
                         /* Acquire lock for the buffer file descriptor. */
-                        OS_ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
+                        ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
                     }
                     else
                     {
@@ -247,7 +247,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                                     }
 
                                     /* Acquire lock for the buffer file descriptor. */
-                                    OS_ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
+                                    ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
                                 }
                             }
 

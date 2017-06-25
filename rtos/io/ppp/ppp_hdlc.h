@@ -14,7 +14,7 @@
 #ifndef _PPP_HDLC_H_
 #define _PPP_HDLC_H_
 
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_PPP
 

@@ -14,7 +14,7 @@
 #ifndef _HEADER_H_
 #define _HEADER_H_
 
-#include <os.h>
+#include <kernel.h>
 #include <fs.h>
 
 /* Header type flags. */

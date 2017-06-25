@@ -15,7 +15,7 @@
 #ifndef _PATH_H_
 #define _PATH_H_
 
-#include <os.h>
+#include <kernel.h>
 
 /* Function prototypes. */
 uint32_t util_path_match(const char *, char **);

@@ -13,7 +13,7 @@
  */
 #ifndef _MMC_SPI_H_
 #define _MMC_SPI_H_
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_MMC
 #ifndef CONFIG_SPI

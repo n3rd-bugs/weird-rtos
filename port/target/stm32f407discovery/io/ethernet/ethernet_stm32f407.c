@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 
 #ifdef CONFIG_ETHERNET
 #include <ethernet.h>
@@ -28,7 +28,7 @@
  */
 ISR_FUN exti2_interrupt()
 {
-    OS_ISR_ENTER();
+    ISR_ENTER();
 
 #ifdef ETHERNET_ENC28J60
     /* Handle enc28j60 interrupt. */
@@ -38,7 +38,7 @@ ISR_FUN exti2_interrupt()
     /* Clear the interrupt pending bit or EXTI2 channel. */
     EXTI->PR = 0x04;
 
-    OS_ISR_EXIT();
+    ISR_EXIT();
 
 } /* exti2_interrupt */
 #endif

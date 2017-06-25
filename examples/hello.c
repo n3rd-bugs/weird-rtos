@@ -11,7 +11,7 @@
  * (in any form) the author will not be liable for any outcome from its direct
  * or indirect use.
  */
-#include <os.h>
+#include <kernel.h>
 #include <string.h>
 #include <fs.h>
 #include <serial.h>
@@ -20,7 +20,7 @@
 void hello_task(void *);
 
 /* Hello task control block. */
-#define DEMO_STACK_SIZE     1024
+#define DEMO_STACK_SIZE     96
 TASK hello_task_cb;
 uint8_t hello_task_stack[DEMO_STACK_SIZE];
 
@@ -58,7 +58,7 @@ int main(void)
     scheduler_task_add(&hello_task_cb, 5);
 
     /* Run scheduler. */
-    os_run();
+    kernel_run();
 
     return (0);
 
