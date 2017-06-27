@@ -1,27 +1,25 @@
 Weird RTOS
 ==========
-This is an educational RTOS that can be used with medium ended 
-micro-controllers including 8-bit AVRs and Cortex-M3/4.
+This is an educational RTOS that can be used with medium ended micro-controllers including 8-bit AVRs and Cortex-M3/4.
 
 ## Features
-- Basic operating system features include
-  - Priority based aperiodic scheduler
-  - Dynamic task creation and deletion
-  - *Condition* to create application spcific signalling mechnisums like timers, events etc.
-  - *Semaphore* with optional specific interrupt protection
-  - *File system* based pipes to support data queus
+- Priority based aperiodic scheduler
+- Dynamic task creation and deletion
+- *Condition* to create application specific signalling mechanisms like timers, events etc.
+- *Semaphore* with optional specific interrupt protection
+- *File system* based pipes to support data queues
 - Support for suspending a task on multiple conditions to eliminate multiple threads.
 - A small networking stack with IPv4, ARP, UDP, TCP.
-- Support for idle work to offload low priortu work from main threads.
+- Support for idle work to offload low priority work from main threads.
 
-### Supported MCUs and Platforms
+## Supported MCUs and Platforms
 | MCU/Platform | Core | RTOS Features |
 | ------------ | ---- | -------- |
 | atmega644 | AVR 8-bit | USART, ADC, SPI, Ethernet, MMC, File system, Alpha Numeric LCD |
 | atmega1284 | AVR 8-bit | USART, ADC, SPI, Ethernet, MMC, File system, Alpha Numeric LCD |
 | STM32F407Discovery | Cortex | USART, SPI, Ethernet |
 
-### Minimum Requirements
+## Minimum Requirements
 | Controller | ROM | ROM actual | RAM | RAM Actual |
 | ---------- | --- | ---------- | --- | ---------- |
 | AVR 8-bit | 8 KB | 4190 bytes | 2 KB | 846 bytes |
@@ -35,7 +33,7 @@ Weird RTOS uses eclipse as build system and provides sample projects for each su
 ```
 +-- 3rdparty - 3rd party components
 +-- api - Higher level components including TFTP, weird-view IoT framework
-+-- docs - Documentation
++-- docs - Related documentation
 +-- examples - Some usage examples
 +-- port - Target specific bits
 |   +-- kernel - Target specific kernel components
@@ -59,3 +57,6 @@ Weird RTOS uses eclipse as build system and provides sample projects for each su
 ## Documentation
 ### Kernel
 - [Scheduler](docs/kernel/SCHEDULER.md)
+
+## Licensing
+Weird RTOS is protected by three-clause MIT license, for more details see [License Agreement](LICENSE.md).
