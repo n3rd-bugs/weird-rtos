@@ -18,7 +18,6 @@
 
 /* Scheduler lock configuration. */
 #define SCHEDULER_MAX_LOCK          (5)
-#define SCHEDULER_MAX_INT_LOCK      (1)
 
 /* Defines the origin from which this task is being yielded.  */
 #define YIELD_INIT                  (0x00)
