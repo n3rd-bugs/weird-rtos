@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <kernel_target.h>
 #include <sys_log.h>
+#include <sleep.h>
 
 /* Some return codes. */
 #define SUCCESS                     (0)
@@ -80,12 +81,6 @@ extern TASK *return_task;
 /* Public function prototypes. */
 void kernel_run();
 void task_yield();
-
-/* External function prototypes. */
-void sleep_ticks(uint32_t);
-void sleep_hw_ticks(uint64_t);
-#define sleep_ms(ms)                sleep_ticks(MS_TO_TICK((ms)))
-#define sleep_us(us)                sleep_hw_ticks(US_TO_HW_TICK((us)))
 
 /* Internal functions should not be called from user applications. */
 void process_system_tick();
