@@ -22,8 +22,8 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 ## Minimum Requirements
 | Controller | ROM | ROM actual | RAM | RAM Actual |
 | ---------- | --- | ---------- | --- | ---------- |
-| AVR 8-bit | 8 KB | 4190 bytes | 2 KB | 846 bytes |
-| Cortex-M4 | 8 KB | 5028 bytes | 4 KB | 1760 bytes |
+| AVR 8-bit | 8 KB | 4212 bytes | 2 KB | 846 bytes |
+| Cortex-M4 | 8 KB | 5044 bytes | 4 KB | 1760 bytes |
 
 ## Building
 Weird RTOS uses eclipse as build system and provides sample projects for each supported platform. Please checkout branch of the required platform and import it in eclipse. For more help please see the following pages
