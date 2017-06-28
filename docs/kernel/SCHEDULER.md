@@ -1,7 +1,7 @@
 Scheduler
 =========
 ## Introduction
-Weird RTOS provides a basic priority based aperiodic scheduler. This is implemented by [scheduler.c](rtos/kernel/scheduler.c) and [kernel.c](rtos/kernel/kernel.c).
+Weird RTOS provides a basic priority based aperiodic scheduler. This is implemented by [scheduler.c](/rtos/kernel/scheduler.c) and [kernel.c](/rtos/kernel/kernel.c).
 
 ## Basic Concepts
 ### Scheduling
