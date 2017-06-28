@@ -29,7 +29,7 @@ int ff_cre_syncobj(BYTE vol, _SYNC_t* sobj)
     UNUSED_PARAM(vol);
 
     /* Create a semaphore for synchronization. */
-    semaphore_create(sobj, 1, 1, FALSE);
+    semaphore_create(sobj, 1);
 
     /* Return status to the caller. */
     return (FFSYNC_SUCCESS);

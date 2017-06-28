@@ -26,59 +26,22 @@ static uint8_t semaphore_do_resume(void *, void *);
 /*
  * semaphore_create
  * @semaphore: Semaphore control block to be initialized.
- * @count: Initial count to be set for this semaphore.
  * @max_count: Maximum count for this semaphore.
- * @interrupt_protected: Flag to specify if this is an interrupt protected lock.
  * This routine initializes a semaphore control block. After this the semaphore
  * can be used to protect shared resources.
  */
-void semaphore_create(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t interrupt_protected)
+void semaphore_create(SEMAPHORE *semaphore, uint8_t max_count)
 {
     /* Clear semaphore memory. */
     memset(semaphore, 0,  sizeof(SEMAPHORE));
 
-    /* If this is interrupt accessible max count should be 1. */
-    ASSERT((interrupt_protected == TRUE) && (max_count != 1));
-
     /* Initialize semaphore count. */
-    semaphore->count = count;
-    semaphore->max_count = max_count;
-
-    /* Set if this is an interrupt protected lock. */
-    semaphore->interrupt_protected = interrupt_protected;
+    semaphore->count = semaphore->max_count = max_count;
 
     /* Initialize condition structure. */
     semaphore->condition.data = semaphore;
 
 } /* semaphore_create */
-
-/*
- * semaphore_update
- * @semaphore: Semaphore control block to be updated.
- * @count: New initial count to be set for this semaphore.
- * @max_count: New maximum count for this semaphore.
- * @interrupt_protected: Flag to specify if this is an interrupt protected lock.
- * This routine will update the semaphore parameters.
- */
-void semaphore_update(SEMAPHORE *semaphore, uint8_t count, uint8_t max_count, uint8_t interrupt_protected)
-{
-    /* Lock the scheduler. */
-    scheduler_lock();
-
-    /* Semaphore must not have been obtained. */
-    ASSERT(semaphore->count != semaphore->max_count);
-
-    /* Update semaphore count. */
-    semaphore->count = count;
-    semaphore->max_count = max_count;
-
-    /* Update semaphore type. */
-    semaphore->interrupt_protected = interrupt_protected;
-
-    /* Enable scheduling. */
-    scheduler_unlock();
-
-} /* semaphore_update */
 
 /*
  * semaphore_set_interrupt_data
@@ -97,7 +60,12 @@ void semaphore_set_interrupt_data(SEMAPHORE *semaphore, void *data, SEM_INT_LOCK
 
     /* Semaphore must not have been obtained. */
     ASSERT(semaphore->count != semaphore->max_count);
-    ASSERT(semaphore->interrupt_protected == FALSE);
+
+    /* For interrupt accessible semaphore max count should be 1. */
+    ASSERT(semaphore->max_count != 1);
+
+    /* Mark this semaphore as interrupt protected. */
+    semaphore->interrupt_protected = TRUE;
 
     /* Set semaphore interrupt data. */
     semaphore->interrupt_lock = lock;
@@ -107,7 +75,7 @@ void semaphore_set_interrupt_data(SEMAPHORE *semaphore, void *data, SEM_INT_LOCK
     /* Enable scheduling. */
     scheduler_unlock();
 
-} /* semaphore_update */
+} /* semaphore_set_interrupt_data */
 
 /*
  * semaphore_destroy

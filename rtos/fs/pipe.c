@@ -49,7 +49,7 @@ void pipe_init()
 
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect global pipe data. */
-    semaphore_create(&pipe_data.lock, 1, 1, FALSE);
+    semaphore_create(&pipe_data.lock, 1);
 #endif
 
     /* Register pipe with file system. */
@@ -111,7 +111,7 @@ void pipe_create(PIPE *pipe, char *name, uint8_t *buffer, uint32_t size)
 
 #ifdef CONFIG_SEMAPHORE
         /* Create a semaphore to protect pipe data. */
-        semaphore_create(&pipe->lock, 1, 1, FALSE);
+        semaphore_create(&pipe->lock, 1);
 #endif
 
         /* Just push this file system in the list. */

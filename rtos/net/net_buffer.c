@@ -61,7 +61,7 @@ void net_buffer_init()
 
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect net buffer file descriptor. */
-    semaphore_create(&net_buffers_fs.lock, 1, 1, FALSE);
+    semaphore_create(&net_buffers_fs.lock, 1);
 #endif
 
     /* Register net buffer file system. */

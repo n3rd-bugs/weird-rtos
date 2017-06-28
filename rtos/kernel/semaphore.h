@@ -100,8 +100,7 @@ typedef struct _semaphore
 } SEMAPHORE;
 
 /* Function prototypes. */
-void semaphore_create(SEMAPHORE *, uint8_t, uint8_t, uint8_t);
-void semaphore_update(SEMAPHORE *, uint8_t, uint8_t, uint8_t);
+void semaphore_create(SEMAPHORE *, uint8_t);
 void semaphore_set_interrupt_data(SEMAPHORE *, void *, SEM_INT_LOCK *, SEM_INT_UNLOCK *);
 void semaphore_destroy(SEMAPHORE *);
 int32_t semaphore_obtain(SEMAPHORE *, uint32_t);

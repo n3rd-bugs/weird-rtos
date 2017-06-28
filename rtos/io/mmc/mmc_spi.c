@@ -63,7 +63,7 @@ void mmc_spi_fsregister(void *device, const char *name)
 
     /* Create MMC semaphore. */
     memset(&mmc->lock, 0, sizeof(SEMAPHORE));
-    semaphore_create(&mmc->lock, 1, 1, FALSE);
+    semaphore_create(&mmc->lock, 1);
 
     /* Register this MMC device with file system. */
     fs_register(&mmc->fs);

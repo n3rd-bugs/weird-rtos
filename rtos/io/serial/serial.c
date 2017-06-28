@@ -123,9 +123,6 @@ void serial_register(SERIAL *serial, const char *name, void *buffer, uint32_t fl
             /* This is a buffered descriptor. */
             serial->console.fs.flags |= FS_BUFFERED;
 
-            /* Update console lock. */
-            semaphore_update(&serial->console.lock, 1, 1, TRUE);
-
             /* Assign interrupt data. */
             semaphore_set_interrupt_data(&serial->console.lock, serial->device.data, serial->device.int_lock, serial->device.int_unlock);
 

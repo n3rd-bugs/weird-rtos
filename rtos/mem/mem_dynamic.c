@@ -178,7 +178,7 @@ void mem_dynamic_init_region(MEM_DYNAMIC *mem_dynamic, uint8_t *start, uint8_t *
 #ifdef CONFIG_SEMAPHORE
     /* Initialize memory lock. */
     /* Tasks with higher priority will be given memory first. */
-    semaphore_create(&mem_dynamic->lock, 1, 1, FALSE);
+    semaphore_create(&mem_dynamic->lock, 1);
 #endif /* CONFIG_SEMAPHORE */
 
 } /* mem_dynamic_init_region */

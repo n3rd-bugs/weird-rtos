@@ -39,7 +39,7 @@ void net_work_init(WORK_QUEUE *work_queue)
 
 #ifdef CONFIG_SEMAPHORE
     /* Create lock to protect work queue. */
-    semaphore_create(&work_queue->lock, 1, 1, FALSE);
+    semaphore_create(&work_queue->lock, 1);
 #endif
 
     /* Initialize work queue condition. */

@@ -65,7 +65,7 @@ void tcp_initialize()
 
 #ifdef CONFIG_SEMAPHORE
     /* Create the semaphore to protect global TCP data. */
-    semaphore_create(&tcp_data.lock, 1, 1, FALSE);
+    semaphore_create(&tcp_data.lock, 1);
 #endif
 
     SYS_LOG_FUNTION_EXIT(TCP);
