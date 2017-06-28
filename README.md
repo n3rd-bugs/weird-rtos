@@ -29,7 +29,7 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 
 ## Building
 Weird RTOS uses eclipse as build system and provides sample projects for each supported platform. Please checkout branch of the required platform and import it in eclipse. For more help please see the following pages
-- [AVR Eclipse Setup](docs/build/AVR-ECLIPSE.md)
+- [AVR Eclipse Setup](weird-rtos/blob/master/docs/build/AVR-ECLIPSE.md)
 
 ## Source Organization
 ```
@@ -58,7 +58,7 @@ Weird RTOS uses eclipse as build system and provides sample projects for each su
 
 ## Documentation
 ### Kernel
-- [Scheduler](docs/kernel/SCHEDULER.md)
+- [Scheduler](weird-rtos/blob/master/docs/kernel/SCHEDULER.md)
 
 ## Licensing
 Weird RTOS is protected by three-clause MIT license, for more details see [License Agreement](LICENSE.md).
