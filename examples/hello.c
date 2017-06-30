@@ -46,8 +46,10 @@ int main(void)
     scheduler_init();
 
 #ifdef CONFIG_SERIAL
+#ifdef CONFIG_FS
     /* Initialize file system. */
     fs_init();
+#endif /* CONFIG_FS */
 
     /* Initialize serial. */
     serial_init();
