@@ -3,6 +3,7 @@ Weird RTOS
 This is an educational RTOS that can be used with medium ended micro-controllers including 8-bit AVRs and Cortex-M3/4.
 
 ## Features
+- Highly scalable for number of small to medium scale applications
 - Priority based aperiodic scheduler
 - Dynamic task creation and deletion
 - *Condition* to create application specific signalling mechanisms like timers, events etc.
@@ -29,7 +30,7 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 
 ## Building
 Weird RTOS uses eclipse as build system and provides sample projects for each supported platform. Please checkout branch of the required platform and import it in eclipse. For more help please see the following pages
-- [AVR Eclipse Setup](weird-rtos/blob/master/docs/build/AVR-ECLIPSE.md)
+- [AVR Eclipse Setup](docs/build/AVR-ECLIPSE.md)
 
 ## Source Organization
 ```
@@ -58,7 +59,11 @@ Weird RTOS uses eclipse as build system and provides sample projects for each su
 
 ## Documentation
 ### Kernel
-- [Scheduler](weird-rtos/blob/master/docs/kernel/SCHEDULER.md)
+- [Scheduler](docs/kernel/SCHEDULER.md)
+- [Semaphore](docs/kernel/SEMAPHORE.md)
+- [Sleep](docs/kernel/SLEEP.md)
+- [Idle](docs/kernel/IDLE.md)
+- [System Logging](docs/kernel/LOGGING.md)
 
 ## Licensing
 Weird RTOS is protected by three-clause MIT license, for more details see [License Agreement](LICENSE.md).

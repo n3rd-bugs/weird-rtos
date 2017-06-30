@@ -1,7 +1,15 @@
 Scheduler
 =========
 ## Introduction
-Weird RTOS provides a basic priority based aperiodic scheduler. This is implemented by [scheduler.c](weird-rtos/blob/master/weird-rtos/blob/master/rtos/kernel/scheduler.c) and [kernel.c](weird-rtos/blob/master/weird-rtos/blob/master/rtos/kernel/kernel.c).
+Weird RTOS provides a basic priority based aperiodic scheduler.
+
+### Sources
+- [scheduler.c](../../rtos/kernel/scheduler.c)
+- [kernel.c](../../rtos/kernel/kernel.c).
+
+### Headers
+- [scheduler.h](../../rtos/kernel/scheduler.h)
+- [kernel.h](../../rtos/kernel/kernel.h)
 
 ## Basic Concepts
 ### Scheduling
@@ -20,63 +28,67 @@ Configures the maximum number of nested scheduler locks that can be obtained, th
 ## APIs
 ### scheduler\_init
 This API must be called before invoking scheduler. This initializes scheduler internals.
-Implemented by [scheduler.c](weird-rtos/blob/master/rtos/kernel/scheduler.c).
+Implemented by [scheduler.c](../../rtos/kernel/scheduler.c).
 
 ### scheduler\_lock
 This API will lock the context of current task (interrupts can still schedule out this task), If an other higher priority task becomes ready, context switch will remain pended until scheduler is unlocked.
-Implemented by [scheduler.c](weird-rtos/blob/master/rtos/kernel/scheduler.c).
+Implemented by [scheduler.c](../../rtos/kernel/scheduler.c).
 
 ### scheduler\_unlock
 This API will unlock the context of current task. This will invoke the scheduler if the system has missed a scheduling point. The context may be scheduled out if a higher priority task is now ready.
-Implemented by [scheduler.c](weird-rtos/blob/master/rtos/kernel/scheduler.c).
+Implemented by [scheduler.c](../../rtos/kernel/scheduler.c).
 
 ### task\_yield
 This API will try to yield current task. Task will only be switched if an higher or same priority task is found on the ready list.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.c](../../rtos/kernel/kernel.c).
 
 ### get\_current\_task
 This API will return the control block of the the current task. Null will be returned if called from interrupt service routine.
 **returns** the control block of current task.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.c](../../rtos/kernel/kernel.c).
 
 ### current\_tick
 This API will return the system clock's current tick. Application can use helper macros to convert this tick into actual time.
 **returns** the current system tick.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.c](../../rtos/kernel/kernel.c).
 
 ### kernel\_run
 This API will start the system scheduler, this should be called once the system is initialized.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.c](../../rtos/kernel/kernel.c).
 
 ## Helper Macros
-### SOFT\_TICKS_PER_SEC
+### SOFT\_TICKS\_PER\_SEC
 This is the number of clock ticks per second.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### MS\_TO\_TICK
 This converts the given milliseconds to the number of equivalent system ticks.
 **takes** number of milliseconds.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### TICK\_TO\_MS
 This converts the given ticks to the number of equivalent milliseconds.
 **takes** number of ticks.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### US\_TO\_HW\_TICK
 This converts the given milliseconds to the number of equivalent hardware ticks.
 **takes** number of milliseconds.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### HW\_TICK\_TO\_US
 This converts the given hardware ticks to the number of equivalent milliseconds.
 **takes** number of hardware ticks.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### ISR\_ENTER
 This must be the first statement of an interrupt service routine.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### ISR\_EXIT
 This must be the last statement of an interrupt service routine.
-Implemented by [kernel.c](weird-rtos/blob/master/rtos/kernel/kernel.c).
+Implemented by [kernel.h](../../rtos/kernel/kernel.h).
+
+### KERNEL\_RUNNING
+This returns true if the kernel scheduler is running.
+Implemented by [kernel.h](../../rtos/kernel/kernel.h).
