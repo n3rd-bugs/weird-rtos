@@ -24,7 +24,8 @@
  * @file: File from where this assert was raised.
  * @line: Line number from which this assert was raised.
  * @task: The task context from which this was called.
- * This function will check if any of the allocated memory has overflow.
+ * This function will halt the system and print the file/line and task
+ * information if required.
  */
 void system_assert(int32_t code, char *file, uint32_t line, TASK *task)
 {

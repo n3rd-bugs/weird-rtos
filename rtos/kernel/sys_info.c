@@ -49,7 +49,7 @@ uint32_t util_task_calc_free_stack(TASK *tcb)
 #ifdef SYS_STACK_SIZE
 /*
  * util_system_calc_free_stack
- * This function returns the number of bytes used on the system stack.
+ * This function returns the number of bytes free on the system stack.
  */
 uint32_t util_system_calc_free_stack()
 {

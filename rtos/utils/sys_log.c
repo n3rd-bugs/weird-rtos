@@ -82,7 +82,8 @@ void sys_log(uint8_t *comp_name, const uint8_t *message, ...)
  * @bytes: Data buffer to be printed as hex.
  * @num_bytes: Number of bytes to be printed.
  * @...: Arguments to the formated string in the message.
- * This function logs a debug message on the console.
+ * This function logs a debug message on the console along with HEX dump of
+ * provided memory region.
  */
 void sys_log_hexdump(uint8_t *comp_name, const uint8_t *message, uint8_t *bytes, uint32_t num_bytes, ...)
 {
