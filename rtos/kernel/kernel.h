@@ -60,8 +60,11 @@
 #define ALLIGN_FLOOR(n)             (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(ALLIGN_SIZE - 1)) : (n))
 #define ALLIGN_CEIL(n)              (uint32_t)(((n) % ALLIGN_SIZE) ? ((n) & (uint32_t)~(ALLIGN_SIZE - 1)) + ALLIGN_SIZE : (n))
 
-/* ISR routines. */
+/* Exported definitions. */
 extern TASK *return_task;
+extern TASK *current_task;
+
+/* ISR routines. */
 #ifndef CPU_ISR_ENTER
 #define CPU_ISR_ENTER()
 #endif

@@ -22,9 +22,6 @@
  * FALSE: Interrupt Disabled */
 volatile uint8_t sys_interrupt_level = TRUE;
 
-/* Current task pointer */
-extern TASK *current_task;
-
 /* AVR system stack. */
 uint8_t *system_stack_end;
 

@@ -24,7 +24,6 @@ uint32_t sys_interrupt_level = TRUE;
  * switching from. */
 /* Removing this requires implementation of naked ISR functions. */
 static TASK *last_task;
-extern TASK *current_task;
 
 /*
  * stack_init
