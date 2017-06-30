@@ -15,7 +15,7 @@
 #define _SYS_LOG_H_
 
 /* System log configuration. */
-//#define SYS_LOG_NONE
+#define SYS_LOG_NONE
 //#define SYS_LOG_RUNTIME_UPDATE
 
 /* System logging level definitions. */
