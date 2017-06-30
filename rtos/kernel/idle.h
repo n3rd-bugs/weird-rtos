@@ -19,10 +19,12 @@
 /* Idle work configurations. */
 #define IDLE_WORK_MAX           (5)
 #define IDLE_TASK_STACK_SIZE    (512)
+//#define IDLE_RUNTIME_UPDATE
 
 /* Error definitions. */
 #define IDLE_NO_SPACE           -500
 #define IDLE_NOT_FOUND          -501
+#define IDLE_CANNOT_UPDATE      -502
 
 /* Idle work function definition. */
 typedef void (IDLE_DO) (void *);

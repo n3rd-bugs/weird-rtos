@@ -72,14 +72,15 @@ extern TASK *current_task;
 #define CPU_ISR_EXIT()
 #endif
 
-#define ISR_ENTER();                                                         \
-                                    CPU_ISR_ENTER();                            \
+#define ISR_ENTER()                 CPU_ISR_ENTER();                            \
                                     return_task = get_current_task();           \
-                                    set_current_task(NULL);
+                                    set_current_task(NULL)
 
-#define ISR_EXIT();              set_current_task(return_task);              \
+#define ISR_EXIT()                  set_current_task(return_task);              \
                                     return_task = NULL;                         \
-                                    CPU_ISR_EXIT();
+                                    CPU_ISR_EXIT()
+
+#define KERNEL_RUNNING()            ((current_task != NULL) || (return_task != NULL))
 
 /* Public function prototypes. */
 void kernel_run();
