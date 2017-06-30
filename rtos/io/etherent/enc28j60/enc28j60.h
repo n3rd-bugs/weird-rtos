@@ -55,10 +55,10 @@
 #define ENC28J60_INT_ENABLE         (0x02)
 
 /* Buffer configuration for a enc28j60 device. */
-#define ENC28J60_MAX_BUFFER_SIZE    (256)
+#define ENC28J60_MAX_BUFFER_SIZE    (32)
 #define ENC28J60_NUM_BUFFERS        (32)
-#define ENC28J60_NUM_BUFFER_LISTS   (24)
-#define ENC28J60_NUM_THR_BUFFER     (16)
+#define ENC28J60_NUM_BUFFER_LISTS   (16)
+#define ENC28J60_NUM_THR_BUFFER     (8)
 #define ENC28J60_NUM_THR_LIST       (4)
 
 /* Networking configuration for a enc28j60 device. */
