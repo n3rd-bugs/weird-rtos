@@ -30,7 +30,7 @@ static void tftp_server_process(void *, int32_t);
  */
 void tftp_server_init(TFTP_SERVER *tftp_server, SOCKET_ADDRESS *socket_address, char *name)
 {
-    SYS_LOG_FUNTION_ENTRY(TFTPS);
+    SYS_LOG_FUNCTION_ENTRY(TFTPS);
 
     /* Clear the given server structure. */
     memset(tftp_server, 0, sizeof(TFTP_SERVER));
@@ -78,7 +78,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(resume_status);
 
-    SYS_LOG_FUNTION_ENTRY(TFTPS);
+    SYS_LOG_FUNCTION_ENTRY(TFTPS);
 
     /* If the timeout was enabled and it has now occurred. */
     if ((tftp_server->port_suspend.timeout_enabled == TRUE) && (INT32CMP(current_system_tick(), tftp_server->port_suspend.timeout) >= 0))
@@ -89,7 +89,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
             /* Close the file descriptor. */
             fs_close(&tftp_server->fd);
 
-            SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered interrupted", "");
+            SYS_LOG_FUNCTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered interrupted", "");
         }
 
         /* Reset the current timeout. */
@@ -111,7 +111,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
 
         if (status == SUCCESS)
         {
-            SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_DEBUG, "received a request 0x%04X", opcode);
+            SYS_LOG_FUNCTION_MSG(TFTPS, SYS_LOG_DEBUG, "received a request 0x%04X", opcode);
 
             /* Process the TFTP opcode. */
             switch (opcode)
@@ -147,14 +147,14 @@ static void tftp_server_process(void *data, int32_t resume_status)
                         /* If read was requested. */
                         if (opcode == TFTP_OP_READ_REQ)
                         {
-                            SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "read requested for \"%s\"", data_buffer);
+                            SYS_LOG_FUNCTION_MSG(TFTPS, SYS_LOG_INFO, "read requested for \"%s\"", data_buffer);
 
                             /* Open the required file. */
                             fd = fs_open((char *)data_buffer, (FS_READ));
                         }
                         else
                         {
-                            SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "write requested for \"%s\"", data_buffer);
+                            SYS_LOG_FUNCTION_MSG(TFTPS, SYS_LOG_INFO, "write requested for \"%s\"", data_buffer);
 
                             /* Open the required file. */
                             fd = fs_open((char *)data_buffer, (FS_WRITE | FS_CREATE));
@@ -166,7 +166,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                             /* A file system error was detected. */
                             status = TFTP_ERROR_FS;
 
-                            SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_ERROR, "error opening file \"%s\"", data_buffer);
+                            SYS_LOG_FUNCTION_MSG(TFTPS, SYS_LOG_ERROR, "error opening file \"%s\"", data_buffer);
                         }
                         else
                         {
@@ -270,7 +270,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                             tftp_server->port_suspend.timeout = MAX_WAIT;
                             tftp_server->port_suspend.timeout_enabled = FALSE;
 
-                            SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered successfully", "");
+                            SYS_LOG_FUNCTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered successfully", "");
                         }
                     }
                 }
@@ -306,7 +306,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                                 tftp_server->port_suspend.timeout = MAX_WAIT;
                                 tftp_server->port_suspend.timeout_enabled = FALSE;
 
-                                SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered successfully", "");
+                                SYS_LOG_FUNCTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered successfully", "");
 
                                 /* Nothing to be sent in reply. */
                                 status = TFTP_FRAME_DROP;
@@ -347,7 +347,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                     tftp_server->port_suspend.timeout = MAX_WAIT;
                     tftp_server->port_suspend.timeout_enabled = FALSE;
 
-                    SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered interrupted", "");
+                    SYS_LOG_FUNCTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered interrupted", "");
                 }
 
                 /* Lets drop this frame. */
@@ -358,7 +358,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
             /* Unknown opcode. */
             default:
 
-                SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_ERROR, "unknown or unsupported opcode 0x%04X", opcode);
+                SYS_LOG_FUNCTION_MSG(TFTPS, SYS_LOG_ERROR, "unknown or unsupported opcode 0x%04X", opcode);
 
                 /* This opcode is not supported. */
                 status = TFTP_NOT_SUPPORTED;
@@ -467,7 +467,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                     tftp_server->port_suspend.timeout = MAX_WAIT;
                     tftp_server->port_suspend.timeout_enabled  = FALSE;
 
-                    SYS_LOG_FUNTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered interrupted", "");
+                    SYS_LOG_FUNCTION_MSG(TFTPS, SYS_LOG_INFO, "file transfered interrupted", "");
                 }
 
                 /* Push the error opcode. */
@@ -584,7 +584,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TFTPS, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TFTPS, status);
 
 } /* tftp_server_process */
 

@@ -47,7 +47,7 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
     uint32_t id_seq;
     uint8_t type;
 
-    SYS_LOG_FUNTION_ENTRY(ICMP);
+    SYS_LOG_FUNCTION_ENTRY(ICMP);
 
     /* Calculate and verify the checksum for the ICMP packet. */
     if (net_csum_calculate(buffer, -1, ihl) == 0)
@@ -94,7 +94,7 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
         status = NET_INVALID_CSUM;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ICMP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ICMP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
 
     /* Return status to the caller. */
     return (status);
@@ -124,7 +124,7 @@ int32_t icmp_header_add(FS_BUFFER *buffer, uint8_t type, uint8_t code, uint32_t 
         {&unused,   4, 0},  /* Unused data. */
     };
 
-    SYS_LOG_FUNTION_ENTRY(ICMP);
+    SYS_LOG_FUNCTION_ENTRY(ICMP);
 
     /* Push the ICMP header. */
 
@@ -143,7 +143,7 @@ int32_t icmp_header_add(FS_BUFFER *buffer, uint8_t type, uint8_t code, uint32_t 
         status = fs_buffer_push_offset(buffer, &csum, 2, ICMP_HDR_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ICMP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ICMP, status);
 
     /* Return status to the caller. */
     return (status);

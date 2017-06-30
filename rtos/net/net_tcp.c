@@ -61,14 +61,14 @@ static void tcp_rtx_free_all(TCP_PORT *);
  */
 void tcp_initialize()
 {
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
 #ifdef CONFIG_SEMAPHORE
     /* Create the semaphore to protect global TCP data. */
     semaphore_create(&tcp_data.lock, 1);
 #endif
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_initialize */
 
@@ -81,7 +81,7 @@ void tcp_initialize()
  */
 void tcp_register(TCP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
 {
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data semaphore. */
@@ -130,7 +130,7 @@ void tcp_register(TCP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
     semaphore_release(&tcp_data.lock);
 #endif
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_register */
 
@@ -141,7 +141,7 @@ void tcp_register(TCP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
  */
 void tcp_unregister(TCP_PORT *port)
 {
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data semaphore. */
@@ -180,7 +180,7 @@ void tcp_unregister(TCP_PORT *port)
     /* Clear the TCP port structure. */
     memset(port, 0, sizeof(TCP_PORT));
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_unregister */
 
@@ -191,7 +191,7 @@ void tcp_unregister(TCP_PORT *port)
  */
 static void tcp_port_initialize(TCP_PORT *port)
 {
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Initialize TCP port configuration. */
     port->rcv_wnd = TCP_WND_SIZE;
@@ -199,7 +199,7 @@ static void tcp_port_initialize(TCP_PORT *port)
     port->nacks = 0;
     port->event_timeout_enable = port->rtx_timeout_enable = FALSE;
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_port_initialize */
 
@@ -217,7 +217,7 @@ static uint8_t tcp_port_search(void *node, void *param)
     TCP_PORT *port = (TCP_PORT *)node;
     uint8_t match = FALSE;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Match two TCP socket addresses. */
     match = net_socket_address_match(&port->socket_address, &tcp_param->socket_address);
@@ -236,7 +236,7 @@ static uint8_t tcp_port_search(void *node, void *param)
         match = FALSE;
     }
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
     /* Return if this is required port. */
     return (match);
@@ -255,7 +255,7 @@ static uint8_t tcp_port_search(void *node, void *param)
  */
 static void tcp_resume_socket(TCP_PORT *port, uint8_t flags)
 {
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* If we need to resume tasks waiting on read. */
     if (flags & FS_BLOCK_READ)
@@ -271,7 +271,7 @@ static void tcp_resume_socket(TCP_PORT *port, uint8_t flags)
         fd_space_available((FD)port);
     }
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_resume_socket */
 
@@ -291,7 +291,7 @@ static int32_t tcp_port_wait(TCP_PORT *port, uint8_t flags)
     SUSPEND suspend, *suspend_ptr = &suspend;
     FS_PARAM fs_param;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Get read condition for server TCP port. */
     fs_condition_get((FD)port, &condition, suspend_ptr, &fs_param, flags);
@@ -302,7 +302,7 @@ static int32_t tcp_port_wait(TCP_PORT *port, uint8_t flags)
     /* Wait on this TCP socket. */
     status = suspend_condition(&condition, &suspend_ptr, &num_conditions, TRUE);
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -325,7 +325,7 @@ static int32_t tcp_process_options(FS_BUFFER *buffer, TCP_PORT *port, uint32_t o
     uint16_t opt_index = 0, opt_value_16;
     uint8_t opt_type, opt_len;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* If we don't have anticipated number of bytes in the provided buffer. */
     if ((offset + total_opt_size) > buffer->total_length)
@@ -457,7 +457,7 @@ static int32_t tcp_process_options(FS_BUFFER *buffer, TCP_PORT *port, uint32_t o
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -479,7 +479,7 @@ static int32_t tcp_add_option(FS_BUFFER *buffer, uint8_t type, uint8_t length, v
 {
     int32_t status = SUCCESS;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Append option type. */
     status = fs_buffer_push(buffer, (uint8_t *)&type, 1, 0);
@@ -498,7 +498,7 @@ static int32_t tcp_add_option(FS_BUFFER *buffer, uint8_t type, uint8_t length, v
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -524,7 +524,7 @@ static int32_t tcp_add_options(FS_BUFFER *buffer, TCP_PORT *port, uint8_t opt_fl
     int32_t status = SUCCESS;
     uint8_t ret_size = 0, opt_value_8;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* If remote sent a maximum segment size. */
     if (opt_flags & TCP_FLAG_MSS)
@@ -570,7 +570,7 @@ static int32_t tcp_add_options(FS_BUFFER *buffer, TCP_PORT *port, uint8_t opt_fl
         *opt_size = ret_size;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -584,7 +584,7 @@ static int32_t tcp_add_options(FS_BUFFER *buffer, TCP_PORT *port, uint8_t opt_fl
  */
 static void tcp_timer_register(TCP_PORT *port)
 {
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Initialize TCP retransmission condition data. */
     port->timeout_suspend.condition.data = port;
@@ -596,7 +596,7 @@ static void tcp_timer_register(TCP_PORT *port)
     /* Add networking condition to process retransmission timer events. */
     net_condition_add(&port->timeout_suspend.condition, &port->timeout_suspend.suspend, &tcp_timeout_callback, (FD)port);
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_timer_register */
 
@@ -607,7 +607,7 @@ static void tcp_timer_register(TCP_PORT *port)
  */
 static void tcp_timer_unregister(TCP_PORT *port)
 {
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Free all the retransmission buffers. */
     tcp_rtx_free_all(port);
@@ -615,7 +615,7 @@ static void tcp_timer_unregister(TCP_PORT *port)
     /* Remove networking condition for retransmission timer. */
     net_condition_remove(&port->timeout_suspend.condition);
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_timer_unregister */
 
@@ -629,7 +629,7 @@ static void tcp_timeout_update(TCP_PORT *port)
     uint32_t timeout = port->event_timeout;
     uint8_t timeout_enabled = port->event_timeout_enable;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* If we need to use the retransmission timer. */
     if ((port->rtx_timeout_enable == TRUE) && ((timeout_enabled == FALSE) || (INT32CMP(timeout, port->rtx_timeout) > 0)))
@@ -657,7 +657,7 @@ static void tcp_timeout_update(TCP_PORT *port)
     /* Networking condition data has been updated. */
     net_condition_updated();
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_timeout_update */
 
@@ -671,7 +671,7 @@ static void tcp_fast_rtx(TCP_PORT *port, uint32_t seq_num)
 {
     uint32_t i;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Traverse the RTX list. */
     for (i = 0; i < TCP_NUM_RTX; i++)
@@ -701,7 +701,7 @@ static void tcp_fast_rtx(TCP_PORT *port, uint32_t seq_num)
     /* Update timeout for this port. */
     tcp_timeout_update(port);
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_fast_rtx */
 
@@ -720,7 +720,7 @@ static void tcp_timeout_callback(void *data, int32_t status)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(status);
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Get lock for this port. */
     if (fd_get_lock((FD)port) == SUCCESS)
@@ -859,7 +859,7 @@ static void tcp_timeout_callback(void *data, int32_t status)
         fd_release_lock((FD)port);
     }
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_timeout_callback */
 
@@ -895,7 +895,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
     uint16_t csum;
     TCP_RTX_DATA *rtx = NULL;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Keep updating the ISS we are using for each sequence number
      * we increment. */
@@ -912,7 +912,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
     /* If we have a valid networking device. */
     if ((status == SUCCESS) && (net_device != NULL))
     {
-        SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "will be using %s for %d.%d.%d.%d", ((FS *)net_device->fd)->name, SYS_LOG_IP(socket_address->local_ip));
+        SYS_LOG_FUNCTION_MSG(TCP, SYS_LOG_DEBUG, "will be using %s for %d.%d.%d.%d", ((FS *)net_device->fd)->name, SYS_LOG_IP(socket_address->local_ip));
 
         /* Save the device descriptor. */
         buffer_fd = net_device->fd;
@@ -1133,13 +1133,13 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
     }
     else if (net_device == NULL)
     {
-        SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_WARN, "unable to find a suitable device for %d.%d.%d.%d", SYS_LOG_IP(socket_address->local_ip));
+        SYS_LOG_FUNCTION_MSG(TCP, SYS_LOG_WARN, "unable to find a suitable device for %d.%d.%d.%d", SYS_LOG_IP(socket_address->local_ip));
 
         /* Networking device was not resolved. */
         status = NET_INVALID_FD;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -1162,7 +1162,7 @@ static uint8_t tcp_check_sequence(uint32_t seg_seq, uint32_t seg_len, uint32_t r
 {
     uint8_t seq_ok = FALSE;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* RCV.WND = 0 ? */
     if (rcv_wnd == 0)
@@ -1202,7 +1202,7 @@ static uint8_t tcp_check_sequence(uint32_t seg_seq, uint32_t seg_len, uint32_t r
         }
     }
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
     /* Return if received sequence number is acceptable or not. */
     return (seq_ok);
@@ -1217,7 +1217,7 @@ static uint8_t tcp_check_sequence(uint32_t seg_seq, uint32_t seg_len, uint32_t r
  */
 static void tcp_process_finbit(TCP_PORT *port, uint32_t fin_seq)
 {
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* RCV.NXT = SEG.SEQ + 1. */
     port->rcv_nxt = fin_seq + 1;
@@ -1228,7 +1228,7 @@ static void tcp_process_finbit(TCP_PORT *port, uint32_t fin_seq)
     /* FIN was sent. */
     port->snd_nxt = (port->snd_una + 1);
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_process_finbit */
 
@@ -1248,7 +1248,7 @@ static uint8_t tcp_oo_buffer_process(void *node, void *param)
     uint32_t seg_seq;
     uint8_t stop = FALSE;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Pull the sequence number for these buffers. */
     ASSERT(fs_buffer_pull(buffer, &seg_seq, 4, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
@@ -1267,7 +1267,7 @@ static uint8_t tcp_oo_buffer_process(void *node, void *param)
         stop = TRUE;
     }
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
     /* Return if we need to insert this fragment here. */
     return (stop);
@@ -1292,7 +1292,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
     TCP_OO_PARAM oo_param;
     uint8_t new_data = FALSE;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Acquire lock for the buffer file descriptor. */
     ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
@@ -1414,7 +1414,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
         tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), NULL, 0, FALSE, FS_BUFFER_TH);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /*  Return status to the caller. */
     return (status);
@@ -1431,7 +1431,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
  */
 static void tcp_buffer_get_ihl_flags(FS_BUFFER *buffer, uint8_t *ihl, uint16_t *flags)
 {
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Peek the version and IHL. */
     ASSERT(fs_buffer_pull_offset(buffer, ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
@@ -1440,7 +1440,7 @@ static void tcp_buffer_get_ihl_flags(FS_BUFFER *buffer, uint8_t *ihl, uint16_t *
     /* Pull the TCP flags. */
     ASSERT(fs_buffer_pull_offset(buffer, flags, 2, (uint32_t)((*ihl) + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
 } /* tcp_buffer_get_ihl_flags */
 
@@ -1460,7 +1460,7 @@ static int32_t tcp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
     /* For now unused. */
     UNUSED_PARAM(size);
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* If we do have some data on this port. */
     if (port->rx_buffer.buffer != NULL)
@@ -1489,7 +1489,7 @@ static int32_t tcp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
         fd_data_flushed(fd);
     }
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
     return (nbytes);
 
@@ -1509,7 +1509,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
     FS_BUFFER *fs_buffer;
     int32_t ret_size = 0;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Read a buffer from given TCP port. */
     ret_size = tcp_read_buffer(fd, (uint8_t *)&fs_buffer, 0);
@@ -1570,7 +1570,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
         fd_release_lock(fs_buffer->fd);
     }
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
     /* Return number of bytes. */
     return (ret_size);
@@ -1592,7 +1592,7 @@ static int32_t tcp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
     TCP_PORT *port = (TCP_PORT *)fd;
     int32_t nbytes = 0;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* For now unused. */
     UNUSED_PARAM(size);
@@ -1603,7 +1603,7 @@ static int32_t tcp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
     /* Not supported. */
     ASSERT(TRUE);
 
-    SYS_LOG_FUNTION_EXIT(TCP);
+    SYS_LOG_FUNCTION_EXIT(TCP);
 
     /* Return number of bytes sent. */
     return (nbytes);
@@ -1626,12 +1626,12 @@ static int32_t tcp_write_data(void *fd, uint8_t *buffer, int32_t size)
     int32_t nbytes = 0, status = SUCCESS;
     int32_t sent = 0;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* We will only send data in established state. */
     if (port->state == TCP_SOCK_ESTAB)
     {
-        SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "SND_NXT: %ld, SND_UNA: %ld, SND_WND: %ld, MSS: %d", port->snd_nxt, port->snd_una, port->snd_wnd, port->mss);
+        SYS_LOG_FUNCTION_MSG(TCP, SYS_LOG_DEBUG, "SND_NXT: %ld, SND_UNA: %ld, SND_WND: %ld, MSS: %d", port->snd_nxt, port->snd_una, port->snd_wnd, port->mss);
 
         /* While we have something to transmit. */
         while ((status == SUCCESS) && (size > 0))
@@ -1725,7 +1725,7 @@ static int32_t tcp_write_data(void *fd, uint8_t *buffer, int32_t size)
         status = sent = NET_CLOSED;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /* Return number of bytes sent. */
     return (sent);
@@ -1960,7 +1960,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     uint16_t seg_wnd, seg_len;
     uint8_t resume_task = FALSE, resume_flags = 0, stop_timer = FALSE, invalid_ack = FALSE;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Check if we don't have enough number of bytes in the incoming packet. */
     if ((buffer->total_length - ihl) < TCP_HRD_SIZE)
@@ -2048,7 +2048,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                 /* Save the send window size. */
                 port->snd_wnd = ((uint32_t)seg_wnd << port->snd_wnd_scale);
 
-                SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "SND_WND: %ld, SND_WND_SCALE: %d", port->snd_wnd, port->snd_wnd_scale);
+                SYS_LOG_FUNCTION_MSG(TCP, SYS_LOG_DEBUG, "SND_WND: %ld, SND_WND_SCALE: %d", port->snd_wnd, port->snd_wnd_scale);
 
                 /* Process this packet according to the current state of the TCP
                  * socket. */
@@ -2404,19 +2404,19 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                         /* First ACK. */
                                         if (port->nacks == 1)
                                         {
-                                            SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "First ACK", "");
+                                            SYS_LOG_FUNCTION_MSG(TCP, SYS_LOG_DEBUG, "First ACK", "");
                                         }
 
                                         /* Second ACK. */
                                         else if (port->nacks == 2)
                                         {
-                                            SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "First duplicate ACK", "");
+                                            SYS_LOG_FUNCTION_MSG(TCP, SYS_LOG_DEBUG, "First duplicate ACK", "");
                                         }
 
                                         /* Third ACK. */
                                         else if (port->nacks == 3)
                                         {
-                                            SYS_LOG_FUNTION_MSG(TCP, SYS_LOG_DEBUG, "Second duplicate ACK", "");
+                                            SYS_LOG_FUNCTION_MSG(TCP, SYS_LOG_DEBUG, "Second duplicate ACK", "");
 
                                             /* Fart retransmit the segment in the RTX queue. */
                                             /* Segment (SEQ=SEG.ACK, ACK=[?], CTL =[?]) */
@@ -2631,7 +2631,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
 
     /* Return status to the caller. */
     return (status);
@@ -2668,7 +2668,7 @@ int32_t tcp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint32
         {(uint32_t []){ 0x0 },              4, (flags) },                       /* Checksum, urgent pointer. */
     };
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Add TCP header header length. */
     tcp_flags = (uint16_t)(tcp_flags | (((opt_len + TCP_HRD_SIZE) << (TCP_HDR_HDR_LEN_SHIFT - 2)) & TCP_HDR_HDR_LEN_MSK));
@@ -2679,7 +2679,7 @@ int32_t tcp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint32
     /* Push the TCP header on the buffer. */
     status = header_generate(&hdr_machine, tcp_hdr, sizeof(tcp_hdr)/sizeof(HEADER), buffer);
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -2697,7 +2697,7 @@ int32_t tcp_listen(TCP_PORT *port)
 {
     int32_t status = SUCCESS;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Obtain lock for this TCP port. */
     status = fd_get_lock((FD)port);
@@ -2711,7 +2711,7 @@ int32_t tcp_listen(TCP_PORT *port)
         fd_release_lock((FD)port);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -2733,7 +2733,7 @@ int32_t tcp_connect(TCP_PORT *port)
     uint32_t iss;
     NET_DEV *net_device;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Obtain lock for this port. */
     status = fd_get_lock((FD)port);
@@ -2798,7 +2798,7 @@ int32_t tcp_connect(TCP_PORT *port)
         fd_release_lock((FD)port);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -2826,7 +2826,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
     uint16_t flags;
     uint8_t ihl;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Obtain lock for server port. */
     status = fd_get_lock((FD)server_port);
@@ -3014,7 +3014,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -3030,7 +3030,7 @@ void tcp_close(TCP_PORT *port)
 {
     int32_t status = SUCCESS;
 
-    SYS_LOG_FUNTION_ENTRY(TCP);
+    SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Obtain lock for this port. */
     if (fd_get_lock((FD)port) == SUCCESS)
@@ -3104,7 +3104,7 @@ void tcp_close(TCP_PORT *port)
         fd_release_lock((FD)port);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(TCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
 } /* tcp_close */
 

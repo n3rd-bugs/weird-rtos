@@ -97,12 +97,12 @@ extern SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
 #define SYS_LOG_IP(ip)  (((uint8_t *)&ip)[3]), (((uint8_t *)&ip)[2]), (((uint8_t *)&ip)[1]), (((uint8_t *)&ip)[0])
 #ifdef SYS_LOG_NONE
 #define SYS_LOG_MSG(component, level, message, ...)
-#define SYS_LOG_FUNTION_MSG(component, level, message, ...)
-#define SYS_LOG_FUNTION_ENTRY(component)
-#define SYS_LOG_FUNTION_EXIT_STATUS(component, status)
-#define SYS_LOG_FUNTION_EXIT(component)
+#define SYS_LOG_FUNCTION_MSG(component, level, message, ...)
+#define SYS_LOG_FUNCTION_ENTRY(component)
+#define SYS_LOG_FUNCTION_EXIT_STATUS(component, status)
+#define SYS_LOG_FUNCTION_EXIT(component)
 #define SYS_LOG_HEXDUMP(component, level, message, bytes, num_bytes)
-#define SYS_LOG_FUNTION_HEXDUMP(component, level, message, bytes, num_bytes)
+#define SYS_LOG_FUNCTION_HEXDUMP(component, level, message, bytes, num_bytes)
 #else
 #ifdef SYS_LOG_RUNTIME_UPDATE
 #define SYS_LOG_LEVEL_SET(component, level)                                                                             \
@@ -120,11 +120,11 @@ extern SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
             sys_log((uint8_t *)#component, (uint8_t *)message, __VA_ARGS__);                                            \
         }
 #endif
-#define SYS_LOG_FUNTION_MSG(component, level, message, ...)                                                             \
+#define SYS_LOG_FUNCTION_MSG(component, level, message, ...)                                                            \
         SYS_LOG_MSG(component, level, "%s " message, __func__, __VA_ARGS__)
-#define SYS_LOG_FUNTION_ENTRY(component)                                                                                \
+#define SYS_LOG_FUNCTION_ENTRY(component)                                                                               \
         SYS_LOG_MSG(component, SYS_LOG_FUNCTION_CALL, "%s enter", __func__)
-#define SYS_LOG_FUNTION_EXIT_STATUS(component, status)                                                                  \
+#define SYS_LOG_FUNCTION_EXIT_STATUS(component, status)                                                                 \
         if (status != SUCCESS)                                                                                          \
         {                                                                                                               \
             SYS_LOG_MSG(component, SYS_LOG_ERROR, "%s exit %ld", __func__, status);                                     \
@@ -133,7 +133,7 @@ extern SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
         {                                                                                                               \
             SYS_LOG_MSG(component, SYS_LOG_FUNCTION_CALL, "%s exit %ld", __func__, status);                             \
         }
-#define SYS_LOG_FUNTION_EXIT(component)                                                                                 \
+#define SYS_LOG_FUNCTION_EXIT(component)                                                                                \
         SYS_LOG_MSG(component, SYS_LOG_FUNCTION_CALL, "%s exit", __func__)
 #ifdef SYS_LOG_RUNTIME_UPDATE
 #define SYS_LOG_HEXDUMP(component, level, message, bytes, num_bytes)                                                    \
@@ -141,7 +141,7 @@ extern SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
         {                                                                                                               \
             sys_log_hexdump((uint8_t *)#component, (uint8_t *)message, (uint8_t *)bytes, num_bytes);                    \
         }
-#define SYS_LOG_FUNTION_HEXDUMP(component, level, message, bytes, num_bytes)                                            \
+#define SYS_LOG_FUNCTION_HEXDUMP(component, level, message, bytes, num_bytes)                                           \
         if ((log_level[SYS_LOG_ ## component] & level) != 0)                                                            \
         {                                                                                                               \
             sys_log_hexdump((uint8_t *)#component, (uint8_t *)("%s " message), (uint8_t *)bytes, num_bytes, __func__);  \
@@ -152,7 +152,7 @@ extern SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
         {                                                                                                               \
             sys_log_hexdump((uint8_t *)#component, (uint8_t *)message, (uint8_t *)bytes, num_bytes);                    \
         }
-#define SYS_LOG_FUNTION_HEXDUMP(component, level, message, bytes, num_bytes)                                            \
+#define SYS_LOG_FUNCTION_HEXDUMP(component, level, message, bytes, num_bytes)                                           \
         if ((SYS_LOG_LEVEL_ ## component & level) != 0)                                                                 \
         {                                                                                                               \
             sys_log_hexdump((uint8_t *)#component, (uint8_t *)("%s " message), (uint8_t *)bytes, num_bytes, __func__);  \

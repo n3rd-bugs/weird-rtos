@@ -39,7 +39,7 @@ static int32_t udp_write_data(void *, uint8_t *, int32_t);
  */
 void udp_initialize()
 {
-    SYS_LOG_FUNTION_ENTRY(UDP);
+    SYS_LOG_FUNCTION_ENTRY(UDP);
 
     /* Clear the global UDP data. */
     memset(&udp_data, 0, sizeof(UDP_DATA));
@@ -49,7 +49,7 @@ void udp_initialize()
     semaphore_create(&udp_data.lock, 1);
 #endif
 
-    SYS_LOG_FUNTION_EXIT(UDP);
+    SYS_LOG_FUNCTION_EXIT(UDP);
 
 } /* udp_initialize */
 
@@ -62,7 +62,7 @@ void udp_initialize()
  */
 void udp_register(UDP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
 {
-    SYS_LOG_FUNTION_ENTRY(UDP);
+    SYS_LOG_FUNCTION_ENTRY(UDP);
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data semaphore. */
@@ -105,7 +105,7 @@ void udp_register(UDP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
     semaphore_release(&udp_data.lock);
 #endif
 
-    SYS_LOG_FUNTION_EXIT(UDP);
+    SYS_LOG_FUNCTION_EXIT(UDP);
 
 } /* udp_register */
 
@@ -116,7 +116,7 @@ void udp_register(UDP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
  */
 void udp_unregister(UDP_PORT *port)
 {
-    SYS_LOG_FUNTION_ENTRY(UDP);
+    SYS_LOG_FUNCTION_ENTRY(UDP);
 
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data semaphore. */
@@ -146,7 +146,7 @@ void udp_unregister(UDP_PORT *port)
     semaphore_release(&udp_data.lock);
 #endif
 
-    SYS_LOG_FUNTION_EXIT(UDP);
+    SYS_LOG_FUNCTION_EXIT(UDP);
 
 } /* udp_unregister */
 
@@ -164,7 +164,7 @@ static uint8_t udp_port_search(void *node, void *param)
     UDP_PORT *port = (UDP_PORT *)node;
     uint8_t match = FALSE;
 
-    SYS_LOG_FUNTION_ENTRY(UDP);
+    SYS_LOG_FUNCTION_ENTRY(UDP);
 
     /* Match two UDP socket addresses. */
     match = net_socket_address_match(&port->socket_address, &udp_param->socket_address);
@@ -183,7 +183,7 @@ static uint8_t udp_port_search(void *node, void *param)
         match = FALSE;
     }
 
-    SYS_LOG_FUNTION_EXIT(UDP);
+    SYS_LOG_FUNCTION_EXIT(UDP);
 
     /* Return if this is required port. */
     return (match);
@@ -220,7 +220,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
     uint16_t csum_hdr, csum;
 #endif
 
-    SYS_LOG_FUNTION_ENTRY(UDP);
+    SYS_LOG_FUNCTION_ENTRY(UDP);
 
     /* Check if we don't have enough number of bytes in the incoming packet. */
     if ((buffer->total_length - ihl) < UDP_HRD_LENGTH)
@@ -357,7 +357,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(UDP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(UDP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
 
     /* Return status to the caller. */
     return (status);
@@ -387,7 +387,7 @@ int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint8_
         {(uint8_t *)&csum,                          2, flags },                         /* UDP checksum. */
     };
 
-    SYS_LOG_FUNTION_ENTRY(UDP);
+    SYS_LOG_FUNCTION_ENTRY(UDP);
 
     /* Calculate the UDP datagram. */
     length = (uint16_t)(buffer->total_length + UDP_HRD_LENGTH);
@@ -398,7 +398,7 @@ int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint8_
     /* Push the UDP header on the buffer. */
     status = header_generate(&hdr_machine, udp_hdr, sizeof(udp_hdr)/sizeof(HEADER), buffer);
 
-    SYS_LOG_FUNTION_EXIT_STATUS(UDP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(UDP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -423,7 +423,7 @@ static int32_t udp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
     /* For now unused. */
     UNUSED_PARAM(size);
 
-    SYS_LOG_FUNTION_ENTRY(UDP);
+    SYS_LOG_FUNCTION_ENTRY(UDP);
 
     /* Get a buffer from the UDP port. */
     fs_buffer = sll_pop(&port->buffer_list, OFFSETOF(FS_BUFFER, next));
@@ -466,7 +466,7 @@ static int32_t udp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
     /* Return the read buffer to the caller. */
     *(FS_BUFFER **)buffer = fs_buffer;
 
-    SYS_LOG_FUNTION_EXIT(UDP);
+    SYS_LOG_FUNCTION_EXIT(UDP);
 
     /* Return number of bytes. */
     return (ret_size);
@@ -486,7 +486,7 @@ static int32_t udp_read_data(void *fd, uint8_t *buffer, int32_t size)
     FS_BUFFER *fs_buffer;
     int32_t ret_size = 0;
 
-    SYS_LOG_FUNTION_ENTRY(UDP);
+    SYS_LOG_FUNCTION_ENTRY(UDP);
 
     /* Read a buffer from given UDP port. */
     if (udp_read_buffer(fd, (uint8_t *)&fs_buffer, 0) > 0)
@@ -516,7 +516,7 @@ static int32_t udp_read_data(void *fd, uint8_t *buffer, int32_t size)
         fd_release_lock(fs_buffer->fd);
     }
 
-    SYS_LOG_FUNTION_EXIT(UDP);
+    SYS_LOG_FUNCTION_EXIT(UDP);
 
     /* Return number of bytes. */
     return (ret_size);
@@ -547,7 +547,7 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
     uint16_t csum = 0;
 #endif
 
-    SYS_LOG_FUNTION_ENTRY(UDP);
+    SYS_LOG_FUNCTION_ENTRY(UDP);
 
     /* Make a copy of destination address for this port. */
     socket_address = port->destination_address;
@@ -637,7 +637,7 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
     /* Obtain lock for this port before returning. */
     ASSERT(fd_get_lock(fd) != SUCCESS);
 
-    SYS_LOG_FUNTION_EXIT_STATUS(UDP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(UDP, status);
 
     /* Return number of bytes. */
     return (ret_size);
@@ -663,7 +663,7 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
     FS_BUFFER *fs_buffer = NULL;
     FD buffer_fd;
 
-    SYS_LOG_FUNTION_ENTRY(UDP);
+    SYS_LOG_FUNCTION_ENTRY(UDP);
 
     /* Resolve the device from which we need to send a UDP datagram. */
     net_device = ipv4_get_source_device(port->destination_address.local_ip);
@@ -733,7 +733,7 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
         ret_size = status;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(UDP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(UDP, status);
 
     /* Return number of bytes. */
     return (ret_size);

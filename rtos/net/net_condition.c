@@ -45,7 +45,7 @@ void net_condition_init()
     CONDITION *condition;
     NET_CONDITION_PROCESS *process;
 
-    SYS_LOG_FUNTION_ENTRY(NET_CONDITION);
+    SYS_LOG_FUNCTION_ENTRY(NET_CONDITION);
 
     /* Clear the networking stack condition global data. */
     memset(&net_condition_data, 0, sizeof(NET_CONDITION));
@@ -63,7 +63,7 @@ void net_condition_init()
     /* Initialize networking stack work queue. */
     net_work_init(&net_work_queue);
 
-    SYS_LOG_FUNTION_EXIT(NET_CONDITION);
+    SYS_LOG_FUNCTION_EXIT(NET_CONDITION);
 
 } /* net_condition_init */
 
@@ -75,7 +75,7 @@ void net_condition_updated()
 {
     TASK *tcb = get_current_task();
 
-    SYS_LOG_FUNTION_ENTRY(NET_CONDITION);
+    SYS_LOG_FUNCTION_ENTRY(NET_CONDITION);
 
     /* If this is not the networking task. */
     if ((tcb) && (tcb != &net_condition_tcb))
@@ -92,7 +92,7 @@ void net_condition_updated()
         fd_release_lock(net_buff_fd);
     }
 
-    SYS_LOG_FUNTION_EXIT(NET_CONDITION);
+    SYS_LOG_FUNCTION_EXIT(NET_CONDITION);
 
 } /* net_condition_updated */
 
@@ -106,7 +106,7 @@ void net_condition_updated()
  */
 void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PROCESS *process, void *data)
 {
-    SYS_LOG_FUNTION_ENTRY(NET_CONDITION);
+    SYS_LOG_FUNCTION_ENTRY(NET_CONDITION);
 
     /* Should never happen. */
     ASSERT(net_condition_data.num == NET_COND_NUM_TOTAL);
@@ -117,7 +117,7 @@ void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PRO
     net_condition_data.process[net_condition_data.num] = process;
     net_condition_data.data[net_condition_data.num] = data;
 
-    SYS_LOG_FUNTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "added a new condition at %d", net_condition_data.num);
+    SYS_LOG_FUNCTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "added a new condition at %d", net_condition_data.num);
 
     /* Increase the number of conditions. */
     net_condition_data.num++;
@@ -125,7 +125,7 @@ void net_condition_add(CONDITION *condition, SUSPEND *suspend, NET_CONDITION_PRO
     /* Networking condition data has been updated. */
     net_condition_updated();
 
-    SYS_LOG_FUNTION_EXIT(NET_CONDITION);
+    SYS_LOG_FUNCTION_EXIT(NET_CONDITION);
 
 } /* net_condition_add */
 
@@ -140,7 +140,7 @@ static int32_t net_condition_get_index(NET_CONDITION *net_cond, CONDITION *condt
 {
     int32_t n, ret_index = -1;
 
-    SYS_LOG_FUNTION_ENTRY(NET_CONDITION);
+    SYS_LOG_FUNCTION_ENTRY(NET_CONDITION);
 
     /* Go through all the valid conditions. */
     for (n = 0; n < (int32_t)net_cond->num; n++)
@@ -156,7 +156,7 @@ static int32_t net_condition_get_index(NET_CONDITION *net_cond, CONDITION *condt
         }
     }
 
-    SYS_LOG_FUNTION_EXIT(NET_CONDITION);
+    SYS_LOG_FUNCTION_EXIT(NET_CONDITION);
 
     /* Return the required condition. */
     return (ret_index);
@@ -172,7 +172,7 @@ void net_condition_remove(CONDITION *condition)
 {
     TASK *tcb = get_current_task();
 
-    SYS_LOG_FUNTION_ENTRY(NET_CONDITION);
+    SYS_LOG_FUNCTION_ENTRY(NET_CONDITION);
 
     /* If this is not networking stack. */
     if (tcb != &net_condition_tcb)
@@ -186,7 +186,7 @@ void net_condition_remove(CONDITION *condition)
         net_condition_do_remove(condition);
     }
 
-    SYS_LOG_FUNTION_EXIT(NET_CONDITION);
+    SYS_LOG_FUNCTION_EXIT(NET_CONDITION);
 
 } /* net_condition_remove */
 
@@ -202,7 +202,7 @@ static int32_t net_condition_do_remove(void *data)
     int32_t index;
     TASK *tcb = get_current_task();
 
-    SYS_LOG_FUNTION_ENTRY(NET_CONDITION);
+    SYS_LOG_FUNCTION_ENTRY(NET_CONDITION);
 
     /* If this is not the networking task. */
     ASSERT(((!tcb) || (tcb != &net_condition_tcb)));
@@ -236,9 +236,9 @@ static int32_t net_condition_do_remove(void *data)
     /* Decrement the number of conditions. */
     net_condition_data.num = (uint32_t)(net_condition_data.num - 1);
 
-    SYS_LOG_FUNTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "removed a condition %d", index);
+    SYS_LOG_FUNCTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "removed a condition %d", index);
 
-    SYS_LOG_FUNTION_EXIT(NET_CONDITION);
+    SYS_LOG_FUNCTION_EXIT(NET_CONDITION);
 
     /* Always return success. */
     return (SUCCESS);
@@ -256,7 +256,7 @@ static void net_condition_task_entry(void *argv)
     uint32_t num_condition;
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(NET_CONDITION);
+    SYS_LOG_FUNCTION_ENTRY(NET_CONDITION);
 
     /* Should never happen. */
     ASSERT(net_cond == NULL);
@@ -264,13 +264,13 @@ static void net_condition_task_entry(void *argv)
     /* This function should never return. */
     for (;;)
     {
-        SYS_LOG_FUNTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "suspending on conditions %d", net_cond->num);
+        SYS_LOG_FUNCTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "suspending on conditions %d", net_cond->num);
 
         /* Suspend until we have a condition to process. */
         num_condition = net_cond->num;
         status = suspend_condition(net_cond->condition, net_cond->suspend, &num_condition, FALSE);
 
-        SYS_LOG_FUNTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "got a condition to process %d", num_condition);
+        SYS_LOG_FUNCTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "got a condition to process %d", num_condition);
 
         /* If a condition was successful became valid. */
         if (num_condition < net_cond->num)
@@ -279,7 +279,7 @@ static void net_condition_task_entry(void *argv)
             net_cond->process[num_condition](net_cond->data[num_condition], status);
         }
 
-        SYS_LOG_FUNTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "processed the condition %d", num_condition);
+        SYS_LOG_FUNCTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "processed the condition %d", num_condition);
     }
 
 } /* net_condition_task_entry */

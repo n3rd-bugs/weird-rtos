@@ -32,7 +32,7 @@ static void net_work_unlock(void *);
  */
 void net_work_init(WORK_QUEUE *work_queue)
 {
-    SYS_LOG_FUNTION_ENTRY(NET_WORK);
+    SYS_LOG_FUNCTION_ENTRY(NET_WORK);
 
     /* Clear work queue data. */
     memset(work_queue, 0, sizeof(WORK_QUEUE));
@@ -52,7 +52,7 @@ void net_work_init(WORK_QUEUE *work_queue)
     /* Register work queue data with networking stack. */
     net_condition_add(&work_queue->condition, &work_queue->suspend, net_work_condition_process, work_queue);
 
-    SYS_LOG_FUNTION_EXIT(NET_WORK);
+    SYS_LOG_FUNCTION_EXIT(NET_WORK);
 
 } /* net_work_init */
 
@@ -73,7 +73,7 @@ int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data
     SUSPEND suspend, *suspend_ptr = (&suspend);
     CONDITION *condition;
 
-    SYS_LOG_FUNTION_ENTRY(NET_WORK);
+    SYS_LOG_FUNCTION_ENTRY(NET_WORK);
 
     ASSERT(queue == NULL);
     ASSERT(work_do == NULL);
@@ -137,7 +137,7 @@ int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data
         scheduler_unlock();
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(NET_WORK, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(NET_WORK, status);
 
     /* Return status to the caller. */
     return (status);
@@ -204,7 +204,7 @@ static void net_work_condition_process(void *data, int32_t resume_status)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(resume_status);
 
-    SYS_LOG_FUNTION_ENTRY(NET_WORK);
+    SYS_LOG_FUNCTION_ENTRY(NET_WORK);
 
     do
     {
@@ -254,7 +254,7 @@ static void net_work_condition_process(void *data, int32_t resume_status)
       /* While we have some work to process. */
     } while (work != NULL);
 
-    SYS_LOG_FUNTION_EXIT(NET_WORK);
+    SYS_LOG_FUNCTION_EXIT(NET_WORK);
 
 } /* net_work_condition_process */
 

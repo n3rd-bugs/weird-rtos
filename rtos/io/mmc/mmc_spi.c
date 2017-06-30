@@ -46,7 +46,7 @@ void mmc_spi_fsregister(void *device, const char *name)
 {
     MMC_SPI *mmc = (MMC_SPI *)device;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* Clear the file system structure. */
     memset(&mmc->fs, 0, sizeof(FS));
@@ -89,7 +89,7 @@ static void *mmc_spi_fsopen(void *priv_data, char *name, uint32_t flags)
     uint8_t buf, *ptr;
     FD fd = priv_data;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* If we are at the end of name. */
     if (*name != '\0')
@@ -104,7 +104,7 @@ static void *mmc_spi_fsopen(void *priv_data, char *name, uint32_t flags)
             strncpy((char *)uint32_buffer, name, (size_t)((uint8_t *)ptr - (uint8_t *)name));
             uint32_buffer[((uint8_t *)ptr - (uint8_t *)name)] = '\0';
 
-            SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_INFO, "requested start sector %s", uint32_buffer);
+            SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_INFO, "requested start sector %s", uint32_buffer);
 
             /* Retrieve the start sector. */
             start_sector = (uint32_t)atoi((char *)uint32_buffer);
@@ -116,7 +116,7 @@ static void *mmc_spi_fsopen(void *priv_data, char *name, uint32_t flags)
                 strncpy((char *)uint32_buffer, (char *)(ptr + 1), strlen((char *)(ptr + 1)));
                 uint32_buffer[strlen((char *)(ptr + 1))] = '\0';
 
-                SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_INFO, "requested number of sector %s", uint32_buffer);
+                SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_INFO, "requested number of sector %s", uint32_buffer);
 
                 /* Retrieve the number of sectors. */
                 num_sectors = (uint32_t)atoi((char *)uint32_buffer);
@@ -220,7 +220,7 @@ static void *mmc_spi_fsopen(void *priv_data, char *name, uint32_t flags)
         fd = NULL;
     }
 
-    SYS_LOG_FUNTION_EXIT(MMC);
+    SYS_LOG_FUNCTION_EXIT(MMC);
 
     /* Return the required file descriptor to the caller. */
     return (fd);
@@ -240,7 +240,7 @@ static int32_t mmc_spi_fsread(void *fd, uint8_t *buffer, int32_t nbytes)
 {
     MMC_SPI *mmc = (MMC_SPI *)fd;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* If MMC was opened for reading. */
     if ((mmc->flags & MMC_SPI_OPEN_READ) && (buffer != NULL))
@@ -279,7 +279,7 @@ static int32_t mmc_spi_fsread(void *fd, uint8_t *buffer, int32_t nbytes)
         nbytes = 0;
     }
 
-    SYS_LOG_FUNTION_EXIT(MMC);
+    SYS_LOG_FUNCTION_EXIT(MMC);
 
     /* Return number of bytes read. */
     return (nbytes);
@@ -299,7 +299,7 @@ static int32_t mmc_spi_fswrite(void *fd, uint8_t *buffer, int32_t nbytes)
 {
     MMC_SPI *mmc = (MMC_SPI *)fd;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* If MMC was opened for writing. */
     if ((mmc->flags & MMC_SPI_OPEN_WRITE) && (buffer != NULL))
@@ -341,7 +341,7 @@ static int32_t mmc_spi_fswrite(void *fd, uint8_t *buffer, int32_t nbytes)
         nbytes = 0;
     }
 
-    SYS_LOG_FUNTION_EXIT(MMC);
+    SYS_LOG_FUNCTION_EXIT(MMC);
 
     /* Return number of bytes written. */
     return (nbytes);
@@ -358,7 +358,7 @@ static void mmc_spi_fsclose(void **fd)
     MMC_SPI *mmc = (MMC_SPI *)(*fd);
     uint8_t tmp_buf = 0xFF;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* If MMC was opened for reading. */
     if (mmc->flags & MMC_SPI_OPEN_READ)
@@ -387,9 +387,9 @@ static void mmc_spi_fsclose(void **fd)
         mmc->flags &= (uint16_t)~(MMC_SPI_OPEN_WRITE);
     }
 
-    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_INFO, "terminated a MMC FS request", "");
+    SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_INFO, "terminated a MMC FS request", "");
 
-    SYS_LOG_FUNTION_EXIT(MMC);
+    SYS_LOG_FUNCTION_EXIT(MMC);
 
 } /* mmc_spi_fsclose */
 
@@ -404,12 +404,12 @@ static int32_t mmc_spi_lock(void *fd, uint32_t timeout)
 {
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* Obtain data lock for this MMC device. */
     status = semaphore_obtain(&((MMC_SPI *)fd)->lock, timeout);
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -423,12 +423,12 @@ static int32_t mmc_spi_lock(void *fd, uint32_t timeout)
  */
 static void mmc_spi_unlock(void *fd)
 {
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* Release data lock for this MMC device. */
     semaphore_release(&((MMC_SPI *)fd)->lock);
 
-    SYS_LOG_FUNTION_EXIT(MMC);
+    SYS_LOG_FUNCTION_EXIT(MMC);
 
 } /* mmc_spi_unlock */
 #endif /* MMC_SPI_FS */
@@ -449,7 +449,7 @@ int32_t mmc_spi_init(void *device)
     uint32_t retries;
     uint8_t resp[5];
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
 #ifdef MMC_SPI_FS
     /* Lock the MMC device. */
@@ -502,7 +502,7 @@ int32_t mmc_spi_init(void *device)
                             status = mmc_spi_cmd(mmc, MMC_SPI_ACMD41, 0, MMC_SPI_ACMD41_ARG, resp, 1);
                         }
 
-                        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
+                        SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
 
                         /* If card is now out of idle. */
                         if ((resp[0] & MMC_SPI_R1_IDLE) == 0)
@@ -541,7 +541,7 @@ int32_t mmc_spi_init(void *device)
                             mmc->flags |= MMC_SPI_CARD_BLOCK;
                         }
 
-                        SYS_LOG_FUNTION_HEXDUMP(MMC, SYS_LOG_INFO, "OCR: 0x", &resp[1], 4);
+                        SYS_LOG_FUNCTION_HEXDUMP(MMC, SYS_LOG_INFO, "OCR: 0x", &resp[1], 4);
                     }
                 }
 
@@ -568,7 +568,7 @@ int32_t mmc_spi_init(void *device)
                                 status = mmc_spi_cmd(mmc, MMC_SPI_ACMD41, 0, MMC_SPI_ACMD41_ARG, resp, 1);
                             }
 
-                            SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
+                            SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
 
                             /* If card is now out of idle. */
                             if ((resp[0] & MMC_SPI_R1_IDLE) == 0)
@@ -609,7 +609,7 @@ int32_t mmc_spi_init(void *device)
                             /* Send CMD1. */
                             status = mmc_spi_cmd(mmc, MMC_SPI_CMD1, 0, 0, resp, 1);
 
-                            SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
+                            SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
 
                             /* If card is now out of idle. */
                             if ((resp[0] & MMC_SPI_R1_IDLE) == 0)
@@ -666,7 +666,7 @@ int32_t mmc_spi_init(void *device)
     mmc_spi_unlock(mmc);
 #endif /* MMC_SPI_FS */
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -694,7 +694,7 @@ int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *b
     SPI_MSG msg;
     uint8_t line = 0x00;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* Need to start a new read transaction. */
     if (*offset == MMC_SPI_START_OFFSET)
@@ -704,7 +704,7 @@ int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *b
         mmc_spi_lock(mmc, MAX_WAIT);
 #endif /* MMC_SPI_FS */
 
-        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "starting read from sector 0x%08lX", sector);
+        SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "starting read from sector 0x%08lX", sector);
 
         /* If card is in byte mode. */
         if ((mmc->flags & MMC_SPI_CARD_BLOCK) == 0)
@@ -746,7 +746,7 @@ int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *b
                     /* Send dummy bytes. */
                     status = mmc->spi.msg(&mmc->spi, &msg);
 
-                    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
+                    SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
 
                     /* If card has sent us some data. */
                     if (line != 0xFF)
@@ -857,7 +857,7 @@ int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *b
 #endif /* MMC_SPI_FS */
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -886,7 +886,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
     SPI_MSG msg;
     uint8_t line = 0x00;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* Need to start a write transaction. */
     if (*offset == MMC_SPI_START_OFFSET)
@@ -896,7 +896,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
         mmc_spi_lock(mmc, MAX_WAIT);
 #endif /* MMC_SPI_FS */
 
-        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "starting write from sector 0x%08lX", sector);
+        SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "starting write from sector 0x%08lX", sector);
 
         /* If card is in byte mode. */
         if ((mmc->flags & MMC_SPI_CARD_BLOCK) == 0)
@@ -938,7 +938,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
                     /* Read a byte form the SPI. */
                     status = mmc->spi.msg(&mmc->spi, &msg);
 
-                    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
+                    SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
 
                     /* If SPI line is now stable. */
                     if (line == 0xFF)
@@ -1044,7 +1044,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
 
                     if (status == SUCCESS)
                     {
-                        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "DATARSP 0x%02X", line);
+                        SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "DATARSP 0x%02X", line);
 
                         /* If we encountered an error. */
                         if ((line & 0x1F) != 0x05)
@@ -1077,7 +1077,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
                     /* Read a byte form the SPI. */
                     status = mmc->spi.msg(&mmc->spi, &msg);
 
-                    SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
+                    SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
 
                     /* If SPI line is now stable. */
                     if (line == 0xFF)
@@ -1138,7 +1138,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
 #endif /* MMC_SPI_FS */
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -1159,7 +1159,7 @@ int32_t mmc_spi_get_num_sectors(MMC_SPI *mmc, uint64_t *num_sectors)
     uint32_t drive_size;
     uint8_t csd[MMC_SPI_CSD_LEN], scale;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* Read CSD from the device. */
     status = mmc_spi_get_csd(mmc, csd);
@@ -1188,7 +1188,7 @@ int32_t mmc_spi_get_num_sectors(MMC_SPI *mmc, uint64_t *num_sectors)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -1210,7 +1210,7 @@ int32_t mmc_spi_get_sectors_per_block(MMC_SPI *mmc, uint64_t *num_sectors)
     SPI_MSG msg;
     uint8_t csd[MMC_SPI_CSD_LEN], i;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* If this is SDv2 card */
     if (mmc->flags & MMC_SPI_CARD_SD2)
@@ -1274,7 +1274,7 @@ int32_t mmc_spi_get_sectors_per_block(MMC_SPI *mmc, uint64_t *num_sectors)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -1292,7 +1292,7 @@ static int32_t mmc_spi_get_csd(MMC_SPI *mmc, uint8_t *csd)
 {
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
 #ifdef MMC_SPI_FS
     /* Lock the MMC device. */
@@ -1313,7 +1313,7 @@ static int32_t mmc_spi_get_csd(MMC_SPI *mmc, uint8_t *csd)
 
     if (status == SUCCESS)
     {
-        SYS_LOG_FUNTION_HEXDUMP(MMC, SYS_LOG_INFO, "CSD: 0x", csd, 16);
+        SYS_LOG_FUNCTION_HEXDUMP(MMC, SYS_LOG_INFO, "CSD: 0x", csd, 16);
     }
 
 #ifdef MMC_SPI_FS
@@ -1321,7 +1321,7 @@ static int32_t mmc_spi_get_csd(MMC_SPI *mmc, uint8_t *csd)
     mmc_spi_unlock(mmc);
 #endif /* MMC_SPI_FS */
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -1345,7 +1345,7 @@ static int32_t mmc_spi_rx_data(MMC_SPI *mmc, uint8_t *buffer, int32_t size)
     SPI_MSG msg;
     uint8_t line;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* Initialize a dummy message. */
     msg.buffer = &line;
@@ -1358,7 +1358,7 @@ static int32_t mmc_spi_rx_data(MMC_SPI *mmc, uint8_t *buffer, int32_t size)
         /* Send dummy bytes. */
         status = mmc->spi.msg(&mmc->spi, &msg);
 
-        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
+        SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
 
         if (line != 0xFF)
         {
@@ -1388,7 +1388,7 @@ static int32_t mmc_spi_rx_data(MMC_SPI *mmc, uint8_t *buffer, int32_t size)
         status = MMC_SPI_READ_ERROR;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -1417,7 +1417,7 @@ static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t ar
     SPI_MSG msg;
     uint8_t cmd_buff[MMC_SPI_CMD_LEN];
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* If we need to select the device. */
     if (flags & MMC_SPI_CMD_SEL)
@@ -1488,7 +1488,7 @@ static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t ar
             /* Read status byte form SPI. */
             status = mmc->spi.msg(&mmc->spi, &msg);
 
-            SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, cmd_buff[0]);
+            SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, cmd_buff[0]);
 
             /* If this is the response byte. */
             if ((cmd_buff[0] & MMC_SPI_R1_COMP) == 0)
@@ -1504,7 +1504,7 @@ static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t ar
             rsp[0] = cmd_buff[0];
         }
 
-        SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "CMD: %d, ARGV 0x%08lX, STATUS 0x%02X", cmd, argv, cmd_buff[0]);
+        SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "CMD: %d, ARGV 0x%08lX, STATUS 0x%02X", cmd, argv, cmd_buff[0]);
 
         /* If command was successful. */
         if ((cmd_buff[0] & (uint8_t)(~MMC_SPI_R1_IDLE)) == SUCCESS)
@@ -1535,7 +1535,7 @@ static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t ar
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -1557,7 +1557,7 @@ static int32_t mmc_slave_select(MMC_SPI *mmc, uint8_t test_line)
     SPI_MSG msg;
     uint8_t line = 0xFF;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* Select the slave. */
     mmc->spi.slave_select(&mmc->spi);
@@ -1579,7 +1579,7 @@ static int32_t mmc_slave_select(MMC_SPI *mmc, uint8_t test_line)
             /* Read a byte form the SPI. */
             status = mmc->spi.msg(&mmc->spi, &msg);
 
-            SYS_LOG_FUNTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
+            SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "retry %ld, line 0x%02X", retries, line);
 
             /* If SPI line is now stable. */
             if (line == 0xFF)
@@ -1601,7 +1601,7 @@ static int32_t mmc_slave_select(MMC_SPI *mmc, uint8_t test_line)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -1620,7 +1620,7 @@ static int32_t mmc_slave_unselect(MMC_SPI *mmc)
     SPI_MSG msg;
     uint8_t line;
 
-    SYS_LOG_FUNTION_ENTRY(MMC);
+    SYS_LOG_FUNCTION_ENTRY(MMC);
 
     /* Initialize an SPI message. */
     msg.buffer = &line;
@@ -1633,7 +1633,7 @@ static int32_t mmc_slave_unselect(MMC_SPI *mmc)
     /* Read a dummy byte form the SPI. */
     mmc->spi.msg(&mmc->spi, &msg);
 
-    SYS_LOG_FUNTION_EXIT_STATUS(MMC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
     return (status);

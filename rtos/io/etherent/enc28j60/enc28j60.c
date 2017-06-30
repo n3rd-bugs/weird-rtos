@@ -42,7 +42,7 @@ void enc28j60_init(ENC28J60 *device)
 {
     FD fd = (FD)&device->ethernet_device;
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
     /* Initialize SPI parameters. */
     device->spi.baudrate = 21000000;
@@ -92,7 +92,7 @@ void enc28j60_init(ENC28J60 *device)
     net_dhcp_client_initialize_device(net_device_get_fd(fd), &device->dhcp_client);
 #endif
 
-    SYS_LOG_FUNTION_EXIT(ENC28J60);
+    SYS_LOG_FUNCTION_EXIT(ENC28J60);
 
 } /* enc28j60_init */
 
@@ -109,7 +109,7 @@ static void enc28j60_initialize(void *data)
     int32_t status;
     uint32_t max_retry = ENC28J60_CLKRDY_TIMEOUT / ENC28J60_CLKRDY_DELAY;
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
     /* Reset this device. */
     device->reset(device);
@@ -120,7 +120,7 @@ static void enc28j60_initialize(void *data)
         /* Read the value of ESTAT. */
         status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_ESTAT, 0xFF, &value, 1);
 
-        SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_DEBUG, "ESTAT %d", value);
+        SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_DEBUG, "ESTAT %d", value);
 
         /* Release lock for this device. */
         fd_release_lock(fd);
@@ -160,7 +160,7 @@ static void enc28j60_initialize(void *data)
         /* Read the revision number. */
         status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EREVID, 0xFF, &value, 1);
 
-        SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_INFO, "REV_ID %d", value);
+        SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_INFO, "REV_ID %d", value);
     }
 
     /* If we have a valid revision ID. */
@@ -264,18 +264,18 @@ static void enc28j60_initialize(void *data)
 
         if (status == SUCCESS)
         {
-            SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_INFO, "driver initialized %ld", status);
+            SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_INFO, "driver initialized %ld", status);
 
             /* Enable enc28j60 interrupts. */
             device->flags |= ENC28J60_INT_ENABLE;
         }
         else
         {
-            SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_ERROR, "failed %ld", status);
+            SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_ERROR, "failed %ld", status);
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ENC28J60, status);
 
 } /* enc28j60_initialize */
 
@@ -289,9 +289,9 @@ static void enc28j60_wdt(void *data)
 {
     ENC28J60 *device = (ENC28J60 *)data;
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
-    SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_WARN, "target halted, trying rest to recover", NULL);
+    SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_WARN, "target halted, trying rest to recover", NULL);
 
     /* Clear device flags. */
     device->flags = 0;
@@ -300,7 +300,7 @@ static void enc28j60_wdt(void *data)
     device->ethernet_device.flags = ETH_FLAG_INIT;
     fd_data_available((FD)data);
 
-    SYS_LOG_FUNTION_EXIT(ENC28J60);
+    SYS_LOG_FUNCTION_EXIT(ENC28J60);
 
 } /* enc28j60_wdt */
 
@@ -317,7 +317,7 @@ static void enc28j60_interrupt(void *data)
     FD fd = (FD)data;
     uint8_t value;
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
     /* While INT pin is asserted. */
     while ((status == SUCCESS) && (device->interrupt_pin(device) == FALSE))
@@ -330,7 +330,7 @@ static void enc28j60_interrupt(void *data)
             /* Get the interrupt status. */
             status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EIR, 0xFF, &value, 1);
 
-            SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_DEBUG, "EIR 0x%d", value);
+            SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_DEBUG, "EIR 0x%d", value);
 
             /* While we have an interrupt to process. */
             if (status == SUCCESS)
@@ -338,7 +338,7 @@ static void enc28j60_interrupt(void *data)
                 /* If link status has been changed. */
                 if (value & ENC28J60_EIR_LINKIF)
                 {
-                    SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_DEBUG, "link status updated", NULL);
+                    SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_DEBUG, "link status updated", NULL);
 
                     /* Handle the link status change event. */
                     enc28j60_link_changed(device);
@@ -360,7 +360,7 @@ static void enc28j60_interrupt(void *data)
                 /* If an RX error was detected. */
                 if (value & ENC28J60_EIR_RXERIF)
                 {
-                    SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_WARN, "RX error detected", NULL);
+                    SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_WARN, "RX error detected", NULL);
 
                     /* Handle RX error. */
                     enc28j60_handle_rx_error(device);
@@ -396,7 +396,7 @@ static void enc28j60_interrupt(void *data)
                 /* If a transmit error was detected. */
                 if (value & ENC28J60_EIR_TXERIF)
                 {
-                    SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_WARN, "TX error detected", NULL);
+                    SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_WARN, "TX error detected", NULL);
 
                     /* Initialize TX FIFO. */
                     status = enc28j60_tx_fifo_init(device);
@@ -428,7 +428,7 @@ static void enc28j60_interrupt(void *data)
     }
     else
     {
-        SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_ERROR, "driver error %ld", status);
+        SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_ERROR, "driver error %ld", status);
 
         /* Disable interrupts. */
         enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_EIE, ENC28J60_EIE_INTIE, NULL, 0);
@@ -441,7 +441,7 @@ static void enc28j60_interrupt(void *data)
         fd_data_available((FD)data);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ENC28J60, status);
 
 } /* enc28j60_interrupt */
 
@@ -454,7 +454,7 @@ static void enc28j60_handle_rx_error(ENC28J60 *device)
 {
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
     /* Disable receive logic. */
     status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_CLR, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXEN, NULL, 0);
@@ -471,7 +471,7 @@ static void enc28j60_handle_rx_error(ENC28J60 *device)
         status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXEN, NULL, 0);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ENC28J60, status);
 
 } /* enc28j60_handle_rx_error */
 
@@ -487,7 +487,7 @@ static int32_t enc28j60_tx_fifo_init(ENC28J60 *device)
 {
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
     /* Set TX reset bit. */
     status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_TXRST, NULL, 0);
@@ -504,7 +504,7 @@ static int32_t enc28j60_tx_fifo_init(ENC28J60 *device)
         status = enc28j60_write_word(device, ENC28J60_ADDR_ETXSTL, ENC28J60_TX_START);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ENC28J60, status);
 
     /* Return status to the caller. */
     return (status);
@@ -523,7 +523,7 @@ static int32_t enc28j60_rx_fifo_init(ENC28J60 *device)
 {
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
     /* Set RX reset bit. */
     status = enc28j60_write_read_op(device, ENC28J60_OP_BIT_SET, ENC28J60_ADDR_ECON1, ENC28J60_ECON1_RXRST, NULL, 0);
@@ -558,7 +558,7 @@ static int32_t enc28j60_rx_fifo_init(ENC28J60 *device)
         device->rx_ptr = ENC28J60_RX_START;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ENC28J60, status);
 
     /* Return status to the caller. */
     return (status);
@@ -575,7 +575,7 @@ static void enc28j60_set_mac_address(ENC28J60 *device, uint8_t *mac)
 {
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
     /* Update MAC address in the hardware. */
     status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAADR0, mac[5], NULL, 0);
@@ -605,7 +605,7 @@ static void enc28j60_set_mac_address(ENC28J60 *device, uint8_t *mac)
         status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MAADR5, mac[0], NULL, 0);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ENC28J60, status);
 
 } /* enc28j60_set_mac_address */
 
@@ -620,7 +620,7 @@ static void enc28j60_link_changed(ENC28J60 *device)
     int32_t status;
     uint16_t phy_register;
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
     /* Read the PHY status register. */
     status = enc28j60_read_phy(device, ENC28J60_ADDR_PHSTAT2, &phy_register);
@@ -628,7 +628,7 @@ static void enc28j60_link_changed(ENC28J60 *device)
     /* If we are now in connected state. */
     if ((status == SUCCESS) && (phy_register & ENC28J60_PHSTAT2_LSTAT))
     {
-        SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_INFO, "Link UP", NULL);
+        SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_INFO, "Link UP", NULL);
 
         /* Initialize RX FIFO. */
         status = enc28j60_rx_fifo_init(device);
@@ -661,13 +661,13 @@ static void enc28j60_link_changed(ENC28J60 *device)
     }
     else
     {
-        SYS_LOG_FUNTION_MSG(ENC28J60, SYS_LOG_INFO, "Link DOWN", NULL);
+        SYS_LOG_FUNCTION_MSG(ENC28J60, SYS_LOG_INFO, "Link DOWN", NULL);
 
         /* Set link-down for this device. */
         net_device_link_down(fd);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ENC28J60, status);
 
 } /* enc28j60_link_changed */
 
@@ -685,7 +685,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
     uint16_t next_ptr, packet_status, packet_length;
     uint8_t num_packets, receive_header[ENC28J60_RX_HEAD_SIZE];
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
     /* Read number of packets available to read. */
     status = enc28j60_write_read_op(device, ENC28J60_OP_READ_CTRL, ENC28J60_ADDR_EPKTCNT, 0xFF, &num_packets, 1);
@@ -814,7 +814,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
 #endif
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ENC28J60, status);
 
 } /* enc28j60_receive_packet */
 
@@ -837,7 +837,7 @@ static int32_t enc28j60_transmit_packet(void *data, FS_BUFFER *buffer)
     uint16_t tx_ptr = ENC28J60_TX_START;
     uint8_t value;
 
-    SYS_LOG_FUNTION_ENTRY(ENC28J60);
+    SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
     /* If we are currently not doing any transmission. */
     if ((device->flags & ENC28J60_IN_TX) == 0)
@@ -889,7 +889,7 @@ static int32_t enc28j60_transmit_packet(void *data, FS_BUFFER *buffer)
         status = ETH_TX_BLOCKED;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ENC28J60, (status == ETH_TX_BLOCKED) ? SUCCESS : status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ENC28J60, (status == ETH_TX_BLOCKED) ? SUCCESS : status);
 
     /* Return status to the caller. */
     return (status);

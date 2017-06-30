@@ -48,7 +48,7 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
 {
     uint32_t system_tick = current_system_tick();
 
-    SYS_LOG_FUNTION_ENTRY(DHCPC);
+    SYS_LOG_FUNCTION_ENTRY(DHCPC);
 
     /* Update the client state. */
     client_data->state = state;
@@ -125,7 +125,7 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
         client_data->lease_time = 0;
     }
 
-    SYS_LOG_FUNTION_EXIT(DHCPC);
+    SYS_LOG_FUNCTION_EXIT(DHCPC);
 
 } /* dhcp_change_state */
 
@@ -143,7 +143,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
 {
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(DHCPC);
+    SYS_LOG_FUNCTION_ENTRY(DHCPC);
 
     /* Add DHCP header on the buffer. */
     status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)((uint32_t)(INT32CMP(current_system_tick(), client_data->start_time)) / SOFT_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_RENEW) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
@@ -188,7 +188,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVI
         status = dhcp_add_option(buffer, DHCP_OPT_END, 0, NULL, 0);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(DHCPC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(DHCPC, status);
 
     /* Return status to the caller. */
     return (status);
@@ -212,7 +212,7 @@ static void dhcp_event(void *data, int32_t status)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(status);
 
-    SYS_LOG_FUNTION_ENTRY(DHCPC);
+    SYS_LOG_FUNCTION_ENTRY(DHCPC);
 
     /* Acquire lock for this file descriptor. */
     ASSERT(fd_get_lock(fd) != SUCCESS);
@@ -346,7 +346,7 @@ static void dhcp_event(void *data, int32_t status)
     /* Release lock for this file descriptor. */
     fd_release_lock(fd);
 
-    SYS_LOG_FUNTION_EXIT(DHCPC);
+    SYS_LOG_FUNCTION_EXIT(DHCPC);
 
 } /* dhcp_event */
 
@@ -369,7 +369,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(resume_status);
 
-    SYS_LOG_FUNTION_ENTRY(DHCPC);
+    SYS_LOG_FUNCTION_ENTRY(DHCPC);
 
     /* While we have some data to read from the client socket. */
     while (fs_read(udp_fd, (uint8_t *)&buffer, sizeof(FS_BUFFER)) > 0)
@@ -616,7 +616,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
         fd_release_lock(buffer_fd);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(DHCPC, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(DHCPC, status);
 
 } /* net_dhcp_client_process */
 
@@ -630,7 +630,7 @@ void net_dhcp_client_initialize()
     CONDITION *condition;
     FD fd = (FD)&dhcp_client.udp;
 
-    SYS_LOG_FUNTION_ENTRY(DHCPC);
+    SYS_LOG_FUNCTION_ENTRY(DHCPC);
 
     /* DHCP client data. */
     memset(&dhcp_client, 0, sizeof(DHCP_CLIENT_DATA));
@@ -661,7 +661,7 @@ void net_dhcp_client_initialize()
     /* Add networking condition for to process data on this UDP port. */
     net_condition_add(condition, &dhcp_client.suspend, &net_dhcp_client_process, &dhcp_client);
 
-    SYS_LOG_FUNTION_EXIT(DHCPC);
+    SYS_LOG_FUNCTION_EXIT(DHCPC);
 
 } /* net_dhcp_client_initialize */
 
@@ -674,7 +674,7 @@ void net_dhcp_client_initialize()
  */
 void net_dhcp_client_initialize_device(NET_DEV *net_device, DHCP_CLIENT_DEVICE *data)
 {
-    SYS_LOG_FUNTION_ENTRY(DHCPC);
+    SYS_LOG_FUNCTION_ENTRY(DHCPC);
 
     /* Set DHCP client data. */
     net_device->ipv4.dhcp_client = data;
@@ -682,7 +682,7 @@ void net_dhcp_client_initialize_device(NET_DEV *net_device, DHCP_CLIENT_DEVICE *
     /* We are in stopped state. */
     data->state = DHCP_CLI_STOPPED;
 
-    SYS_LOG_FUNTION_EXIT(DHCPC);
+    SYS_LOG_FUNCTION_EXIT(DHCPC);
 
 } /* net_dhcp_client_initialize_device */
 
@@ -697,7 +697,7 @@ void net_dhcp_client_start(NET_DEV *net_device)
     FD fd = net_device->fd;
     DHCP_CLIENT_DEVICE *client_data = net_device->ipv4.dhcp_client;
 
-    SYS_LOG_FUNTION_ENTRY(DHCPC);
+    SYS_LOG_FUNCTION_ENTRY(DHCPC);
 
     /* If DHCP client data is actually set. */
     if ((client_data != NULL) && (client_data->state == DHCP_CLI_STOPPED))
@@ -715,7 +715,7 @@ void net_dhcp_client_start(NET_DEV *net_device)
         net_condition_add(&client_data->condition, &client_data->suspend, &dhcp_event, fd);
     }
 
-    SYS_LOG_FUNTION_EXIT(DHCPC);
+    SYS_LOG_FUNCTION_EXIT(DHCPC);
 
 } /* net_dhcp_client_start */
 
@@ -730,7 +730,7 @@ void net_dhcp_client_stop(NET_DEV *net_device)
     DHCP_CLIENT_DEVICE *client_data = net_device->ipv4.dhcp_client;
     FD *fd = net_device->fd;
 
-    SYS_LOG_FUNTION_ENTRY(DHCPC);
+    SYS_LOG_FUNCTION_ENTRY(DHCPC);
 
     /* If DHCP client data is actually set. */
     if ((client_data != NULL) && (client_data->state != DHCP_CLI_STOPPED))
@@ -756,7 +756,7 @@ void net_dhcp_client_stop(NET_DEV *net_device)
         client_data->state = DHCP_CLI_STOPPED;
     }
 
-    SYS_LOG_FUNTION_EXIT(DHCPC);
+    SYS_LOG_FUNCTION_EXIT(DHCPC);
 
 } /* net_dhcp_client_stop */
 

@@ -57,7 +57,7 @@ int32_t dhcp_add_header(FS_BUFFER *buffer, uint8_t operation, uint32_t xid, uint
         {padding,                           (DHCP_HDR_CHADDR_LEN - ETH_ADDR_LEN),   0 },                    /* Address padding. */
     };
 
-    SYS_LOG_FUNTION_ENTRY(DHCP);
+    SYS_LOG_FUNCTION_ENTRY(DHCP);
 
     /* Append magic cookie on the buffer. */
     status = fs_buffer_hdr_push(buffer, (uint8_t *)&magic_cookie, 4, FS_BUFFER_PACKED);
@@ -79,7 +79,7 @@ int32_t dhcp_add_header(FS_BUFFER *buffer, uint8_t operation, uint32_t xid, uint
         status = header_generate(&machine, headers, sizeof(headers)/sizeof(HEADER), buffer);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(DHCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(DHCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -117,7 +117,7 @@ int32_t dhcp_get_header(FS_BUFFER *buffer, uint8_t *operation, uint32_t *xid, ui
         {NULL,              (DHCP_HDR_CHADDR_LEN - ETH_ADDR_LEN) + 4 + 192, 0 },                    /* Address padding, server name, file name, DHCP magic number. */
     };
 
-    SYS_LOG_FUNTION_ENTRY(DHCP);
+    SYS_LOG_FUNCTION_ENTRY(DHCP);
 
     /* Initialize a header parse machine. */
     header_parse_machine_init(&machine, &fs_buffer_hdr_pull);
@@ -132,7 +132,7 @@ int32_t dhcp_get_header(FS_BUFFER *buffer, uint8_t *operation, uint32_t *xid, ui
         *operation = (uint8_t)(op_word >> DHCP_HDR_OP_SHIFT);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(DHCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(DHCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -154,7 +154,7 @@ int32_t dhcp_add_option(FS_BUFFER *buffer, uint8_t type, uint8_t length, void *v
 {
     int32_t status = SUCCESS;
 
-    SYS_LOG_FUNTION_ENTRY(DHCP);
+    SYS_LOG_FUNCTION_ENTRY(DHCP);
 
     /* Append option type. */
     status = fs_buffer_push(buffer, (uint8_t *)&type, 1, 0);
@@ -172,7 +172,7 @@ int32_t dhcp_add_option(FS_BUFFER *buffer, uint8_t type, uint8_t length, void *v
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(DHCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(DHCP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -194,7 +194,7 @@ int32_t dhcp_get_option(FS_BUFFER *buffer, uint8_t *type, uint8_t *length)
 {
     int32_t status = SUCCESS;
 
-    SYS_LOG_FUNTION_ENTRY(DHCP);
+    SYS_LOG_FUNCTION_ENTRY(DHCP);
 
     /* Pull option type. */
     status = fs_buffer_pull(buffer, type, 1, 0);
@@ -206,7 +206,7 @@ int32_t dhcp_get_option(FS_BUFFER *buffer, uint8_t *type, uint8_t *length)
         status = fs_buffer_pull(buffer, length, 1, 0);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(DHCP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(DHCP, status);
 
     /* Return status to the caller. */
     return (status);

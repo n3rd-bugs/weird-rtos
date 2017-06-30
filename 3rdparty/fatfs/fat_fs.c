@@ -47,7 +47,7 @@ void fatfs_init()
 {
     uint32_t i;
 
-    SYS_LOG_FUNTION_ENTRY(FATFS);
+    SYS_LOG_FUNCTION_ENTRY(FATFS);
 
 #ifdef CONFIG_SEMAPHORE
     /* Create lock to protect FAT file system layer. */
@@ -69,7 +69,7 @@ void fatfs_init()
     /* Register FAT file system. */
     fs_register(&fat_fs);
 
-    SYS_LOG_FUNTION_EXIT(FATFS);
+    SYS_LOG_FUNCTION_EXIT(FATFS);
 
 } /* fatfs_init */
 
@@ -90,7 +90,7 @@ static void *fatfs_open(void *priv_data, char *name, uint32_t flags)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(priv_data);
 
-    SYS_LOG_FUNTION_ENTRY(FATFS);
+    SYS_LOG_FUNCTION_ENTRY(FATFS);
 
 #ifdef CONFIG_SEMAPHORE
     /* Lock the FAT layer. */
@@ -132,7 +132,7 @@ static void *fatfs_open(void *priv_data, char *name, uint32_t flags)
     /* If we did find a file entry. */
     if (fd != NULL)
     {
-        SYS_LOG_FUNTION_MSG(FATFS, SYS_LOG_INFO, "opening \"%s\"", name);
+        SYS_LOG_FUNCTION_MSG(FATFS, SYS_LOG_INFO, "opening \"%s\"", name);
 
         /* If read is requested. */
         if (flags & FS_READ)
@@ -165,7 +165,7 @@ static void *fatfs_open(void *priv_data, char *name, uint32_t flags)
         /* Transfer open to the FAT file system. */
         if ((status = f_open(&fd->file, name, fs_flags)) != FR_OK)
         {
-            SYS_LOG_FUNTION_MSG(FATFS, SYS_LOG_INFO, "f_open returned %d", status);
+            SYS_LOG_FUNCTION_MSG(FATFS, SYS_LOG_INFO, "f_open returned %d", status);
 
 #ifdef CONFIG_SEMAPHORE
             /* Lock the FAT layer. */
@@ -192,7 +192,7 @@ static void *fatfs_open(void *priv_data, char *name, uint32_t flags)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT(FATFS);
+    SYS_LOG_FUNCTION_EXIT(FATFS);
 
     /* Return the resolved file descriptor. */
     return (fd);
@@ -213,7 +213,7 @@ static int32_t fatfs_read(void *priv_data, uint8_t *buf, int32_t nbytes)
     UINT bytes;
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(FATFS);
+    SYS_LOG_FUNCTION_ENTRY(FATFS);
 
     /* Transfer read to the file system. */
     if ((status = f_read(&fd->file, buf, (UINT)nbytes, (UINT *)&bytes)) != FR_OK)
@@ -221,12 +221,12 @@ static int32_t fatfs_read(void *priv_data, uint8_t *buf, int32_t nbytes)
         /* Nothing was read from the file system. */
         bytes = 0;
 
-        SYS_LOG_FUNTION_MSG(FATFS, SYS_LOG_INFO, "f_read returned %d", status);
+        SYS_LOG_FUNCTION_MSG(FATFS, SYS_LOG_INFO, "f_read returned %d", status);
     }
 
-    SYS_LOG_FUNTION_HEXDUMP(FATFS, SYS_LOG_DEBUG, "read ", buf, (uint32_t)nbytes);
+    SYS_LOG_FUNCTION_HEXDUMP(FATFS, SYS_LOG_DEBUG, "read ", buf, (uint32_t)nbytes);
 
-    SYS_LOG_FUNTION_EXIT(FATFS);
+    SYS_LOG_FUNCTION_EXIT(FATFS);
 
     /* Return number of bytes read. */
     return ((int32_t)bytes);
@@ -247,9 +247,9 @@ static int32_t fatfs_write(void *priv_data, uint8_t *buf, int32_t nbytes)
     UINT bytes;
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(FATFS);
+    SYS_LOG_FUNCTION_ENTRY(FATFS);
 
-    SYS_LOG_FUNTION_HEXDUMP(FATFS, SYS_LOG_DEBUG, "writing ", buf, (uint32_t)nbytes);
+    SYS_LOG_FUNCTION_HEXDUMP(FATFS, SYS_LOG_DEBUG, "writing ", buf, (uint32_t)nbytes);
 
     /* Transfer write to the file system. */
     if ((status = f_write(&fd->file, buf, (UINT)nbytes, (UINT *)&bytes)) != FR_OK)
@@ -257,10 +257,10 @@ static int32_t fatfs_write(void *priv_data, uint8_t *buf, int32_t nbytes)
         /* Nothing was read from the file system. */
         bytes = 0;
 
-        SYS_LOG_FUNTION_MSG(FATFS, SYS_LOG_INFO, "f_write returned %d", status);
+        SYS_LOG_FUNCTION_MSG(FATFS, SYS_LOG_INFO, "f_write returned %d", status);
     }
 
-    SYS_LOG_FUNTION_EXIT(FATFS);
+    SYS_LOG_FUNCTION_EXIT(FATFS);
 
     /* Return number of bytes read. */
     return ((int32_t)bytes);
@@ -277,12 +277,12 @@ static void fatfs_close(void **priv_data)
     FAT_FILE **fd = (FAT_FILE **)priv_data;
     int32_t status;
 
-    SYS_LOG_FUNTION_ENTRY(FATFS);
+    SYS_LOG_FUNCTION_ENTRY(FATFS);
 
     /* Close the required file. */
     if ((status = f_close(&(*fd)->file)) != FR_OK)
     {
-        SYS_LOG_FUNTION_MSG(FATFS, SYS_LOG_INFO, "f_close returned %d", status);
+        SYS_LOG_FUNCTION_MSG(FATFS, SYS_LOG_INFO, "f_close returned %d", status);
     }
 
 #ifdef CONFIG_SEMAPHORE
@@ -305,7 +305,7 @@ static void fatfs_close(void **priv_data)
 #endif
     }
 
-    SYS_LOG_FUNTION_EXIT(FATFS);
+    SYS_LOG_FUNCTION_EXIT(FATFS);
 
 } /* fatfs_close */
 

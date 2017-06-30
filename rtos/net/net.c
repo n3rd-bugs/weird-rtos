@@ -38,7 +38,7 @@
  */
 void net_init()
 {
-    SYS_LOG_FUNTION_ENTRY(NET);
+    SYS_LOG_FUNCTION_ENTRY(NET);
 
     /* Initialize networking devices. */
     net_devices_init();
@@ -69,7 +69,7 @@ void net_init()
     ethernet_init();
 #endif
 
-    SYS_LOG_FUNTION_EXIT(NET);
+    SYS_LOG_FUNCTION_EXIT(NET);
 
 } /* net_buffer_init */
 
@@ -97,7 +97,7 @@ uint16_t net_port_random()
  */
 uint8_t net_port_match(uint16_t port1, uint16_t port2, uint8_t match)
 {
-    SYS_LOG_FUNTION_ENTRY(NET);
+    SYS_LOG_FUNCTION_ENTRY(NET);
 
     /* If match is not already failed. */
     if (match != FALSE)
@@ -130,7 +130,7 @@ uint8_t net_port_match(uint16_t port1, uint16_t port2, uint8_t match)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT(NET);
+    SYS_LOG_FUNCTION_EXIT(NET);
 
     /* Return the match status to the caller. */
     return (match);
@@ -150,7 +150,7 @@ uint8_t net_socket_address_match(SOCKET_ADDRESS *socket1, SOCKET_ADDRESS *socket
 {
     uint8_t match;
 
-    SYS_LOG_FUNTION_ENTRY(NET);
+    SYS_LOG_FUNCTION_ENTRY(NET);
 
 #ifdef NET_IPV4
     /* Compare the local and foreign IP addresses. */
@@ -162,7 +162,7 @@ uint8_t net_socket_address_match(SOCKET_ADDRESS *socket1, SOCKET_ADDRESS *socket
     match = net_port_match(socket1->local_port, socket2->local_port, TRUE);
     match = net_port_match(socket1->foreign_port, socket2->foreign_port, match);
 
-    SYS_LOG_FUNTION_EXIT(NET);
+    SYS_LOG_FUNCTION_EXIT(NET);
 
     /* Return the match status to the caller. */
     return (match);

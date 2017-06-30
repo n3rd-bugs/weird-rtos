@@ -56,7 +56,7 @@ static int32_t arp_process_prologue_ipv4(FS_BUFFER *buffer)
         {&protolen,                 1,              0 },                    /* Protocol address length. */
     };
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* Initialize a header parse machine. */
     header_parse_machine_init(&machine, &fs_buffer_hdr_pull);
@@ -76,7 +76,7 @@ static int32_t arp_process_prologue_ipv4(FS_BUFFER *buffer)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ARP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ARP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -97,7 +97,7 @@ static int32_t arp_process_request(FS_BUFFER *buffer)
     uint32_t own_ip, target_ip;
     uint8_t dst_mac[ETH_ADDR_LEN];
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* Pull the address required by the caller. */
     ASSERT(fs_buffer_pull_offset(buffer, &target_ip, IPV4_ADDR_LEN, ARP_HDR_TGT_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
@@ -123,7 +123,7 @@ static int32_t arp_process_request(FS_BUFFER *buffer)
         status = arp_send_packet(buffer, ARP_OP_RESPONSE, ethernet_get_mac_address(buffer->fd), own_ip, dst_mac, target_ip);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ARP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ARP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
 
     /* Return status to the caller. */
     return (status);
@@ -144,7 +144,7 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
     uint32_t src_ip, i;
     ARP_DATA *arp_data = arp_get_data(buffer->fd);
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* Pull the IPv4 address sent by the remote. */
     ASSERT(fs_buffer_pull_offset(buffer, &src_ip, IPV4_ADDR_LEN, ARP_HDR_SRC_IPV4_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
@@ -185,7 +185,7 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ARP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ARP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -222,7 +222,7 @@ static int32_t arp_send_packet(FS_BUFFER *buffer, uint16_t operation, uint8_t *s
         {&dst_ip,                           IPV4_ADDR_LEN,  (FS_BUFFER_PACKED) },   /* Destination IPv4 address. */
     };
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* Initialize header machine. */
     header_gen_machine_init(&machine, &fs_buffer_hdr_push);
@@ -236,7 +236,7 @@ static int32_t arp_send_packet(FS_BUFFER *buffer, uint16_t operation, uint8_t *s
         status = net_device_buffer_transmit(buffer, NET_PROTO_ARP, 0);
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ARP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ARP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
 
     /* Return status to the caller. */
     return (status);
@@ -250,7 +250,7 @@ static int32_t arp_send_packet(FS_BUFFER *buffer, uint16_t operation, uint8_t *s
  */
 static void arp_free_entry(ARP_ENTRY *entry)
 {
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* Free any buffers still on this entry. */
     if (entry->buffer_list.head != NULL)
@@ -265,7 +265,7 @@ static void arp_free_entry(ARP_ENTRY *entry)
     /* Clear the ARP entry flags to reinitialize this entry. */
     entry->flags = 0;
 
-    SYS_LOG_FUNTION_EXIT(ARP);
+    SYS_LOG_FUNCTION_EXIT(ARP);
 
 } /* arp_free_entry */
 
@@ -287,7 +287,7 @@ static ARP_ENTRY *arp_find_entry(FD fd, uint32_t address)
     ARP_ENTRY *entry = NULL;
     uint32_t i;
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* Go though all the ARP entries in the device. */
     for (i = 0; i < arp_data->num_entries; i++)
@@ -310,7 +310,7 @@ static ARP_ENTRY *arp_find_entry(FD fd, uint32_t address)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT(ARP);
+    SYS_LOG_FUNCTION_EXIT(ARP);
 
     /* Return required ARP entry. */
     return (entry);
@@ -329,7 +329,7 @@ static void arp_update_timers(FD fd)
     uint32_t i, next_timeout;
     uint8_t timeout_enabled = FALSE;
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* Go though all the ARP entries in the device. */
     for (i = 0; i < arp_data->num_entries; i++)
@@ -367,7 +367,7 @@ static void arp_update_timers(FD fd)
         arp_data->suspend.timeout_enabled = FALSE;
     }
 
-    SYS_LOG_FUNTION_EXIT(ARP);
+    SYS_LOG_FUNCTION_EXIT(ARP);
 
 } /* arp_update_timers */
 
@@ -384,7 +384,7 @@ static int32_t arp_route(FD fd, ARP_ENTRY *entry)
     FS_BUFFER *buffer;
     uint32_t src_ip;
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* Get IPv4 address assigned to this device. */
     src_ip = IPV4_ADDR_UNSPEC;
@@ -416,7 +416,7 @@ static int32_t arp_route(FD fd, ARP_ENTRY *entry)
         status = FS_BUFFER_NO_SPACE;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ARP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ARP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -439,7 +439,7 @@ static void arp_event(void *data, int32_t resume_status)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(resume_status);
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* Acquire lock for this file descriptor. */
     ASSERT(fd_get_lock(fd) != SUCCESS);
@@ -514,7 +514,7 @@ static void arp_event(void *data, int32_t resume_status)
     /* Release lock for this file descriptor. */
     fd_release_lock(fd);
 
-    SYS_LOG_FUNTION_EXIT(ARP);
+    SYS_LOG_FUNCTION_EXIT(ARP);
 
 } /* arp_event */
 
@@ -532,7 +532,7 @@ int32_t arp_resolve(FS_BUFFER *buffer, uint32_t dst_ip, uint8_t *dst_addr)
     int32_t status = SUCCESS;
     ARP_ENTRY *entry;
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* Try to find an entry in ARP cache for the device. */
     entry = arp_find_entry(buffer->fd, dst_ip);
@@ -598,7 +598,7 @@ int32_t arp_resolve(FS_BUFFER *buffer, uint32_t dst_ip, uint8_t *dst_addr)
         status = NET_DST_UNREACHABLE;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ARP, status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ARP, status);
 
     /* Return status to the caller. */
     return (status);
@@ -616,7 +616,7 @@ void arp_set_data(FD fd, ARP_ENTRY *entry_list, uint32_t num_entries)
 {
     ETH_DEVICE *device = (ETH_DEVICE *)fd;
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* ARP entries are already cleared. */
 
@@ -633,7 +633,7 @@ void arp_set_data(FD fd, ARP_ENTRY *entry_list, uint32_t num_entries)
     /* Add networking condition to process ARP for this device. */
     net_condition_add(&device->arp.condition, &device->arp.suspend, &arp_event, fd);
 
-    SYS_LOG_FUNTION_EXIT(ARP);
+    SYS_LOG_FUNCTION_EXIT(ARP);
 
 } /* arp_set_data */
 
@@ -666,7 +666,7 @@ int32_t net_process_arp(FS_BUFFER *buffer)
     int32_t status = SUCCESS;
     uint16_t operation;
 
-    SYS_LOG_FUNTION_ENTRY(ARP);
+    SYS_LOG_FUNCTION_ENTRY(ARP);
 
     /* If we have valid length in the packet. */
     if (buffer->total_length > ARP_HDR_LEN)
@@ -722,7 +722,7 @@ int32_t net_process_arp(FS_BUFFER *buffer)
         }
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(ARP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(ARP, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
 
     /* Return status to the caller. */
     return (status);

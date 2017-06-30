@@ -37,7 +37,7 @@ int32_t net_buffer_process(FS_BUFFER *buffer)
     uint32_t flags;
     uint8_t protocol;
 
-    SYS_LOG_FUNTION_ENTRY(NET_PROCESS);
+    SYS_LOG_FUNCTION_ENTRY(NET_PROCESS);
 
     /* Skim the protocol and flags from the buffer. */
     ASSERT(fs_buffer_pull(buffer, &flags, sizeof(uint32_t), 0) != SUCCESS);
@@ -70,7 +70,7 @@ int32_t net_buffer_process(FS_BUFFER *buffer)
         break;
     }
 
-    SYS_LOG_FUNTION_EXIT_STATUS(NET_PROCESS, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
+    SYS_LOG_FUNCTION_EXIT_STATUS(NET_PROCESS, (status == NET_BUFFER_CONSUMED) ? SUCCESS : status);
 
     /* Return status to the caller. */
     return (status);
