@@ -18,7 +18,7 @@
 #include <kernel.h>
 
 /* Assert configuration. */
-//#define ASSERT_NONE
+#define ASSERT_NONE
 #define ASSERT_FILE_INFO
 
 /* Error handling. */
