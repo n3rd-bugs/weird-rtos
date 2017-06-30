@@ -5,6 +5,7 @@ This list is needed to be updated whenever a new error code is added.
     SUCCESS                 0
     IDLE_NO_SPACE           -500
     IDLE_NOT_FOUND          -501
+    IDLE_CANNOT_UPDATE      -502
     CONDITION_TIMEOUT       -600
     SEMAPHORE_BUSY          -700
     SEMAPHORE_DELETED       -701
