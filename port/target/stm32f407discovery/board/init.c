@@ -111,29 +111,20 @@ void sysclock_init()
  * This is system entry function, this will initialize the hardware and then
  * call the user initializer.
  */
-void system_entry(void)
+NAKED_FUN system_entry(void)
 {
+#ifdef CONFIG_TASK_STATS
+    register uint32_t sp asm ("sp");
+    uint8_t *stack = (uint8_t *)&_ebss;
+#endif /* CONFIG_TASK_STATS */
+
     /* Adjust system vector table pointer. */
     SCB->VTOR = (uint32_t)(&system_isr_table);
 
-    __asm (
-    "   MOV    R0, %[sp]    \r\n"
-    "   CMP    R0, #0       \r\n"
-    "   BEQ    skip_sp      \r\n"
-    "   mov    SP, R0       \r\n"
-    "   sub    SP, #4       \r\n"
-    "   mov    R0, #0       \r\n"
-    "   mvn    R0, R0       \r\n"
-    "   str    R0, [SP,#0]  \r\n"
-    "   add    SP, #4       \r\n"
-    " skip_sp:              \r\n"
-    ::
-    [sp] "r" (&sys_stack_start));
-
 #if (CORTEX_M4_FPU == TRUE)
     /* Enable FPU co-processor. */
-    SCB->CPACR |= ((3UL << 10*2)|(3UL << 11*2));
-#endif
+    SCB->CPACR |= ((3UL << (10 * 2)) | (3UL << (11 * 2)));
+#endif /* (CORTEX_M4_FPU == TRUE) */
 
     /* Initialize BSS. */
     asm (
@@ -165,6 +156,16 @@ void system_entry(void)
     "   bcc     CLEAR_REGION    \r\n"
     );
 
+#ifdef CONFIG_TASK_STATS
+    /* Load a predefined pattern on the system stack until we hit the
+     * stack pointer. */
+    while ((uint8_t *)sp > stack)
+    {
+        /* Load a predefined pattern. */
+        *(stack++) = CONFIG_STACK_PATTERN;
+    }
+#endif /* CONFIG_TASK_STATS */
+
     /* Initialize system clock. */
     sysclock_init();
 
@@ -174,9 +175,13 @@ void system_entry(void)
     /* We are not running any task until OS initializes. */
     set_current_task(NULL);
 
-    ENABLE_INTERRUPTS();
+    /* Disable interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Call application initializer. */
     (void) main();
+
+    /* We should never return from this function. */
+    for (;;) ;
 
 } /* system_entry */
