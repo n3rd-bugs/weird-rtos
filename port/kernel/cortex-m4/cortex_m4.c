@@ -71,9 +71,6 @@ void stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
  */
 void run_first_task()
 {
-    /* Disable interrupts. */
-    DISABLE_INTERRUPTS();
-
     /* We are running the first task so there is no last task. */
     last_task = NULL;
 
