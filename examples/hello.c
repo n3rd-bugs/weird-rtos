@@ -20,6 +20,7 @@
 void hello_task(void *);
 
 /* Hello task control block. */
+/* TODO adjust this if serial is enabled. */
 #define DEMO_STACK_SIZE     96
 TASK hello_task_cb;
 uint8_t hello_task_stack[DEMO_STACK_SIZE];
