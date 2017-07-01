@@ -56,4 +56,30 @@ SECTIONS
         . = ALIGN(4);
         _ebss = .;
     } > m_data
+
+    . = ALIGN(4);
+    .heap_stack :
+    {
+        PROVIDE ( end = . );
+        __heap_addr = .;
+        . = . + __heap_size;
+        . = . + __stack_size;
+        PROVIDE ( sys_stack_start = . );
+    } > m_data
+
+    . = ALIGN(4);
+    .dynamic_mem :
+    {
+        PROVIDE ( dynamic_start = . );
+        . = ORIGIN(m_data) + LENGTH(m_data);
+        PROVIDE ( dynamic_end = . );
+    } > m_data
+
+    . = ALIGN(4);
+    .static_mem :
+    {
+        PROVIDE ( static_start = . );
+        . = ORIGIN(m_cram) + LENGTH(m_cram);
+        PROVIDE ( static_end = . );
+    } > m_cram
 }

@@ -21,7 +21,7 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
 {
     .callback =
     {
-        (isr)STM32F407_STACK_END,   /* -0x10  Top of Stack          */
+        (isr)&sys_stack_start,      /* -0x10  Top of Stack          */
         (isr)&system_entry,         /* -0x0F  Reset Handler         */
         (isr)&nmi_interrupt,        /* -0x0E  NMI Handler           */
         (isr)&hard_fault_interrupt, /* -0x0D  Hard Fault Handler    */
