@@ -24,10 +24,10 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 | Controller | ROM | ROM actual\* | RAM | RAM Actual\*\* |
 | ---------- | --- | ---------- | --- | ---------- |
 | AVR 8-bit | 4 KB | 3250 bytes | 1 KB | 299 bytes |
-| Cortex-M4 | 4 KB | 3007 bytes | 1 KB | 824 bytes |
+| Cortex-M4 | 4 KB | 3007 bytes | 2 KB | 920 bytes |
 
 _* with size optimizations_
-_** hello.c example with serial disabled_
+_** hello.c example with serial disabled, not including system stack_
 
 ## Building
 Weird RTOS uses eclipse as build system and provides sample projects for each supported platform. Please checkout branch of the required platform and import it in eclipse. For more help please see the following pages
