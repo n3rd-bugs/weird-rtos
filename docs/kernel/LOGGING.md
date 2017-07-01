@@ -146,7 +146,7 @@ This logs a message and also includes a HEX dump of given memory region.
 Implemented by [sys_log.h](../../rtos/utils/sys_log.h).
 
 ### SYS\_LOG\_FUNCTION\_HEXDUMP
-This is like [SYS_LOG_HEXDUMP](LOGGING.md#sys_log_hexdump) but also logs the function name from which this message was logged.
+This is like [SYS_LOG_HEXDUMP](LOGGING.md#sys_log_hexdump-1) but also logs the function name from which this message was logged.
 **takes** component identifier for which we are logging this message.
 **takes** log level of this message.
 **takes** a formated message.
