@@ -46,7 +46,7 @@ These allow user to configure log level of various components in the system.
 
 ## APIs
 ### system\_assert
-This function will halt the system and print the file/line and task information if required. In most cases direct call to this API can be avoided by using [ASSERT](LOGGING.md#ASSERT) and [ASSERT\_INFO](LOGGING.md#ASSERT_INFO). A user application can update this API to implement its own assert handler.
+This function will halt the system and print the file/line and task information if required. In most cases direct call to this API can be avoided by using [ASSERT](LOGGING.md#assert) and [ASSERT\_INFO](LOGGING.md#assert_info). A user application can update this API to implement its own assert handler.
 **takes** optional argument that can be used to identify the origin of an exception.
 **takes** file name from which assert condition was detected.
 **takes** line number at which this assert condition was detected.
@@ -97,7 +97,7 @@ This will assert the system if the given argument is not false. If assert is tri
 Implemented by [assert.h](../../rtos/kernel/assert.h).
 
 ### ASSERT\_INFO
-This is same as [ASSERT](LOGGING.md#ASSERT) but user also provide the file and line information to be passed to assert. This can be used to track the call hierarchy of exception.
+This is same as [ASSERT](LOGGING.md#assert) but user also provide the file and line information to be passed to assert. This can be used to track the call hierarchy of exception.
 **takes** an argument that if is not false, assert will be triggered.
 **takes** file name to be passed to assert.
 **takes** line number to be passed to assert.
@@ -112,7 +112,7 @@ This logs the message for the provided component and logging level.
 Implemented by [sys_log.h](../../rtos/utils/sys_log.h).
 
 ### SYS\_LOG\_FUNCTION\_MSG
-This is like [ASSERT](LOGGING.md#SYS_LOG_MSG) but also logs the function name from which this message was logged.
+This is like [SYS_LOG_MSG](LOGGING.md#sys_log_msg) but also logs the function name from which this message was logged.
 **takes** component identifier for which we are logging this message.
 **takes** log level of this message.
 **takes** a formated message.
@@ -146,7 +146,7 @@ This logs a message and also includes a HEX dump of given memory region.
 Implemented by [sys_log.h](../../rtos/utils/sys_log.h).
 
 ### SYS\_LOG\_FUNCTION\_HEXDUMP
-This is like [ASSERT](LOGGING.md#SYS_LOG_HEXDUMP) but also logs the function name from which this message was logged.
+This is like [SYS_LOG_HEXDUMP](LOGGING.md#sys_log_hexdump) but also logs the function name from which this message was logged.
 **takes** component identifier for which we are logging this message.
 **takes** log level of this message.
 **takes** a formated message.
