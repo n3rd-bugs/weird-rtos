@@ -32,6 +32,7 @@
 #ifdef DHCP_CLIENT
 #include <net_dhcp_client.h>
 #endif
+#include <idle.h>
 
 /* Error code definitions. */
 #define ENC28J60_DISCONNECTED       -11000
@@ -101,6 +102,12 @@
 #define ENC28J60_OUI_B0             0x00
 #define ENC28J60_OUI_B1             0x04
 #define ENC28J60_OUI_B2             0xA3
+
+#ifdef ENC28J60_INT_POLL
+#if (IDLE_WORK_MAX == 0)
+#error "At least one idle work is required to enable polling mode."
+#endif /* (IDLE_WORK_MAX == 0) */
+#endif /* ENC28J60_INT_POLL */
 
 /* ENC28J60 device structure definition. */
 typedef struct _enc28j60_device ENC28J60;
