@@ -22,9 +22,9 @@
 #include <condition.h>
 
 /* File system configuration. */
-#define FS_PIPE
 #define FS_CONSOLE
-#define FS_FAT
+//#define FS_PIPE
+//#define FS_FAT
 
 /* Error definitions. */
 #define FS_NODE_DELETED         -800
