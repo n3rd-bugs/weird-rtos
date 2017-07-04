@@ -45,14 +45,16 @@ void task_create(TASK *tcb, char *name, uint8_t *stack, uint32_t stack_size, TAS
 
     /* Fill the task stack with a pre-defined constant. */
     memset(stack, CONFIG_STACK_PATTERN, stack_size);
-#else
-    /* Remove some warnings. */
-    UNUSED_PARAM(name);
-#endif /* CONFIG_TASK_STATS */
 
     /* Store the stack information for this task. */
     tcb->stack_size = stack_size;
     tcb->stack_start = stack;
+#else
+    /* Remove some warnings. */
+    UNUSED_PARAM(name);
+    UNUSED_PARAM(stack);
+    UNUSED_PARAM(stack_size);
+#endif /* CONFIG_TASK_STATS */
 
     /* Initialize task information. */
     tcb->entry = entry;
