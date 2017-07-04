@@ -18,7 +18,9 @@
 #include <idle.h>
 
 /* A list of all the tasks in the system. */
+#ifdef CONFIG_TASK_STATS
 TASK_LIST sch_task_list;
+#endif
 TASK_LIST sch_ready_task_list;
 
 /* Internal function prototypes. */
@@ -32,7 +34,9 @@ static uint8_t scheduler_task_sort(void *, void *);
 void scheduler_init()
 {
     /* Clear the schedule lists. */
+#ifdef CONFIG_TASK_STATS
     memset(&sch_task_list, 0, sizeof(TASK_LIST));
+#endif
     memset(&sch_ready_task_list, 0, sizeof(TASK_LIST));
 
     /* Initialize idle task. */
