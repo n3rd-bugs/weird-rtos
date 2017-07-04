@@ -402,6 +402,7 @@ void fs_condition_init(FD fd)
     fs->condition.data = fd;
     fs->condition.lock = &fs_condition_lock;
     fs->condition.unlock = &fs_condition_unlock;
+    fs->condition.do_suspend = &fs_do_suspend;
 
 } /* fs_condition_init */
 
@@ -426,7 +427,6 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
     /* Initialize file system parameter. */
     param->flag = flag;
     suspend->param = param;
-    suspend->do_suspend = &fs_do_suspend;
 
     /* If timeout is enabled for this descriptor. */
     if (fs->timeout != MAX_WAIT)

@@ -40,6 +40,7 @@ void semaphore_create(SEMAPHORE *semaphore, uint8_t max_count)
 
     /* Initialize condition structure. */
     semaphore->condition.data = semaphore;
+    semaphore->condition.do_suspend = &semaphore_do_suspend;
 
 } /* semaphore_create */
 
@@ -118,7 +119,6 @@ void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEN
 {
     /* Initialize suspend criteria. */
     suspend->param = (void *)semaphore;
-    suspend->do_suspend = &semaphore_do_suspend;
 
     /* If we don't want to wait indefinitely. */
     if (timeout != MAX_WAIT)

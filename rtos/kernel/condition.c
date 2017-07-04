@@ -247,7 +247,7 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
     {
         /* Check if we don't need to suspend for this condition, or if user
          * has sent a ping on this condition. */
-        if ((((*suspend)->do_suspend) && ((*suspend)->do_suspend((*condition)->data, (*suspend)->param) == FALSE)) || ((*condition)->flags & CONDITION_PING))
+        if ((((*condition)->do_suspend) && ((*condition)->do_suspend((*condition)->data, (*suspend)->param) == FALSE)) || ((*condition)->flags & CONDITION_PING))
         {
             /* We don't need to suspend for this condition. */
             do_suspend = FALSE;

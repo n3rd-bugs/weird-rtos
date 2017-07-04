@@ -43,14 +43,11 @@ typedef struct _resume
 typedef struct _suspend SUSPEND;
 struct _suspend
 {
-    /* System tick at which we will resume this condition. */
-    uint32_t    timeout;
-
     /* Suspend link list member. */
     SUSPEND     *next;
 
-    /* Function that will be called to see if we need to suspend. */
-    CONDITION_DO_SUSPEND    *do_suspend;
+    /* System tick at which we will resume this condition. */
+    uint32_t    timeout;
 
     TASK        *task;      /* Task suspended on this. */
     void        *param;     /* User defined criteria for the tasks. */
@@ -75,20 +72,23 @@ typedef struct _suspend_list
 typedef struct _condition
 {
     /* Link-list of the suspend on this condition. */
-    SUSPEND_LIST        suspend_list;
+    SUSPEND_LIST            suspend_list;
+
+    /* Function that will be called to see if we need to suspend. */
+    CONDITION_DO_SUSPEND    *do_suspend;
 
     /* Function that will be called to get lock for condition. */
-    CONDITION_LOCK      *lock;
+    CONDITION_LOCK          *lock;
 
     /* Function that will be called to release lock for this condition. */
-    CONDITION_UNLOCK    *unlock;
+    CONDITION_UNLOCK        *unlock;
 
     /* Private data that will be passed to the lock, unlock and suspend check
      * APIs.  */
-    void                *data;
+    void                    *data;
 
     /* Condition flags. */
-    uint32_t            flags;
+    uint32_t                flags;
 
 } CONDITION;
 

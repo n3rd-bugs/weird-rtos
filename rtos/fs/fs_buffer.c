@@ -265,6 +265,7 @@ void fs_buffer_condition_init(FD fd)
     fs->buffer->condition.data = fd;
     fs->buffer->condition.lock = &fs_condition_lock;
     fs->buffer->condition.unlock = &fs_condition_unlock;
+    fs->buffer->condition.do_suspend = &fs_buffer_do_suspend;
 
 } /* fs_buffer_condition_init */
 
@@ -369,7 +370,6 @@ void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_
 
     /* Initialize file system parameter. */
     suspend->param = param;
-    suspend->do_suspend = &fs_buffer_do_suspend;
     suspend->timeout_enabled = FALSE;
 
     /* Return the condition for this file system buffer. */
