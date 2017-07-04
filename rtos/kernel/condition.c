@@ -504,6 +504,7 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
     SUSPEND *suspend;
     SUSPEND_LIST tmp_list = {NULL, NULL};
     uint32_t interrupt_level;
+    uint8_t yield_task = FALSE;
 
     /* If caller is not in locked state. */
     if ((locked == FALSE) && (condition->lock))
@@ -511,6 +512,13 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
         /* Lock this condition. */
         condition->lock(condition->data);
     }
+
+    /* Disable preemption as we will be accessing task data structure. */
+    scheduler_lock();
+
+    /* Disable interrupts to protect access to resources from interrupts. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+    DISABLE_INTERRUPTS();
 
     /* Resume all the tasks waiting on this condition. */
     do
@@ -537,13 +545,6 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
         /* If we have a task. */
         if (suspend)
         {
-            /* Disable preemption as we are accessing task data structure. */
-            scheduler_lock();
-
-            /* Disable interrupts to protect access to resources from interrupts. */
-            interrupt_level = GET_INTERRUPT_LEVEL();
-            DISABLE_INTERRUPTS();
-
             /* If task is actually suspended on this condition. */
             if ((suspend->task->status == TASK_SUSPENDED) && (suspend_is_task_waiting(suspend->task, condition) == TRUE))
             {
@@ -570,8 +571,8 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
                 /* Try to reschedule this task. */
                 scheduler_task_yield(suspend->task, YIELD_SYSTEM);
 
-                /* Try to yield the current task. */
-                task_yield();
+                /* Yield the current task. */
+                yield_task = TRUE;
             }
             else
             {
@@ -579,16 +580,23 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
                  * the list later. */
                 sll_push(&tmp_list, suspend, OFFSETOF(SUSPEND, next));
             }
-
-            /* Restore old interrupt level. */
-            SET_INTERRUPT_LEVEL(interrupt_level);
-
-            /* Enable preemption, we will switch to a new task here if
-             * required. */
-            scheduler_unlock();
         }
 
     } while (suspend != NULL);
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
+    /* Enable preemption, we will switch to a new task here if
+     * required. */
+    scheduler_unlock();
+
+    /* If we need to yield the current task. */
+    if (yield_task == TRUE)
+    {
+        /* Try to yield the current task. */
+        task_yield();
+    }
 
     /* Put any tasks back on the suspend list if any. */
     do
