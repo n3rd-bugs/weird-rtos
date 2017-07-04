@@ -36,34 +36,75 @@ Configures the pattern to be filled in the task's stack to track stack usage.
 ## Data Structures
 ### TASK\_ENTRY
 This defines a task's entry function.
+
 ```
 typedef void TASK_ENTRY (void *argv);
 ```
 
 ### TASK
 This defines control block for a task.
+
 ```
 typedef struct _task
 {
+    /* Task entry function. */
     TASK_ENTRY  *entry;
+
+    /* Task arguments. */
     void        *argv;
+
+    /* Task list member. */
     TASK        *next;
+
+#ifdef CONFIG_TASK_STATS
+    /* Number of times this task was scheduled. */
     uint32_t    scheduled;
+
+    /* Global task list member. */
     TASK        *next_global;
+
+    /* This is start of the stack pointer for this task. */
     uint8_t     *stack_start;
+
+    /* Task stack size. */
     uint32_t    stack_size;
+
+    /* Name for this task. */
     char        name[8];
+#endif /* CONFIG_TASK_STATS */
+
+    /* This holds current stack pointer of this task. */
     uint8_t     *tos;
+
+    /* If suspended this will hold task suspension data. */
     void        *suspend_data;
+
+    /* This defines task priority. */
     uint32_t    priority;
+
+    /* Number of wait conditions on which this task is waiting. */
     uint32_t    num_conditions;
+
+#ifdef CONFIG_SLEEP
+    /* Link list member for sleeping tasks. */
     TASK        *next_sleep;
+
+    /* The system tick at which this task is needed to be rescheduled. */
     uint32_t    tick_sleep;
+#endif /* CONFIG_SLEEP */
+
+    /* Current task status. */
     int32_t     status;
+
+    /* Task flags as configured by scheduler. */
     uint8_t     flags;
+
+    /* Lock count, how much nested scheduler locks have we acquired. */
     uint8_t     lock_count;
+
+    /* Structure padding. */
     uint8_t     pad[2];
-};
+} TASK;
 ```
 
 ## APIs

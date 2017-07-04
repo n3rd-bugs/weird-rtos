@@ -10,7 +10,7 @@ Sleep is used to control timed operations in an operating system. This not only 
 - [sleep.h](../../rtos/kernel/sleep.h)
 
 ## Basic Concepts
-On each tick sleep is invoked to see if there is a thread that can be resumed. If a thread is found it is moved to the ready task list and is scheduled if required. In case the scheduler is locked by the running task. The sleep is invoked when the running task unlocks the scheduler.
+On each tick sleep is invoked to see if there is a task that can be resumed. If a task is found it is moved to the ready task list and is scheduled if required. In case the scheduler is locked by the running task. The sleep is invoked when the running task unlocks the scheduler.
 
 ## APIs
 ### sleep\_ticks

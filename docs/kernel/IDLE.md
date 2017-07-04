@@ -26,6 +26,7 @@ Configures the stack size of idle task.
 ## Data Structures
 ### IDLE\_DO
 This defines the callback API to be called to perform background work.
+
 ```
 typedef void (IDLE_DO) (void *);
 ```

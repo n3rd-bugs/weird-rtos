@@ -16,13 +16,13 @@ Weird RTOS provides whole sum solution to trace system information using debug c
 ## Basic Concepts
 During development sometimes it is not possible to track bugs through debug connection. To handle such situation debug console is used to print out useful information at the time of crash. Weird RTOS provides configurable scalable logging facilities that not only allows tracing issues in RTOS but also in user application.
 
-- *Assert*
+- *Assert*  
 Assert provides APIs to detect and halt system at a certain non-recoverable system crash. This also allows a user to display the origin of such crash. However it is application's responsibility to implement any recovery from such situation if possible.
 
-- *System Information*
+- *System Information*  
 This module provides APIs to compute and display system information such as stack usage of various tasks in the system. This allows user to track stack overflow in system and even optimize stack for a certain application.
 
-- *System Log*
+- *System Log*  
 System log provides runtime tracing facility with component level log filtering support. This allows a user to configure logs from a specific component and track root cause of pesky issues. However due to the nature of this service it is not advisable to be used in the core components as it will not only hide the actual issue but also may cause undefined behaviour.
 
 ## Configurations

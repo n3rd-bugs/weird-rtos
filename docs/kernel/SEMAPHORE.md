@@ -16,9 +16,9 @@ Semaphores in Weird RTOS are designed especially for the development of small em
 
 ## Basic Concepts
 A semaphore can be used in two modes
-1. *Normal mode*
+1. *Normal mode*  
 In default mode the semaphore works like a normal lock, allows tasks to suspend on it. In such mode semaphore can only be accessed in the context of a task.
-2. *Interrupt protected mode*
+2. *Interrupt protected mode*  
 It is possible that the resources semaphore is trying to protect is also to be accessed in the context of interrupt. This interrupt control APIs to be linked with a semaphore so that a specific interrupt can also be locked with semaphore.
 
 Semaphore uses condition to implement task suspend and also allows application to extract suspend condition.
@@ -29,35 +29,54 @@ In some use cases it is not possible to suspend the current task. For that inter
 ## Data Structures
 ### SEMAPHORE
 This holds data associated to a semaphore
+
 ```
 typedef struct _semaphore
 {
+    /* Semaphore condition structure. */
     CONDITION   condition;
+
+    /* Current owner of this semaphore if any. */
     TASK        *owner;
+
+    /* Interrupt manipulation APIs. */
     SEM_INT_LOCK    *interrupt_lock;
     SEM_INT_UNLOCK  *interrupt_unlock;
     void        *interrupt_data;
+
+    /* Current semaphore count. */
     uint8_t     count;
+
+    /* Maximum semaphore count there can be. */
     uint8_t     max_count;
+
+    /* Flag to specify if this is an interrupt
+     * protected lock. */
     uint8_t     interrupt_protected;
+
+    /* Padding variable. */
     uint8_t     pad[1];
+
 } SEMAPHORE;
 ```
 
 ### SEM\_INT\_LOCK
 This defines callback API to lock interrupt associated with a semaphore.
+
 ```
 typedef void SEM_INT_LOCK (void *);
 ```
 
 ### SEM\_INT\_UNLOCK
 This defines callback API to unlock interrupt associated with a semaphore.
+
 ```
 typedef void SEM_INT_UNLOCK (void *);
 ```
 
 ### INTLCK
 This defines data structure for an interrupt protected lock.
+
 ```
 typedef volatile uint8_t INTLCK;
 ```
@@ -78,7 +97,7 @@ This will set interrupt data for this semaphore and also mark this semaphore to 
 Implemented by [semaphore.c](../../rtos/kernel/semaphore.c).
 
 ### semaphore\_destroy
-This API destroyers a semaphore. This will also resume any threads waiting on this semaphore.  
+This API destroyers a semaphore. This will also resume any tasks waiting on this semaphore.  
 **takes** the control block of semaphore needed to be destroyed.  
 Implemented by [semaphore.c](../../rtos/kernel/semaphore.c).
 

@@ -9,9 +9,9 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 - *Condition* to create application specific signalling mechanisms like timers, events etc.
 - *Semaphore* with optional specific interrupt protection
 - *File system* based pipes to support data queues
-- Support for suspending a task on multiple conditions to eliminate multiple threads.
+- Support for suspending a task on multiple conditions to eliminate multiple tasks.
 - A small networking stack with IPv4, ARP, UDP, TCP.
-- Support for idle work to offload low priority work from main threads.
+- Support for idle work to offload low priority work from main tasks.
 
 ## Supported MCUs and Platforms
 | MCU/Platform | Core | RTOS Features |
@@ -34,6 +34,7 @@ Weird RTOS uses eclipse as build system and provides sample projects for each su
 - [AVR Eclipse Setup](docs/build/AVR-ECLIPSE.md)
 
 ## Source Organization
+
 ```
 +-- 3rdparty - 3rd party components
 +-- api - Higher level components including TFTP, weird-view IoT framework
