@@ -26,8 +26,8 @@
 /* User call back to check if this task satisfy the criteria. */
 typedef uint8_t CONDITION_DO_RESUME (void *, void *);
 typedef uint8_t CONDITION_DO_SUSPEND (void *, void *);
-typedef void CONDITION_UNLOCK (void *);
 typedef void CONDITION_LOCK (void *);
+typedef void CONDITION_UNLOCK (void *);
 
 /* Resume data. */
 typedef struct _resume
