@@ -88,7 +88,7 @@ static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDIT
  * @condition: Condition list for which we need to get lock.
  * @num: Number of conditions.
  * @resume_condition: Condition for which we don't need to acquire lock.
- * This routine will lock the conditions.
+ * This routine will lock all the conditions.
  */
 static void suspend_lock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
 {
@@ -115,7 +115,8 @@ static void suspend_lock_condition(CONDITION **condition, uint32_t num, CONDITIO
  * @suspend: Suspend list.
  * @num: Number of conditions.
  * @tcb: Current task pointer.
- * This routine will add given task on all the conditions we need to wait for.
+ * This routine will add the given task on all the conditions we need to wait
+ * for.
  */
 static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend, uint32_t num, TASK *tcb)
 {
@@ -125,8 +126,8 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
         /* Add this task on the suspend data. */
         (*suspend)->task = tcb;
 
-        /* Add suspend to the suspend list on priority. */
-        sll_insert(&(*condition)->suspend_list, *suspend, &suspend_priority_sort, OFFSETOF(SUSPEND, next));
+        /* Add suspend to the suspend list. */
+        sll_append(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next));
 
         /* Pick next condition. */
         condition++;
@@ -141,7 +142,7 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
  * @condition: Condition list from which this suspend is needed to be removed.
  * @suspend: Suspend list.
  * @num: Number of conditions.
- * This routine will remove all the suspend from the respective conditions.
+ * This routine will remove all the suspends from their respective conditions.
  */
 static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspend, uint32_t num)
 {
@@ -167,8 +168,8 @@ static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspen
  * @num: Number of conditions.
  * @return_num: If not null the condition index for which we were resumed will
  *  be returned here.
- * This routine will remove all the suspend from the respective conditions,
- * except the one we were resumed from at it was already removed.
+ * This routine will remove all the suspends from their respective conditions,
+ * except the one we were resumed from as it was already removed.
  */
 static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, uint32_t num, CONDITION *resume_condition, uint32_t *return_num)
 {
@@ -206,9 +207,8 @@ static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, u
  * @return_num: If a condition is valid, the index for that condition will be
  *  returned here.
  * @return: Will return true if we do need to suspend on a condition.
- * This routine will check for all the conditions if we do need to suspend on
- * them. If any of the condition is valid we will not suspend to wait for that
- * condition.
+ * This routine will check for all the conditions to see if we do need to
+ * suspend on them. If any of the condition is satisfied we will not suspend.
  */
 static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint32_t num, uint32_t *return_num)
 {
@@ -284,7 +284,7 @@ static uint8_t suspend_is_task_waiting(TASK *task, CONDITION *check_condition)
  *  returned here.
  * @return: Minimum timeout calculated will be returned here.
  * This routine will calculate the timeout for which we need to wait on the
- * given conditions before returning a timeout.
+ * given conditions before returning an error.
  */
 static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
 {
@@ -325,8 +325,8 @@ static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
 
 /*
  * suspend_condition
- * @condition: Condition for which we need to suspend this task.
- * @suspend: Suspend data.
+ * @condition: Array of conditions for which we need to suspend this task.
+ * @suspend: Array of suspend data associated with each condition.
  * @num: Pointer to number of conditions we are waiting for. Can be null for
  *  one condition otherwise the index of the condition for which we resumed
  *  will be returned here.
@@ -497,9 +497,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *nu
  * @condition: Condition for which we need to resume tasks.
  * @resume: Resume data.
  * @locked: If we are resuming task(s) on a condition in locked state.
- * @return: SUCCESS if we have successfully resumed tasks waiting on the
- *  criteria.
- * This function will suspend the caller task to wait for a criteria.
+ * This will resume any tasks waiting for a condition.
  */
 void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 {
