@@ -18,7 +18,7 @@
 #include <config.h>
 
 /* Task configuration. */
-#define CONFIG_TASK_STATS
+//#define CONFIG_TASK_STATS
 #define CONFIG_STACK_PATTERN    'A'
 
 /* These defines different task flags. */
