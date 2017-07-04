@@ -77,31 +77,6 @@ void task_create(TASK *tcb, char *name, uint8_t *stack, uint32_t stack_size, TAS
 } /* task_create */
 
 /*
- * task_priority_sort
- * @node: Existing task in a task list.
- * @task: New task being added in a task list.
- * @return: TRUE if the new task is needed be scheduled before the existing node
- *  in the list.
- * This is sorting function called by SLL routines to sort the task list on
- * the priority.
- */
-uint8_t task_priority_sort(void *node, void *task)
-{
-    uint8_t schedule = FALSE;
-
-    /* Check if this node has lower priority than the new task. */
-    if (((TASK *)node)->priority > ((TASK *)task)->priority)
-    {
-        /* Schedule the new task before this node. */
-        schedule = TRUE;
-    }
-
-    /* Return if we need to schedule this task before the given node. */
-    return (schedule);
-
-} /* task_priority_sort. */
-
-/*
  * task_entry_return
  * @node: Argument needed to be passed to the task.
  * This is entry and return function for the tasks which can finish.

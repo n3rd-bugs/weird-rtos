@@ -100,6 +100,5 @@ typedef struct _task_list
 
 /* Function prototypes. */
 void task_create(TASK *, char *, uint8_t *, uint32_t, TASK_ENTRY *, void *, uint8_t);
-uint8_t task_priority_sort(void *, void *);
 
 #endif /* _TASKS_H_ */
