@@ -22,7 +22,6 @@
 
 /* Internal function prototypes. */
 static uint8_t suspend_sreach(void *, void *);
-static uint8_t suspend_priority_sort(void *, void *);
 static void suspend_lock_condition(CONDITION **, uint32_t, CONDITION *);
 static void suspend_unlock_condition(CONDITION **, uint32_t, CONDITION *);
 static void suspend_condition_add_task(CONDITION **, SUSPEND **, uint32_t, TASK *);
@@ -56,32 +55,6 @@ static uint8_t suspend_sreach(void *node, void *param)
     return (match);
 
 } /* suspend_sreach */
-
-/*
- * suspend_priority_sort
- * @node: Existing suspend in a list.
- * @task: New suspend being added in a list.
- * @return: TRUE if the new suspend is needed be handled before the existing
- *  suspend in the list.
- * This is sorting function called by SLL routines to sort the suspend list on
- * the priority.
- */
-static uint8_t suspend_priority_sort(void *node, void *new)
-{
-    SUSPEND *suspend_node = (SUSPEND *)node, *suspned_new = (SUSPEND *)new;
-    uint8_t schedule = FALSE;
-
-    /* Check if this node has lower priority than the new suspend. */
-    if (suspend_node->task->priority > suspned_new->task->priority)
-    {
-        /* Handle the new suspend before this one. */
-        schedule = TRUE;
-    }
-
-    /* Return if we need to handle this suspend before the given suspend. */
-    return (schedule);
-
-} /* suspend_priority_sort. */
 
 /*
  * suspend_unlock_condition
