@@ -45,66 +45,9 @@ void scheduler_init()
 } /* scheduler_init */
 
 /*
- * scheduler_task_sort
- * @node: An existing node in the list.
- * @task: New task that is needed to be added in the list.
- * @return: If the new task is needed to be scheduled before the existing node
- *  TRUE will be returned otherwise FALSE will be returned.
- * This is task sorting function that is used by SLL routines to schedule new
- * aperiodic tasks.
- */
-static uint8_t scheduler_task_sort(void *node, void *task)
-{
-    uint8_t schedule = FALSE;
-
-    /* If node has low priority than the given task, then we can schedule the
-     * given task here. */
-    if (((TASK *)node)->priority > ((TASK *)task)->priority)
-    {
-        /* Schedule the given task before this node. */
-        schedule = TRUE;
-    }
-
-    /* Return if we need to schedule this task before the given node. */
-    return (schedule);
-
-} /* scheduler_task_sort */
-
-/*
- * scheduler_get_next_task
- * @return: Task's control block that will run next.
- * This function is called by system tick to get the next task that is needed to
- * run next.
- */
-TASK *scheduler_get_next_task()
-{
-    TASK *tcb = NULL;
-
-    /* Resume any of the sleeping tasks. */
-    sleep_process_system_tick();
-
-    /* Get the task we need to run */
-    tcb = (TASK *)sll_pop(&sch_ready_task_list, OFFSETOF(TASK, next));
-
-    /* We should always have a task to execute. */
-    ASSERT(tcb == NULL);
-
-#ifdef CONFIG_TASK_STATS
-    /* Increment the number of times this task was scheduled. */
-    tcb->scheduled ++;
-#endif /* CONFIG_TASK_STATS */
-
-    /* Return the task to run. */
-    return (tcb);
-
-} /* scheduler_get_next_task */
-
-/*
  * scheduler_task_add
  * @tcb: Task control block that is needed to be added in the system.
- * @class: Scheduling class that is needed to be used for this task.
  * @priority: Priority for this task.
- *  In case of periodic task this defines the task period in system ticks.
  * This function adds a task in the system, the task must be initialized before
  * adding.
  */
@@ -131,44 +74,6 @@ void scheduler_task_add(TASK *tcb, uint32_t priority)
     SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* scheduler_task_add */
-
-/*
- * scheduler_task_yield
- * @tcb: The task's control block that is needed to be scheduled in the
- *  aperiodic scheduler.
- * @from: From where this task is being scheduled.
- * This is yield function required by a scheduling class, this is called when a
- * task is needed to be scheduled in the aperiodic scheduler.
- */
-void scheduler_task_yield(TASK *tcb, uint8_t from)
-{
-    /* Adjust the task control block as required. */
-    switch (from)
-    {
-    case YIELD_INIT:
-    case YIELD_MANUAL:
-
-        /* Task is resuming normally. */
-        tcb->status = TASK_RESUME;
-
-        break;
-
-    case YIELD_SLEEP:
-
-        /* Task is being resumed from sleep. */
-        tcb->tick_sleep = 0;
-        tcb->status = TASK_RESUME_SLEEP;
-
-        break;
-
-    default:
-        break;
-    }
-
-    /* Schedule the task being yielded/re-enqueued. */
-    sll_insert(&sch_ready_task_list, tcb, &scheduler_task_sort, OFFSETOF(TASK, next));
-
-} /* scheduler_task_yield */
 
 /*
  * scheduler_task_remove
@@ -246,3 +151,96 @@ void scheduler_unlock()
     }
 
 } /* scheduler_unlock */
+
+/*
+ * scheduler_get_next_task
+ * @return: Task's control block that will run next.
+ * This function is called by system tick to get the next task that is needed to
+ * run next.
+ */
+TASK *scheduler_get_next_task()
+{
+    TASK *tcb = NULL;
+
+    /* Resume any of the sleeping tasks. */
+    sleep_process_system_tick();
+
+    /* Get the task we need to run */
+    tcb = (TASK *)sll_pop(&sch_ready_task_list, OFFSETOF(TASK, next));
+
+    /* We should always have a task to execute. */
+    ASSERT(tcb == NULL);
+
+#ifdef CONFIG_TASK_STATS
+    /* Increment the number of times this task was scheduled. */
+    tcb->scheduled ++;
+#endif /* CONFIG_TASK_STATS */
+
+    /* Return the task to run. */
+    return (tcb);
+
+} /* scheduler_get_next_task */
+
+/*
+ * scheduler_task_yield
+ * @tcb: The task's control block that is needed to be scheduled in the
+ *  aperiodic scheduler.
+ * @from: From where this task is being scheduled.
+ * This is yield function required by a scheduling class, this is called when a
+ * task is needed to be scheduled in the aperiodic scheduler.
+ */
+void scheduler_task_yield(TASK *tcb, uint8_t from)
+{
+    /* Adjust the task control block as required. */
+    switch (from)
+    {
+    case YIELD_INIT:
+    case YIELD_MANUAL:
+
+        /* Task is resuming normally. */
+        tcb->status = TASK_RESUME;
+
+        break;
+
+    case YIELD_SLEEP:
+
+        /* Task is being resumed from sleep. */
+        tcb->tick_sleep = 0;
+        tcb->status = TASK_RESUME_SLEEP;
+
+        break;
+
+    default:
+        break;
+    }
+
+    /* Schedule the task being yielded/re-enqueued. */
+    sll_insert(&sch_ready_task_list, tcb, &scheduler_task_sort, OFFSETOF(TASK, next));
+
+} /* scheduler_task_yield */
+
+/*
+ * scheduler_task_sort
+ * @node: An existing node in the list.
+ * @task: New task that is needed to be added in the list.
+ * @return: If the new task is needed to be scheduled before the existing node
+ *  TRUE will be returned otherwise FALSE will be returned.
+ * This is task sorting function that is used by SLL routines to schedule new
+ * aperiodic tasks.
+ */
+static uint8_t scheduler_task_sort(void *node, void *task)
+{
+    uint8_t schedule = FALSE;
+
+    /* If node has low priority than the given task, then we can schedule the
+     * given task here. */
+    if (((TASK *)node)->priority > ((TASK *)task)->priority)
+    {
+        /* Schedule the given task before this node. */
+        schedule = TRUE;
+    }
+
+    /* Return if we need to schedule this task before the given node. */
+    return (schedule);
+
+} /* scheduler_task_sort */
