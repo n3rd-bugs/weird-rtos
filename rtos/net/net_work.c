@@ -146,16 +146,16 @@ int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data
 
 /*
  * net_work_lock
- * @fd: Work queue needed to be protected.
+ * @wq: Work queue needed to be protected.
  * @timeout: Number of ticks we need to wait for the lock.
  * @return: Success will be returned if lock was successfully acquired.
  * This function will get the lock for work queue.
  */
-static void net_work_lock(void *fd)
+static void net_work_lock(void *wq)
 {
 #ifdef CONFIG_SEMAPHORE
-    /* Obtain data lock for this console. */
-    semaphore_obtain(&(((WORK_QUEUE *)fd)->lock), MAX_WAIT);
+    /* Obtain lock for work queue data. */
+    semaphore_obtain(&(((WORK_QUEUE *)wq)->lock), MAX_WAIT);
 #else
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
@@ -171,14 +171,14 @@ static void net_work_lock(void *fd)
 
 /*
  * net_work_unlock
- * @fd: Work queue for which lock is needed to released.
+ * @wq: Work queue for which lock is needed to released.
  * This function will release the lock for work queue.
  */
-static void net_work_unlock(void *fd)
+static void net_work_unlock(void *wq)
 {
 #ifdef CONFIG_SEMAPHORE
-    /* Release data lock for this console. */
-    semaphore_release(&(((WORK_QUEUE *)fd)->lock));
+    /* Release lock for work queue data. */
+    semaphore_release(&(((WORK_QUEUE *)wq)->lock));
 #else
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
