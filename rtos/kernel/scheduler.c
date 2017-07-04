@@ -51,7 +51,7 @@ void scheduler_init()
  * This function adds a task in the system, the task must be initialized before
  * adding.
  */
-void scheduler_task_add(TASK *tcb, uint32_t priority)
+void scheduler_task_add(TASK *tcb, uint8_t priority)
 {
     uint32_t interrupt_level;
 
@@ -62,7 +62,7 @@ void scheduler_task_add(TASK *tcb, uint32_t priority)
     /* Update the task control block. */
     tcb->priority = priority;
 
-    /* Enqueue this task in the required scheduler. */
+    /* Enqueue this task in the ready list. */
     scheduler_task_yield(tcb, YIELD_INIT);
 
 #ifdef CONFIG_TASK_STATS
@@ -232,7 +232,7 @@ static uint8_t scheduler_task_sort(void *node, void *task)
 {
     uint8_t schedule = FALSE;
 
-    /* If node has low priority than the given task, then we can schedule the
+    /* If node has lower priority than the given task, then we can schedule the
      * given task here. */
     if (((TASK *)node)->priority > ((TASK *)task)->priority)
     {

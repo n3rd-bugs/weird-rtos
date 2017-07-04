@@ -64,9 +64,6 @@ struct _task
     /* If suspended this will hold task suspension data. */
     void        *suspend_data;
 
-    /* This defines task priority. */
-    uint32_t    priority;
-
     /* Number of wait conditions on which this task is waiting. */
     uint32_t    num_conditions;
 
@@ -78,6 +75,9 @@ struct _task
     uint32_t    tick_sleep;
 #endif /* CONFIG_SLEEP */
 
+    /* This defines task priority. */
+    uint8_t     priority;
+
     /* Current task status. */
     int32_t     status;
 
@@ -88,7 +88,7 @@ struct _task
     uint8_t     lock_count;
 
     /* Structure padding. */
-    uint8_t     pad[2];
+    uint8_t     pad[1];
 };
 
 /* This defines a task list. */

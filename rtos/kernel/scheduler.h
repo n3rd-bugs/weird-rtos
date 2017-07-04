@@ -38,7 +38,7 @@ extern TASK_LIST sch_task_list;
 
 /* Function prototypes. */
 void scheduler_init();
-void scheduler_task_add(TASK *, uint32_t);
+void scheduler_task_add(TASK *, uint8_t);
 void scheduler_task_remove(TASK *);
 void scheduler_lock();
 void scheduler_unlock();
