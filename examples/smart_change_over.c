@@ -693,6 +693,12 @@ int32_t weird_view_demo_task_stats(uint16_t id, FS_BUFFER *buffer)
         status = util_print_sys_info_buffer(buffer);
     }
 
+    if (status == SUCCESS)
+    {
+        /* Reset CPU usage. */
+        usage_reset();
+    }
+
     /* Always return success. */
     return (SUCCESS);
 
