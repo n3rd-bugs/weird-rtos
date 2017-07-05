@@ -372,7 +372,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
     {
 #ifdef CONFIG_TASK_USAGE
         /* Print table header. */
-        status = fs_buffer_push(buffer, (uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\tCPU(%%)\r\n", sizeof("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\tCPU(%%)\r\n") - 1, 0);
+        status = fs_buffer_push(buffer, (uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\tCPU(%)\r\n", sizeof("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\tCPU(%)\r\n") - 1, 0);
 #else
         /* Print table header. */
         status = fs_buffer_push(buffer, (uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n", sizeof("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n") - 1, 0);
