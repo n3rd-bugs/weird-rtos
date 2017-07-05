@@ -84,11 +84,11 @@ struct _task
     uint32_t    tick_sleep;
 #endif /* CONFIG_SLEEP */
 
-    /* This defines task priority. */
-    uint8_t     priority;
-
     /* Current task status. */
     int32_t     status;
+
+    /* This defines task priority. */
+    uint8_t     priority;
 
     /* Task flags as configured by scheduler. */
     uint8_t     flags;
