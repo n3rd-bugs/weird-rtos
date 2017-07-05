@@ -82,6 +82,9 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
     /* Process system tick. */
     process_system_tick();
 
+    /* We may switch to a new task so mark an exit. */
+    MARK_EXIT();
+
     /* Check if we can actually preempt the current task. */
     if (current_task->lock_count == 0)
     {
@@ -98,6 +101,9 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
         current_task->flags |= TASK_SCHED_DRIFT;
     }
 
+    /* Mark entry to a new task. */
+    MARK_ENTRY();
+
     /* Restore the previous task's context. */
     RESTORE_CONTEXT();
 
@@ -111,7 +117,7 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
 uint64_t current_hardware_tick()
 {
     /* Return hardware system tick. */
-    return ((current_system_tick() * OCR1A) + TCNT1);
+    return (((uint64_t)(current_system_tick() + (uint64_t)((TIFR1 & (1 << OCF1A)) ? 1 : 0)) * (uint64_t)(SYS_FREQ / SOFT_TICKS_PER_SEC / 64)) + (uint64_t)TCNT1);
 
 } /* current_hardware_tick */
 
@@ -180,17 +186,23 @@ NAKED_FUN control_to_system()
     /* Save context for either a task or an ISR. */
     SAVE_CONTEXT_CTS();
 
-    /* If we do have a task to switch. */
-    if (current_task != NULL)
+    /* If we are in a task. */
+    if (avr_in_isr == FALSE)
     {
-        /* Context has already been saved, just switch to new
-         * task here. */
-        set_current_task((TASK *)scheduler_get_next_task());
+        /* We may switch to a new task so mark an exit. */
+        MARK_EXIT();
     }
+
+    /* Context has already been saved, just switch to new
+     * task here. */
+    set_current_task((TASK *)scheduler_get_next_task());
 
     /* If we are in a task. */
     if (avr_in_isr == FALSE)
     {
+        /* Mark entry to a new task. */
+        MARK_ENTRY();
+
         /* Restore the next task's context. */
         RESTORE_CONTEXT();
     }
