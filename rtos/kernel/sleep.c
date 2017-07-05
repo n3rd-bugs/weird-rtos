@@ -58,8 +58,7 @@ static uint8_t sleep_task_sort(void *node, void *task)
  */
 void sleep_process_system_tick()
 {
-    TASK *tcb = NULL;
-    TASK *tcb_break = NULL;
+    TASK *tcb = NULL, *tcb_break = NULL;
 
     for (;;)
     {
