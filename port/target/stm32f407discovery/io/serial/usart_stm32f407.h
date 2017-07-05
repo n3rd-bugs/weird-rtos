@@ -20,7 +20,7 @@
 
 /* Some configurations. */
 #define BAUD_RATE                       19200
-#define SERIAL_INTERRUPT_MODE
+//#define SERIAL_INTERRUPT_MODE
 
 /* Serial buffer configuration. */
 #define SERIAL_MAX_BUFFER_SIZE          128
