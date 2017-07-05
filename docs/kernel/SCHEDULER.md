@@ -30,6 +30,9 @@ Configures the maximum number of nested scheduler locks that can be obtained, th
 ### CONFIG\_TASK\_STATS
 Configures if we need to collect task statistics.
 
+### CONFIG\_TASK\_USAGE
+Configures if we need to collect task CPU usage statistics.
+
 ### CONFIG\_STACK\_PATTERN
 Configures the pattern to be filled in the task's stack to track stack usage.
 
@@ -47,6 +50,14 @@ This defines control block for a task.
 ```
 typedef struct _task
 {
+#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
+    /* Number of ticks this task was scheduled. */
+    uint64_t    total_active_ticks;
+
+    /* Tick at which this task was last scheduled. */
+    uint64_t    last_active_tick;
+#endif /* (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE)) */
+
     /* Task entry function. */
     TASK_ENTRY  *entry;
 

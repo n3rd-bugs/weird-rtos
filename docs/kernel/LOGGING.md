@@ -20,7 +20,7 @@ During development sometimes it is not possible to track bugs through debug conn
 Assert provides APIs to detect and halt system at a certain non-recoverable system crash. This also allows a user to display the origin of such crash. However it is application's responsibility to implement any recovery from such situation if possible.
 
 - *System Information*  
-This module provides APIs to compute and display system information such as stack usage of various tasks in the system. This allows user to track stack overflow in system and even optimize stack for a certain application.
+This module provides APIs to compute and display system information such as stack and CPU usage of various tasks in the system. This allows user to track stack overflow in system and even optimize stack for a certain application.
 
 - *System Log*  
 System log provides runtime tracing facility with component level log filtering support. This allows a user to configure logs from a specific component and track root cause of pesky issues. However due to the nature of this service it is not advisable to be used in the core components as it will not only hide the actual issue but also may cause undefined behaviour.
@@ -52,6 +52,17 @@ This function will halt the system and print the file/line and task information 
 **takes** line number at which this assert condition was detected.  
 **takes** control block of the current task.  
 Implemented by [assert.c](../../rtos/kernel/assert.c).
+
+### usage\_reset
+This function resets the CPU usage statistics for all the tasks.  
+Implemented by [sys_info.c](../../rtos/kernel/sys_info.c).
+
+### usage\_calculate
+This function calculates and returns the CPU usage of the given task.  
+**takes** the task control block for which CPU usage is required, if null system CPU usage will be returned.  
+**takes** the scale in which CPU usage is required.  
+**returns** the CPU usage of current task.  
+Implemented by [sys_info.c](../../rtos/kernel/sys_info.c).
 
 ### util\_task\_calc\_free\_stack
 This function calculate and returns number of bytes free on a given task's stack.  
