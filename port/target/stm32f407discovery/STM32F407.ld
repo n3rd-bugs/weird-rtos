@@ -55,5 +55,7 @@ SECTIONS
 
         . = ALIGN(4);
         _ebss = .;
+
+        PROVIDE ( end = .);
     } > m_data
 }
