@@ -59,7 +59,7 @@ void system_tick_Init()
 
 /*
  * isr_servicecall_handle
- * This pendSV interrupt handle.
+ * This is 64-bit clock interrupt handler.
  */
 ISR_FUN isr_clock64_tick(void)
 {
@@ -76,20 +76,13 @@ ISR_FUN isr_clock64_tick(void)
 } /* isr_clock64_tick */
 
 /*
- * pit_get_clock
+ * current_hardware_tick
  * This returns value of a 64-bit hardware timer running at half of peripheral
  * frequency.
- * User should not use this clock for time keeping that require higher 32-bits.
  */
-uint64_t pit_get_clock()
+uint64_t current_hardware_tick()
 {
-    /* Load the soft-clock value. */
-    uint64_t c_val = (uint32_t)clock_64_high_32;
-
-    /* Make it higher 32-bits. */
-    c_val = (c_val << 31);
-
     /* Add and return current timer value. */
-    return (c_val + (TIM2->CNT));
+    return (((uint64_t)(clock_64_high_32 + ((TIM2->SR & TIM_DIER_UIE) ? 1 : 0)) * 0xFFFFFFFF) + (uint64_t)(TIM2->CNT));
 
 } /* pit_get_clock */

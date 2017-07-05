@@ -41,12 +41,8 @@ extern uint32_t _ebss;
 #define STM32F407_STACK_END             (0x20020000)
 #define SYS_STACK_SIZE                  (STM32F407_STACK_END - (uint32_t)SYSTEM_STACK)
 
-/* 64-bit clock management. */
-#define current_hardware_tick()         pit_get_clock()
-#define current_hardware_tick_usec()    (pit_get_clock() / PCLK_FREQ)
-
 /* Function prototypes. */
-uint64_t pit_get_clock();
+uint64_t current_hardware_tick();
 
 /* Helper functions. */
 void system_entry(void);
