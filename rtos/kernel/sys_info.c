@@ -22,6 +22,144 @@
 #include <string.h>
 #endif
 
+#ifdef CONFIG_TASK_USAGE
+/* Number of ticks system context was active. */
+static uint64_t sys_total_active_ticks;
+
+/* Last tick at which we switched to system context. */
+static uint64_t sys_last_active_tick;
+
+/* Tick at which we reset the usage statistics. */
+static uint64_t sys_clock_base;
+
+/*
+ * mark_task_entry
+ * This function marks the entry of a task if we are in one.
+ */
+void mark_task_entry()
+{
+    /* If we do have a current task. */
+    if (current_task != NULL)
+    {
+        /* Save the tick at which this task was scheduled. */
+        current_task->last_active_tick = current_hardware_tick();
+
+        /* Increment the number of ticks we were in system context. */
+        sys_total_active_ticks += (current_task->last_active_tick - sys_last_active_tick);
+    }
+
+} /* mark_task_entry */
+
+/*
+ * mark_task_exit
+ * This function marks the exit of current task if we are in one.
+ */
+void mark_task_exit()
+{
+    /* If we do have a current task. */
+    if (current_task != NULL)
+    {
+        /* Save the tick at which we entered the system context. */
+        sys_last_active_tick = current_hardware_tick();
+
+        /* Increment the number of ticks we were in this task's context. */
+        current_task->total_active_ticks += sys_last_active_tick - current_task->last_active_tick;
+    }
+
+} /* mark_task_exit */
+
+/*
+ * usage_reset
+ * This function reset the CPU usage statistics for all the tasks and system.
+ */
+void usage_reset()
+{
+    TASK *tcb = sch_task_list.head;
+
+    /* Pick the new base clock. */
+    sys_clock_base = current_hardware_tick();
+
+    /* Lock the schedule. */
+    scheduler_lock();
+
+    /* Traverse the list of all the tasks. */
+    while (tcb != NULL)
+    {
+        /* Reset total active ticks for this task. */
+        tcb->total_active_ticks = 0;
+
+        /* Get the next task. */
+        tcb = tcb->next_global;
+    }
+
+    /* Reset total system active ticks. */
+    sys_total_active_ticks = 0;
+
+    /* If we are in a task's context. */
+    if (get_current_task() != NULL)
+    {
+        /* Mark this tick as task's last active tick. */
+        get_current_task()->last_active_tick = sys_clock_base;
+    }
+    else
+    {
+        /* Mark this tick as system's last active tick. */
+        sys_last_active_tick = sys_clock_base;
+    }
+
+    /* Unlock the schedule. */
+    scheduler_unlock();
+
+} /* usage_reset */
+
+/*
+ * usage_calculate
+ * @task: Task control block for which CPU usage is required, if null system
+ *  CPU usage will be returned.
+ * @scale: Scale in which CPU usage is required.
+ * @return: Scaled CPU usage of current task.
+ * This function calculates and return the given task's CPU usage.
+ */
+uint64_t usage_calculate(TASK *task, uint64_t scale)
+{
+    uint64_t usage;
+    uint32_t interrupt_level;
+
+    /* If we have task. */
+    if (task != NULL)
+    {
+        /* Pick the total number of active ticks. */
+        usage = task->total_active_ticks;
+
+        /* If we are in this task. */
+        if (current_task == task)
+        {
+            /* Disable interrupts. */
+            interrupt_level = GET_INTERRUPT_LEVEL();
+            DISABLE_INTERRUPTS();
+
+            /* Add current usage. */
+            usage += (current_hardware_tick() - current_task->last_active_tick);
+
+            /* Restore old interrupt level. */
+            SET_INTERRUPT_LEVEL(interrupt_level);
+        }
+    }
+    else
+    {
+        /* Pick the ticks we were active in system context. */
+        usage = sys_total_active_ticks;
+    }
+
+    /* Calculate and scale the usage. */
+    usage = ((usage * scale) / (current_hardware_tick() - sys_clock_base));
+
+    /* Return the usage to the caller. */
+    return (usage);
+
+} /* usage_calculate */
+#endif /* CONFIG_TASK_USAGE */
+
 /*
  * util_task_calc_free_stack
  * @tcb: Task control block of which number of free bytes on the stack are
@@ -76,12 +214,19 @@ void util_print_sys_info()
     /* Get the first task. */
     TASK *tcb = sch_task_list.head;
     uint32_t stack_free;
+#ifdef CONFIG_TASK_USAGE
+    uint32_t usage;
+#endif /* CONFIG_TASK_USAGE */
 
     /* Print current system tick. */
     printf("System tick: %lu\r\n", (uint32_t)current_system_tick());
 
     /* Print table header. */
-    printf("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n");
+    printf("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)");
+#ifdef CONFIG_TASK_USAGE
+    printf("\tCPU(%%)");
+#endif /* CONFIG_TASK_USAGE */
+    printf("\r\n");
 
     /* Print information about all the tasks in the system. */
     while (tcb != NULL)
@@ -89,16 +234,17 @@ void util_print_sys_info()
         /* Calculate number of bytes still intact on the task's stack. */
         stack_free = util_task_calc_free_stack(tcb);
 
+#ifdef CONFIG_TASK_USAGE
+        /* Calculate % CPU usage for this task. */
+        usage = (uint32_t)usage_calculate(tcb, 100);
+#endif /* CONFIG_TASK_USAGE */
+
         /* Print task information. */
-        printf("%s\t%lu\t%lu\t%lu\t%li\t%lu\t%lu%s\r\n",
-               tcb->name,
-               tcb->stack_size,
-               stack_free,
-               tcb->stack_size - stack_free,
-               tcb->status,
-               (uint32_t)tcb->scheduled,
-               (uint32_t)tcb->tick_sleep,
-               (tcb == get_current_task()) ? "\t<Running>" : "");
+        printf("%s\t%lu\t%lu\t%lu\t%li\t%lu\t%lu", tcb->name, tcb->stack_size, stack_free, tcb->stack_size - stack_free, tcb->status, tcb->scheduled, tcb->tick_sleep);
+#ifdef CONFIG_TASK_USAGE
+        printf("\t%lu", usage);
+#endif /* CONFIG_TASK_USAGE */
+        printf("%s\r\n", (tcb == get_current_task()) ? "\t<Running>" : "");
 
         /* Get the next task. */
         tcb = tcb->next_global;
@@ -108,12 +254,18 @@ void util_print_sys_info()
     /* Get number of bytes free on the system stack. */
     stack_free = util_system_calc_free_stack();
 
+#ifdef CONFIG_TASK_USAGE
+    /* Calculate % CPU usage for system. */
+    usage = (uint32_t)usage_calculate(NULL, 100);
+#endif /* CONFIG_TASK_USAGE */
+
     /* Print system stack information. */
-    printf("SYSTEM\t%lu\t%lu\t%lu\t-\t-\t-\r\n",
+    printf("SYSTEM\t%lu\t%lu\t%lu\t-\t-\t-\t%lu\r\n",
            (uint32_t)SYS_STACK_SIZE,
            stack_free,
-           SYS_STACK_SIZE - stack_free);
-#endif
+           SYS_STACK_SIZE - stack_free,
+           usage);
+#endif /* SYS_STACK_SIZE */
 
 } /* util_print_sys_info */
 
@@ -178,7 +330,7 @@ void util_print_sys_info_assert()
     serial_assert_puts((uint8_t *)str, 0);
     snprintf(str, sizeof(str), "-\t-\t-\r\n");
     serial_assert_puts((uint8_t *)str, 0);
-#endif
+#endif /* SYS_STACK_SIZE */
 
 } /* util_print_sys_info_assert */
 #endif /* CONFIG_SERIAL */
@@ -198,6 +350,9 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
     uint32_t stack_free;
     char str[16];
     int32_t status;
+#ifdef CONFIG_TASK_USAGE
+    uint32_t usage;
+#endif /* CONFIG_TASK_USAGE */
 
     /* Print current system tick. */
     status = fs_buffer_push(buffer, (uint8_t *)"System tick: ", strlen("System tick: "), 0);
@@ -215,8 +370,13 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 
     if (status == SUCCESS)
     {
+#ifdef CONFIG_TASK_USAGE
+        /* Print table header. */
+        status = fs_buffer_push(buffer, (uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\tCPU(%%)\r\n", sizeof("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\tCPU(%%)\r\n") - 1, 0);
+#else
         /* Print table header. */
         status = fs_buffer_push(buffer, (uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n", sizeof("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n") - 1, 0);
+#endif
     }
 
     /* Print information about all the tasks in the system. */
@@ -260,7 +420,24 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "%lu\r\n", (uint32_t)tcb->tick_sleep);
+            snprintf(str, sizeof(str), "%lu", (uint32_t)tcb->tick_sleep);
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
+
+#ifdef CONFIG_TASK_USAGE
+        if (status == SUCCESS)
+        {
+            /* Calculate % CPU usage for this task. */
+            usage = (uint32_t)usage_calculate(tcb, 100);
+
+            snprintf(str, sizeof(str), "\t%lu", usage);
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
+#endif
+
+        if (status == SUCCESS)
+        {
+            snprintf(str, sizeof(str), "\r\n");
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
@@ -295,7 +472,24 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 
     if (status == SUCCESS)
     {
-        snprintf(str, sizeof(str), "-\t-\t-\r\n");
+        snprintf(str, sizeof(str), "-\t-\t-");
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+    }
+
+#ifdef CONFIG_TASK_USAGE
+    if (status == SUCCESS)
+    {
+        /* Calculate % CPU usage for this task. */
+        usage = (uint32_t)usage_calculate(NULL, 100);
+
+        snprintf(str, sizeof(str), "\t%lu", usage);
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+    }
+#endif
+
+    if (status == SUCCESS)
+    {
+        snprintf(str, sizeof(str), "\r\n");
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 #endif

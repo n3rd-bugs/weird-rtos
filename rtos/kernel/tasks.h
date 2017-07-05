@@ -19,6 +19,7 @@
 
 /* Task configuration. */
 //#define CONFIG_TASK_STATS
+#define CONFIG_TASK_USAGE
 #define CONFIG_STACK_PATTERN    'A'
 
 /* These defines different task flags. */
@@ -32,6 +33,14 @@ typedef void TASK_ENTRY (void *argv);
 typedef struct _task TASK;
 struct _task
 {
+#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
+    /* Number of ticks this task was scheduled. */
+    uint64_t    total_active_ticks;
+
+    /* Tick at which this task was last scheduled. */
+    uint64_t    last_active_tick;
+#endif /* (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE)) */
+
     /* Task entry function. */
     TASK_ENTRY  *entry;
 

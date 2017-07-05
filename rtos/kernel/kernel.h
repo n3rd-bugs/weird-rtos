@@ -72,11 +72,21 @@ extern TASK *current_task;
 #define CPU_ISR_EXIT()
 #endif
 
+#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
+#define MARK_ENTRY()                mark_task_entry()
+#define MARK_EXIT()                 mark_task_exit()
+#else
+#define MARK_ENTRY()
+#define MARK_EXIT()
+#endif /*  (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE)) */
+
 #define ISR_ENTER()                 CPU_ISR_ENTER();                            \
                                     return_task = get_current_task();           \
+                                    MARK_EXIT();                                \
                                     set_current_task(NULL)
 
 #define ISR_EXIT()                  set_current_task(return_task);              \
+                                    MARK_ENTRY();                               \
                                     return_task = NULL;                         \
                                     CPU_ISR_EXIT()
 
@@ -85,12 +95,16 @@ extern TASK *current_task;
 /* Public function prototypes. */
 void kernel_run();
 void task_yield();
+uint32_t current_system_tick();
+TASK *get_current_task();
 
 /* Internal functions should not be called from user applications. */
 void process_system_tick();
-
 void set_current_task(TASK *);
-TASK *get_current_task();
-uint32_t current_system_tick();
+
+#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
+void mark_task_entry();
+void mark_task_exit();
+#endif /*  (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE)) */
 
 #endif /* _KERNEL_H_ */

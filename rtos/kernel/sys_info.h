@@ -22,6 +22,8 @@
 #endif
 
 /* Function prototypes. */
+void usage_reset();
+uint64_t usage_calculate(TASK *, uint64_t);
 uint32_t util_task_calc_free_stack(TASK *);
 void util_print_sys_info();
 #ifdef SYS_STACK_SIZE
