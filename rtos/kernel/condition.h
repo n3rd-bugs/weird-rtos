@@ -88,7 +88,10 @@ typedef struct _condition
     void                    *data;
 
     /* Condition flags. */
-    uint32_t                flags;
+    uint8_t                 flags;
+
+    /* Structure padding. */
+    uint8_t                 pad[3];
 
 } CONDITION;
 
