@@ -485,7 +485,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
     if (condition[return_num]->flags & CONDITION_PING)
     {
         /* Clear the ping flag. */
-        condition[return_num]->flags &= (uint32_t)~(CONDITION_PING);
+        condition[return_num]->flags &= (uint8_t)~(CONDITION_PING);
     }
 
     /* If caller was not in locked state. */

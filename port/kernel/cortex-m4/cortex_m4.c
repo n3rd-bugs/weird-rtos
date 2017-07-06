@@ -17,7 +17,7 @@
 /* Global interrupt level. */
 /* TRUE: Interrupt Enabled
  * FALSE: Interrupt Disabled */
-uint32_t sys_interrupt_level = TRUE;
+INT_LVL sys_interrupt_level = TRUE;
 
 /* Local variable definitions. */
 /* We need to keep this to save the stack pointer for the task we are

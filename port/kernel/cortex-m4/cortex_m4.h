@@ -16,11 +16,9 @@
 
 #include <kernel.h>
 
-/* System interrupt level. */
-extern uint32_t sys_interrupt_level;
-
 /* Macros to manipulate interrupts. */
 typedef uint8_t INT_LVL;
+extern INT_LVL sys_interrupt_level;
 #define DISABLE_INTERRUPTS()            {                               \
                                             asm("   CPSID   I   ");     \
                                             sys_interrupt_level = 0;    \
