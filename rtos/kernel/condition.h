@@ -93,7 +93,7 @@ typedef struct _condition
 } CONDITION;
 
 /* Function prototypes. */
-int32_t suspend_condition(CONDITION **, SUSPEND **, uint32_t *, uint8_t);
+int32_t suspend_condition(CONDITION **, SUSPEND **, uint8_t *, uint8_t);
 void resume_condition(CONDITION *, RESUME *, uint8_t);
 
 #endif /* _CONDITION_H_ */

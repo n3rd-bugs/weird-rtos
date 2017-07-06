@@ -22,15 +22,15 @@
 
 /* Internal function prototypes. */
 static uint8_t suspend_sreach(void *, void *);
-static void suspend_lock_condition(CONDITION **, uint32_t, CONDITION *);
-static void suspend_unlock_condition(CONDITION **, uint32_t, CONDITION *);
-static void suspend_condition_add_task(CONDITION **, SUSPEND **, uint32_t, TASK *);
-static void suspend_condition_remove_all(CONDITION **, SUSPEND **, uint32_t);
-static void suspend_condition_remove(CONDITION **, SUSPEND **, uint32_t, CONDITION *, uint32_t *);
-static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint32_t, uint32_t *);
+static void suspend_lock_condition(CONDITION **, uint8_t, CONDITION *);
+static void suspend_unlock_condition(CONDITION **, uint8_t, CONDITION *);
+static void suspend_condition_add_task(CONDITION **, SUSPEND **, uint8_t, TASK *);
+static void suspend_condition_remove_all(CONDITION **, SUSPEND **, uint8_t);
+static void suspend_condition_remove(CONDITION **, SUSPEND **, uint8_t, CONDITION *, uint8_t *);
+static uint8_t suspend_do_suspend(CONDITION **, SUSPEND **, uint8_t, uint8_t *);
 static uint8_t suspend_is_task_waiting(TASK *, CONDITION *);
 #ifdef CONFIG_SLEEP
-static uint32_t suspend_timeout_get_min(SUSPEND **, uint32_t, uint32_t *);
+static uint32_t suspend_timeout_get_min(SUSPEND **, uint8_t, uint8_t *);
 #endif
 
 /*
@@ -64,7 +64,7 @@ static uint8_t suspend_sreach(void *node, void *param)
  * This routine will unlock all the conditions in the condition list, except
  * the one for which we were resumed.
  */
-static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
+static void suspend_unlock_condition(CONDITION **condition, uint8_t num, CONDITION *resume_condition)
 {
     /* Unlock all conditions. */
     while (num)
@@ -90,7 +90,7 @@ static void suspend_unlock_condition(CONDITION **condition, uint32_t num, CONDIT
  * @resume_condition: Condition for which we don't need to acquire lock.
  * This routine will lock all the conditions.
  */
-static void suspend_lock_condition(CONDITION **condition, uint32_t num, CONDITION *resume_condition)
+static void suspend_lock_condition(CONDITION **condition, uint8_t num, CONDITION *resume_condition)
 {
     /* For all conditions acquire lock for which we can suspend. */
     while (num)
@@ -118,7 +118,7 @@ static void suspend_lock_condition(CONDITION **condition, uint32_t num, CONDITIO
  * This routine will add the given task on all the conditions we need to wait
  * for.
  */
-static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend, uint32_t num, TASK *tcb)
+static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend, uint8_t num, TASK *tcb)
 {
     /* For all conditions add this task. */
     while (num)
@@ -144,7 +144,7 @@ static void suspend_condition_add_task(CONDITION **condition, SUSPEND **suspend,
  * @num: Number of conditions.
  * This routine will remove all the suspends from their respective conditions.
  */
-static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspend, uint32_t num)
+static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspend, uint8_t num)
 {
     /* For all conditions remove respective conditions. */
     while (num)
@@ -171,9 +171,9 @@ static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspen
  * This routine will remove all the suspends from their respective conditions,
  * except the one we were resumed from as it was already removed.
  */
-static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, uint32_t num, CONDITION *resume_condition, uint32_t *return_num)
+static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, uint8_t num, CONDITION *resume_condition, uint8_t *return_num)
 {
-    uint32_t n;
+    uint8_t n;
 
     /* For all conditions remove this task. */
     for (n = 0; n < num; n++)
@@ -210,10 +210,9 @@ static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, u
  * This routine will check for all the conditions to see if we do need to
  * suspend on them. If any of the condition is satisfied we will not suspend.
  */
-static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint32_t num, uint32_t *return_num)
+static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint8_t num, uint8_t *return_num)
 {
-    uint32_t n;
-    uint8_t do_suspend = TRUE;
+    uint8_t n, do_suspend = TRUE;
 
     /* For all conditions check if we need to suspend. */
     for (n = 0; n < num; n++)
@@ -254,8 +253,7 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
  */
 static uint8_t suspend_is_task_waiting(TASK *task, CONDITION *check_condition)
 {
-    uint32_t n;
-    uint8_t waiting = FALSE;
+    uint8_t n, waiting = FALSE;
 
     /* Check the task list. */
     for (n = 0; n < task->num_conditions; n++)
@@ -286,9 +284,10 @@ static uint8_t suspend_is_task_waiting(TASK *task, CONDITION *check_condition)
  * This routine will calculate the timeout for which we need to wait on the
  * given conditions before returning an error.
  */
-static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_t *return_num)
+static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint8_t num, uint8_t *return_num)
 {
-    uint32_t min_timeout = MAX_WAIT, this_timeout, clock = current_system_tick(), n, min_index = 0;
+    uint32_t min_timeout = MAX_WAIT, this_timeout, clock = current_system_tick();
+    uint8_t n, min_index = 0;
 
     /* For all conditions search the minimum timeout. */
     for (n = 0; n < num; n++)
@@ -338,12 +337,14 @@ static uint32_t suspend_timeout_get_min(SUSPEND **suspend, uint32_t num, uint32_
  *  for the condition.
  * This function will suspend the caller task to wait for a criteria.
  */
-int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint32_t *num, uint8_t locked)
+int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num, uint8_t locked)
 {
-    uint32_t timeout, timeout_index, interrupt_level, num_conditions, return_num;
+    uint32_t timeout;
     int32_t status = SUCCESS, task_status = TASK_RESUME;
     CONDITION *resume_condition = NULL;
     TASK *tcb = get_current_task();
+    INT_LVL interrupt_level;
+    uint8_t timeout_index, num_conditions, return_num;
 
     /* Current task should not be null. */
     ASSERT(tcb == NULL);

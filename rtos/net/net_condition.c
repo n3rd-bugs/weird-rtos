@@ -253,8 +253,8 @@ static int32_t net_condition_do_remove(void *data)
 static void net_condition_task_entry(void *argv)
 {
     NET_CONDITION *net_cond = (NET_CONDITION *)argv;
-    uint32_t num_condition;
     int32_t status;
+    uint8_t num_condition;
 
     SYS_LOG_FUNCTION_ENTRY(NET_CONDITION);
 
