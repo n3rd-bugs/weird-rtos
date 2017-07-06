@@ -72,7 +72,7 @@ int32_t idle_add_work(IDLE_DO *do_fun, void *priv_data)
 #ifdef IDLE_RUNTIME_UPDATE
     uint8_t acquired = FALSE;
 #endif /* IDLE_RUNTIME_UPDATE */
-    uint32_t i;
+    uint8_t i;
 
 #ifndef IDLE_RUNTIME_UPDATE
     if (KERNEL_RUNNING() == FALSE)
@@ -152,7 +152,7 @@ int32_t idle_remove_work(IDLE_DO *do_fun, void *priv_data)
 #ifdef IDLE_RUNTIME_UPDATE
     uint8_t acquired = FALSE;
 #endif /* IDLE_RUNTIME_UPDATE */
-    uint32_t i;
+    uint8_t i;
 
 #ifndef IDLE_RUNTIME_UPDATE
     if (KERNEL_RUNNING() == FALSE)
@@ -225,7 +225,7 @@ static void idle_task_entry(void *argv)
 #if (IDLE_WORK_MAX >  0)
     IDLE_DO *do_fun;
     void *priv_data;
-    uint32_t i;
+    uint8_t i;
 #ifdef IDLE_RUNTIME_UPDATE
     uint8_t acquired;
 #endif /* IDLE_RUNTIME_UPDATE */
