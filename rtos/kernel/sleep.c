@@ -131,7 +131,7 @@ void sleep_add_to_list(TASK *tcb, uint32_t ticks)
 void sleep_remove_from_list(TASK *tcb)
 {
     /* Remove this task from the list of sleeping tasks. */
-    sll_remove(&sleep_task_list, tcb, OFFSETOF(TASK, next_sleep));
+    ASSERT(sll_remove(&sleep_task_list, tcb, OFFSETOF(TASK, next_sleep)) != tcb);
 
 } /* sleep_remove_from_list */
 
@@ -155,12 +155,12 @@ void sleep_ticks(uint32_t ticks)
     /* Lock the scheduler. */
     scheduler_lock();
 
+    /* Add current task to the sleep list. */
+    sleep_add_to_list(tcb, ticks);
+
     /* Disable interrupts. */
     interrupt_level = GET_INTERRUPT_LEVEL();
     DISABLE_INTERRUPTS();
-
-    /* Add current task to the sleep list. */
-    sleep_add_to_list(tcb, ticks);
 
     /* Task is being suspended. */
     tcb->status = TASK_SUSPENDED;

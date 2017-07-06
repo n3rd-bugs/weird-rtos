@@ -391,11 +391,6 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
         /* Disable preemption. */
         scheduler_lock();
 
-        /* Disable global interrupts, need to do this to protect against any
-         * interrupt locks. */
-        interrupt_level = GET_INTERRUPT_LEVEL();
-        DISABLE_INTERRUPTS();
-
 #ifdef CONFIG_SLEEP
         /* Check if we need to wait for a finite time. */
         if (timeout != MAX_WAIT)
@@ -405,6 +400,11 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
             sleep_add_to_list(tcb, timeout);
         }
 #endif /* CONFIG_SLEEP */
+
+        /* Disable global interrupts, need to do this to protect against any
+         * interrupt locks. */
+        interrupt_level = GET_INTERRUPT_LEVEL();
+        DISABLE_INTERRUPTS();
 
         /* Unlock all the conditions so they can be resumed. */
         suspend_unlock_condition(condition, num_conditions, NULL);
@@ -450,6 +450,21 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
 
         else
         {
+#ifdef CONFIG_SLEEP
+            /* Check if we were waiting on a timeout. */
+            if (timeout != MAX_WAIT)
+            {
+                /* Disable preemption. */
+                scheduler_lock();
+
+                /* Remove this task from sleeping tasks. */
+                sleep_remove_from_list(tcb);
+
+                /* Enable preemption. */
+                scheduler_unlock();
+            }
+#endif /* CONFIG_SLEEP */
+
             /* Remove the task from all the conditions except the one from
              * which we resumed. */
             suspend_condition_remove(condition, suspend, num_conditions, resume_condition, &return_num);
@@ -549,11 +564,6 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
             /* If task is actually suspended on this condition. */
             if ((suspend->task->status == TASK_SUSPENDED) && (suspend_is_task_waiting(suspend->task, condition) == TRUE))
             {
-#ifdef CONFIG_SLEEP
-                /* Remove this task from sleeping tasks. */
-                sleep_remove_from_list(suspend->task);
-#endif /* CONFIG_SLEEP */
-
                 /* If do have resume data. */
                 if (resume != NULL)
                 {
