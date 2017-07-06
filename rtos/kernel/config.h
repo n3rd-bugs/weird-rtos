@@ -8,8 +8,8 @@
  *
  * This source is for educational purpose only, and should never be used for
  * any other purpose. If this source is used for other than educational purpose
- * (in any form) the author will not be liable for any outcome from its direct
- * or indirect use.
+ * (in any form, direct or indirect) the author will not be liable for any
+ * outcome.
  */
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
