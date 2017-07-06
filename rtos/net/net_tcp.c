@@ -286,7 +286,6 @@ static void tcp_resume_socket(TCP_PORT *port, uint8_t flags)
 static int32_t tcp_port_wait(TCP_PORT *port, uint8_t flags)
 {
     int32_t status;
-    uint32_t num_conditions;
     CONDITION *condition;
     SUSPEND suspend, *suspend_ptr = &suspend;
     FS_PARAM fs_param;
@@ -296,11 +295,8 @@ static int32_t tcp_port_wait(TCP_PORT *port, uint8_t flags)
     /* Get read condition for server TCP port. */
     fs_condition_get((FD)port, &condition, suspend_ptr, &fs_param, flags);
 
-    /* Wait for a connection request on the server port. */
-    num_conditions = 1;
-
     /* Wait on this TCP socket. */
-    status = suspend_condition(&condition, &suspend_ptr, &num_conditions, TRUE);
+    status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
 
     SYS_LOG_FUNCTION_EXIT_STATUS(TCP, status);
 
