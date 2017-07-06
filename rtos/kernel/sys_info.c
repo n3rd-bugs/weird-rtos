@@ -260,11 +260,11 @@ void util_print_sys_info()
 #endif /* CONFIG_TASK_USAGE */
 
     /* Print system stack information. */
-    printf("SYSTEM\t%lu\t%lu\t%lu\t-\t-\t-\t%lu\r\n",
-           (uint32_t)SYS_STACK_SIZE,
-           stack_free,
-           SYS_STACK_SIZE - stack_free,
-           usage);
+    printf("SYSTEM\t%lu\t%lu\t%lu\t-\t-\t-", (uint32_t)SYS_STACK_SIZE, stack_free, SYS_STACK_SIZE - stack_free);
+#ifdef CONFIG_TASK_USAGE
+    printf("\t%lu", usage);
+#endif /* CONFIG_TASK_USAGE */
+    printf("\r\n");
 #endif /* SYS_STACK_SIZE */
 
 } /* util_print_sys_info */
