@@ -67,7 +67,12 @@ typedef void SEM_INT_UNLOCK (void *);
 /* Semaphore resume parameter. */
 typedef struct _semaphore_param
 {
-    uint32_t    num;    /* Maximum number of tasks to resume. */
+    /* Maximum number of tasks to resume. */
+    uint8_t     num;
+
+    /* Structure padding. */
+    uint8_t     pad[3];
+
 } SEMAPHORE_PARAM;
 
 /* Semaphore data structure. */
