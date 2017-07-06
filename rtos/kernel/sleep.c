@@ -144,7 +144,7 @@ void sleep_remove_from_list(TASK *tcb)
 void sleep_ticks(uint32_t ticks)
 {
     TASK *tcb;
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
 
     /* Save the current task pointer. */
     tcb = get_current_task();

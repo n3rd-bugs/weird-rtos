@@ -504,7 +504,7 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
 {
     SUSPEND *suspend;
     SUSPEND_LIST tmp_list = {NULL, NULL};
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
     uint8_t yield_task = FALSE;
 
     /* If caller is not in locked state. */

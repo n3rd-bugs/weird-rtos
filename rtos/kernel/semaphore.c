@@ -86,8 +86,8 @@ void semaphore_set_interrupt_data(SEMAPHORE *semaphore, void *data, SEM_INT_LOCK
  */
 void semaphore_destroy(SEMAPHORE *semaphore)
 {
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
     RESUME resume;
+    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();
@@ -209,11 +209,11 @@ static uint8_t semaphore_do_resume(void *param_resume, void *param_suspend)
  */
 int32_t semaphore_obtain(SEMAPHORE *semaphore, uint32_t wait)
 {
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
     int32_t status = SUCCESS;
     SUSPEND suspend, *suspend_ptr = (&suspend);
     CONDITION *condition;
     TASK *tcb;
+    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Should never happen. */
     ASSERT((semaphore->interrupt_protected == TRUE) && (semaphore->interrupt_lock == NULL));

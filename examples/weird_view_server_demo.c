@@ -324,7 +324,7 @@ int32_t weird_view_demo_analog_data(uint16_t id, uint32_t *value, uint32_t *valu
 void adc_data_callback(uint32_t data)
 {
     static int32_t n = 0;
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
 
 #if (PLAT_TARGET == PLAT_ATMEGA644P)
     /* Toggle an LED show sample rate. */

@@ -51,7 +51,7 @@ void ppp_init()
  */
 void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
 {
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
     FS *fs = (FS *)fd;
 
     /* Will only work with buffered file descriptors. */
@@ -98,7 +98,7 @@ void ppp_register_fd(PPP *ppp, FD fd, uint8_t dedicated)
 PPP *ppp_get_instance_fd(FD fd)
 {
     PPP *ret_instance;
-    uint32_t interrupt_level = GET_INTERRUPT_LEVEL();
+    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();

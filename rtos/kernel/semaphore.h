@@ -22,7 +22,7 @@ typedef volatile uint8_t INTLCK;
 /* Initializes an interrupt protected lock. */
 #define INTLCK_INIT(lock)                           \
     {                                               \
-        uint32_t int_status = GET_INTERRUPT_LEVEL();\
+        INT_LVL int_status = GET_INTERRUPT_LEVEL(); \
         DISABLE_INTERRUPTS();                       \
         lock = 0;                                   \
         SET_INTERRUPT_LEVEL(int_status);            \
@@ -31,7 +31,7 @@ typedef volatile uint8_t INTLCK;
 /* Try to acquire an interrupt protected lock. */
 #define INTLCK_TRY_GET(lock, acquired)              \
     {                                               \
-        uint32_t int_status = GET_INTERRUPT_LEVEL();\
+        INT_LVL int_status = GET_INTERRUPT_LEVEL(); \
         acquired = FALSE;                           \
         DISABLE_INTERRUPTS();                       \
         if (lock == 0)                              \
@@ -47,7 +47,7 @@ typedef volatile uint8_t INTLCK;
 /* Release an interrupt protected lock. */
 #define INTLCK_RELEASE(lock)                        \
     {                                               \
-        uint32_t int_status = GET_INTERRUPT_LEVEL();\
+        INT_LVL int_status = GET_INTERRUPT_LEVEL(); \
         DISABLE_INTERRUPTS();                       \
         lock--;                                     \
         SET_INTERRUPT_LEVEL(int_status);            \

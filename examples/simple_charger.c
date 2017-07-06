@@ -67,8 +67,8 @@ void adc_sample_process(void *, int32_t);
 void control_entry(void *argv)
 {
     uint64_t charge_start = 0;
-    uint32_t interrupt_level;
     uint32_t battery_level;
+    INT_LVL interrupt_level;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(argv);
@@ -146,7 +146,7 @@ void control_entry(void *argv)
 void adc_data_callback(uint32_t data)
 {
     static int32_t n = 0;
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
 
     /* Put data on the ADC sample. */
     adc_sample[n] = (uint16_t)data;
@@ -191,7 +191,7 @@ void adc_data_callback(uint32_t data)
 void adc_sample_process(void *data, int32_t status)
 {
     uint32_t i, v_int = 0;
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
 
     /* Remove some compiler warning. */
     UNUSED_PARAM(data);

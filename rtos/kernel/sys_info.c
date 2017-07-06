@@ -123,7 +123,7 @@ void usage_reset()
 uint64_t usage_calculate(TASK *task, uint64_t scale)
 {
     uint64_t usage;
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
 
     /* If we have task. */
     if (task != NULL)

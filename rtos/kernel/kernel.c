@@ -45,7 +45,7 @@ void process_system_tick()
  */
 void task_yield()
 {
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
     uint8_t in_isr = FALSE;
 
     /* If we are in an interrupt. */
@@ -128,7 +128,8 @@ TASK *get_current_task()
  */
 uint32_t current_system_tick()
 {
-    uint32_t return_tick, interrupt_level = GET_INTERRUPT_LEVEL();
+    uint32_t return_tick;
+    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Disable global interrupts. */
     DISABLE_INTERRUPTS();

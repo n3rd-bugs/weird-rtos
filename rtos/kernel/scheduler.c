@@ -53,7 +53,7 @@ void scheduler_init()
  */
 void scheduler_task_add(TASK *tcb, uint8_t priority)
 {
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
 
     /* Disable interrupts. */
     interrupt_level = GET_INTERRUPT_LEVEL();

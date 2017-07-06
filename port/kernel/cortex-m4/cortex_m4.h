@@ -20,6 +20,7 @@
 extern uint32_t sys_interrupt_level;
 
 /* Macros to manipulate interrupts. */
+typedef uint8_t INT_LVL;
 #define DISABLE_INTERRUPTS()            {                               \
                                             asm("   CPSID   I   ");     \
                                             sys_interrupt_level = 0;    \

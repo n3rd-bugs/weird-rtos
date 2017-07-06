@@ -187,7 +187,8 @@ void adc_sample_process(void *, int32_t);
 
 void generator_self()
 {
-    uint32_t interrupt_level, i, loop;
+    uint32_t i, loop;
+    INT_LVL interrupt_level;
     uint8_t main_on, generator_on;
 
     /* Get system interrupt level. */
@@ -330,8 +331,8 @@ void toggle_auto_start(uint8_t *auto_start, uint8_t force_off)
  */
 void control_entry(void *argv)
 {
-    uint32_t interrupt_level, switch_count = 0;
-    uint32_t gen_off_count, change_over_count = 0;
+    INT_LVL interrupt_level;
+    uint32_t gen_off_count, change_over_count = 0, switch_count = 0;
 #if ENABLE_LOG
     uint32_t gen_volt_tmp, main_volt_tmp;
 #endif
@@ -715,7 +716,7 @@ int32_t weird_view_demo_task_stats(uint16_t id, FS_BUFFER *buffer)
  */
 int32_t weird_view_demo_analog_data(uint16_t id, uint32_t *value, uint32_t *value_div, uint32_t *max_value)
 {
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
 
     /* Get system interrupt level. */
     interrupt_level = GET_INTERRUPT_LEVEL();
@@ -756,7 +757,7 @@ int32_t weird_view_demo_analog_data(uint16_t id, uint32_t *value, uint32_t *valu
 void adc_data_callback(uint32_t data)
 {
     static int32_t n = 0;
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
 
     /* Put data on the ADC sample. */
     adc_sample[n] = (uint16_t)data;
@@ -801,7 +802,7 @@ void adc_data_callback(uint32_t data)
 void adc_sample_process(void *data, int32_t status)
 {
     uint32_t i, v_int = 0;
-    uint32_t interrupt_level;
+    INT_LVL interrupt_level;
 
     /* Remove some compiler warning. */
     UNUSED_PARAM(data);

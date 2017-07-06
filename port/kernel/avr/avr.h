@@ -42,6 +42,7 @@ extern uint8_t *system_stack_end;
 extern uint8_t avr_in_isr;
 
 /* Macros to manipulate interrupts. */
+typedef uint8_t INT_LVL;
 #define ENABLE_INTERRUPTS()             {                                           \
                                             sys_interrupt_level = 1;                \
                                             if (return_task == NULL)                \
