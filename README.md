@@ -23,10 +23,10 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 ## Minimum Requirements
 | Controller | ROM | ROM actual\* | RAM | RAM Actual\*\* |
 | ---------- | --- | ---------- | --- | ---------- |
-| AVR 8-bit | 4 KB | 3250 bytes | 1 KB | 299 bytes |
-| Cortex-M4 | 4 KB | 2983 bytes | 2 KB | 952 bytes |
+| AVR 8-bit | 4 KB | 2962 bytes | 1 KB | 239 bytes |
+| Cortex-M4 | 4 KB | 3920 bytes | 2 KB | 880 bytes |
 
-_* with size optimizations_
+_* with size optimizations_  
 _** hello.c example with serial disabled, not including system stack_
 
 ## Building

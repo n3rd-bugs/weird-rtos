@@ -90,9 +90,6 @@ typedef struct _task
     /* If suspended this will hold task suspension data. */
     void        *suspend_data;
 
-    /* Number of wait conditions on which this task is waiting. */
-    uint32_t    num_conditions;
-
 #ifdef CONFIG_SLEEP
     /* Link list member for sleeping tasks. */
     TASK        *next_sleep;
@@ -104,6 +101,14 @@ typedef struct _task
     /* Current task status. */
     int32_t     status;
 
+#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
+    /* Structure padding. */
+    int8_t      pad[4];
+#endif
+
+    /* Number of wait conditions on which this task is waiting. */
+    uint8_t     num_conditions;
+
     /* This defines task priority. */
     uint8_t     priority;
 
@@ -112,9 +117,6 @@ typedef struct _task
 
     /* Lock count, how much nested scheduler locks have we acquired. */
     uint8_t     lock_count;
-
-    /* Structure padding. */
-    uint8_t     pad[1];
 } TASK;
 ```
 
