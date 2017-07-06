@@ -24,7 +24,7 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 | Controller | ROM | ROM actual\* | RAM | RAM Actual\*\* |
 | ---------- | --- | ---------- | --- | ---------- |
 | AVR 8-bit | 4 KB | 2962 bytes | 1 KB | 239 bytes |
-| Cortex-M4 | 4 KB | 3920 bytes | 2 KB | 880 bytes |
+| Cortex-M4 | 4 KB | 2755 bytes | 2 KB | 880 bytes |
 
 _* with size optimizations_  
 _** hello.c example with serial disabled, not including system stack_
