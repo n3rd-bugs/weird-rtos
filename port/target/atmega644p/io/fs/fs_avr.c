@@ -53,6 +53,7 @@ void fs_avr_init()
     mmc_spi_bb.port_miso = mmc_spi_bb.port_mosi = mmc_spi_bb.port_ss = mmc_spi_bb.port_sclk = 0x02;
 
     /* Hook-up SPI interface. */
+    mmc_spi.spi.cfg_flags = SPI_CFG_MASTER;
     mmc_spi.spi.data = &mmc_spi_bb;
     mmc_spi.spi.init = &spi_bb_atmega644_init;
     mmc_spi.spi.slave_select = &spi_bb_atmega644_slave_select;
