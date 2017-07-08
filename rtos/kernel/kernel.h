@@ -63,6 +63,7 @@
 /* Exported definitions. */
 extern TASK *return_task;
 extern TASK *current_task;
+extern uint32_t current_tick;
 
 /* ISR routines. */
 #ifndef CPU_ISR_ENTER
@@ -92,15 +93,15 @@ extern TASK *current_task;
 
 #define KERNEL_RUNNING()            ((current_task != NULL) || (return_task != NULL))
 
+/* Kernel macro definitions. */
+#define get_current_task()          (current_task)
+#define set_current_task(task)      current_task = task
+#define process_system_tick()       current_tick ++
+
 /* Public function prototypes. */
 void kernel_run();
 void task_yield();
 uint32_t current_system_tick();
-TASK *get_current_task();
-
-/* Internal functions should not be called from user applications. */
-void process_system_tick();
-void set_current_task(TASK *);
 
 #if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
 void mark_task_entry();

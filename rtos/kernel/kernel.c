@@ -23,18 +23,7 @@ TASK *current_task = NULL;
 TASK *return_task = NULL;
 
 /* This is used for time keeping in the system. */
-static uint32_t current_tick;
-
-/*
- * process_system_tick
- * This function is called at each system tick.
- */
-void process_system_tick()
-{
-    /* Increment system clock. */
-    current_tick ++;
-
-} /* process_system_tick */
+uint32_t current_tick = 0;
 
 /*
  * task_yield
@@ -94,31 +83,6 @@ void task_yield()
     }
 
 } /* task_yield */
-
-/*
- * set_current_task
- * @tcb: The task control block that is needed to be set as current task.
- * This function is called when we need to set current task, usually required
- * by scheduling routines.
- */
-void set_current_task(TASK *tcb)
-{
-    /* Set the current task to the given task. */
-    current_task = tcb;
-
-} /* set_current_task */
-
-/*
- * get_current_task
- * @return: The pointer to control block of the currently running task.
- * This function returns the pointer to the control block of the current task.
- */
-TASK *get_current_task()
-{
-    /* Return the current task's control block. */
-   return (current_task);
-
-} /* get_current_task */
 
 /*
  * current_system_tick
