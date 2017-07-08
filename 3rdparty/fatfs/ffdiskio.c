@@ -120,6 +120,13 @@ DSTATUS disk_initialize (
 	/* If the given device was resolved. */
 	if (device != NULL)
 	{
+		/* If device is not in idle state. */
+		if (device->state != 0)
+		{
+			/* Synchronize updates on the device. */
+			disk_ioctl(pdrv, CTRL_SYNC, NULL);
+		}
+
 		/* Initialize SPI. */
 		if (device->init(device->phy_device) == SUCCESS)
 		{
