@@ -248,24 +248,25 @@ static int32_t serial_puts(uint8_t *buf, int32_t n)
     SERIAL *serial = debug_serial;
 #endif
 
-    /* Assert if debug serial is not yet initialized. */
-    ASSERT(serial == NULL);
-
+    /* If we do have a serial port. */
+    if (serial != NULL)
+    {
 #ifdef FS_CONSOLE
-    /* Write given string on the serial port. */
-    n = fs_puts(serial, buf, n);
+        /* Write given string on the serial port. */
+        n = fs_puts(serial, buf, n);
 #else
-    /* Print the result on the serial. */
-    n = debug_serial->device.puts(serial, serial->device.data, buf, n, 0);
+        /* Print the result on the serial. */
+        n = debug_serial->device.puts(serial, serial->device.data, buf, n, 0);
 #endif /* FS_CONSOLE */
 
 #ifdef LCD_AN_DEBUG
-    if (n > 0)
-    {
-        /* Print this string on the LCD-AN. */
-        n = fs_puts(lcd_an_fd, buf, n);
-    }
+        if (n > 0)
+        {
+            /* Print this string on the LCD-AN. */
+            n = fs_puts(lcd_an_fd, buf, n);
+        }
 #endif
+    }
 
     /* Print number of bytes printed. */
     return (n);
