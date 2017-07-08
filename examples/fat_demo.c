@@ -29,7 +29,7 @@ TASK    fat_demo_cb;
 void fat_demo_entry(void *argv);
 
 #define FAT_DEMO_FILE_SIZE      (1024UL * 1024UL * 1UL) /* 1 MB */
-uint8_t test_buffer[PRINTF_BUFFER_SIZE];
+uint8_t test_buffer[SERIAL_PRINTF_BUFFER_SIZE];
 
 /*
  * fat_demo_entry
@@ -46,7 +46,7 @@ void fat_demo_entry(void *argv)
     UNUSED_PARAM(argv);
 
     /* Create a write file. */
-    fd = fs_open("fatfs\\0\\testfile.txt", (FS_CREATE | FS_WRITE));
+    fd = fs_open("\\fatfs\\0\\testfile.txt", (FS_CREATE | FS_WRITE));
     if (fd != NULL)
     {
         /* Write some data on it. */
@@ -61,7 +61,7 @@ void fat_demo_entry(void *argv)
     }
 
     /* Create the created file to read back. */
-    fd = fs_open("fatfs\\0\\testfile.txt", (FS_READ));
+    fd = fs_open("\\fatfs\\0\\testfile.txt", (FS_READ));
     if (fd != NULL)
     {
         /* Read file content. */
@@ -80,7 +80,7 @@ void fat_demo_entry(void *argv)
     }
 
     /* Create a large write file. */
-    fd = fs_open("fatfs\\0\\longfile.txt", (FS_CREATE | FS_WRITE));
+    fd = fs_open("\\fatfs\\0\\longfile.txt", (FS_CREATE | FS_WRITE));
     if (fd != NULL)
     {
         /* Set a predefined pattern on the test buffer. */
@@ -117,7 +117,7 @@ void fat_demo_entry(void *argv)
     }
 
     /* Open the large file for reading. */
-    fd = fs_open("fatfs\\0\\longfile.txt", (FS_READ));
+    fd = fs_open("\\fatfs\\0\\longfile.txt", (FS_READ));
     if (fd != NULL)
     {
         /* Save the before tick. */
@@ -162,11 +162,6 @@ int main(void)
 
     /* Initialize file system. */
     fs_init();
-
-#ifdef CONFIG_NET
-    /* Initialize networking stack. */
-    net_init();
-#endif
 
     /* Initialize serial. */
     serial_init();
