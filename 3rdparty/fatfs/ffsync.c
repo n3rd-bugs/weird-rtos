@@ -43,12 +43,12 @@ int ff_cre_syncobj(BYTE vol, _SYNC_t* sobj)
  *  otherwise FFSYNC_ERROR will be returned.
  * This function is responsible for acquiring a synchronization object.
  */
-int ff_req_grant(_SYNC_t sobj)
+int ff_req_grant(_SYNC_t *sobj)
 {
     int status = FFSYNC_SUCCESS;
 
     /* Acquire the synchronization object. */
-    if (semaphore_obtain(&sobj, _FS_TIMEOUT) != SUCCESS)
+    if (semaphore_obtain(sobj, _FS_TIMEOUT) != SUCCESS)
     {
         /* Return error to the caller. */
         status = FFSYNC_ERROR;
@@ -64,10 +64,10 @@ int ff_req_grant(_SYNC_t sobj)
  * @sobj: Synchronization object needed to be released.
  * This function is responsible for releasing a synchronization object.
  */
-void ff_rel_grant(_SYNC_t sobj)
+void ff_rel_grant(_SYNC_t *sobj)
 {
     /* Release the synchronization object. */
-    semaphore_release(&sobj);
+    semaphore_release(sobj);
 
 } /* ff_rel_grant */
 
@@ -78,10 +78,10 @@ void ff_rel_grant(_SYNC_t sobj)
  *  successfully destroyed.
  * This function is responsible for deleting a synchronization object.
  */
-int ff_del_syncobj(_SYNC_t sobj)
+int ff_del_syncobj(_SYNC_t *sobj)
 {
     /* Destroy this synchronization object. */
-    semaphore_destroy(&sobj);
+    semaphore_destroy(sobj);
 
     /* Return status to the caller. */
     return (FFSYNC_SUCCESS);

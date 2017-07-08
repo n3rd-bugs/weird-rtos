@@ -30,10 +30,10 @@ typedef enum
 } FFSYNC_STATUS;
 
 /* Function prototypes. */
-int ff_cre_syncobj (BYTE vol, _SYNC_t* sobj);
-int ff_req_grant (_SYNC_t sobj);
-void ff_rel_grant (_SYNC_t sobj);
-int ff_del_syncobj (_SYNC_t sobj);
+int ff_cre_syncobj (BYTE vol, _SYNC_t *sobj);
+int ff_req_grant (_SYNC_t *sobj);
+void ff_rel_grant (_SYNC_t *sobj);
+int ff_del_syncobj (_SYNC_t *sobj);
 
 #endif /* (_FS_REENTRANT == TRUE) */
 #endif /* FS_FAT */
