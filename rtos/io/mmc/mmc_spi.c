@@ -448,6 +448,9 @@ int32_t mmc_spi_init(void *device)
     SPI_MSG msg;
     uint32_t retries;
     uint8_t resp[5];
+#ifndef SYS_LOG_NONE
+    uint64_t num_sector;
+#endif /* SYS_LOG_NONE */
 
     SYS_LOG_FUNCTION_ENTRY(MMC);
 
@@ -494,7 +497,10 @@ int32_t mmc_spi_init(void *device)
                     for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_RESUME_RETRIES)); retries++)
                     {
                         /* Send CMD55. */
-                        status = mmc_spi_cmd(mmc, MMC_SPI_CMD55, 0, 0, NULL, 0);
+                        if (mmc_spi_cmd(mmc, MMC_SPI_CMD55, 0, 0, NULL, 0) != SUCCESS)
+                        {
+                            continue;
+                        }
 
                         if (status == SUCCESS)
                         {
@@ -666,6 +672,17 @@ int32_t mmc_spi_init(void *device)
     mmc_spi_unlock(mmc);
 #endif /* MMC_SPI_FS */
 
+#ifndef SYS_LOG_NONE
+    if (status == SUCCESS)
+    {
+        /* Get the number of sectors on this MMC card. */
+        if (mmc_spi_get_num_sectors(mmc, &num_sector) == SUCCESS)
+        {
+            SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "MMC has 0x%08lX%08lX sectors", (uint32_t)(num_sector >> 32), (uint32_t)(num_sector));
+        }
+    }
+#endif /* SYS_LOG_NONE */
+
     SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
     /* Return status to the caller. */
@@ -729,6 +746,8 @@ int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *b
     /* If we need to read data. */
     if (buffer != NULL)
     {
+        SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "reading a %ld chunk", size);
+
         /* While we have some data to read. */
         for ( ; ((status == SUCCESS) && (size != 0)); (size -= this_size))
         {
@@ -921,6 +940,8 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
     /* If we have data to transfer. */
     if (buffer != NULL)
     {
+        SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "writing a %ld chunk", size);
+
         /* If we have more data to transfer. */
         for ( ; ((status == SUCCESS) && (size != 0)); (size -= this_size))
         {
