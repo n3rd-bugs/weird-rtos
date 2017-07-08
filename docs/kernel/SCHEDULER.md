@@ -159,18 +159,13 @@ Implemented by [tasks.c](../../rtos/kernel/tasks.c).
 This API will try to yield current task. Task will only be switched if an higher or same priority task is found on the ready list.  
 Implemented by [kernel.c](../../rtos/kernel/kernel.c).
 
-### get\_current\_task
-This API will return the control block of the the current task. Null will be returned if called from interrupt service routine.  
-**returns** the control block of current task.  
-Implemented by [kernel.c](../../rtos/kernel/kernel.c).
-
-### current\_tick
-This API will return the system clock's current tick. Application can use helper macros to convert this tick into actual time.  
-**returns** the current system tick.  
-Implemented by [kernel.c](../../rtos/kernel/kernel.c).
-
 ### kernel\_run
 This API will start the system scheduler, this should be called once the system is initialized.  
+Implemented by [kernel.c](../../rtos/kernel/kernel.c).
+
+### current\_system\_tick
+This API will return the system clock's current tick. Application can use helper macros to convert this tick into actual time.  
+**returns** the current system tick.  
 Implemented by [kernel.c](../../rtos/kernel/kernel.c).
 
 ## Helper Macros
@@ -208,4 +203,8 @@ Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### KERNEL\_RUNNING
 This returns true if the kernel scheduler is running.  
+Implemented by [kernel.h](../../rtos/kernel/kernel.h).
+
+### get\_current\_task
+This will return the control block of the the current task. Null will be returned if called from an interrupt service routine.  
 Implemented by [kernel.h](../../rtos/kernel/kernel.h).
