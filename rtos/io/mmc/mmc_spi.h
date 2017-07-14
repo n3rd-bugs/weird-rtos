@@ -63,7 +63,7 @@
 #define MMC_SPI_CMD58_BM        (0x40)
 
 /* MMC SPI definitions. */
-#define MMC_SPI_LINE_RETRIES    (10)
+#define MMC_SPI_LINE_RETRIES    (100)
 #define MMC_SPI_IDLE_RETRIES    (2)
 #define MMC_SPI_RESUME_RETRIES  (10)
 #define MMC_SPI_RX_RETRIES      (15)
