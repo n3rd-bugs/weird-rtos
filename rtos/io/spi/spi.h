@@ -75,8 +75,10 @@ struct _spi_msg
     int32_t     length;
 
     /* Message flags. */
-    uint32_t    flags;
+    uint8_t     flags;
 
+    /* Structure padding. */
+    uint8_t     pad[3];
 };
 
 /* Function prototypes. */

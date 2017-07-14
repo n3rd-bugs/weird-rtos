@@ -446,8 +446,7 @@ int32_t mmc_spi_init(void *device)
     MMC_SPI *mmc = (MMC_SPI *)device;
     int32_t status = MMC_SPI_CMD_ERROR;
     SPI_MSG msg;
-    uint32_t retries;
-    uint8_t resp[5];
+    uint8_t retries, resp[5];
 #ifndef SYS_LOG_NONE
     uint64_t num_sector;
 #endif /* SYS_LOG_NONE */
@@ -707,9 +706,9 @@ int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *b
 {
     MMC_SPI *mmc = (MMC_SPI *)device;
     int32_t this_size = 0, status = SUCCESS;
-    uint32_t sector_offset, retries;
+    uint32_t sector_offset;
     SPI_MSG msg;
-    uint8_t line = 0x00;
+    uint8_t retries, line = 0x00;
 
     SYS_LOG_FUNCTION_ENTRY(MMC);
 
@@ -901,9 +900,9 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
 {
     MMC_SPI *mmc = (MMC_SPI *)device;
     int32_t this_size = 0, status = SUCCESS;
-    uint32_t sector_offset, retries;
+    uint32_t sector_offset;
     SPI_MSG msg;
-    uint8_t line = 0x00;
+    uint8_t retries, line = 0x00;
 
     SYS_LOG_FUNCTION_ENTRY(MMC);
 
@@ -1362,9 +1361,8 @@ static int32_t mmc_spi_get_csd(MMC_SPI *mmc, uint8_t *csd)
 static int32_t mmc_spi_rx_data(MMC_SPI *mmc, uint8_t *buffer, int32_t size)
 {
     int32_t status = SUCCESS;
-    uint32_t retries;
     SPI_MSG msg;
-    uint8_t line;
+    uint8_t retries, line;
 
     SYS_LOG_FUNCTION_ENTRY(MMC);
 
@@ -1434,9 +1432,8 @@ static int32_t mmc_spi_rx_data(MMC_SPI *mmc, uint8_t *buffer, int32_t size)
 static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t argv, uint8_t *rsp, int32_t rsp_len)
 {
     int32_t status = SUCCESS;
-    uint32_t retries;
     SPI_MSG msg;
-    uint8_t cmd_buff[MMC_SPI_CMD_LEN];
+    uint8_t retries, cmd_buff[MMC_SPI_CMD_LEN];
 
     SYS_LOG_FUNCTION_ENTRY(MMC);
 
@@ -1574,9 +1571,8 @@ static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t ar
 static int32_t mmc_slave_select(MMC_SPI *mmc, uint8_t test_line)
 {
     int32_t status = SUCCESS;
-    uint32_t retries;
     SPI_MSG msg;
-    uint8_t line = 0xFF;
+    uint8_t retries, line = 0xFF;
 
     SYS_LOG_FUNCTION_ENTRY(MMC);
 
