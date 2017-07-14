@@ -190,6 +190,7 @@ DRESULT disk_read (
 		else
 		{
 			/* Read write error. */
+			device->state = FDEV_IDLE;
 			status = RES_ERROR;
 		}
 	}
@@ -240,6 +241,7 @@ DRESULT disk_write (
 		else
 		{
 			/* Read write error. */
+			device->state = FDEV_IDLE;
 			status = RES_ERROR;
 		}
 	}
