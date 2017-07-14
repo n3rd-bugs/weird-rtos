@@ -1034,28 +1034,20 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
                     msg.length = 1;
                     msg.flags = (SPI_MSG_WRITE);
 
-                    /* Send dummy CRC. */
+                    /* Send first byte of CRC. */
                     status = mmc->spi.msg(&mmc->spi, &msg);
 
-                    /* If we have transfer anticipated number of bytes. */
-                    if (status == msg.length)
-                    {
-                        /* Reset status. */
-                        status = SUCCESS;
-                    }
-
+                    /* If message was successfully sent. */
                     if (status == SUCCESS)
                     {
-                        /* Read a byte. */
-                        msg.flags = (SPI_MSG_READ);
-
-                        /* Exchange a dummy byte. */
+                        /* Send second byte of CRC. */
                         status = mmc->spi.msg(&mmc->spi, &msg);
                     }
 
+                    /* If message was successfully sent. */
                     if (status == SUCCESS)
                     {
-                        /* Read a byte. */
+                        /* Read response byte. */
                         msg.flags = (SPI_MSG_READ);
 
                         /* Read data response. */
