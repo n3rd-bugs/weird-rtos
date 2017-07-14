@@ -1064,13 +1064,18 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
 
                     if (status == SUCCESS)
                     {
-                        SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "DATARSP 0x%02X", line);
-
                         /* If we encountered an error. */
                         if ((line & 0x1F) != 0x05)
                         {
+                            SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_ERROR, "DATARSP 0x%02X", line);
+
                             /* Return error to the caller. */
                             status = MMC_SPI_WRITE_ERROR;
+                        }
+                        else
+                        {
+                            SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "DATARSP 0x%02X", line);
+                        
                         }
                     }
                 }
