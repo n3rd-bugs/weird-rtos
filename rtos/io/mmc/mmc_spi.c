@@ -496,29 +496,24 @@ int32_t mmc_spi_init(void *device)
                     for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_RESUME_RETRIES)); retries++)
                     {
                         /* Send CMD55. */
-                        if (mmc_spi_cmd(mmc, MMC_SPI_CMD55, 0, 0, NULL, 0) != SUCCESS)
-                        {
-                            continue;
-                        }
-
-                        if (status == SUCCESS)
+                        if (mmc_spi_cmd(mmc, MMC_SPI_CMD55, 0, 0, NULL, 0) == SUCCESS)
                         {
                             /* Send ACMD41 on MMC. */
-                            status = mmc_spi_cmd(mmc, MMC_SPI_ACMD41, 0, MMC_SPI_ACMD41_ARG, resp, 1);
+                            if (mmc_spi_cmd(mmc, MMC_SPI_ACMD41, 0, MMC_SPI_ACMD41_ARG, resp, 1) == SUCCESS)
+                            {
+                                SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
+
+                                /* If card is now out of idle. */
+                                if ((resp[0] & MMC_SPI_R1_IDLE) == 0)
+                                {
+                                    break;
+                                }
+                            }
                         }
 
-                        SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "ldle-retry %ld, line 0x%02X", retries, resp[0]);
-
-                        /* If card is now out of idle. */
-                        if ((resp[0] & MMC_SPI_R1_IDLE) == 0)
-                        {
-                            break;
-                        }
-                        else
-                        {
-                            /* Sleep before trying again. */
-                            sleep_ms(MMC_SPI_RESUME_DELAY);
-                        }
+                        /* Sleep before trying again. */
+                        resp[0] = 0xFF;
+                        sleep_ms(MMC_SPI_RESUME_DELAY);
                     }
 
                     /* If we are out of retries. */
