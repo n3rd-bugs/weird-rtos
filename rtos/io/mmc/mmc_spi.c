@@ -981,11 +981,20 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
 
                 if (status == SUCCESS)
                 {
+                    /* Send a dummy byte. */
+                    line = 0xFF;
+
+                    /* Write dummy byte on the bus. */
+                    msg.flags = (SPI_MSG_WRITE);
+                    status = mmc->spi.msg(&mmc->spi, &msg);
+                }
+
+                if (status == SUCCESS)
+                {
                     /* Send data token. */
                     line = MMC_SPI_DATA_TX_TKN;
 
                     /* Write token on the SPI bus. */
-                    msg.flags = (SPI_MSG_WRITE);
                     status = mmc->spi.msg(&mmc->spi, &msg);
                 }
             }
