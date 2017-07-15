@@ -5,7 +5,8 @@ from PyQt5 import QtWidgets, QtGui
 from PyQt5.Qt import QWidget, QTimer, QDoubleValidator, QThread
 from PyQt5.QtCore import pyqtSignal, QMutex, QWaitCondition
 from socket import socket, AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_REUSEADDR
-from weird_view import WV_UPDATE, WV_UPDATE_REPLY, WV_PLUGIN_LOG_UPDATE, WV_PLUGIN_LOG_APPEND
+from weird_view import WV_UPDATE, WV_UPDATE_REPLY, WV_PLUGIN_LOG_UPDATE, WV_PLUGIN_LOG_APPEND,\
+    WV_REQ_TIMEOUT
 
 # Enable/disable debugging for this module.
 DEBUG           = True
@@ -53,7 +54,7 @@ class LogRefreshThread(QThread):
             except:
                 pass
             self.udp_socket.setblocking(1)
-            self.udp_socket.settimeout(0.1)
+            self.udp_socket.settimeout(WV_REQ_TIMEOUT)
                 
             try:
                 if DEBUG:
@@ -125,7 +126,7 @@ class PluginLog(QWidget):
         
         # Set socket options.
         self.udp_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        self.udp_socket.settimeout(0.1)
+        self.udp_socket.settimeout(WV_REQ_TIMEOUT)
         
         # Initialize a timer to query data for this plugin.
         self.timer = QTimer()

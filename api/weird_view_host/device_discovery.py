@@ -4,7 +4,7 @@ This file implements device discovery components.
 from PyQt5.QtCore import pyqtSignal, QThread
 from socket import socket, AF_INET, SOCK_DGRAM, SOL_SOCKET, SO_BROADCAST, SO_REUSEADDR
 from datetime import datetime, timedelta
-from weird_view import WV_DISC, WV_DISC_REPLY, WV_LIST, WV_LIST_REPLY
+from weird_view import WV_DISC, WV_DISC_REPLY, WV_LIST, WV_LIST_REPLY, WV_REQ_TIMEOUT
 from time import sleep
 import netifaces
 
@@ -44,7 +44,7 @@ class DiscoveryThread(QThread):
         # Set socket options.
         self.udp_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
         self.udp_socket.setsockopt(SOL_SOCKET, SO_BROADCAST, 1)
-        self.udp_socket.settimeout(0.1)
+        self.udp_socket.settimeout(WV_REQ_TIMEOUT)
         
         # Initialize discovery parameters.
         self.next_retry = datetime.now()
@@ -161,7 +161,7 @@ class PluginDiscoveryThread(QThread):
         
         # Set socket options.
         self.udp_socket.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
-        self.udp_socket.settimeout(1)
+        self.udp_socket.settimeout(WV_REQ_TIMEOUT)
         
         # Setup discovery parameters.
         self.next_retry = datetime.now()

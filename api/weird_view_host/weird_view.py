@@ -2,6 +2,9 @@
 This file contians weird view protocol defintions.
 """
 
+# Configuration options
+WV_REQ_TIMEOUT          = 0.5
+
 # Weird view protocol definitions.
 WV_DISC                 = "8737808B"
 WV_DISC_REPLY           = "134E3A9D"
