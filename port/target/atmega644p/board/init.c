@@ -70,4 +70,7 @@ void avr_sys_stack_pointer_save(void)
     /* Save the system stack pointer. */
     system_stack_end = (uint8_t *)SP;
 
+    /* Hook STDIO. */
+    io_avr_init();
+
 } /* avr_sys_stack_pointer_save */

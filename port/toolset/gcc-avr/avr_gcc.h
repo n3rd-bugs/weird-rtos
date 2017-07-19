@@ -29,4 +29,7 @@
 
 #define LITTLE_ENDIAN
 
+/* Function prototypes. */
+void io_avr_init();
+
 #endif /* _AVR_GCC_H_ */
