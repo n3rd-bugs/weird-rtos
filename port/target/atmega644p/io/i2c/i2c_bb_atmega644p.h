@@ -1,7 +1,7 @@
 /*
  * i2c_bb_atmega644p.h
  *
- * Copyright (c) 2015 Usama Masood <mirzaon@gmail.com>
+ * Copyright (c) 2017 Usama Masood <mirzaon@gmail.com>
  *
  * Standard MIT License apply on this source code, with the inclusion of below
  * clause.
