@@ -20,19 +20,6 @@
 #include <console.h>
 #include <stdarg.h>
 
-/* Hook-up the STDIO printf function. */
-#ifdef printf
-#undef printf
-#endif
-#define printf  serial_printf
-#ifdef vprintf
-#undef vprintf
-#endif
-#define vprintf serial_vprintf
-
-/* Serial configurations. */
-#define SERIAL_PRINTF_BUFFER_SIZE   64
-
 /* Serial device flag definitions. */
 #define SERIAL_DEBUG                0x01
 #define SERIAL_INT                  0x02
@@ -81,12 +68,17 @@ typedef struct _serial
 
 } SERIAL;
 
+/* Debug file descriptor. */
+#ifdef FS_CONSOLE
+extern FD debug_fd;
+#else
+extern SERIAL *debug_serial;
+#endif /* FS_CONSOLE */
+
 /* Function prototypes. */
 void serial_init();
 void serial_register(SERIAL *, const char *, void *, uint32_t);
 void serial_assert_puts(uint8_t *, int32_t);
-int32_t serial_printf(char *, ...);
-int32_t serial_vprintf(const char *, va_list);
 
 #endif /* CONFIG_SERIAL */
 #endif /* _SERIAL_H_ */

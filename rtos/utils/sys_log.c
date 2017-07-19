@@ -14,7 +14,6 @@
 #include <kernel.h>
 
 #ifndef SYS_LOG_NONE
-#include <serial.h>
 #include <string.h>
 #include <stdarg.h>
 

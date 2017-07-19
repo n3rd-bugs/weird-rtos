@@ -18,9 +18,6 @@
 
 #ifdef FS_CONSOLE
 
-/* Debug file descriptor. */
-extern FD debug_fd;
-
 /* Console file system. */
 typedef struct _console
 {

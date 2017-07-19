@@ -15,8 +15,6 @@
 #include <kernel.h>
 
 #ifdef MEMGR_STATS
-#include <serial.h>
-
 #ifdef MEMGR_DYNAMIC
 /*
  * mem_dynamic_print_usage
