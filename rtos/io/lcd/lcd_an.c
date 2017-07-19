@@ -28,7 +28,7 @@ static void lcd_an_send_nibble(LCD_AN *, uint8_t);
 static int32_t lcd_an_write_register(LCD_AN *, uint8_t, uint8_t);
 static int32_t lcd_an_read_register(LCD_AN *, uint8_t, uint8_t *);
 static int32_t lcd_an_create_custom_char(LCD_AN *, uint8_t, uint8_t *);
-static int32_t lcd_an_write(void *, uint8_t *, int32_t);
+static int32_t lcd_an_write(void *, const uint8_t *, int32_t);
 static int32_t lcd_an_ioctl(void *, uint32_t, void *);
 
 /*
@@ -406,7 +406,7 @@ static int32_t lcd_an_create_custom_char(LCD_AN *lcd, uint8_t index, uint8_t *bi
  *  LCD_AN_COLUMN_FULL will be returned if there is more column left on the LCD.
  * This function prints a string on the LCD.
  */
-static int32_t lcd_an_write(void *priv_data, uint8_t *buf, int32_t nbytes)
+static int32_t lcd_an_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
 {
     LCD_AN *lcd = (LCD_AN *)priv_data;
     int32_t to_print = nbytes;

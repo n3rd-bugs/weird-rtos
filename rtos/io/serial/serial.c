@@ -30,10 +30,9 @@ SERIAL *debug_serial = NULL;
 
 #ifdef FS_CONSOLE
 /* Internal function prototypes. */
-static int32_t serial_write(void *, uint8_t *, int32_t);
+static int32_t serial_write(void *, const uint8_t *, int32_t);
 static int32_t serial_read(void *, uint8_t *, int32_t);
 #endif
-static int32_t serial_puts(uint8_t *, int32_t);
 
 /*
  * serial_init
@@ -143,7 +142,7 @@ void serial_register(SERIAL *serial, const char *name, void *buffer, uint32_t fl
  * @return: Number of bytes will be returned if write was successful.
  * This function will send a given buffer on the serial port.
  */
-static int32_t serial_write(void *fs, uint8_t *buf, int32_t nbytes)
+static int32_t serial_write(void *fs, const uint8_t *buf, int32_t nbytes)
 {
     SERIAL *serial = (SERIAL *)fs;
     FS_BUFFER *buffer = (FS_BUFFER *)buf;
@@ -164,7 +163,7 @@ static int32_t serial_write(void *fs, uint8_t *buf, int32_t nbytes)
     else
     {
         /* Transmit required buffer on the serial. */
-        n = serial->device.puts(fs, serial->device.data, buf, nbytes, 0);
+        n = serial->device.puts(fs, serial->device.data, (uint8_t *)buf, nbytes, 0);
     }
 
     /* Return number of bytes transmitted. */

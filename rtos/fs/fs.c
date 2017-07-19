@@ -703,14 +703,14 @@ int32_t fs_read(FD fd, uint8_t *buffer, int32_t nbytes)
  * chain average number of bytes written will be returned.
  * This function will write data on a file descriptor.
  */
-int32_t fs_write(FD fd, uint8_t *buffer, int32_t nbytes)
+int32_t fs_write(FD fd, const uint8_t *buffer, int32_t nbytes)
 {
     FS *fs = (FS *)fd, *next_fs = NULL;
     FS_PARAM param;
     SUSPEND suspend, *suspend_ptr = (&suspend);
     int32_t status = SUCCESS, written = 0, n_fd = 0, nbytes_fd;
     CONDITION *condition;
-    uint8_t *buffer_start;
+    const uint8_t *buffer_start;
     uint8_t is_list = FALSE;
 
     /* If this is a null terminated string. */
@@ -961,7 +961,7 @@ int32_t fs_vprintf(FD fd, const char *format, va_list vl)
  * @return: Returns number of bytes written on the descriptor.
  * This function writes a buffer on the given file descriptor.
  */
-int32_t fs_puts(FD fd, uint8_t *buf, int32_t n)
+int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
 {
     FS_BUFFER *buffer;
     FS *fs = (FS *)fd;
@@ -988,7 +988,7 @@ int32_t fs_puts(FD fd, uint8_t *buf, int32_t n)
         if (buffer != NULL)
         {
             /* Push data on the buffer. */
-            if (fs_buffer_push(buffer, buf, (uint32_t)n, flags) == SUCCESS)
+            if (fs_buffer_push(buffer, (uint8_t *)buf, (uint32_t)n, flags) == SUCCESS)
             {
                 /* Pass this buffer to the serial driver. */
                 buf = (uint8_t *)buffer;

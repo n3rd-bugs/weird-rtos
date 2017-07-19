@@ -48,8 +48,8 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *, FS_BUFFER *, uint16_t, uint32_t);
 static void tcp_buffer_get_ihl_flags(FS_BUFFER *, uint8_t *, uint16_t *);
 static int32_t tcp_read_buffer(void *, uint8_t *, int32_t);
 static int32_t tcp_read_data(void *, uint8_t *, int32_t);
-static int32_t tcp_write_buffer(void *, uint8_t *, int32_t);
-static int32_t tcp_write_data(void *, uint8_t *, int32_t);
+static int32_t tcp_write_buffer(void *, const uint8_t *, int32_t);
+static int32_t tcp_write_data(void *, const uint8_t *, int32_t);
 static TCP_RTX_DATA *tcp_get_rtx_free(TCP_PORT *);
 static uint8_t tcp_rtx_return_buffer(void *, FS_BUFFER *);
 static uint8_t tcp_rtx_process_ack(TCP_PORT *, uint32_t);
@@ -1583,7 +1583,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
  *  cannot send any more data.
  * This function will write a buffer on the TCP socket.
  */
-static int32_t tcp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
+static int32_t tcp_write_buffer(void *fd, const uint8_t *buffer, int32_t size)
 {
     TCP_PORT *port = (TCP_PORT *)fd;
     int32_t nbytes = 0;
@@ -1616,7 +1616,7 @@ static int32_t tcp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
  *  cannot send any more data.
  * This function will write a given data buffer on the TCP socket.
  */
-static int32_t tcp_write_data(void *fd, uint8_t *buffer, int32_t size)
+static int32_t tcp_write_data(void *fd, const uint8_t *buffer, int32_t size)
 {
     TCP_PORT *port = (TCP_PORT *)fd;
     int32_t nbytes = 0, status = SUCCESS;
@@ -1657,7 +1657,7 @@ static int32_t tcp_write_data(void *fd, uint8_t *buffer, int32_t size)
                 if (nbytes > 0)
                 {
                     /* Send a TCP segment with required data. */
-                    status = tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), buffer, nbytes, TRUE, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
+                    status = tcp_send_segment(port, &port->socket_address, port->snd_nxt, port->rcv_nxt, (TCP_HDR_FLAG_ACK), (uint16_t)(port->rcv_wnd >> port->rcv_wnd_scale), (uint8_t *)buffer, nbytes, TRUE, (FS_BUFFER_TH | FS_BUFFER_SUSPEND));
 
                     if (status == SUCCESS)
                     {

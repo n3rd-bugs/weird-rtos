@@ -30,8 +30,8 @@ UDP_DATA udp_data;
 static uint8_t udp_port_search(void *, void *);
 static int32_t udp_read_buffer(void *, uint8_t *, int32_t);
 static int32_t udp_read_data(void *, uint8_t *, int32_t);
-static int32_t udp_write_buffer(void *, uint8_t *, int32_t);
-static int32_t udp_write_data(void *, uint8_t *, int32_t);
+static int32_t udp_write_buffer(void *, const uint8_t *, int32_t);
+static int32_t udp_write_data(void *, const uint8_t *, int32_t);
 
 /*
  * udp_initialize
@@ -535,7 +535,7 @@ static int32_t udp_read_data(void *fd, uint8_t *buffer, int32_t size)
  * This function will write a file system buffer on given UDP port. This
  * function will consume the provided buffer in any case.
  */
-static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
+static int32_t udp_write_buffer(void *fd, const uint8_t *buffer, int32_t size)
 {
     UDP_PORT *port = (UDP_PORT *)fd;
     NET_DEV *net_device;
@@ -655,7 +655,7 @@ static int32_t udp_write_buffer(void *fd, uint8_t *buffer, int32_t size)
  *  the reply.
  * This function will write data on given UDP port.
  */
-static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
+static int32_t udp_write_data(void *fd, const uint8_t *buffer, int32_t size)
 {
     UDP_PORT *port = (UDP_PORT *)fd;
     NET_DEV *net_device;
@@ -688,7 +688,7 @@ static int32_t udp_write_data(void *fd, uint8_t *buffer, int32_t size)
         if (fs_buffer != NULL)
         {
             /* Push UDP payload on the buffer. */
-            status = fs_buffer_push(fs_buffer, buffer, (uint32_t)size, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
+            status = fs_buffer_push(fs_buffer, (uint8_t *)buffer, (uint32_t)size, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
         }
         else
         {

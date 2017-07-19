@@ -72,7 +72,7 @@ struct _fs
     /* File operations. */
     void        *(*open) (void *, char *, uint32_t);
     void        (*close) (void **);
-    int32_t     (*write) (void *, uint8_t *, int32_t);
+    int32_t     (*write) (void *, const uint8_t *, int32_t);
     int32_t     (*read) (void *, uint8_t *, int32_t);
     int32_t     (*ioctl) (void *, uint32_t, void *);
 
@@ -173,11 +173,11 @@ int32_t fd_try_get_lock(FD, uint32_t);
 void fd_release_lock(FD);
 
 int32_t fs_read(FD, uint8_t *, int32_t);
-int32_t fs_write(FD, uint8_t *, int32_t);
+int32_t fs_write(FD, const uint8_t *, int32_t);
 int32_t fs_ioctl(FD, uint32_t, void *);
 int32_t fs_printf(FD, char *, ...);
 int32_t fs_vprintf(FD, const char *, va_list);
-int32_t fs_puts(FD, uint8_t *, int32_t);
+int32_t fs_puts(FD, const uint8_t *, int32_t);
 
 void fs_connected(FD);
 void fs_disconnected(FD);

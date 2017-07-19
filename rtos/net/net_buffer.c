@@ -28,7 +28,7 @@ static NET_BUFFER_FS net_buffers_fs;
 static int32_t net_buffer_lock(void *, uint32_t);
 static void net_buffer_unlock(void *);
 static void net_buffer_condition_callback(void *, int32_t);
-static int32_t net_buffer_write(void *, uint8_t *, int32_t);
+static int32_t net_buffer_write(void *, const uint8_t *, int32_t);
 static int32_t net_buffer_read(void *, uint8_t *, int32_t);
 
 /*
@@ -205,7 +205,7 @@ static void net_buffer_unlock(void *fd)
  * This function will write a networking buffer and queue it for further
  * processing.
  */
-static int32_t net_buffer_write(void *fd, uint8_t *data, int32_t nbytes)
+static int32_t net_buffer_write(void *fd, const uint8_t *data, int32_t nbytes)
 {
     NET_BUFFER_FS *net_buffer = (NET_BUFFER_FS *)fd;
 

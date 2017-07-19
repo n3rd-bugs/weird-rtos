@@ -24,7 +24,7 @@
 #ifdef MMC_SPI_FS
 static void *mmc_spi_fsopen(void *, char *, uint32_t);
 static int32_t mmc_spi_fsread(void *, uint8_t *, int32_t);
-static int32_t mmc_spi_fswrite(void *, uint8_t *, int32_t);
+static int32_t mmc_spi_fswrite(void *, const uint8_t *, int32_t);
 static void mmc_spi_fsclose(void **);
 static int32_t mmc_spi_lock(void *, uint32_t);
 static void mmc_spi_unlock(void *);
@@ -295,7 +295,7 @@ static int32_t mmc_spi_fsread(void *fd, uint8_t *buffer, int32_t nbytes)
  *  zero will be returned.
  * This function will write a chunk from the MMC device.
  */
-static int32_t mmc_spi_fswrite(void *fd, uint8_t *buffer, int32_t nbytes)
+static int32_t mmc_spi_fswrite(void *fd, const uint8_t *buffer, int32_t nbytes)
 {
     MMC_SPI *mmc = (MMC_SPI *)fd;
 
@@ -315,7 +315,7 @@ static int32_t mmc_spi_fswrite(void *fd, uint8_t *buffer, int32_t nbytes)
             }
 
             /* Write a chunk of buffer. */
-            if (mmc_spi_write(mmc, 0, &mmc->offset, buffer, nbytes) == SUCCESS)
+            if (mmc_spi_write(mmc, 0, &mmc->offset, (uint8_t *)buffer, nbytes) == SUCCESS)
             {
                 if (mmc->num_bytes != MMC_SPI_UNKNOWN_NBYTES)
                 {

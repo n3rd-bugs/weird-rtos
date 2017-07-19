@@ -281,7 +281,7 @@ static void *pipe_open(void *priv_data, char *name, uint32_t flags)
  * @return: Number of bytes written on this pipe.
  * This function will write data on pipe.
  */
-int32_t pipe_write(void *fd, uint8_t *data, int32_t nbytes)
+int32_t pipe_write(void *fd, const uint8_t *data, int32_t nbytes)
 {
     PIPE *pipe = (PIPE *)fd;
     uint32_t required_space, part_size;

@@ -21,7 +21,7 @@
 /* Internal function prototypes. */
 static void *fatfs_open(void *, char *, uint32_t);
 static int32_t fatfs_read(void *, uint8_t *, int32_t);
-static int32_t fatfs_write(void *, uint8_t *, int32_t);
+static int32_t fatfs_write(void *, const uint8_t *, int32_t);
 static void fatfs_close(void **priv_data);
 
 /* Global file list. */
@@ -241,7 +241,7 @@ static int32_t fatfs_read(void *priv_data, uint8_t *buf, int32_t nbytes)
  * @return: Number of bytes will be returned if write was successful.
  * This function will write data in a file.
  */
-static int32_t fatfs_write(void *priv_data, uint8_t *buf, int32_t nbytes)
+static int32_t fatfs_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
 {
     FAT_FILE *fd = (FAT_FILE *)priv_data;
     UINT bytes;
