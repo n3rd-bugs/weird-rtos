@@ -260,7 +260,7 @@ static int32_t serial_puts(uint8_t *buf, int32_t n)
 #endif /* FS_CONSOLE */
 
 #ifdef LCD_AN_DEBUG
-        if (n > 0)
+        if ((n > 0) && (lcd_an_fd != NULL))
         {
             /* Print this string on the LCD-AN. */
             n = fs_puts(lcd_an_fd, buf, n);
