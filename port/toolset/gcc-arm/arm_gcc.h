@@ -29,4 +29,9 @@
 
 #define LITTLE_ENDIAN
 
+/* Function prototypes. */
+void io_arm_init();
+int _write(int, char *, int);
+int _read(int, char *, int);
+
 #endif /* _ARM_GCC_H_ */
