@@ -30,7 +30,7 @@ static void usart1_handle_rx_interrupt();
 static void usart_stm32f407_enable_interrupt(void *);
 #endif /* SERIAL_INTERRUPT_MODE */
 static void usart_stm32f407_disable_interrupt(void *);
-static int32_t usart_stm32f407_puts(void *, void *, uint8_t *, int32_t, uint32_t);
+static int32_t usart_stm32f407_puts(void *, void *, const uint8_t *, int32_t, uint32_t);
 static int32_t usart_stm32f407_gets(void *, void *, uint8_t *, int32_t, uint32_t);
 
 /* Target serial port. */
@@ -293,7 +293,7 @@ static void usart_stm32f407_disable_interrupt(void *data)
  * @flags: Flags to specify the operation.
  * This function sends a buffer on the given USART.
  */
-static int32_t usart_stm32f407_puts(void *fd, void *priv_data, uint8_t *buf, int32_t nbytes, uint32_t flags)
+static int32_t usart_stm32f407_puts(void *fd, void *priv_data, const uint8_t *buf, int32_t nbytes, uint32_t flags)
 {
     int32_t to_print = nbytes;
     SERIAL *usart = (SERIAL *)priv_data;
