@@ -166,6 +166,9 @@ NAKED_FUN system_entry(void)
     }
 #endif /* CONFIG_TASK_STATS */
 
+    /* Initialize IO. */
+    io_arm_init();
+
     /* Initialize system clock. */
     sysclock_init();
 
