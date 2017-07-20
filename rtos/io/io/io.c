@@ -54,6 +54,13 @@ int io_puts(const char *s, int32_t n)
 #endif /* LCD_AN_DEBUG */
 #endif /* CONFIG_LCD_AN */
 
+#ifndef CONFIG_SERIAL
+#ifndef CONFIG_LCD_AN
+    /* Remove a compiler warning. */
+    UNUSED_PARAM(s);
+#endif /* CONFIG_SERIAL */
+#endif /* CONFIG_LCD_AN */
+
     /* Return number of bytes printed. */
     return (n);
 
@@ -87,6 +94,13 @@ int io_gets(char *s, int32_t n)
 #endif /* FS_CONSOLE */
     }
 #endif /* CONFIG_SERIAL */
+
+#ifndef CONFIG_SERIAL
+#ifndef CONFIG_LCD_AN
+    /* Remove a compiler warning. */
+    UNUSED_PARAM(s);
+#endif /* CONFIG_SERIAL */
+#endif /* CONFIG_LCD_AN */
 
     /* Return number of bytes read. */
     return (n);
