@@ -23,6 +23,20 @@ static int io_avr_get(struct __file *);
 static FILE stdio;
 
 /*
+ * io_avr_init
+ * This will initialize IO routines for AVR.
+ */
+void io_avr_init()
+{
+    /* Initialize SDIO stream. */
+    fdev_setup_stream(&stdio, &io_avr_put, &io_avr_get, _FDEV_SETUP_RW);
+
+    /* Initialize SDIO streams. */
+    stdin = stdout = stderr = &stdio;
+
+} /* io_avr_init */
+
+/*
  * io_avr_put
  * @stream: File stream needed to be written.
  * This will write a character on IO.
@@ -56,17 +70,3 @@ static int io_avr_get(struct __file *stream)
     return (c);
 
 } /* io_avr_get */
-
-/*
- * io_avr_init
- * This will initialize IO routines for AVR.
- */
-void io_avr_init()
-{
-    /* Initialize SDIO stream. */
-    fdev_setup_stream(&stdio, &io_avr_put, &io_avr_get, _FDEV_SETUP_RW);
-
-    /* Initialize SDIO streams. */
-    stdin = stdout = stderr = &stdio;
-
-} /* io_avr_init */
