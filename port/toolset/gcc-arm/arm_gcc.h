@@ -29,6 +29,9 @@
 
 #define LITTLE_ENDIAN
 
+/* If buffered IO is required. */
+#define IO_BUFFERED
+
 /* Function prototypes. */
 void io_arm_init();
 int _write(int, char *, int);

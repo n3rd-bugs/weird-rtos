@@ -24,10 +24,12 @@ extern int errno;
  */
 void io_arm_init()
 {
+#ifndef IO_BUFFERED
     /* Disable buffering on the SDIO files. */
     setvbuf(stdin, NULL, _IONBF, 0);
     setvbuf(stdout, NULL, _IONBF, 0);
     setvbuf(stderr, NULL, _IONBF, 0);
+#endif
 
 } /* io_arm_init */
 
