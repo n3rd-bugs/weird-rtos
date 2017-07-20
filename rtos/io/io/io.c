@@ -93,14 +93,10 @@ int io_gets(char *s, int32_t n)
         n = debug_serial->device.gets(serial, serial->device.data, (uint8_t *)s, n, 0);
 #endif /* FS_CONSOLE */
     }
-#endif /* CONFIG_SERIAL */
-
-#ifndef CONFIG_SERIAL
-#ifndef CONFIG_LCD_AN
+#else
     /* Remove a compiler warning. */
     UNUSED_PARAM(s);
 #endif /* CONFIG_SERIAL */
-#endif /* CONFIG_LCD_AN */
 
     /* Return number of bytes read. */
     return (n);
