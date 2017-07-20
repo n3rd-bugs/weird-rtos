@@ -26,7 +26,7 @@
 #define SERIAL_IN_TX                0x04
 
 typedef int32_t (SERIAL_INIT) (void *);
-typedef int32_t (SERIAL_PUTS) (void *, void *, uint8_t *, int32_t, uint32_t);
+typedef int32_t (SERIAL_PUTS) (void *, void *, const uint8_t *, int32_t, uint32_t);
 typedef int32_t (SERIAL_GETS) (void *, void *, uint8_t *, int32_t, uint32_t);
 
 /* Serial target device structure. */
