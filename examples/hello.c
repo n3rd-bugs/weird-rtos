@@ -15,6 +15,7 @@
 #include <string.h>
 #include <fs.h>
 #include <serial.h>
+#include <stdio.h>
 
 /* Function prototypes. */
 void hello_task(void *);
