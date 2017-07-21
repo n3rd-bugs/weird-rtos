@@ -103,7 +103,7 @@
 #define ENC28J60_OUI_B1             0x04
 #define ENC28J60_OUI_B2             0xA3
 
-#ifdef ENC28J60_INT_POLL
+#if (ENC28J60_INT_POLL == TRUE)
 #if (IDLE_WORK_MAX == 0)
 #error "At least one idle work is required to enable polling mode."
 #endif /* (IDLE_WORK_MAX == 0) */
