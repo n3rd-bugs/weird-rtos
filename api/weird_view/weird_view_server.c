@@ -104,10 +104,11 @@ static void weird_view_server_process(void *data, int32_t status)
     WEIRD_VIEW_SERVER *weird_view = (WEIRD_VIEW_SERVER *)data;
     WEIRD_VIEW_PLUGIN *plugin;
     FS_BUFFER *rx_buffer;
-    uint32_t command, i, value, value_div, disp_max;
+    uint32_t command, i, j, value, value_div, disp_max;
     int32_t received;
     uint16_t id;
-    uint8_t state;
+    uint8_t state, this_size = 0, str[16];
+    P_STR_T name;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(status);
@@ -175,11 +176,25 @@ static void weird_view_server_process(void *data, int32_t status)
                     /* Push plugin name. */
                     if (received == SUCCESS)
                     {
-                        received = fs_buffer_push(rx_buffer, (uint8_t []){ (uint8_t)strlen(weird_view->plugin[i].name) }, sizeof(uint8_t), 0);
+                        received = fs_buffer_push(rx_buffer, (uint8_t []){ (uint8_t)P_STR_LEN(weird_view->plugin[i].name) }, sizeof(uint8_t), 0);
                     }
                     if (received == SUCCESS)
                     {
-                        received = fs_buffer_push(rx_buffer, (uint8_t *)weird_view->plugin[i].name, strlen(weird_view->plugin[i].name), 0);
+                        /* Pick the name to be sent. */
+                        name = weird_view->plugin[i].name;
+
+                        for (j = 0; (received == SUCCESS) && (j < P_STR_LEN(weird_view->plugin[i].name)); j += this_size)
+                        {
+                            /* Pick the number of bytes we need to copy. */
+                            this_size = (P_STR_LEN(name) > sizeof(str)) ? sizeof(str) : P_STR_LEN(name);
+
+                            /* Copy the required bytes. */
+                            P_MEM_CPY(str, name, this_size);
+                            received = fs_buffer_push(rx_buffer, str, this_size, 0);
+
+                            /* Move name ahead. */
+                            name += this_size;
+                        }
                     }
                 }
             }
@@ -395,7 +410,6 @@ static void weird_view_server_process(void *data, int32_t status)
         {
             /* Free this buffer. */
             fs_buffer_add(rx_buffer->fd, rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-
         }
 
         /* Release lock for buffer file descriptor. */

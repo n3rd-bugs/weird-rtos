@@ -40,7 +40,7 @@ typedef int32_t WV_GET_ANALOG_DATA (uint16_t, uint32_t *, uint32_t *, uint32_t *
 typedef struct _weird_view_plugin
 {
     /* Name of this plugin. */
-    char        *name;
+    P_STR_T     name;
 
     /* Plugin data pointer. */
     void        *data;
