@@ -75,7 +75,7 @@ TASK control_cb;
 void control_entry(void *argv);
 
 /* LCD task definitions. */
-#define LOG_TASK_STACK_SIZE             352
+#define LOG_TASK_STACK_SIZE             384
 uint8_t log_stack[LOG_TASK_STACK_SIZE];
 TASK log_cb;
 void log_entry(void *argv);
@@ -1061,6 +1061,7 @@ void log_entry(void *argv)
     uint32_t systick, ip_address, target_time = LOG_DELAY;
     static FD *enc28j60_fd = NULL;
     uint8_t day, hour, min, sec, milisec;
+    char str[10];
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(argv);
@@ -1091,25 +1092,51 @@ void log_entry(void *argv)
         min = (uint8_t)((systick / (60LU * SOFT_TICKS_PER_SEC)) - (((uint32_t)day * 1440LU) + ((uint32_t)hour * 60LU)));
         sec = (uint8_t)((systick / (SOFT_TICKS_PER_SEC)) - (((uint32_t)day * 86400LU) + ((uint32_t)hour * 3600LU) + ((uint32_t)min * 60LU)));
         milisec = (uint8_t)((systick) - (((uint32_t)day * 86400LU) + (((uint32_t)hour * 3600LU) + ((uint32_t)min * 60LU) + ((uint32_t)sec)) * SOFT_TICKS_PER_SEC));
-        printf("\f\t%02u:%02u:%02u:%02u.%02u\r\n", day, hour, min, sec, ((uint8_t)TICK_TO_MS(milisec) / 10));
-        printf("\t%ld.%ld.%ld.%ld\r\n",
-               (uint32_t)(ip_address >> 24),
-               ((uint32_t)(ip_address >> 16)) & 0xFF,
-               ((uint32_t)(ip_address >> 8)) & 0xFF,
-               ((uint32_t)(ip_address & 0xFF)));
+        P_STR_CPY(str, P_STR("\f\t%02u:"));
+        printf(str, day);
+        P_STR_CPY(str, P_STR("%02u:"));
+        printf(str, hour);
+        P_STR_CPY(str, P_STR("%02u:"));
+        printf(str, min);
+        P_STR_CPY(str, P_STR("%02u."));
+        printf(str, sec);
+        P_STR_CPY(str, P_STR("%02u"));
+        printf(str, ((uint8_t)TICK_TO_MS(milisec) / 10));
+        P_STR_CPY(str, P_STR("\r\n"));
+        printf(str);
+
+        P_STR_CPY(str, P_STR("\t%ld"));
+        printf(str, (uint32_t)(ip_address >> 24));
+        P_STR_CPY(str, P_STR(".%ld"));
+        printf(str, ((uint32_t)(ip_address >> 16)) & 0xFF);
+        P_STR_CPY(str, P_STR(".%ld"));
+        printf(str, ((uint32_t)(ip_address >> 8)) & 0xFF);
+        P_STR_CPY(str, P_STR(".%ld"));
+        printf(str, ((uint32_t)(ip_address & 0xFF)));
+        P_STR_CPY(str, P_STR("\r\n"));
+        printf(str);
 
         /* Calculate the tick at which we need to display log. */
         target_time += LOG_DELAY;
 
-        printf("V(M): %ld", main_volt);
+        P_STR_CPY(str, P_STR("V(M): "));
+        printf(str);
+        P_STR_CPY(str, P_STR("%ld"));
+        printf(str, main_volt);
 #if (COMPUTE_APPROX == TRUE)
-        printf(", %ld", main_approx);
+        P_STR_CPY(str, P_STR(", %ld"));
+        printf(str, main_approx);
 #endif /* (COMPUTE_APPROX == TRUE) */
-        printf("\r\n");
+        P_STR_CPY(str, P_STR("\r\n"));
+        printf(str);
 
-        printf("V(G): %ld", generator_volt);
+        P_STR_CPY(str, P_STR("V(G): "));
+        printf(str);
+        P_STR_CPY(str, P_STR("%ld"));
+        printf(str, generator_volt);
 #if (COMPUTE_APPROX == TRUE)
-        printf(", %ld", generator_approx);
+        P_STR_CPY(str, P_STR(", %ld"));
+        printf(str, generator_approx);
 #endif /* (COMPUTE_APPROX == TRUE) */
 
         /* Sleep for some time. */
