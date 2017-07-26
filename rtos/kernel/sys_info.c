@@ -253,7 +253,8 @@ void util_print_sys_info()
 #endif /* CONFIG_TASK_USAGE */
 
         /* Print task information. */
-        P_STR_NCPY(str, tcb->name, sizeof(str));
+        P_STR_NCPY(str, tcb->name, (P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name));
+        str[(P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name)] = '\0';
         printf(str);
         P_STR_NCPY(str, P_STR("\t%lu\t%lu\t%lu\t"), sizeof(str));
         printf(str, tcb->stack_size, stack_free, tcb->stack_size - stack_free);
@@ -338,7 +339,8 @@ void util_print_sys_info_assert()
         /* Calculate number of bytes still intact on the task's stack. */
         stack_free = util_task_calc_free_stack(tcb);
 
-        P_STR_NCPY(str, tcb->name, sizeof(str));
+        P_STR_NCPY(str, tcb->name, (P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name));
+        str[(P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name)] = '\0';
         serial_assert_puts((uint8_t *)str, 0);
         P_STR_NCPY(str_fmt, P_STR("\t%lu\t"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, tcb->stack_size);
@@ -463,12 +465,13 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
         /* Calculate number of bytes still intact on the task's stack. */
         stack_free = util_task_calc_free_stack(tcb);
 
-        P_STR_NCPY(str, tcb->name, sizeof(str));
+        P_STR_NCPY(str, tcb->name, (P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name));
+        str[(P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name)] = '\0';
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
 
         if (status == SUCCESS)
         {
-            P_STR_NCPY(str_fmt, P_STR("%lu"), sizeof(str_fmt));
+            P_STR_NCPY(str_fmt, P_STR("\t%lu\t"), sizeof(str_fmt));
             snprintf(str, sizeof(str), str_fmt, tcb->stack_size);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
