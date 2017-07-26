@@ -214,19 +214,32 @@ void util_print_sys_info()
     /* Get the first task. */
     TASK *tcb = sch_task_list.head;
     uint32_t stack_free;
+    char str[16];
 #ifdef CONFIG_TASK_USAGE
     uint32_t usage;
 #endif /* CONFIG_TASK_USAGE */
 
     /* Print current system tick. */
-    printf("System tick: %lu\r\n", (uint32_t)current_system_tick());
+    P_STR_NCPY(str, P_STR("System tick: "), sizeof(str));
+    printf(str);
+    P_STR_NCPY(str, P_STR("%lu\r\n"), sizeof(str));
+    printf(str, (uint32_t)current_system_tick());
 
     /* Print table header. */
-    printf("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)");
+    P_STR_NCPY(str, P_STR("Name\tTotal\t"), sizeof(str));
+    printf(str);
+    P_STR_NCPY(str, P_STR("Free\tMin.\t"), sizeof(str));
+    printf(str);
+    P_STR_NCPY(str, P_STR("Status\tn(T)\t"), sizeof(str));
+    printf(str);
+    P_STR_NCPY(str, P_STR("s(T)"), sizeof(str));
+    printf(str);
 #ifdef CONFIG_TASK_USAGE
-    printf("\tCPU(%%)");
+    P_STR_NCPY(str, P_STR("\tCPU(%%)"), sizeof(str));
+    printf(str);
 #endif /* CONFIG_TASK_USAGE */
-    printf("\r\n");
+    P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
+    printf(str);
 
     /* Print information about all the tasks in the system. */
     while (tcb != NULL)
@@ -240,11 +253,23 @@ void util_print_sys_info()
 #endif /* CONFIG_TASK_USAGE */
 
         /* Print task information. */
-        printf("%s\t%lu\t%lu\t%lu\t%li\t%lu\t%lu", tcb->name, tcb->stack_size, stack_free, tcb->stack_size - stack_free, tcb->status, tcb->scheduled, tcb->tick_sleep);
+        P_STR_NCPY(str, tcb->name, sizeof(str));
+        printf(str);
+        P_STR_NCPY(str, P_STR("\t%lu\t%lu\t%lu\t"), sizeof(str));
+        printf(str, tcb->stack_size, stack_free, tcb->stack_size - stack_free);
+        P_STR_NCPY(str, P_STR("%li\t%lu\t%lut"), sizeof(str));
+        printf(str, tcb->status, tcb->scheduled, tcb->tick_sleep);
 #ifdef CONFIG_TASK_USAGE
-        printf("\t%lu", usage);
+        P_STR_NCPY(str, P_STR("\t%lu"), sizeof(str));
+        printf(str, usage);
 #endif /* CONFIG_TASK_USAGE */
-        printf("%s\r\n", (tcb == get_current_task()) ? "\t<Running>" : "");
+        if (tcb == get_current_task())
+        {
+            P_STR_NCPY(str, P_STR("\t<Running>"), sizeof(str));
+            printf(str);
+        }
+        P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
+        printf(str);
 
         /* Get the next task. */
         tcb = tcb->next_global;
@@ -260,11 +285,16 @@ void util_print_sys_info()
 #endif /* CONFIG_TASK_USAGE */
 
     /* Print system stack information. */
-    printf("SYSTEM\t%lu\t%lu\t%lu\t-\t-\t-", (uint32_t)SYS_STACK_SIZE, stack_free, SYS_STACK_SIZE - stack_free);
+    P_STR_NCPY(str, P_STR("SYSTEM\t%lu\t"), sizeof(str));
+    printf(str, (uint32_t)SYS_STACK_SIZE);
+    P_STR_NCPY(str, P_STR("%lu\t%lu\t-\t-\t-"), sizeof(str));
+    printf(str, stack_free, SYS_STACK_SIZE - stack_free);
 #ifdef CONFIG_TASK_USAGE
-    printf("\t%lu", usage);
+    P_STR_NCPY(str, P_STR("\t%lu"), sizeof(str));
+    printf(str, usage);
 #endif /* CONFIG_TASK_USAGE */
-    printf("\r\n");
+    P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
+    printf(str);
 #endif /* SYS_STACK_SIZE */
 
 } /* util_print_sys_info */
@@ -281,15 +311,26 @@ void util_print_sys_info_assert()
     TASK *tcb = sch_task_list.head;
     uint32_t stack_free;
     char str[16];
+    char str_fmt[10];
 
     /* Print current system tick. */
-    serial_assert_puts((uint8_t *)"System tick: ", 0);
-    snprintf(str, sizeof(str), "%lu", (uint32_t)current_system_tick());
+    P_STR_NCPY(str, P_STR("System tick: "), sizeof(str));
     serial_assert_puts((uint8_t *)str, 0);
-    serial_assert_puts((uint8_t *)"\r\n", 0);
+    P_STR_NCPY(str_fmt, P_STR("%lu"), sizeof(str_fmt));
+    snprintf(str, sizeof(str), str_fmt, (uint32_t)current_system_tick());
+    serial_assert_puts((uint8_t *)str, 0);
+    P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
+    serial_assert_puts((uint8_t *)str, 0);
 
     /* Print table header. */
-    serial_assert_puts((uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n", 0);
+    P_STR_NCPY(str, P_STR("Name\tTotal\t"), sizeof(str));
+    serial_assert_puts((uint8_t *)str, 0);
+    P_STR_NCPY(str, P_STR("Free\tMin.\t"), sizeof(str));
+    serial_assert_puts((uint8_t *)str, 0);
+    P_STR_NCPY(str, P_STR("Status\tn(T)\t"), sizeof(str));
+    serial_assert_puts((uint8_t *)str, 0);
+    P_STR_NCPY(str, P_STR("s(T)\r\n"), sizeof(str));
+    serial_assert_puts((uint8_t *)str, 0);
 
     /* Print information about all the tasks in the system. */
     while (tcb != NULL)
@@ -297,19 +338,23 @@ void util_print_sys_info_assert()
         /* Calculate number of bytes still intact on the task's stack. */
         stack_free = util_task_calc_free_stack(tcb);
 
-        snprintf(str, sizeof(str), "%s\t", tcb->name);
+        P_STR_NCPY(str, tcb->name, sizeof(str));
         serial_assert_puts((uint8_t *)str, 0);
-        snprintf(str, sizeof(str), "%lu\t", tcb->stack_size);
+        P_STR_NCPY(str_fmt, P_STR("\t%lu\t"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt, tcb->stack_size);
         serial_assert_puts((uint8_t *)str, 0);
-        snprintf(str, sizeof(str), "%lu\t", stack_free);
+        P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt, stack_free);
         serial_assert_puts((uint8_t *)str, 0);
-        snprintf(str, sizeof(str), "%lu\t", tcb->stack_size - stack_free);
+        snprintf(str, sizeof(str), str_fmt, tcb->stack_size - stack_free);
         serial_assert_puts((uint8_t *)str, 0);
-        snprintf(str, sizeof(str), "%li\t", tcb->status);
+        P_STR_NCPY(str_fmt, P_STR("%li\t"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt, tcb->status);
         serial_assert_puts((uint8_t *)str, 0);
-        snprintf(str, sizeof(str), "%lu\t", (uint32_t)tcb->scheduled);
+        P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->scheduled);
         serial_assert_puts((uint8_t *)str, 0);
-        snprintf(str, sizeof(str), "%lu\r\n", (uint32_t)tcb->tick_sleep);
+        snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->tick_sleep);
         serial_assert_puts((uint8_t *)str, 0);
 
         /* Get the next task. */
@@ -320,15 +365,17 @@ void util_print_sys_info_assert()
     /* Get number of bytes free on the system stack. */
     stack_free = util_system_calc_free_stack(tcb);
 
-    snprintf(str, sizeof(str), "SYSTEM\t");
+    P_STR_NCPY(str, P_STR("SYSTEM"), sizeof(str));
     serial_assert_puts((uint8_t *)str, 0);
-    snprintf(str, sizeof(str), "%lu\t", (uint32_t)SYS_STACK_SIZE);
+    P_STR_NCPY(str_fmt, P_STR("\t%lu\t"), sizeof(str_fmt));
+    snprintf(str, sizeof(str), str_fmt, (uint32_t)SYS_STACK_SIZE);
     serial_assert_puts((uint8_t *)str, 0);
-    snprintf(str, sizeof(str), "%lu\t", stack_free);
+    P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
+    snprintf(str, sizeof(str), str_fmt, stack_free);
     serial_assert_puts((uint8_t *)str, 0);
-    snprintf(str, sizeof(str), "%lu\t", SYS_STACK_SIZE - stack_free);
+    snprintf(str, sizeof(str), str_fmt, SYS_STACK_SIZE - stack_free);
     serial_assert_puts((uint8_t *)str, 0);
-    snprintf(str, sizeof(str), "-\t-\t-\r\n");
+    P_STR_NCPY(str, P_STR("-\t-\t-\r\n"), sizeof(str));
     serial_assert_puts((uint8_t *)str, 0);
 #endif /* SYS_STACK_SIZE */
 
@@ -349,34 +396,65 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
     TASK *tcb = sch_task_list.head;
     uint32_t stack_free;
     char str[16];
+    char str_fmt[10];
     int32_t status;
 #ifdef CONFIG_TASK_USAGE
     uint32_t usage;
 #endif /* CONFIG_TASK_USAGE */
 
     /* Print current system tick. */
-    status = fs_buffer_push(buffer, (uint8_t *)"System tick: ", strlen("System tick: "), 0);
+    P_STR_NCPY(str, P_STR("System tick: "), sizeof(str));
+    status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
 
     if (status == SUCCESS)
     {
-        snprintf(str, sizeof(str), "%lu", (uint32_t)current_system_tick());
+        P_STR_NCPY(str_fmt, P_STR("%lu"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt, (uint32_t)current_system_tick());
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
     if (status == SUCCESS)
     {
-        status = fs_buffer_push(buffer, (uint8_t *)"\r\n", strlen("\r\n"), 0);
+        P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
     if (status == SUCCESS)
     {
+        /* Print table header. */
+        P_STR_NCPY(str, P_STR("Name\tTotal\t"), sizeof(str));
+        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+
+        if (status == SUCCESS)
+        {
+            P_STR_NCPY(str, P_STR("Free\tMin.\t"), sizeof(str));
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
+
+        if (status == SUCCESS)
+        {
+            P_STR_NCPY(str, P_STR("Status\tn(T)\t"), sizeof(str));
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
+
+        if (status == SUCCESS)
+        {
+            P_STR_NCPY(str, P_STR("s(T)"), sizeof(str));
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
+
 #ifdef CONFIG_TASK_USAGE
-        /* Print table header. */
-        status = fs_buffer_push(buffer, (uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\tCPU(%)\r\n", sizeof("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\tCPU(%)\r\n") - 1, 0);
-#else
-        /* Print table header. */
-        status = fs_buffer_push(buffer, (uint8_t *)"Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n", sizeof("Name\tTotal\tFree\tMin.\tStatus\tn(T)\ts(T)\r\n") - 1, 0);
+        if (status == SUCCESS)
+        {
+            P_STR_NCPY(str, P_STR("\tCPU(%)"), sizeof(str));
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
 #endif
+        if (status == SUCCESS)
+        {
+            P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
+            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        }
     }
 
     /* Print information about all the tasks in the system. */
@@ -385,42 +463,47 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
         /* Calculate number of bytes still intact on the task's stack. */
         stack_free = util_task_calc_free_stack(tcb);
 
-        snprintf(str, sizeof(str), "%s\t", tcb->name);
+        P_STR_NCPY(str, tcb->name, sizeof(str));
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "%lu\t", tcb->stack_size);
+            P_STR_NCPY(str_fmt, P_STR("%lu"), sizeof(str_fmt));
+            snprintf(str, sizeof(str), str_fmt, tcb->stack_size);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "%lu\t", stack_free);
+            P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
+            snprintf(str, sizeof(str), str_fmt, stack_free);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "%lu\t", tcb->stack_size - stack_free);
+            snprintf(str, sizeof(str), str_fmt, tcb->stack_size - stack_free);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "%li\t", tcb->status);
+            P_STR_NCPY(str_fmt, P_STR("%li\t"), sizeof(str_fmt));
+            snprintf(str, sizeof(str), str_fmt, tcb->status);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "%lu\t", (uint32_t)tcb->scheduled);
+            P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
+            snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->scheduled);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "%lu", (uint32_t)tcb->tick_sleep);
+            P_STR_NCPY(str_fmt, P_STR("%lu"), sizeof(str_fmt));
+            snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->tick_sleep);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
@@ -430,14 +513,16 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
             /* Calculate % CPU usage for this task. */
             usage = (uint32_t)usage_calculate(tcb, 100);
 
-            snprintf(str, sizeof(str), "\t%lu", usage);
+            P_STR_NCPY(str_fmt, P_STR("\t%lu"), sizeof(str_fmt));
+            snprintf(str, sizeof(str), str_fmt, usage);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 #endif
 
         if (status == SUCCESS)
         {
-            snprintf(str, sizeof(str), "\r\n");
+            P_STR_NCPY(str_fmt, P_STR("\r\n"), sizeof(str_fmt));
+            snprintf(str, sizeof(str), str_fmt);
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
@@ -449,30 +534,34 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
     /* Get number of bytes free on the system stack. */
     stack_free = util_system_calc_free_stack(tcb);
 
-    snprintf(str, sizeof(str), "SYSTEM\t");
+    P_STR_NCPY(str, P_STR("SYSTEM"), sizeof(str));
     status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
 
     if (status == SUCCESS)
     {
-        snprintf(str, sizeof(str), "%lu\t", (uint32_t)SYS_STACK_SIZE);
+        P_STR_NCPY(str_fmt, P_STR("\t%lu\t"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt, (uint32_t)SYS_STACK_SIZE);
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
     if (status == SUCCESS)
     {
-        snprintf(str, sizeof(str), "%lu\t", stack_free);
+        P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt, stack_free);
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
     if (status == SUCCESS)
     {
-        snprintf(str, sizeof(str), "%lu\t", SYS_STACK_SIZE - stack_free);
+        P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt, SYS_STACK_SIZE - stack_free);
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
     if (status == SUCCESS)
     {
-        snprintf(str, sizeof(str), "-\t-\t-");
+        P_STR_NCPY(str_fmt, P_STR("-\t-\t-"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt);
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
@@ -482,14 +571,16 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
         /* Calculate % CPU usage for this task. */
         usage = (uint32_t)usage_calculate(NULL, 100);
 
-        snprintf(str, sizeof(str), "\t%lu", usage);
+        P_STR_NCPY(str_fmt, P_STR("\t%lu"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt, usage);
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 #endif
 
     if (status == SUCCESS)
     {
-        snprintf(str, sizeof(str), "\r\n");
+        P_STR_NCPY(str_fmt, P_STR("\r\n"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt);
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 #endif

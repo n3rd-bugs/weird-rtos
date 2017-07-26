@@ -33,7 +33,7 @@ static uint8_t idle_task_stack[IDLE_TASK_STACK_SIZE];
 void idle_task_init()
 {
     /* Initialize idle task's control block and stack. */
-    task_create(&idle_task, "Idle", idle_task_stack, IDLE_TASK_STACK_SIZE, &idle_task_entry, (void *)0x00, TASK_NO_RETURN);
+    task_create(&idle_task, P_STR("Idle"), idle_task_stack, IDLE_TASK_STACK_SIZE, &idle_task_entry, (void *)0x00, TASK_NO_RETURN);
     scheduler_task_add(&idle_task, 255);
 
 #if ((IDLE_WORK_MAX > 0) && defined(IDLE_RUNTIME_UPDATE))

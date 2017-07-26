@@ -64,7 +64,7 @@ struct _task
     uint32_t    stack_size;
 
     /* Name for this task. */
-    char        name[8];
+    P_STR_T     name;
 #endif /* CONFIG_TASK_STATS */
 
     /* This holds current stack pointer of this task. */
@@ -110,6 +110,6 @@ typedef struct _task_list
 } TASK_LIST;
 
 /* Function prototypes. */
-void task_create(TASK *, char *, uint8_t *, uint32_t, TASK_ENTRY *, void *, uint8_t);
+void task_create(TASK *, P_STR_T, uint8_t *, uint32_t, TASK_ENTRY *, void *, uint8_t);
 
 #endif /* _TASKS_H_ */

@@ -30,18 +30,14 @@ static void task_entry_return(void *);
  * This function initializes a task control block with the given parameters, that
  * can be then enqueued in the scheduler to run.
  */
-void task_create(TASK *tcb, char *name, uint8_t *stack, uint32_t stack_size, TASK_ENTRY *entry, void *argv, uint8_t flags)
+void task_create(TASK *tcb, P_STR_T name, uint8_t *stack, uint32_t stack_size, TASK_ENTRY *entry, void *argv, uint8_t flags)
 {
     /* Clear the task structure. */
     memset(tcb, 0, sizeof(TASK));
 
 #ifdef CONFIG_TASK_STATS
     /* If user has provided a task name. */
-    if (name != 0)
-    {
-        /* Copy the task name. */
-        strncpy(tcb->name, name, 7);
-    }
+    tcb->name = name;
 
     /* Fill the task stack with a pre-defined constant. */
     memset(stack, CONFIG_STACK_PATTERN, stack_size);
