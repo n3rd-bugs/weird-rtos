@@ -75,7 +75,7 @@ TASK control_cb;
 void control_entry(void *argv);
 
 /* LCD task definitions. */
-#define LOG_TASK_STACK_SIZE             384
+#define LOG_TASK_STACK_SIZE             352
 uint8_t log_stack[LOG_TASK_STACK_SIZE];
 TASK log_cb;
 void log_entry(void *argv);
@@ -241,7 +241,7 @@ void generator_self()
         SET_INTERRUPT_LEVEL(interrupt_level);
 
         /* Wait before releasing the self. */
-        sleep_ms(GENERATOR_SELF_DELAY + (GENERATOR_SELF_DEL_INC * loop));
+        sleep_fms(GENERATOR_SELF_DELAY + (GENERATOR_SELF_DEL_INC * loop));
 
         /* Get system interrupt level. */
         interrupt_level = GET_INTERRUPT_LEVEL();
@@ -297,7 +297,7 @@ void generator_self()
             SET_INTERRUPT_LEVEL(interrupt_level);
 
             /* Sleep for some time. */
-            sleep_ms(STATE_DELAY);
+            sleep_fms(STATE_DELAY);
         }
     }
 } /* generator_self */
@@ -383,18 +383,18 @@ void control_entry(void *argv)
     SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Wait for system to stabilize. */
-    sleep_ms(POWER_ON_DELAY);
+    sleep_fms(POWER_ON_DELAY);
 
     while(1)
     {
         /* Wait for ADC to take new readings. */
-        sleep_ms(STATE_DELAY);
+        sleep_fms(STATE_DELAY);
 
         /* Check if button is pressed. */
         if (!(IN_AUTO_SEL & (1 << PIN_AUTO_SEL)))
         {
             /* Wait for sometime. */
-            sleep_ms(DEBOUNCE_DELAY);
+            sleep_fms(DEBOUNCE_DELAY);
 
             /* Is button is still pressed. */
             if (!(IN_AUTO_SEL & (1 << PIN_AUTO_SEL)))
@@ -440,14 +440,14 @@ void control_entry(void *argv)
                         gen_off_count ++;
                     }
 
-                    sleep_ms(DEBOUNCE_DELAY);
+                    sleep_fms(DEBOUNCE_DELAY);
                 }
 
                 break;
             }
 
             /* Sleep for de-bounce of the key. */
-            sleep_ms(DEBOUNCE_DELAY);
+            sleep_fms(DEBOUNCE_DELAY);
         }
 
         /* If we need to auto start the generator. */
@@ -1067,7 +1067,7 @@ void log_entry(void *argv)
     UNUSED_PARAM(argv);
 
     /* Wait before staring log. */
-    sleep_ms(LOG_DELAY);
+    sleep_fms(LOG_DELAY);
 
 #ifdef CONFIG_LCD_AN
     /* Initialize LCD. */
@@ -1144,7 +1144,7 @@ void log_entry(void *argv)
         systick = current_system_tick();
         if (target_time > TICK_TO_MS(systick))
         {
-            sleep_ms(target_time - TICK_TO_MS(systick));
+            sleep_fms(target_time - TICK_TO_MS(systick));
         }
     }
 
