@@ -30,5 +30,11 @@
 #ifndef P_STR_NCPY
 #define P_STR_NCPY                  strncpy
 #endif
+#ifndef P_STR_LEN
+#define P_STR_LEN                   strlen
+#endif
+#ifndef P_MEM_CPY
+#define P_MEM_CPY                   memcpy
+#endif
 
 #endif /* _PSTRING_H_ */

@@ -30,11 +30,13 @@
 
 #define LITTLE_ENDIAN
 
-#define P_STR               PSTR
+#define P_STR(s)            PSTR(s)
 #define P_STR_T             PGM_P
-#define P_STR_MEM           ROGMEM
+#define P_STR_MEM           PROGMEM
 #define P_STR_CPY           strcpy_P
 #define P_STR_NCPY          strncpy_P
+#define P_STR_LEN           strlen_P
+#define P_MEM_CPY           memcpy_P
 
 /* Function prototypes. */
 void io_avr_init();
