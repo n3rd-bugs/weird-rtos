@@ -29,6 +29,11 @@ This suspends the current task for the given number of milliseconds. If the prov
 **takes** the number of milliseconds to suspend the current task.  
 Implemented by [sleep.h](../../rtos/kernel/sleep.h).
 
+### sleep\_fms
+This is like [sleep_ms](SLEEP.md#sleep_ms) but it forces sleep for a tick if the computed ticks are 0.  
+**takes** the number of milliseconds to suspend the current task.  
+Implemented by [sleep.h](../../rtos/kernel/sleep.h).
+
 ### sleep\_us
 This suspends the current task for the given number of microseconds. This APIs is not recommended to use as this performs a busy wait.  
 **takes** the number of microseconds to block the current task.  

@@ -25,6 +25,7 @@ void sleep_remove_from_list(TASK *);
 void sleep_ticks(uint32_t);
 void sleep_hw_ticks(uint64_t);
 #define sleep_ms(ms)                sleep_ticks(MS_TO_TICK((ms)))
+#define sleep_fms(ms)               sleep_ticks((MS_TO_TICK((ms)) > 0) ? MS_TO_TICK((ms)) : 1)
 #define sleep_us(us)                sleep_hw_ticks(US_TO_HW_TICK((us)))
 
 #endif /* CONFIG_SLEEP */
