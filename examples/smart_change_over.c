@@ -24,11 +24,10 @@
 #include <math.h>
 #include <lcd_an.h>
 #include <serial.h>
+#include <avr/wdt.h>
 
 /* Definitions to communicate with other side. */
 #define DEVICE_NAME         "Smart Change Over"
-
-#define ADC_SAMPLES         50
 
 /* Function prototypes. */
 int32_t weird_view_demo_task_stats(uint16_t, FS_BUFFER *);
@@ -67,10 +66,16 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 };
 
 /* Control task definitions. */
-#define CONTROL_TASK_STACK_SIZE         96
+#define CONTROL_TASK_STACK_SIZE         102
 uint8_t control_stack[CONTROL_TASK_STACK_SIZE];
-TASK    control_cb;
+TASK control_cb;
 void control_entry(void *argv);
+
+/* LCD task definitions. */
+#define LOG_TASK_STACK_SIZE             352
+uint8_t log_stack[LOG_TASK_STACK_SIZE];
+TASK log_cb;
+void log_entry(void *argv);
 
 /* ADC configuration and data. */
 #define ADC_PRESCALE            ((uint32_t)125)
@@ -78,20 +83,15 @@ void control_entry(void *argv);
 #define ADC_ATIMER_PRESCALE     ((uint32_t)8)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
 
-#define ADC_CHANNEL_DELAY       (SOFT_TICKS_PER_SEC / 5)
-
-static uint16_t adc_sample[ADC_SAMPLES];
-static CONDITION adc_condition;
-static SUSPEND adc_suspend;
-
 /* Charge controller definitions. */
 #define ADC_CHN_MAIN            (1)
 #define ADC_CHN_GENERATOR       (3)
 
-#define VOLTAGE_THRESHOLD       (15000)
+#define VOLTAGE_THRESHOLD       (300)
 #define POWER_ON_DELAY          (500)
-#define LED_TOGGLE_DELAY        (250)
-#define STATE_DELAY             (50)
+#define LED_TOGGLE_DELAY        (150)
+#define LOG_DELAY               (5000)
+#define STATE_DELAY             (100)
 #define DEBOUNCE_DELAY          (20)
 #define KEY_GEN_OFF_DELAY       (750)
 #define GENERATOR_SELF_DELAY    (1500)
@@ -99,8 +99,12 @@ static SUSPEND adc_suspend;
 #define GENERATOR_ON_DELAY      (10000)
 #define GENERATOR_SELF_RETRY    (3)
 #define SWITCH_DELAY            (5000)
-#define ENABLE_WDT              TRUE
-#define ENABLE_LOG              FALSE
+#define ADC_CHANNEL_DELAY       (200)
+#define ADC_NUM_WAVES           (10)
+#define ADC_NUM_SAMPLES         (ADC_NUM_WAVES * ADC_SAMPLE_PER_WAVE)
+#define ENABLE_WDT              FALSE
+#define COMPUTE_AVG             FALSE
+#define COMPUTE_APPROX          TRUE
 
 /* IO configurations. */
 #define BOARD_REV               1
@@ -180,6 +184,14 @@ static volatile uint32_t main_volt = 0;
 static volatile uint32_t generator_volt = 0;
 static uint8_t current_channel = 0;
 static uint8_t auto_start = FALSE;
+#if (COMPUTE_APPROX == TRUE)
+static uint8_t adc_got_wave = FALSE;
+static uint16_t adc_wave[ADC_SAMPLE_PER_WAVE];
+static uint32_t main_approx, generator_approx;
+#endif /* (COMPUTE_APPROX == TRUE) */
+static uint32_t adc_sample;
+static CONDITION adc_condition;
+static SUSPEND adc_suspend;
 
 /* ADC APIs. */
 void adc_data_callback(uint32_t);
@@ -211,9 +223,6 @@ void generator_self()
          loop++)
     {
         /* Self the generator. */
-#if ENABLE_LOG
-        printf("SELF %d\r\n", loop);
-#endif
 
         /* Get system interrupt level. */
         interrupt_level = GET_INTERRUPT_LEVEL();
@@ -333,9 +342,6 @@ void control_entry(void *argv)
 {
     INT_LVL interrupt_level;
     uint32_t gen_off_count, change_over_count = 0, switch_count = 0;
-#if ENABLE_LOG
-    uint32_t gen_volt_tmp, main_volt_tmp;
-#endif
     uint8_t main_on, generator_on;
     uint8_t generator_selfed = FALSE;
     uint8_t generator_switched_on = FALSE;
@@ -344,11 +350,6 @@ void control_entry(void *argv)
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(argv);
-
-#ifdef CONFIG_LCD_AN
-    /* Initialize LCD. */
-    lcd_an_init();
-#endif
 
     /* Get system interrupt level. */
     interrupt_level = GET_INTERRUPT_LEVEL();
@@ -377,10 +378,6 @@ void control_entry(void *argv)
 
     /* Restore old interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);
-
-#if ENABLE_LOG
-    printf("CTRL Task\r\n");
-#endif
 
     /* Wait for system to stabilize. */
     sleep_ms(POWER_ON_DELAY);
@@ -469,9 +466,6 @@ void control_entry(void *argv)
         DISABLE_INTERRUPTS();
 
         /* If main has crossed the threshold. */
-#if ENABLE_LOG
-        main_volt_tmp = main_volt;
-#endif
         if (main_volt > VOLTAGE_THRESHOLD)
         {
             /* Main detected. */
@@ -486,9 +480,6 @@ void control_entry(void *argv)
         }
 
         /* If generator has crossed the threshold. */
-#if ENABLE_LOG
-        gen_volt_tmp = generator_volt;
-#endif
         if (generator_volt > VOLTAGE_THRESHOLD)
         {
             /* Generator detected. */
@@ -504,11 +495,6 @@ void control_entry(void *argv)
 
         /* Restore old interrupt level. */
         SET_INTERRUPT_LEVEL(interrupt_level);
-
-#if ENABLE_LOG
-        /* Print main voltage. */
-        printf("M - %d G - %d\r\n", main_volt_tmp, gen_volt_tmp);
-#endif
 
         /* Check if generator is no longer on. */
         if (generator_on == FALSE)
@@ -529,9 +515,6 @@ void control_entry(void *argv)
                     DISABLE_INTERRUPTS();
 
                     /* Toggle the change over. */
-#if ENABLE_LOG
-                    printf("SW->OFF\r\n");
-#endif
                     PORT_CHANGE_OVER &= ((uint8_t)~(1 << PIN_CHANGE_OVER));
 
                     /* Supply is no longer on the generator. */
@@ -562,9 +545,6 @@ void control_entry(void *argv)
                 if ((switch_count > (SWITCH_DELAY / STATE_DELAY)) || (do_gen_off == TRUE))
                 {
                     /* Turn off the generator. */
-#if ENABLE_LOG
-                    printf("GEN->OFF\r\n");
-#endif
                     PORT_GENPWR_ON &= (uint8_t)(~(1 << PIN_GENPWR_ON));
 
                     /* Generator is no longer on and clear the self-ed flag. */
@@ -597,9 +577,6 @@ void control_entry(void *argv)
                 if (switch_count > (SWITCH_DELAY / STATE_DELAY))
                 {
                     /* Turn-on generator. */
-#if ENABLE_LOG
-                    printf("GEN->ON\r\n");
-#endif
                     PORT_GENPWR_ON |= (1 << PIN_GENPWR_ON);
 
                     /* Generator is turned on. */
@@ -629,9 +606,6 @@ void control_entry(void *argv)
                 PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
 
                 /* Turn off the change over. */
-#if ENABLE_LOG
-                printf("SW->OFF\r\n");
-#endif
                 PORT_CHANGE_OVER &= ((uint8_t)~(1 << PIN_CHANGE_OVER));
                 supply_gen = FALSE;
 
@@ -655,9 +629,6 @@ void control_entry(void *argv)
                 DISABLE_INTERRUPTS();
 
                 /* Toggle the generator supply. */
-#if ENABLE_LOG
-                printf("SW->ON\r\n");
-#endif
                 PORT_CHANGE_OVER |= (1 << PIN_CHANGE_OVER);
 
                 /* Supply is no longer on the generator. */
@@ -730,13 +701,13 @@ int32_t weird_view_demo_analog_data(uint16_t id, uint32_t *value, uint32_t *valu
         /* (x * 2 * ((10k + 100k) / 10k)) */
         *value = main_volt;
         *value_div = 1;
-        *max_value = 1024ul * ADC_SAMPLES;
+        *max_value = 1024;
         break;
 
     case 0x02:
         *value = generator_volt;
         *value_div = 1;
-        *max_value = 1024ul * ADC_SAMPLES;
+        *max_value = 1024;
         break;
     }
 
@@ -757,37 +728,144 @@ int32_t weird_view_demo_analog_data(uint16_t id, uint32_t *value, uint32_t *valu
 void adc_data_callback(uint32_t data)
 {
     static int32_t n = 0;
-    INT_LVL interrupt_level;
+#if (COMPUTE_APPROX == TRUE)
+    static int32_t wave_index = 0;
+    static uint16_t last_sample = 0;
+    static uint8_t edge = 0;
+#endif /* (COMPUTE_APPROX == TRUE) */
 
-    /* Put data on the ADC sample. */
-    adc_sample[n] = (uint16_t)data;
+#if COMPUTE_AVG
+    /* Add the new reading. */
+    adc_sample += (uint32_t)data;
+#else
+    /* If we have a new max. */
+    if (data > adc_sample)
+    {
+        /* Save the new max. */
+        adc_sample = data;
+    }
+#endif /* COMPUTE_AVG */
+
+#if (COMPUTE_APPROX == TRUE)
+    /* If we have not yet found a wave. */
+    if (adc_got_wave == FALSE)
+    {
+        /* If we have not yet found a negative edge. */
+        if (edge == 0)
+        {
+            /* If this is a negative edge. */
+            if (last_sample > data)
+            {
+                /* Lets start waiting for a positive edge. */
+                edge = 1;
+            }
+        }
+
+        /* If we were at a negative edge. */
+        if (edge == 1)
+        {
+            /* If this is a positive edge. */
+            if (last_sample < data)
+            {
+                /* If wave do start from a zero value. */
+                if ((last_sample == 0) || ((wave_index != 0) && (adc_wave[0] == 0)))
+                {
+                    /* Let's save starting values. */
+                    adc_wave[wave_index++] = last_sample;
+                    adc_wave[wave_index++] = data;
+
+                    /* Reset the edge. */
+                    edge = 0;
+
+                    /* This may be a good wave. */
+                    adc_got_wave = TRUE;
+                }
+                else
+                {
+                    /* Reset the wave index. */
+                    wave_index = 0;
+
+                    /* Reset the edge. */
+                    edge = 0;
+                }
+            }
+        }
+    }
+    else
+    {
+        /* If we don't have a complete good wave. */
+        if (wave_index != ADC_SAMPLE_PER_WAVE)
+        {
+            /* If we are still at positive edge. */
+            if (edge == 0)
+            {
+                /* If we are now at negative edge. */
+                if (last_sample > data)
+                {
+                    /* Move to next edge. */
+                    edge = 1;
+                }
+            }
+            else
+            {
+                /* If we encountered a positive edge. */
+                if (last_sample < data)
+                {
+                    /* This wave is not good. */
+                    adc_got_wave = FALSE;
+
+                    /* Reset the wave index. */
+                    wave_index = 0;
+
+                    /* Let's save starting value. */
+                    adc_wave[wave_index++] = last_sample;
+                }
+            }
+
+            /* Pick a wave sample. */
+            adc_wave[wave_index++] = data;
+
+            /* If the wave does not terminate a zero value. */
+            if ((wave_index == ADC_SAMPLE_PER_WAVE) && (adc_wave[ADC_SAMPLE_PER_WAVE -1] != 0))
+            {
+                /* This wave is not good. */
+                adc_got_wave = FALSE;
+
+                /* Reset the wave index. */
+                wave_index = 0;
+            }
+        }
+    }
+
+    /* Save the last sample. */
+    last_sample = data;
+
+#endif /* (COMPUTE_APPROX == TRUE) */
 
     /* We have taken a sample. */
     n++;
 
-    /* If we have required number of samples. */
-    if (n == ADC_SAMPLES)
+    /* If we have processed the required number of samples. */
+    if (n == ADC_NUM_SAMPLES)
     {
         /* Reset the sample counter. */
         n = 0;
 
+#if (COMPUTE_APPROX == TRUE)
+        /* Reset the wave counters. */
+        wave_index = 0;
+        edge = 0;
+        last_sample = 0;
+#endif /* (COMPUTE_APPROX == TRUE) */
+
         /* Stop ADC sampling. */
         adc_atmega644_periodic_read_stop();
-
-        /* Get system interrupt level. */
-        interrupt_level = GET_INTERRUPT_LEVEL();
-
-        /* Disable global interrupts. */
-        DISABLE_INTERRUPTS();
 
         /* Set the ping flag for ADC condition. */
         adc_condition.flags |= CONDITION_PING;
 
         /* Resume any tasks waiting for ADC condition. */
         resume_condition(&adc_condition, NULL, TRUE);
-
-        /* Restore old interrupt level. */
-        SET_INTERRUPT_LEVEL(interrupt_level);
     }
 
 } /* adc_data_callback */
@@ -801,8 +879,12 @@ void adc_data_callback(uint32_t data)
  */
 void adc_sample_process(void *data, int32_t status)
 {
-    uint32_t i, v_int = 0;
+    uint32_t v_int = 0;
     INT_LVL interrupt_level;
+#if (COMPUTE_APPROX == TRUE)
+    uint32_t i;
+    double approx_alpha = 0, approx_beta = 0, avrg, sd;
+#endif /* (COMPUTE_APPROX == TRUE) */
 
     /* Remove some compiler warning. */
     UNUSED_PARAM(data);
@@ -825,11 +907,55 @@ void adc_sample_process(void *data, int32_t status)
 
     else
     {
-        /* Compute the sum of ADC sample. */
-        for (i = 0; i < ADC_SAMPLES; i++)
+#if COMPUTE_AVG
+        /* Compute average of ADC sample. */
+        v_int += adc_sample/ADC_SAMPLES;
+#else
+        /* Use the MAX value as the sample. */
+        v_int = adc_sample;
+#endif /* COMPUTE_AVG */
+
+#if (COMPUTE_APPROX == TRUE)
+        /* If we do have a good wave. */
+        if (adc_got_wave == TRUE)
         {
-            v_int += adc_sample[i];
+            /* Calculate sum of all the values. */
+            avrg = 0;
+            for (i = 0; i < ADC_SAMPLE_PER_WAVE; i++)
+            {
+                avrg += (double)adc_wave[i];
+            }
+
+            /* Compute sample average. */
+            avrg = avrg / ADC_SAMPLE_PER_WAVE;
+
+            /* Calculate standard deviation. */
+            sd = 0;
+            for (i = 0; i < ADC_SAMPLE_PER_WAVE; i++)
+            {
+                sd += pow(((double)adc_wave[i] - avrg), 2);
+            }
+            sd /= ADC_SAMPLE_PER_WAVE;
+            sd = sqrt(sd);
+
+            /* Alpha is sd(samples) / sd(sin(x)). */
+            approx_alpha = sd / 0.308124;
+
+            /* For beta avrg(samples) - (alpha * avrg(sin(x))). */
+            approx_beta = avrg - ((approx_alpha * 2) / (3.141592));
+
+#if 0
+            for (i = 0; i < ADC_SAMPLE_PER_WAVE; i++)
+            {
+                printf("%d\r\n", adc_wave[i]);
+            }
+            printf("-------------\r\n");
+#endif
         }
+#endif /* (COMPUTE_APPROX == TRUE) */
+
+        /* Reset the ADC sample. */
+        adc_sample = 0;
 
         /* Get system interrupt level. */
         interrupt_level = GET_INTERRUPT_LEVEL();
@@ -838,7 +964,7 @@ void adc_sample_process(void *data, int32_t status)
         DISABLE_INTERRUPTS();
 
 #ifdef PORT_SAMPLE_IND
-        /* Sample was processed. */
+        /* A sample was processed. */
         PORT_SAMPLE_IND ^= (1 << PIN_SAMPLE_IND);
 #endif
 
@@ -850,6 +976,16 @@ void adc_sample_process(void *data, int32_t status)
             main_volt = v_int;
             current_channel = ADC_CHN_GENERATOR;
 
+#if (COMPUTE_APPROX == TRUE)
+            /* If we do have a good wave. */
+            if (adc_got_wave == TRUE)
+            {
+                /* Compute the wave max using the approximation constants. */
+                main_approx = approx_alpha - approx_beta;
+                adc_got_wave = FALSE;
+            }
+#endif /* (COMPUTE_APPROX == TRUE) */
+
             break;
 
         case ADC_CHN_GENERATOR:
@@ -857,6 +993,16 @@ void adc_sample_process(void *data, int32_t status)
             /* Save the ADC reading. */
             generator_volt = v_int;
             current_channel = ADC_CHN_MAIN;
+
+#if (COMPUTE_APPROX == TRUE)
+            /* If we do have a good wave. */
+            if (adc_got_wave == TRUE)
+            {
+                /* Compute the wave max using the approximation constants. */
+                generator_approx = approx_alpha - approx_beta;
+                adc_got_wave = FALSE;
+            }
+#endif /* (COMPUTE_APPROX == TRUE) */
 
             break;
         }
@@ -868,7 +1014,7 @@ void adc_sample_process(void *data, int32_t status)
         adc_channel_select(current_channel);
 
         /* Before actually starting the sampling, wait for channel to switch. */
-        adc_suspend.timeout = (current_system_tick() + ADC_CHANNEL_DELAY);
+        adc_suspend.timeout = (current_system_tick() + MS_TO_TICK(ADC_CHANNEL_DELAY));
         adc_suspend.timeout_enabled = TRUE;
     }
 
@@ -902,6 +1048,78 @@ void adc_int_unlock(void *data)
 
 } /* adc_int_unlock */
 
+/*
+ * log_entry
+ * @argv: Task argument.
+ * This is main entry function for smart switch control task.
+ */
+void log_entry(void *argv)
+{
+    uint32_t systick, ip_address, target_time = LOG_DELAY;
+    static FD *enc28j60_fd = NULL;
+    uint8_t day, hour, min, sec, milisec;
+
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(argv);
+
+    /* Wait before staring log. */
+    sleep_ms(LOG_DELAY);
+
+#ifdef CONFIG_LCD_AN
+    /* Initialize LCD. */
+    lcd_an_init();
+#endif
+
+    /* Open ethernet device. */
+    enc28j60_fd = fs_open("\\ethernet\\enc28j60", 0);
+
+    for (;;)
+    {
+        /* If we should update display. */
+        systick = current_system_tick();
+
+        /* Try to get the assigned IP address to the ethernet controller. */
+        ip_address = IPV4_ADDR_UNSPEC;
+        ipv4_get_device_address(enc28j60_fd, &ip_address, NULL);
+
+        /* Calculate time. */
+        day = (uint8_t)(systick / (86400LU * SOFT_TICKS_PER_SEC));
+        hour = (uint8_t)((systick / (3600LU * SOFT_TICKS_PER_SEC)) - ((uint32_t)day * 24LU));
+        min = (uint8_t)((systick / (60LU * SOFT_TICKS_PER_SEC)) - (((uint32_t)day * 1440LU) + ((uint32_t)hour * 60LU)));
+        sec = (uint8_t)((systick / (SOFT_TICKS_PER_SEC)) - (((uint32_t)day * 86400LU) + ((uint32_t)hour * 3600LU) + ((uint32_t)min * 60LU)));
+        milisec = (uint8_t)((systick) - (((uint32_t)day * 86400LU) + (((uint32_t)hour * 3600LU) + ((uint32_t)min * 60LU) + ((uint32_t)sec)) * SOFT_TICKS_PER_SEC));
+        printf("\f\t%02u:%02u:%02u:%02u.%02u\r\n", day, hour, min, sec, ((uint8_t)TICK_TO_MS(milisec) / 10));
+        printf("\t%ld.%ld.%ld.%ld\r\n",
+               (uint32_t)(ip_address >> 24),
+               ((uint32_t)(ip_address >> 16)) & 0xFF,
+               ((uint32_t)(ip_address >> 8)) & 0xFF,
+               ((uint32_t)(ip_address & 0xFF)));
+
+        /* Calculate the tick at which we need to display log. */
+        target_time += LOG_DELAY;
+
+        printf("V(M): %ld", main_volt);
+#if (COMPUTE_APPROX == TRUE)
+        printf(", %ld", main_approx);
+#endif /* (COMPUTE_APPROX == TRUE) */
+        printf("\r\n");
+
+        printf("V(G): %ld", generator_volt);
+#if (COMPUTE_APPROX == TRUE)
+        printf(", %ld", generator_approx);
+#endif /* (COMPUTE_APPROX == TRUE) */
+
+        /* Sleep for some time. */
+        /* Pick the system tick. */
+        systick = current_system_tick();
+        if (target_time > TICK_TO_MS(systick))
+        {
+            sleep_ms(target_time - TICK_TO_MS(systick));
+        }
+    }
+
+} /* log_entry */
+
 /* Main entry function for AVR. */
 int main(void)
 {
@@ -934,14 +1152,11 @@ int main(void)
     PORT_CONNECTED &= (uint8_t)(~(1 << PIN_CONNECTED));
 
 #if (ENABLE_WDT == TRUE)
-    /* Reset watchdog timer. */
+    /* Reset watch dog timer. */
     WDT_RESET();
 
-    /* Start timed sequence */
-    WDTCSR |= (1 << WDCE) | (1 << WDE);
-
-    /* Set new prescaler (time-out). */
-    WDTCSR = (1 << WDE) | (1 << WDP3) | (1 << WDP0);
+    /* Enable WDT with watch interval of 2 second. */
+    wdt_enable(WDTO_2S);
 #endif
 
     /* Initialize scheduler. */
@@ -974,8 +1189,8 @@ int main(void)
     /* Initialize a weird view server instance. */
     weird_view_server_init(&weird_view, &socket_address, DEVICE_NAME, weird_view_plugins, sizeof(weird_view_plugins)/sizeof(WEIRD_VIEW_PLUGIN));
 
-    /* Initialize condition data. */
-    adc_suspend.timeout = (uint32_t)(current_system_tick() + ADC_CHANNEL_DELAY);
+    /* Initialize condition data and trigger it now. */
+    adc_suspend.timeout = current_system_tick() + MS_TO_TICK(ADC_CHANNEL_DELAY);
     adc_suspend.timeout_enabled = TRUE;
 
     /* Initialize ADC condition data. */
@@ -989,6 +1204,10 @@ int main(void)
     /* Initialize control task. */
     task_create(&control_cb, "CONTROL", control_stack, CONTROL_TASK_STACK_SIZE, &control_entry, (void *)0, TASK_NO_RETURN);
     scheduler_task_add(&control_cb, 0);
+
+    /* Initialize log task. */
+    task_create(&log_cb, "LOG", log_stack, LOG_TASK_STACK_SIZE, &log_entry, (void *)0, TASK_NO_RETURN);
+    scheduler_task_add(&log_cb, 255);
 
     /* Run scheduler. */
     kernel_run();
