@@ -178,7 +178,7 @@ void enc28j60_atmega644p_reset(ENC28J60 *device)
     fd_release_lock(fd);
 
     /* Sleep to wait for target to actually reset. */
-    sleep_ms(ENC28J60_ATMEGA644P_RESET_DELAY);
+    sleep_fms(ENC28J60_ATMEGA644P_RESET_DELAY);
 
     /* Acquire lock for this device. */
     ASSERT(fd_get_lock(fd) != SUCCESS);

@@ -60,7 +60,7 @@ void lcd_an_register(LCD_AN *lcd)
 
 #if (LCD_AN_INIT_DELAY > 0)
     /* Need to wait at least 15ms on power up. */
-    sleep_ms(LCD_AN_INIT_DELAY);
+    sleep_fms(LCD_AN_INIT_DELAY);
 #endif
 
     /* Send first 0x3. */
@@ -122,7 +122,7 @@ void lcd_an_register(LCD_AN *lcd)
 
 #if (LCD_AN_CLEAR_DELAY > 0)
         /* Wait for sometime before writing any more data. */
-        sleep_ms(LCD_AN_CLEAR_DELAY);
+        sleep_fms(LCD_AN_CLEAR_DELAY);
 #endif
     }
 
@@ -174,7 +174,7 @@ static int32_t lcd_an_wait_8bit(LCD_AN *lcd)
     UNUSED_PARAM(lcd);
 
     /* Rather waiting on status bit just busy wait here. */
-    sleep_ms(LCD_AN_8_BIT_DELAY);
+    sleep_fms(LCD_AN_8_BIT_DELAY);
 #else
 
     /* Read the command register. */
@@ -435,7 +435,7 @@ static int32_t lcd_an_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
 
 #if (LCD_AN_CLEAR_DELAY > 0)
             /* Wait for sometime before writing any more data. */
-            sleep_ms(LCD_AN_CLEAR_DELAY);
+            sleep_fms(LCD_AN_CLEAR_DELAY);
 #endif
 
             break;

@@ -128,7 +128,7 @@ static void enc28j60_initialize(void *data)
         /* If clock is still not ready. */
         if ((value & ENC28J60_ESTAT_CLKRDY) == 0)
         {
-            sleep_ms(ENC28J60_CLKRDY_DELAY);
+            sleep_fms(ENC28J60_CLKRDY_DELAY);
         }
 
         /* Acquire lock for this device. */

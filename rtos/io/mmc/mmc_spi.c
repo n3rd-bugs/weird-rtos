@@ -513,7 +513,7 @@ int32_t mmc_spi_init(void *device)
 
                         /* Sleep before trying again. */
                         resp[0] = 0xFF;
-                        sleep_ms(MMC_SPI_RESUME_DELAY);
+                        sleep_fms(MMC_SPI_RESUME_DELAY);
                     }
 
                     /* If we are out of retries. */
@@ -578,7 +578,7 @@ int32_t mmc_spi_init(void *device)
                             else
                             {
                                 /* Sleep before trying again. */
-                                sleep_ms(MMC_SPI_RESUME_DELAY);
+                                sleep_fms(MMC_SPI_RESUME_DELAY);
                             }
                         }
 
@@ -619,7 +619,7 @@ int32_t mmc_spi_init(void *device)
                             else
                             {
                                 /* Sleep before trying again. */
-                                sleep_ms(MMC_SPI_RESUME_DELAY);
+                                sleep_fms(MMC_SPI_RESUME_DELAY);
                             }
                         }
 
@@ -769,7 +769,7 @@ int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *b
                     else
                     {
                         /* Sleep before retrying. */
-                        sleep_ms(MMC_SPI_RX_DELAY);
+                        sleep_fms(MMC_SPI_RX_DELAY);
                     }
                 }
 
@@ -963,7 +963,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
                     else
                     {
                         /* Sleep before retrying. */
-                        sleep_ms(MMC_SPI_TX_DELAY);
+                        sleep_fms(MMC_SPI_TX_DELAY);
                     }
                 }
 
@@ -1108,7 +1108,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
                     else
                     {
                         /* Sleep before retrying. */
-                        sleep_ms(MMC_SPI_TX_DELAY);
+                        sleep_fms(MMC_SPI_TX_DELAY);
                     }
                 }
 
@@ -1387,7 +1387,7 @@ static int32_t mmc_spi_rx_data(MMC_SPI *mmc, uint8_t *buffer, int32_t size)
         else
         {
             /* Sleep before retrying. */
-            sleep_ms(MMC_SPI_RX_DELAY);
+            sleep_fms(MMC_SPI_RX_DELAY);
         }
     }
 
@@ -1607,7 +1607,7 @@ static int32_t mmc_slave_select(MMC_SPI *mmc, uint8_t test_line)
             else
             {
                 /* Sleep before trying again. */
-                sleep_ms(MMC_SPI_SELECT_DELAY);
+                sleep_fms(MMC_SPI_SELECT_DELAY);
             }
         }
 
