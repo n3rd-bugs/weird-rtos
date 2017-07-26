@@ -16,6 +16,7 @@
 
 #ifndef _AVR_GCC_H_
 #define _AVR_GCC_H_
+#include <avr/pgmspace.h>
 
 #define STACK_LESS          __attribute__ ((naked))
 #define NOINLINE            __attribute__ ((noinline))
@@ -28,6 +29,12 @@
 #define SPEEDOPTIMIZATION   __attribute__((optimize("O3")))
 
 #define LITTLE_ENDIAN
+
+#define P_STR               PSTR
+#define P_STR_T             PGM_P
+#define P_STR_MEM           ROGMEM
+#define P_STR_CPY           strcpy_P
+#define P_STR_NCPY          strncpy_P
 
 /* Function prototypes. */
 void io_avr_init();
