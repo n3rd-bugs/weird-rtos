@@ -24,9 +24,11 @@ ADC_DATA_CALLBACK *adc_callback = NULL;
  * ISR(TIMER0_COMPA_vect, ISR_BLOCK)
  * This is stubbed TIMER0 ISR routine.
  */
-ISR(TIMER0_COMPA_vect, ISR_BLOCK)
+ISR(TIMER0_COMPA_vect, ISR_NAKED)
 {
-    ;
+    /* Return from a naked ISR. */
+    ISR_RETURN();
+
 } /* ISR(TIMER0_COMPA_vect, ISR_BLOCK) */
 
 /*
