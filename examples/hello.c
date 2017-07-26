@@ -58,7 +58,7 @@ int main(void)
 #endif /* CONFIG_SERIAL */
 
     /* Create a task for hello demo. */
-    task_create(&hello_task_cb, "HELLO", hello_task_stack, DEMO_STACK_SIZE, &hello_task, (void *)(NULL), 0);
+    task_create(&hello_task_cb, P_STR("HELLO"), hello_task_stack, DEMO_STACK_SIZE, &hello_task, (void *)(NULL), 0);
     scheduler_task_add(&hello_task_cb, 5);
 
     /* Run scheduler. */

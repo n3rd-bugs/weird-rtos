@@ -99,7 +99,7 @@ int main(void)
 
     /* Create a task for UDP echo demo. */
     udp_echo_task_cb = (TASK *)mem_static_alloc(sizeof(TASK) + 4096);
-    task_create(udp_echo_task_cb, "ECHO", (uint8_t *)(udp_echo_task_cb + 1), 4096, &udp_echo_task, (void *)(NULL), 0);
+    task_create(udp_echo_task_cb, P_STR("ECHO"), (uint8_t *)(udp_echo_task_cb + 1), 4096, &udp_echo_task, (void *)(NULL), 0);
     scheduler_task_add(udp_echo_task_cb, 5);
 
     /* Run scheduler. */

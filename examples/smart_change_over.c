@@ -1202,11 +1202,11 @@ int main(void)
     net_condition_add(&adc_condition, &adc_suspend, &adc_sample_process, (void *)NULL);
 
     /* Initialize control task. */
-    task_create(&control_cb, "CONTROL", control_stack, CONTROL_TASK_STACK_SIZE, &control_entry, (void *)0, TASK_NO_RETURN);
+    task_create(&control_cb, P_STR("CONTROL"), control_stack, CONTROL_TASK_STACK_SIZE, &control_entry, (void *)0, TASK_NO_RETURN);
     scheduler_task_add(&control_cb, 0);
 
     /* Initialize log task. */
-    task_create(&log_cb, "LOG", log_stack, LOG_TASK_STACK_SIZE, &log_entry, (void *)0, TASK_NO_RETURN);
+    task_create(&log_cb, P_STR("LOG"), log_stack, LOG_TASK_STACK_SIZE, &log_entry, (void *)0, TASK_NO_RETURN);
     scheduler_task_add(&log_cb, 255);
 
     /* Run scheduler. */

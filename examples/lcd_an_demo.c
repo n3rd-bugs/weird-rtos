@@ -93,7 +93,7 @@ int main(void)
     serial_init();
 
     /* Initialize LCD demo task. */
-    task_create(&lcd_demo_cb, "LCD", lcd_demo_stack, LCD_DEMO_TASK_STACK_SIZE, &lcd_demo_entry, (void *)0, TASK_NO_RETURN);
+    task_create(&lcd_demo_cb, P_STR("LCD"), lcd_demo_stack, LCD_DEMO_TASK_STACK_SIZE, &lcd_demo_entry, (void *)0, TASK_NO_RETURN);
     scheduler_task_add(&lcd_demo_cb, 0);
 
     /* Run scheduler. */

@@ -83,7 +83,7 @@ int main(void)
     serial_init();
 
     /* Create a task for TCP demo. */
-    task_create(&tcp_task_cb, "TCP", tcp_task_stack, DEMO_STACK_SIZE, &tcp_server_task, (void *)(NULL), 0);
+    task_create(&tcp_task_cb, P_STR("TCP"), tcp_task_stack, DEMO_STACK_SIZE, &tcp_server_task, (void *)(NULL), 0);
     scheduler_task_add(&tcp_task_cb, 5);
 
     /* Run scheduler. */

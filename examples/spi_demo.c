@@ -59,7 +59,7 @@ int main(void)
     scheduler_init();
 
     /* Create a task for SPI demo. */
-    task_create(&spi_demo_task_cb, "SPI", demo_stack, 256, &spi_demo_task, (void *)(NULL), 0);
+    task_create(&spi_demo_task_cb, P_STR("SPI"), demo_stack, 256, &spi_demo_task, (void *)(NULL), 0);
     scheduler_task_add(&spi_demo_task_cb, 5);
 
     /* Run scheduler. */
