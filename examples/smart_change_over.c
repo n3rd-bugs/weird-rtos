@@ -34,13 +34,16 @@ int32_t weird_view_demo_task_stats(uint16_t, FS_BUFFER *);
 int32_t weird_view_demo_analog_data(uint16_t, uint32_t *, uint32_t *, uint32_t *);
 
 /* Weird view server definitions. */
+const char plgn_name_1[] P_STR_MEM = "Main Line Voltage";
+const char plgn_name_2[] P_STR_MEM = "Generator Voltage";
+const char plgn_name_3[] P_STR_MEM = "Task Statistics";
 WEIRD_VIEW_SERVER           weird_view;
 WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 {
         /* Analog plugin. */
         {
                 .id         = 0x01,
-                .name       = "Main Line Voltage",
+                .name       = plgn_name_1,
                 .data       = (void *)&weird_view_demo_analog_data,
                 .request    = NULL,
                 .type       = WV_PLUGIN_ANALOG
@@ -49,7 +52,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
         /* Analog plugin. */
         {
                 .id         = 0x02,
-                .name       = "Generator Voltage",
+                .name       = plgn_name_2,
                 .data       = (void *)&weird_view_demo_analog_data,
                 .request    = NULL,
                 .type       = WV_PLUGIN_ANALOG
@@ -58,7 +61,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
         /* Task statistics plugin. */
         {
                 .id         = 0x03,
-                .name       = "Task Statistics",
+                .name       = plgn_name_3,
                 .data       = (void *)&weird_view_demo_task_stats,
                 .request    = NULL,
                 .type       = WV_PLUGIN_LOG

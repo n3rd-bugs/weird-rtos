@@ -39,13 +39,18 @@ void weird_view_demo_switch_req(uint16_t, uint8_t);
 int32_t weird_view_demo_analog_data(uint16_t, uint32_t *, uint32_t *, uint32_t *);
 
 /* Battery task stack. */
+const char plgn_name_1[] P_STR_MEM = "Switch 1";
+const char plgn_name_2[] P_STR_MEM = "Analog 1";
+const char plgn_name_3[] P_STR_MEM = "Analog 2";
+const char plgn_name_4[] P_STR_MEM = "Samples";
+const char plgn_name_5[] P_STR_MEM = "Task Statistics";
 WEIRD_VIEW_SERVER           weird_view;
 WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 {
         /* Switch plugin. */
         {
                 .id         = 0x01,
-                .name       = "Switch 1",
+                .name       = plgn_name_1,
                 .data       = (void *)&weird_view_demo_switch_data,
                 .request    = (void *)&weird_view_demo_switch_req,
                 .type       = WV_PLUGIN_SWITCH
@@ -54,7 +59,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
         /* Analog plugin. */
         {
                 .id         = 0x02,
-                .name       = "Analog 1",
+                .name       = plgn_name_2,
                 .data       = (void *)&weird_view_demo_analog_data,
                 .request    = NULL,
                 .type       = WV_PLUGIN_ANALOG
@@ -63,7 +68,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
         /* Analog plugin. */
         {
                 .id         = 0x03,
-                .name       = "Analog 2",
+                .name       = plgn_name_3,
                 .data       = (void *)&weird_view_demo_analog_data,
                 .request    = NULL,
                 .type       = WV_PLUGIN_ANALOG
@@ -72,7 +77,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
         /* ADC sample plugin. */
         {
                 .id         = 0x04,
-                .name       = "Samples",
+                .name       = plgn_name_4,
                 .data       = (void *)&weird_view_demo_adc_sample,
                 .request    = NULL,
                 .type       = WV_PLUGIN_WAVE
@@ -81,7 +86,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
         /* Task statistics plugin. */
         {
                 .id         = 0x05,
-                .name       = "Task Statistics",
+                .name       = plgn_name_5,
                 .data       = (void *)&weird_view_demo_task_stats,
                 .request    = NULL,
                 .type       = WV_PLUGIN_LOG
