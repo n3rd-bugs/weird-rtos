@@ -73,6 +73,10 @@ extern uint32_t current_tick;
 #ifndef CPU_ISR_EXIT
 #define CPU_ISR_EXIT()
 #endif
+#ifndef CPU_ISR_RETURN
+#define CPU_ISR_RETURN()            CPU_ISR_ENTER();                            \
+                                    CPU_ISR_EXIT();
+#endif
 
 #if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
 #define MARK_ENTRY()                mark_task_entry()
@@ -91,6 +95,8 @@ extern uint32_t current_tick;
                                     MARK_ENTRY();                               \
                                     return_task = NULL;                         \
                                     CPU_ISR_EXIT()
+
+#define ISR_RETURN()                CPU_ISR_RETURN()
 
 #define KERNEL_RUNNING()            ((current_task != NULL) || (return_task != NULL))
 

@@ -78,6 +78,8 @@ typedef uint8_t INT_LVL;
 
 #define WDT_RESET()         asm volatile ( "wdr" :: );
 
+#define CPU_ISR_RETURN()    asm volatile ( "reti" :: );
+
 #define CPU_ISR_ENTER()     {                               \
                                 SAVE_CONTEXT_ISR();         \
                                 LOAD_SYSTEM_STACK();        \
