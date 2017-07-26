@@ -880,7 +880,7 @@ static int32_t enc28j60_transmit_packet(void *data, FS_BUFFER *buffer)
             device->flags |= ENC28J60_IN_TX;
 
             /* Enable watch dog interrupt. */
-            ethernet_wdt_enable(&device->ethernet_device, ENC28J60_WDT_TIMEOUT);
+            ethernet_wdt_enable(&device->ethernet_device, MS_TO_TICK(ENC28J60_WDT_TIMEOUT));
         }
     }
     else

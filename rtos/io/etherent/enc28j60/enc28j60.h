@@ -38,7 +38,7 @@
 #define ENC28J60_DISCONNECTED       -11000
 
 /* ENC28J60 watch dog configuration. */
-#define ENC28J60_WDT_TIMEOUT        (SOFT_TICKS_PER_SEC / 10)
+#define ENC28J60_WDT_TIMEOUT        (1000)
 
 /* ENC28J60 CLKRDY delay configuration. */
 #define ENC28J60_CLKRDY_TIMEOUT     (100)
