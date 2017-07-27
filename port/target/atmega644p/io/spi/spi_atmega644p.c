@@ -26,6 +26,7 @@ void spi_atmega644_init(SPI_DEVICE *device)
 {
     uint32_t baud_scale;
     uint8_t bit_count = 0;
+    INT_LVL interrupt_level;
 
     /* SPI baudrate table.
      * Divisor  SP1     SP0     SPX
@@ -81,6 +82,12 @@ void spi_atmega644_init(SPI_DEVICE *device)
      *  SCLK - PB7
      */
 
+    /* Get system interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
+
     /* If we are operating in master mode. */
     if (device->cfg_flags & SPI_CFG_MASTER)
     {
@@ -108,6 +115,9 @@ void spi_atmega644_init(SPI_DEVICE *device)
         PORTB &= (uint8_t)~(1 << 6);
     }
 
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
     /* Enable SPI device. */
     SPCR |= (1 << ATMEGA644P_SPI_SPCR_SPE_SHIFT);
 
@@ -119,11 +129,22 @@ void spi_atmega644_init(SPI_DEVICE *device)
  */
 void spi_atmega644_slave_select(SPI_DEVICE *device)
 {
+    INT_LVL interrupt_level;
+
     /* Remove some compiler warning. */
     UNUSED_PARAM(device);
 
+    /* Get system interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
+
     /* Set SS low. */
     PORTB &= (uint8_t)~(1 << 4);
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* spi_atmega644_slave_select */
 
@@ -133,11 +154,22 @@ void spi_atmega644_slave_select(SPI_DEVICE *device)
  */
 void spi_atmega644_slave_unselect(SPI_DEVICE *device)
 {
+    INT_LVL interrupt_level;
+
     /* Remove some compiler warning. */
     UNUSED_PARAM(device);
 
+    /* Get system interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
+
     /* Set SS high. */
     PORTB |= (1 << 4);
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* spi_atmega644_slave_unselect */
 

@@ -25,6 +25,13 @@
 void i2c_bb_atmega644_init(I2C_DEVICE *device)
 {
     I2C_BB_AVR *bb_avr = (I2C_BB_AVR *)device->data;
+    INT_LVL interrupt_level;
+
+    /* Get system interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Set SCL and SDA high. */
     _SFR_IO8(bb_avr->port_scl) |= (1 << bb_avr->pin_num_scl);
@@ -33,6 +40,9 @@ void i2c_bb_atmega644_init(I2C_DEVICE *device)
     /* SCL and SDA will be output. */
     _SFR_IO8(bb_avr->ddr_scl) |= (1 << bb_avr->pin_num_scl);
     _SFR_IO8(bb_avr->ddr_sda) |= (1 << bb_avr->pin_num_sda);
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* i2c_bb_atmega644_init */
 
@@ -49,6 +59,7 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
     I2C_BB_AVR *bb_avr = (I2C_BB_AVR *)device->data;
     int32_t j, status = SUCCESS;
     uint8_t *ptr, acked = TRUE, byte_tx, byte_rx, i, k, this_len, port_sda, pin_map_sda, ddr_sda, pin_sda, port_scl, pin_map_scl;
+    INT_LVL interrupt_level;
 
     /* Save the register addresses we will need to access. */
     port_sda = bb_avr->port_sda;
@@ -58,17 +69,32 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
     port_scl = bb_avr->port_scl;
     pin_map_scl = (1 << bb_avr->pin_num_scl);
 
+    /* Get system interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
+
     /* Send start bit. */
     /* Clear SDA and SCL. */
     _SFR_IO8(port_sda) &= (uint8_t)(~(pin_map_sda));
     _SFR_IO8(port_scl) &= (uint8_t)(~(pin_map_scl));
 
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
     /* Write first byte of the message. */
     byte_tx = ((device->address << 1) | (message->flags == I2C_MSG_READ));
+
+    /* Get system interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Transfer a byte bit by bit. */
     for (i = 0; i < 8; i++)
     {
+        /* Disable global interrupts. */
+        DISABLE_INTERRUPTS();
+
         /* If we need to send a high. */
         if ((byte_tx & 0x80) != 0)
         {
@@ -84,6 +110,9 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
         /* Toggle SCL. */
         _SFR_IO8(port_scl) ^= pin_map_scl;
 
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
+
         /* A bit is now transfered */
         byte_tx = (byte_tx << 1);
 
@@ -92,9 +121,18 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
         _delay_us(ATMEGA644P_I2C_DELAY);
 #endif /* ATMEGA644P_SLOW_I2C */
 
+        /* Disable global interrupts. */
+        DISABLE_INTERRUPTS();
+
         /* Toggle SCL. */
         _SFR_IO8(port_scl) ^= pin_map_scl;
+
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
     }
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Make SDA input. */
     _SFR_IO8(ddr_sda) &= (uint8_t)(~(pin_map_sda));
@@ -114,6 +152,9 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
 
     /* Make SDA output. */
     _SFR_IO8(ddr_sda) |= pin_map_sda;
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Save the message start pointer. */
     ptr = message->buffer;
@@ -151,6 +192,9 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
                     /* Transfer a byte bit by bit. */
                     for (i = 0; i < 8; i++)
                     {
+                        /* Disable global interrupts. */
+                        DISABLE_INTERRUPTS();
+
                         /* If we need to send a high. */
                         if ((byte_tx & 0x80) != 0)
                         {
@@ -166,6 +210,9 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
                         /* Toggle SCL. */
                         _SFR_IO8(port_scl) ^= pin_map_scl;
 
+                        /* Restore old interrupt level. */
+                        SET_INTERRUPT_LEVEL(interrupt_level);
+
                         /* A bit is now transfered */
                         byte_tx = (byte_tx << 1);
 
@@ -174,9 +221,18 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
                         _delay_us(ATMEGA644P_I2C_DELAY);
 #endif /* ATMEGA644P_SLOW_I2C */
 
+                        /* Disable global interrupts. */
+                        DISABLE_INTERRUPTS();
+
                         /* Toggle SCL. */
                         _SFR_IO8(port_scl) ^= pin_map_scl;
+
+                        /* Restore old interrupt level. */
+                        SET_INTERRUPT_LEVEL(interrupt_level);
                     }
+
+                    /* Disable global interrupts. */
+                    DISABLE_INTERRUPTS();
 
                     /* Make SDA input. */
                     _SFR_IO8(ddr_sda) &= (uint8_t)(~(pin_map_sda));
@@ -199,6 +255,9 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
 
                     /* Make SDA output. */
                     _SFR_IO8(ddr_sda) |= pin_map_sda;
+
+                    /* Restore old interrupt level. */
+                    SET_INTERRUPT_LEVEL(interrupt_level);
                 }
             }
 
@@ -214,8 +273,14 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
         /* If we are reading. */
         case I2C_MSG_READ:
 
+            /* Disable global interrupts. */
+            DISABLE_INTERRUPTS();
+
             /* Make SDA input. */
             _SFR_IO8(ddr_sda) &= (uint8_t)(~(pin_map_sda));
+
+            /* Restore old interrupt level. */
+            SET_INTERRUPT_LEVEL(interrupt_level);
 
             /* While we have a byte to read. */
             for (j = 0; j < message->length; j += this_len)
@@ -247,13 +312,22 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
                         /* Make space in the RX byte for this bit. */
                         byte_rx = (byte_rx << 1);
 
+                        /* Disable global interrupts. */
+                        DISABLE_INTERRUPTS();
+
                         /* Toggle SCL. */
                         _SFR_IO8(port_scl) ^= pin_map_scl;
+
+                        /* Restore old interrupt level. */
+                        SET_INTERRUPT_LEVEL(interrupt_level);
 
 #ifdef ATMEGA644P_SLOW_I2C
                         /* Insert a delay. */
                         _delay_us(ATMEGA644P_I2C_DELAY);
 #endif /* ATMEGA644P_SLOW_I2C */
+
+                        /* Disable global interrupts. */
+                        DISABLE_INTERRUPTS();
 
                         /* If SDA is high. */
                         if ((_SFR_IO8(pin_sda) & pin_map_sda) != 0)
@@ -265,11 +339,17 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
                         /* Toggle SCL. */
                         _SFR_IO8(port_scl) ^= pin_map_scl;
 
+                        /* Restore old interrupt level. */
+                        SET_INTERRUPT_LEVEL(interrupt_level);
+
 #ifdef ATMEGA644P_SLOW_I2C
                         /* Insert a delay. */
                         _delay_us(ATMEGA644P_I2C_DELAY);
 #endif /* ATMEGA644P_SLOW_I2C */
                     }
+
+                    /* Disable global interrupts. */
+                    DISABLE_INTERRUPTS();
 
                     /* Make SDA output. */
                     _SFR_IO8(ddr_sda) |= pin_map_sda;
@@ -302,15 +382,27 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
 
                     /* Make SDA input. */
                     _SFR_IO8(ddr_sda) &= (uint8_t)(~(pin_map_sda));
+
+                    /* Restore old interrupt level. */
+                    SET_INTERRUPT_LEVEL(interrupt_level);
                 }
             }
+
+            /* Disable global interrupts. */
+            DISABLE_INTERRUPTS();
 
             /* Make SDA output. */
             _SFR_IO8(ddr_sda) |= pin_map_sda;
 
+            /* Restore old interrupt level. */
+            SET_INTERRUPT_LEVEL(interrupt_level);
+
             break;
         }
     }
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Send stop bit. */
     /* Clear SDA. */
@@ -319,6 +411,9 @@ int32_t i2c_bb_atmega644_message(I2C_DEVICE *device, I2C_MSG *message)
     /* Set SCL and SDA. */
     _SFR_IO8(port_scl) |= (pin_map_scl);
     _SFR_IO8(port_sda) |= (pin_map_sda);
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Return status to the caller. */
     return (status);

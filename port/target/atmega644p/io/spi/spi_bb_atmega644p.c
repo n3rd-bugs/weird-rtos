@@ -25,6 +25,13 @@
 void spi_bb_atmega644_init(SPI_DEVICE *device)
 {
     SPI_BB_AVR *bb_avr = (SPI_BB_AVR *)device->data;
+    INT_LVL interrupt_level;
+
+    /* Get system interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Only mast mode is supported. */
     ASSERT((device->cfg_flags & SPI_CFG_MASTER) == 0);
@@ -44,6 +51,9 @@ void spi_bb_atmega644_init(SPI_DEVICE *device)
     /* MISO will be input. */
     _SFR_IO8(bb_avr->ddr_miso) &= (uint8_t)(~(1 << bb_avr->pin_num_miso));
 
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
 } /* spi_bb_atmega644_init */
 
 /*
@@ -53,9 +63,19 @@ void spi_bb_atmega644_init(SPI_DEVICE *device)
 void spi_bb_atmega644_slave_select(SPI_DEVICE *device)
 {
     SPI_BB_AVR *bb_avr = (SPI_BB_AVR *)device->data;
+    INT_LVL interrupt_level;
+
+    /* Get system interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Set SS low. */
     _SFR_IO8(bb_avr->port_ss) &= (uint8_t)(~(1 << bb_avr->pin_num_ss));
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* spi_bb_atmega644_slave_select */
 
@@ -66,9 +86,19 @@ void spi_bb_atmega644_slave_select(SPI_DEVICE *device)
 void spi_bb_atmega644_slave_unselect(SPI_DEVICE *device)
 {
     SPI_BB_AVR *bb_avr = (SPI_BB_AVR *)device->data;
+    INT_LVL interrupt_level;
+
+    /* Get system interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
 
     /* Set SS high. */
     _SFR_IO8(bb_avr->port_ss) |= (1 << bb_avr->pin_num_ss);
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* spi_bb_atmega644_slave_unselect */
 
@@ -84,6 +114,7 @@ int32_t spi_bb_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
     SPI_BB_AVR *bb_avr = (SPI_BB_AVR *)device->data;
     int32_t j;
     uint8_t *ptr, byte_tx, byte_rx, i, k, this_len, port_mosi, pin_map_mosi, port_sclk, pin_map_sclk, pin_miso, pin_map_miso;
+    INT_LVL interrupt_level;
 
     /* Save the register addresses we will need to access. */
     port_mosi = bb_avr->port_mosi;
@@ -95,6 +126,9 @@ int32_t spi_bb_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
 
     /* Save the message start pointer. */
     ptr = message->buffer;
+
+    /* Get system interrupt level. */
+    interrupt_level = GET_INTERRUPT_LEVEL();
 
     /* Process the message request. */
     switch (message->flags & (SPI_MSG_WRITE | SPI_MSG_READ))
@@ -131,6 +165,9 @@ int32_t spi_bb_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
                     /* Make space in the RX byte for this bit. */
                     byte_rx = (byte_rx << 1);
 
+                    /* Disable global interrupts. */
+                    DISABLE_INTERRUPTS();
+
                     /* If we need to send a high. */
                     if ((byte_tx & 0x80) != 0)
                     {
@@ -155,6 +192,9 @@ int32_t spi_bb_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
 
                     /* Toggle SCLK. */
                     _SFR_IO8(port_sclk) ^= pin_map_sclk;
+
+                    /* Restore old interrupt level. */
+                    SET_INTERRUPT_LEVEL(interrupt_level);
 
                     /* A bit is now transfered */
                     byte_tx = (byte_tx << 1);
@@ -197,6 +237,9 @@ int32_t spi_bb_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
                 /* Transfer a byte bit by bit. */
                 for (i = 0; i < 8; i++)
                 {
+                    /* Disable global interrupts. */
+                    DISABLE_INTERRUPTS();
+
                     /* If we need to send a high. */
                     if ((byte_tx & 0x80) != 0)
                     {
@@ -215,6 +258,9 @@ int32_t spi_bb_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
                     /* Toggle SCLK. */
                     _SFR_IO8(port_sclk) ^= pin_map_sclk;
 
+                    /* Restore old interrupt level. */
+                    SET_INTERRUPT_LEVEL(interrupt_level);
+
                     /* A bit is now transfered */
                     byte_tx = (byte_tx << 1);
                 }
@@ -229,8 +275,14 @@ int32_t spi_bb_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
     /* If we are only reading. */
     case SPI_MSG_READ:
 
+        /* Disable global interrupts. */
+        DISABLE_INTERRUPTS();
+
         /* Set the MOSI high. */
         _SFR_IO8(port_mosi) |= pin_map_mosi;
+
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
 
         /* While we have a byte to read. */
         for (j = 0; j < message->length; j += this_len)
@@ -259,6 +311,9 @@ int32_t spi_bb_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
                     /* Make space in the RX byte for this bit. */
                     byte_rx = (byte_rx << 1);
 
+                    /* Disable global interrupts. */
+                    DISABLE_INTERRUPTS();
+
                     /* Toggle SCLK. */
                     _SFR_IO8(port_sclk) ^= pin_map_sclk;
 
@@ -271,6 +326,9 @@ int32_t spi_bb_atmega644_message(SPI_DEVICE *device, SPI_MSG *message)
 
                     /* Toggle SCLK. */
                     _SFR_IO8(port_sclk) ^= pin_map_sclk;
+
+                    /* Restore old interrupt level. */
+                    SET_INTERRUPT_LEVEL(interrupt_level);
                 }
 
                 /* Save the byte read from SPI. */
