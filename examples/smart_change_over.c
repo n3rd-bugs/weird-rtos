@@ -114,9 +114,9 @@ void log_entry(void *argv);
 #define VOLTAGE_THRESHOLD       (300)
 #define POWER_ON_DELAY          (500)
 #define LED_TOGGLE_DELAY        (150)
-#define LOG_DELAY               (5000)
+#define LOG_DELAY               (2500)
 #define STATE_DELAY             (100)
-#define DEBOUNCE_DELAY          (20)
+#define DEBOUNCE_DELAY          (100)
 #define KEY_GEN_OFF_DELAY       (750)
 #define GENERATOR_SELF_DELAY    (1500)
 #define GENERATOR_SELF_DEL_INC  (750)
@@ -124,7 +124,7 @@ void log_entry(void *argv);
 #define GENERATOR_SELF_RETRY    (3)
 #define SWITCH_DELAY            (5000)
 #define ADC_CHANNEL_DELAY       (200)
-#define ADC_MAX_WAVES           (50)
+#define ADC_MAX_WAVES           (25)
 #define ADC_NUM_SAMPLES         (ADC_MAX_WAVES * ADC_SAMPLE_PER_WAVE)
 #define ENABLE_WDT              FALSE
 #define COMPUTE_AVG             FALSE
@@ -744,6 +744,7 @@ static int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER *buffer)
 {
     int32_t status = -1;
 
+#if (COMPUTE_APPROX == TRUE)
     switch (id)
     {
     case 0x04:
@@ -765,17 +766,26 @@ static int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER *buffer)
         break;
     }
 
-    /* Add sample size. */
-    status = fs_buffer_push(buffer, (uint8_t []){ sizeof(uint16_t) }, sizeof(uint8_t), 0);
+    if (status == SUCCESS)
+    {
+        /* Add sample size. */
+        status = fs_buffer_push(buffer, (uint8_t []){ sizeof(uint16_t) }, sizeof(uint8_t), 0);
+    }
 
     if (status == SUCCESS)
     {
         /* Push ADC sample on the buffer. */
         status = fs_buffer_push(buffer, (uint8_t *)adc_wave_copy, (ADC_SAMPLE_PER_WAVE * sizeof(uint16_t)), 0);
     }
+#else
 
-    /* Always return success. */
-    return (SUCCESS);
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(id);
+    UNUSED_PARAM(buffer);
+#endif
+
+    /* Always status to the caller. */
+    return (status);
 
 } /* weird_view_demo_adc_sample */
 
@@ -829,7 +839,7 @@ void adc_data_callback(uint32_t data)
             if (last_sample < data)
             {
                 /* If wave do start from a zero value. */
-                if ((last_sample == 0) || ((wave_index != 0) && (adc_wave[0] == 0)))
+                if (((wave_index == 0) && (last_sample == 0)) || ((wave_index != 0) && (adc_wave[0] == 0)))
                 {
                     /* Let's save starting values. */
                     adc_wave[wave_index++] = last_sample;
@@ -912,7 +922,11 @@ void adc_data_callback(uint32_t data)
 
     /* If we have processed the maximum number of samples or we do have a
      * stable wave. */
+#if (COMPUTE_APPROX == TRUE)
     if ((n == ADC_NUM_SAMPLES) || ((adc_got_wave == TRUE) && (wave_index == ADC_SAMPLE_PER_WAVE)))
+#else
+    if (n == ADC_NUM_SAMPLES)
+#endif
     {
         /* Reset the sample counter. */
         n = 0;
