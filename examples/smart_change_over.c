@@ -1171,9 +1171,6 @@ void log_entry(void *argv)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(argv);
 
-    /* Wait before staring log. */
-    sleep_fms(LOG_DELAY);
-
 #ifdef CONFIG_LCD_AN
     /* Initialize LCD. */
     lcd_an_init();
