@@ -32,11 +32,14 @@
 /* Function prototypes. */
 int32_t weird_view_demo_task_stats(uint16_t, FS_BUFFER *);
 int32_t weird_view_demo_analog_data(uint16_t, uint32_t *, uint32_t *, uint32_t *);
+static int32_t weird_view_demo_adc_sample(uint16_t, FS_BUFFER *);
 
 /* Weird view server definitions. */
 const char plgn_name_1[] P_STR_MEM = "Main Line Voltage";
 const char plgn_name_2[] P_STR_MEM = "Generator Voltage";
 const char plgn_name_3[] P_STR_MEM = "Task Statistics";
+const char plgn_name_4[] P_STR_MEM = "Main Line Wave";
+const char plgn_name_5[] P_STR_MEM = "Generator Wave";
 WEIRD_VIEW_SERVER           weird_view;
 WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 {
@@ -66,6 +69,24 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
                 .request    = NULL,
                 .type       = WV_PLUGIN_LOG
         },
+
+        /* ADC sample plugin. */
+        {
+                .id         = 0x04,
+                .name       = plgn_name_4,
+                .data       = (void *)&weird_view_demo_adc_sample,
+                .request    = NULL,
+                .type       = WV_PLUGIN_WAVE
+        },
+
+        /* ADC sample plugin. */
+        {
+                .id         = 0x05,
+                .name       = plgn_name_5,
+                .data       = (void *)&weird_view_demo_adc_sample,
+                .request    = NULL,
+                .type       = WV_PLUGIN_WAVE
+        },
 };
 
 /* Control task definitions. */
@@ -81,9 +102,9 @@ TASK log_cb;
 void log_entry(void *argv);
 
 /* ADC configuration and data. */
-#define ADC_PRESCALE            ((uint32_t)125)
+#define ADC_PRESCALE            ((uint32_t)10)
 #define ADC_WAVE_FREQ           ((uint32_t)100)
-#define ADC_ATIMER_PRESCALE     ((uint32_t)8)
+#define ADC_ATIMER_PRESCALE     ((uint32_t)256)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
 
 /* Charge controller definitions. */
@@ -103,8 +124,8 @@ void log_entry(void *argv);
 #define GENERATOR_SELF_RETRY    (3)
 #define SWITCH_DELAY            (5000)
 #define ADC_CHANNEL_DELAY       (200)
-#define ADC_NUM_WAVES           (10)
-#define ADC_NUM_SAMPLES         (ADC_NUM_WAVES * ADC_SAMPLE_PER_WAVE)
+#define ADC_MAX_WAVES           (50)
+#define ADC_NUM_SAMPLES         (ADC_MAX_WAVES * ADC_SAMPLE_PER_WAVE)
 #define ENABLE_WDT              FALSE
 #define COMPUTE_AVG             FALSE
 #define COMPUTE_APPROX          TRUE
@@ -189,7 +210,9 @@ static uint8_t current_channel = 0;
 static uint8_t auto_start = FALSE;
 #if (COMPUTE_APPROX == TRUE)
 static uint8_t adc_got_wave = FALSE;
+static int8_t last_sample_channel = -1;
 static uint16_t adc_wave[ADC_SAMPLE_PER_WAVE];
+static uint16_t adc_wave_copy[ADC_SAMPLE_PER_WAVE];
 static uint32_t main_approx, generator_approx;
 #endif /* (COMPUTE_APPROX == TRUE) */
 static uint32_t adc_sample;
@@ -690,14 +713,6 @@ int32_t weird_view_demo_task_stats(uint16_t id, FS_BUFFER *buffer)
  */
 int32_t weird_view_demo_analog_data(uint16_t id, uint32_t *value, uint32_t *value_div, uint32_t *max_value)
 {
-    INT_LVL interrupt_level;
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
-
     switch (id)
     {
     case 0x01:
@@ -714,13 +729,55 @@ int32_t weird_view_demo_analog_data(uint16_t id, uint32_t *value, uint32_t *valu
         break;
     }
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
     /* Always return success. */
     return (SUCCESS);
 
 } /* weird_view_demo_analog_data */
+
+/*
+ * weird_view_demo_adc_sample
+ * @id: Plugin id.
+ * @buffer: File system buffer in which reply will be populated.
+ * This is callback function to populate the given buffer with task statistics.
+ */
+static int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER *buffer)
+{
+    int32_t status = -1;
+
+    switch (id)
+    {
+    case 0x04:
+        /* If we have a sample for main line. */
+        if (last_sample_channel == ADC_CHN_MAIN)
+        {
+            /* Let's send this sample. */
+            status = SUCCESS;
+        }
+        break;
+
+    case 0x05:
+        /* If we have a sample for generator. */
+        if (last_sample_channel == ADC_CHN_GENERATOR)
+        {
+            /* Let's send this sample. */
+            status = SUCCESS;
+        }
+        break;
+    }
+
+    /* Add sample size. */
+    status = fs_buffer_push(buffer, (uint8_t []){ sizeof(uint16_t) }, sizeof(uint8_t), 0);
+
+    if (status == SUCCESS)
+    {
+        /* Push ADC sample on the buffer. */
+        status = fs_buffer_push(buffer, (uint8_t *)adc_wave_copy, (ADC_SAMPLE_PER_WAVE * sizeof(uint16_t)), 0);
+    }
+
+    /* Always return success. */
+    return (SUCCESS);
+
+} /* weird_view_demo_adc_sample */
 
 /*
  * adc_data_callback
@@ -735,6 +792,7 @@ void adc_data_callback(uint32_t data)
     static int32_t wave_index = 0;
     static uint16_t last_sample = 0;
     static uint8_t edge = 0;
+    static uint32_t sample_tick = 0;
 #endif /* (COMPUTE_APPROX == TRUE) */
 
 #if COMPUTE_AVG
@@ -782,6 +840,9 @@ void adc_data_callback(uint32_t data)
 
                     /* This may be a good wave. */
                     adc_got_wave = TRUE;
+
+                    /* Save the current system tick. */
+                    sample_tick = current_system_tick();
                 }
                 else
                 {
@@ -828,8 +889,9 @@ void adc_data_callback(uint32_t data)
             /* Pick a wave sample. */
             adc_wave[wave_index++] = data;
 
-            /* If the wave does not terminate a zero value. */
-            if ((wave_index == ADC_SAMPLE_PER_WAVE) && (adc_wave[ADC_SAMPLE_PER_WAVE -1] != 0))
+            /* If the wave does not terminate a zero value or we did process a
+             * system tick. */
+            if (((wave_index == ADC_SAMPLE_PER_WAVE) && (adc_wave[ADC_SAMPLE_PER_WAVE -1] != 0)) || (sample_tick != current_system_tick()))
             {
                 /* This wave is not good. */
                 adc_got_wave = FALSE;
@@ -848,13 +910,21 @@ void adc_data_callback(uint32_t data)
     /* We have taken a sample. */
     n++;
 
-    /* If we have processed the required number of samples. */
-    if (n == ADC_NUM_SAMPLES)
+    /* If we have processed the maximum number of samples or we do have a
+     * stable wave. */
+    if ((n == ADC_NUM_SAMPLES) || ((adc_got_wave == TRUE) && (wave_index == ADC_SAMPLE_PER_WAVE)))
     {
         /* Reset the sample counter. */
         n = 0;
 
 #if (COMPUTE_APPROX == TRUE)
+        /* If we did not pick a complete wave. */
+        if (wave_index != ADC_SAMPLE_PER_WAVE)
+        {
+            /* This wave is not good. */
+            adc_got_wave = FALSE;
+        }
+
         /* Reset the wave counters. */
         wave_index = 0;
         edge = 0;
@@ -946,15 +1016,14 @@ void adc_sample_process(void *data, int32_t status)
 
             /* For beta avrg(samples) - (alpha * avrg(sin(x))). */
             approx_beta = avrg - ((approx_alpha * 2) / (3.141592));
-
-#if 0
-            for (i = 0; i < ADC_SAMPLE_PER_WAVE; i++)
-            {
-                printf("%d\r\n", adc_wave[i]);
-            }
-            printf("-------------\r\n");
-#endif
         }
+#if 0
+        for (i = 0; i < ADC_SAMPLE_PER_WAVE; i++)
+        {
+            printf("%d\r\n", adc_wave[i]);
+        }
+        printf("-------------\r\n");
+#endif
 #endif /* (COMPUTE_APPROX == TRUE) */
 
         /* Reset the ADC sample. */
@@ -986,6 +1055,17 @@ void adc_sample_process(void *data, int32_t status)
                 /* Compute the wave max using the approximation constants. */
                 main_approx = approx_alpha - approx_beta;
                 adc_got_wave = FALSE;
+
+                /* Make a copy of this sample. */
+                memcpy(adc_wave_copy, adc_wave, sizeof(uint16_t) * ADC_SAMPLE_PER_WAVE);
+
+                /* Mark this as an okay sample. */
+                last_sample_channel = ADC_CHN_MAIN;
+            }
+            else
+            {
+                /* Approximation is not available. */
+                main_approx = 0;
             }
 #endif /* (COMPUTE_APPROX == TRUE) */
 
@@ -1004,6 +1084,17 @@ void adc_sample_process(void *data, int32_t status)
                 /* Compute the wave max using the approximation constants. */
                 generator_approx = approx_alpha - approx_beta;
                 adc_got_wave = FALSE;
+
+                /* Make a copy of this sample. */
+                memcpy(adc_wave_copy, adc_wave, sizeof(uint16_t) * ADC_SAMPLE_PER_WAVE);
+
+                /* Mark this as an okay sample. */
+                last_sample_channel = ADC_CHN_GENERATOR;
+            }
+            else
+            {
+                /* Approximation is not available. */
+                generator_approx = 0;
             }
 #endif /* (COMPUTE_APPROX == TRUE) */
 
