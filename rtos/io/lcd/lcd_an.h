@@ -29,6 +29,7 @@
 #endif
 
 #define LCD_AN_DEBUG
+//#define LCD_AN_NO_BUSY_WAIT
 
 /* Alphanumeric LCD configurations */
 #define LCD_AN_BUSY_TIMEOUT     (500)

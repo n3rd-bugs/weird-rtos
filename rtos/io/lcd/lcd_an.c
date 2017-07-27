@@ -241,10 +241,13 @@ static void lcd_an_send_nibble(LCD_AN *lcd, uint8_t nibble)
  */
 static int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
 {
+#ifndef LCD_AN_NO_BUSY_WAIT
     uint8_t cmd_byte;
     uint32_t sys_time = current_system_tick();
+#endif /* LCD_AN_NO_BUSY_WAIT */
     int32_t status = SUCCESS;
 
+#ifndef LCD_AN_NO_BUSY_WAIT
     /* Wait for LCD. */
     do
     {
@@ -262,6 +265,7 @@ static int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
 
     /* If we did not timeout waiting for the LCD. */
     if ((cmd_byte & (1 << 7)) == 0)
+#endif /* LCD_AN_NO_BUSY_WAIT */
     {
         /* Select required register. */
         if (rs == TRUE)
@@ -285,11 +289,16 @@ static int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
         lcd_an_send_nibble(lcd, ((byte >> 4) & 0x0F));
         lcd_an_send_nibble(lcd, (byte & 0x0F));
 
+#ifdef LCD_AN_NO_BUSY_WAIT
+        /* Yield the task to put delay in transaction.. */
+        task_yield();
+#else
     }
     else
     {
         /* Return error to the caller. */
         status = LCD_AN_TIME_OUT;
+#endif /* LCD_AN_NO_BUSY_WAIT */
     }
 
     /* Return status to the caller. */
