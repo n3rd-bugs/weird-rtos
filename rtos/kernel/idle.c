@@ -267,6 +267,9 @@ static void idle_task_entry(void *argv)
                 do_fun(priv_data);
             }
         }
+
+        /* Yield the current task to allow any background tasks to run. */
+        task_yield();
 #endif /* (IDLE_WORK_MAX >  0) */
     }
 
