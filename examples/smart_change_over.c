@@ -96,15 +96,15 @@ TASK control_cb;
 void control_entry(void *argv);
 
 /* LCD task definitions. */
-#define LOG_TASK_STACK_SIZE             352
+#define LOG_TASK_STACK_SIZE             384
 uint8_t log_stack[LOG_TASK_STACK_SIZE];
 TASK log_cb;
 void log_entry(void *argv);
 
 /* ADC configuration and data. */
-#define ADC_PRESCALE            ((uint32_t)10)
+#define ADC_PRESCALE            ((uint32_t)62)
 #define ADC_WAVE_FREQ           ((uint32_t)100)
-#define ADC_ATIMER_PRESCALE     ((uint32_t)256)
+#define ADC_ATIMER_PRESCALE     ((uint32_t)64)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
 
 /* Charge controller definitions. */
@@ -1163,7 +1163,7 @@ void adc_int_unlock(void *data)
  */
 void log_entry(void *argv)
 {
-    uint32_t systick, ip_address, target_time = LOG_DELAY;
+    uint32_t systick, ip_address, target_time = 0;
     static FD *enc28j60_fd = NULL;
     uint8_t day, hour, min, sec, milisec;
     char str[10];
@@ -1203,7 +1203,7 @@ void log_entry(void *argv)
         P_STR_CPY(str, P_STR("%02u."));
         printf(str, sec);
         P_STR_CPY(str, P_STR("%02u"));
-        printf(str, ((uint8_t)TICK_TO_MS(milisec) / 10));
+        printf(str, (TICK_TO_MS(milisec) / 10));
         P_STR_CPY(str, P_STR("\r\n"));
         printf(str);
 
