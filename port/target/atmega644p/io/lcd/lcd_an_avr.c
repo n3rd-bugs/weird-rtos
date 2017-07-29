@@ -123,14 +123,6 @@ void lcd_an_avr_init()
     /* Register PCF8574 LCD device. */
     lcd_an_pcf8574_init(&avr_lcd_an);
 #else
-    INT_LVL interrupt_level;
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
-
     /* Configure GPIO for LCD. */
     /* Configure D7 as output. */
     LCD_AN_AVR_D7_DDR |= (1 << LCD_AN_AVR_D7);
@@ -153,9 +145,6 @@ void lcd_an_avr_init()
     /* Configure RS as output. */
     LCD_AN_AVR_RS_DDR |= (1 << LCD_AN_AVR_RS);
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
     /* Register LCD device. */
     lcd_an_register(&avr_lcd_an);
 #endif
@@ -170,21 +159,10 @@ void lcd_an_avr_init()
  */
 static void lcd_an_avr_set_en(LCD_AN *lcd)
 {
-    INT_LVL interrupt_level;
-
     UNUSED_PARAM(lcd);
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
 
     /* Set enable PIN. */
     LCD_AN_AVR_EN_PORT |= (1 << LCD_AN_AVR_EN);
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* lcd_an_avr_set_en */
 
@@ -195,21 +173,10 @@ static void lcd_an_avr_set_en(LCD_AN *lcd)
  */
 static void lcd_an_avr_clr_en(LCD_AN *lcd)
 {
-    INT_LVL interrupt_level;
-
     UNUSED_PARAM(lcd);
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
 
     /* Clear enable PIN. */
     LCD_AN_AVR_EN_PORT &= (uint8_t)(~(1 << LCD_AN_AVR_EN));
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* lcd_an_avr_clr_en */
 
@@ -220,21 +187,10 @@ static void lcd_an_avr_clr_en(LCD_AN *lcd)
  */
 static void lcd_an_avr_set_rs(LCD_AN *lcd)
 {
-    INT_LVL interrupt_level;
-
     UNUSED_PARAM(lcd);
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
 
     /* Set R/S PIN. */
     LCD_AN_AVR_RS_PORT |= (1 << LCD_AN_AVR_RS);
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* lcd_an_avr_set_rs */
 
@@ -245,21 +201,10 @@ static void lcd_an_avr_set_rs(LCD_AN *lcd)
  */
 static void lcd_an_avr_clr_rs(LCD_AN *lcd)
 {
-    INT_LVL interrupt_level;
-
     UNUSED_PARAM(lcd);
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
 
     /* Clear R/S PIN. */
     LCD_AN_AVR_RS_PORT &= (uint8_t)(~(1 << LCD_AN_AVR_RS));
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* lcd_an_avr_clr_rs */
 
@@ -270,15 +215,7 @@ static void lcd_an_avr_clr_rs(LCD_AN *lcd)
  */
 static void lcd_an_avr_set_rw(LCD_AN *lcd)
 {
-    INT_LVL interrupt_level;
-
     UNUSED_PARAM(lcd);
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
 
     /* Set R/W PIN. */
     LCD_AN_AVR_RW_PORT |= (1 << LCD_AN_AVR_RW);
@@ -295,9 +232,6 @@ static void lcd_an_avr_set_rw(LCD_AN *lcd)
     /* Configure D4 as input. */
     LCD_AN_AVR_D4_DDR &= (uint8_t)(~(1 << LCD_AN_AVR_D4));
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
 } /* lcd_an_avr_set_rw */
 
 /*
@@ -307,15 +241,7 @@ static void lcd_an_avr_set_rw(LCD_AN *lcd)
  */
 static void lcd_an_avr_clr_rw(LCD_AN *lcd)
 {
-    INT_LVL interrupt_level;
-
     UNUSED_PARAM(lcd);
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
 
     /* Clear R/W PIN. */
     LCD_AN_AVR_RW_PORT &= (uint8_t)(~(1 << LCD_AN_AVR_RW));
@@ -332,9 +258,6 @@ static void lcd_an_avr_clr_rw(LCD_AN *lcd)
     /* Configure D4 as output. */
     LCD_AN_AVR_D4_DDR |= (1 << LCD_AN_AVR_D4);
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
 } /* lcd_an_avr_clr_rw */
 
 /*
@@ -345,15 +268,7 @@ static void lcd_an_avr_clr_rw(LCD_AN *lcd)
  */
 static void lcd_an_avr_put_data(LCD_AN *lcd, uint8_t nibble)
 {
-    INT_LVL interrupt_level;
-
     UNUSED_PARAM(lcd);
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
 
     if (nibble & (1 << 0))
     {
@@ -399,9 +314,6 @@ static void lcd_an_avr_put_data(LCD_AN *lcd, uint8_t nibble)
         LCD_AN_AVR_D7_PORT &= (uint8_t)(~(1 << LCD_AN_AVR_D7));
     }
 
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
 } /* lcd_an_avr_put_data */
 
 /*
@@ -413,15 +325,7 @@ static void lcd_an_avr_put_data(LCD_AN *lcd, uint8_t nibble)
 static uint8_t lcd_an_avr_read_data(LCD_AN *lcd)
 {
     uint8_t nibble = 0;
-    INT_LVL interrupt_level;
-
     UNUSED_PARAM(lcd);
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
 
     /* Check if D4 is high. */
     if (LCD_AN_AVR_D4_PIN & (1 << LCD_AN_AVR_D4))
@@ -450,9 +354,6 @@ static uint8_t lcd_an_avr_read_data(LCD_AN *lcd)
         /* Set the 3rd bit */
         nibble |= (1 << 3);
     }
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Return the read nibble. */
     return (nibble);

@@ -170,19 +170,9 @@ uint8_t enc28j60_atmega644p_interrupt_pin(ENC28J60 *device)
 void enc28j60_atmega644p_reset(ENC28J60 *device)
 {
     FD *fd = (FD)device;
-    INT_LVL interrupt_level;
-
-    /* Get system interrupt level. */
-    interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
 
     /* Clear the RST, i.e. PD.4. */
     PORTD &= (uint8_t)~(1 << 4);
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
 
     /* Release lock for this device. */
     fd_release_lock(fd);
@@ -193,14 +183,8 @@ void enc28j60_atmega644p_reset(ENC28J60 *device)
     /* Acquire lock for this device. */
     ASSERT(fd_get_lock(fd) != SUCCESS);
 
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
-
     /* Set the RST, i.e. PD.4. */
     PORTD |= (1 << 4);
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
 
 } /* enc28j60_atmega644p_reset */
 
