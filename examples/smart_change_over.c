@@ -102,7 +102,7 @@ TASK log_cb;
 void log_entry(void *argv);
 
 /* ADC configuration and data. */
-#define ADC_PRESCALE            ((uint32_t)62)
+#define ADC_PRESCALE            ((uint32_t)61)
 #define ADC_WAVE_FREQ           ((uint32_t)100)
 #define ADC_ATIMER_PRESCALE     ((uint32_t)64)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
