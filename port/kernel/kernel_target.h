@@ -55,6 +55,7 @@
 #include <stm32f407.h>
 #endif
 
+#include <p_string.h>
 #include <tasks.h>
 
 /* Following functions must be implemented by target porting layer. */

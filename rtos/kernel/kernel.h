@@ -16,7 +16,6 @@
 
 #include <stdint.h>
 #include <kernel_target.h>
-#include <p_string.h>
 #include <config.h>
 #include <tasks.h>
 #include <scheduler.h>
