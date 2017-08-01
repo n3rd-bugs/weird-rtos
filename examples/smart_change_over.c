@@ -90,7 +90,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 };
 
 /* Control task definitions. */
-#define CONTROL_TASK_STACK_SIZE         102
+#define CONTROL_TASK_STACK_SIZE         160
 uint8_t control_stack[CONTROL_TASK_STACK_SIZE];
 TASK control_cb;
 void control_entry(void *argv);
@@ -114,7 +114,7 @@ void log_entry(void *argv);
 #define VOLTAGE_THRESHOLD       (300)
 #define POWER_ON_DELAY          (500)
 #define LED_TOGGLE_DELAY        (150)
-#define LOG_DELAY               (2500)
+#define LOG_DELAY               (1000)
 #define STATE_DELAY             (100)
 #define DEBOUNCE_DELAY          (100)
 #define KEY_GEN_OFF_DELAY       (750)
@@ -126,9 +126,10 @@ void log_entry(void *argv);
 #define ADC_CHANNEL_DELAY       (200)
 #define ADC_MAX_WAVES           (25)
 #define ADC_NUM_SAMPLES         (ADC_MAX_WAVES * ADC_SAMPLE_PER_WAVE)
-#define ENABLE_WDT              FALSE
+#define ENABLE_WDT              TRUE
 #define COMPUTE_AVG             FALSE
 #define COMPUTE_APPROX          TRUE
+#define ENABLE_COUTERMEASURE    TRUE
 
 /* IO configurations. */
 #define BOARD_REV               1
@@ -155,14 +156,17 @@ void log_entry(void *argv);
 
 #define DDR_GENPWR_ON           DDRB
 #define PORT_GENPWR_ON          PORTB
+#define IN_GENPWR_ON            PINB
 #define PIN_GENPWR_ON           1
 
 #define DDR_GENSELF_ON          DDRB
 #define PORT_GENSELF_ON         PORTB
+#define IN_GENSELF_ON           PINB
 #define PIN_GENSELF_ON          2
 
 #define DDR_CHANGE_OVER         DDRD
 #define PORT_CHANGE_OVER        PORTD
+#define IN_CHANGE_OVER          PIND
 #define PIN_CHANGE_OVER         3
 
 #define DDR_AUTO_SEL            DDRA
@@ -188,14 +192,17 @@ void log_entry(void *argv);
 
 #define DDR_GENPWR_ON           DDRB
 #define PORT_GENPWR_ON          PORTB
+#define IN_GENPWR_ON            PINB
 #define PIN_GENPWR_ON           1
 
 #define DDR_GENSELF_ON          DDRB
 #define PORT_GENSELF_ON         PORTB
+#define IN_GENSELF_ON           PINB
 #define PIN_GENSELF_ON          2
 
 #define DDR_CHANGE_OVER         DDRD
 #define PORT_CHANGE_OVER        PORTD
+#define IN_CHANGE_OVER          PIND
 #define PIN_CHANGE_OVER         3
 
 #define DDR_AUTO_SEL            DDRA
@@ -287,6 +294,12 @@ void generator_self()
 
             /* Disable global interrupts. */
             DISABLE_INTERRUPTS();
+
+#ifdef ENABLE_COUTERMEASURE
+            /* Release the self here in any case. */
+            PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
+            PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
+#endif /* ENABLE_COUTERMEASURE */
 
             /* If main has crossed the threshold. */
             if (main_volt > VOLTAGE_THRESHOLD)
@@ -408,10 +421,16 @@ void control_entry(void *argv)
     /* Wait for system to stabilize. */
     sleep_fms(POWER_ON_DELAY);
 
-    while(1)
+    for (;;)
     {
         /* Wait for ADC to take new readings. */
         sleep_fms(STATE_DELAY);
+
+#ifdef ENABLE_COUTERMEASURE
+        /* Release the self here in any case. */
+        PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
+        PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
+#endif /* ENABLE_COUTERMEASURE */
 
         /* Check if button is pressed. */
         if (!(IN_AUTO_SEL & (1 << PIN_AUTO_SEL)))
@@ -805,6 +824,11 @@ void adc_data_callback(uint32_t data)
     static uint32_t sample_tick = 0;
 #endif /* (COMPUTE_APPROX == TRUE) */
 
+#if (ENABLE_WDT == TRUE)
+    /* Reset watch dog timer. */
+    WDT_RESET();
+#endif
+
 #if COMPUTE_AVG
     /* Add the new reading. */
     adc_sample += (uint32_t)data;
@@ -976,11 +1000,6 @@ void adc_sample_process(void *data, int32_t status)
     /* Remove some compiler warning. */
     UNUSED_PARAM(data);
     UNUSED_PARAM(status);
-
-#if (ENABLE_WDT == TRUE)
-    /* Reset watch dog timer. */
-    WDT_RESET();
-#endif
 
     /* Were we waiting for ADC channel to stabilize. */
     if (adc_suspend.timeout_enabled != FALSE)
@@ -1207,14 +1226,36 @@ void log_entry(void *argv)
         P_STR_CPY(str, P_STR("\r\n"));
         printf(str);
 
-        P_STR_CPY(str, P_STR("\t%ld"));
+        P_STR_CPY(str, P_STR("%ld"));
         printf(str, (uint32_t)(ip_address >> 24));
         P_STR_CPY(str, P_STR(".%ld"));
         printf(str, ((uint32_t)(ip_address >> 16)) & 0xFF);
         P_STR_CPY(str, P_STR(".%ld"));
         printf(str, ((uint32_t)(ip_address >> 8)) & 0xFF);
-        P_STR_CPY(str, P_STR(".%ld"));
+        P_STR_CPY(str, P_STR(".%ld "));
         printf(str, ((uint32_t)(ip_address & 0xFF)));
+
+        /* If generator power is on. */
+        if (IN_GENPWR_ON & (1 << PIN_GENPWR_ON))
+        {
+            P_STR_CPY(str, P_STR("P"));
+            printf(str);
+        }
+
+        /* If generator self is on. */
+        if (IN_GENSELF_ON & (1 << PIN_GENSELF_ON))
+        {
+            P_STR_CPY(str, P_STR("S"));
+            printf(str);
+        }
+
+        /* If change over is on. */
+        if (IN_CHANGE_OVER & (1 << PIN_CHANGE_OVER))
+        {
+            P_STR_CPY(str, P_STR("C"));
+            printf(str);
+        }
+
         P_STR_CPY(str, P_STR("\r\n"));
         printf(str);
 
