@@ -31,7 +31,7 @@ NET_DEV_DATA net_dev_data;
  * net_devices_init
  * This function initialize global data structure for networking devices.
  */
-void net_devices_init()
+void net_devices_init(void)
 {
     SYS_LOG_FUNCTION_ENTRY(NET_DEVICE);
 

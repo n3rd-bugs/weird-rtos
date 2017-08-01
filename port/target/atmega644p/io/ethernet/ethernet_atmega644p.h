@@ -18,7 +18,7 @@
 #ifdef CONFIG_ETHERNET
 
 /* Function prototypes. */
-void ethernet_atmega644p_init();
+void ethernet_atmega644p_init(void);
 
 #endif /* CONFIG_ETHERNET */
 #endif /* _ETHERNET_ATMEGA644P_H_ */

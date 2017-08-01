@@ -65,8 +65,8 @@ typedef struct _socket_address
 } SOCKET_ADDRESS;
 
 /* Function prototypes. */
-void net_init();
-uint16_t net_port_random();
+void net_init(void);
+uint16_t net_port_random(void);
 uint8_t net_port_match(uint16_t, uint16_t, uint8_t);
 uint8_t net_socket_address_match(SOCKET_ADDRESS *, SOCKET_ADDRESS *);
 

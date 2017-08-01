@@ -42,7 +42,7 @@ FS pipe_fs =
  * pipe_init
  * This function will initialize pipe file system.
  */
-void pipe_init()
+void pipe_init(void)
 {
     /* Clear the pipe data. */
     memset(&pipe_data, 0, sizeof(PIPE_DATA));

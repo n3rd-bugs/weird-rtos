@@ -155,7 +155,7 @@ typedef struct _ppp_proto
 } PPP_PROTO;
 
 /* Function prototypes. */
-void ppp_init();
+void ppp_init(void);
 void ppp_register_fd(PPP *, FD, uint8_t);
 PPP *ppp_get_instance_fd(FD);
 void ppp_connection_established(void *, void *);

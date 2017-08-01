@@ -46,7 +46,7 @@ FS console_fs =
  * console_init
  * This function will initialize debug console.
  */
-void console_init()
+void console_init(void)
 {
     /* Clear the console data. */
     memset(&console_data, 0, sizeof(CONSOLE_DATA));

@@ -361,9 +361,9 @@ typedef uint8_t INT_LVL;
 #define TOS_SET(tos, sp, size)          (tos = (sp + (size-1)))
 
 /* Function prototypes. */
-void system_tick_Init();
+void system_tick_Init(void);
 void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv);
-NAKED_FUN control_to_system();
-uint64_t current_hardware_tick();
+NAKED_FUN control_to_system(void);
+uint64_t current_hardware_tick(void);
 
 #endif /* _AVR_H_ */

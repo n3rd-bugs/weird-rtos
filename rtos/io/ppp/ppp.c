@@ -29,7 +29,7 @@ PPP_DATA ppp_data;
  * ppp_init
  * This function will initialize global PPP data.
  */
-void ppp_init()
+void ppp_init(void)
 {
     /* Clear the global data. */
     memset(&ppp_data, 0, sizeof(PPP_DATA));

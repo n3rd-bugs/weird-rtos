@@ -30,8 +30,8 @@
 /* Internal function prototypes. */
 static int32_t usart_atmega644p_init(void *);
 #ifdef SERIAL_INTERRUPT_MODE
-void usart0_handle_tx_interrupt();
-void usart0_handle_rx_interrupt();
+void usart0_handle_tx_interrupt(void);
+void usart0_handle_rx_interrupt(void);
 static void usart_atmega644p_enable_interrupt(void *);
 #endif /* SERIAL_INTERRUPT_MODE */
 static void usart_atmega644p_disable_interrupt(void *);
@@ -51,7 +51,7 @@ static FS_BUFFER usart0_buffer_lists[SERIAL_NUM_BUFFER_LIST];
  * serial_atmega644p_init
  * This will initialize serial interface(s) for this target.
  */
-void serial_atmega644p_init()
+void serial_atmega644p_init(void)
 {
     /* Initialize serial device data. */
     usart0.device.init = &usart_atmega644p_init;
@@ -126,7 +126,7 @@ ISR(USART0_TX_vect, ISR_NAKED)
  * usart0_handle_tx_interrupt
  * This function handles TX interrupt.
  */
-void usart0_handle_tx_interrupt()
+void usart0_handle_tx_interrupt(void)
 {
     FS_BUFFER *buffer;
     uint8_t chr;
@@ -180,7 +180,7 @@ ISR(USART0_RX_vect, ISR_NAKED)
  * usart0_handle_rx_interrupt
  * This function handles RX interrupt.
  */
-void usart0_handle_rx_interrupt()
+void usart0_handle_rx_interrupt(void)
 {
     FS_BUFFER *buffer;
     uint8_t chr;

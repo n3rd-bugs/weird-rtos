@@ -18,7 +18,7 @@
  * wdt_disbale
  * This function disables the WDT.
  */
-void wdt_disbale()
+void wdt_disbale(void)
 {
     ;
 } /* wdt_disbale */
@@ -27,7 +27,7 @@ void wdt_disbale()
  * sysclock_init
  * This function initializes system clock.
  */
-void sysclock_init()
+void sysclock_init(void)
 {
 
     /* Reset the RCC clock configuration to the default reset state. */

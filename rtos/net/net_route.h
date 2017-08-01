@@ -59,7 +59,7 @@ typedef struct _net_route
 int32_t route_add(FD, uint32_t, uint32_t, uint32_t, uint32_t, uint8_t);
 int32_t route_remove(FD, uint32_t, uint32_t);
 int32_t route_get(FD *, uint32_t, uint32_t *, uint32_t *, uint32_t *);
-void route_print();
+void route_print(void);
 
 #endif /* NET_IPV4 */
 #endif /* CONFIG_NET */

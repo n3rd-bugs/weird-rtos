@@ -47,7 +47,7 @@ ISR(INT0_vect, ISR_NAKED)
  * ethernet_atmega644p_init
  * This function will initialize ethernet devices for atmega644p platform.
  */
-void ethernet_atmega644p_init()
+void ethernet_atmega644p_init(void)
 {
 #ifdef ETHERNET_ENC28J60
     /* Initialize ENC28j60 ethernet controller. */

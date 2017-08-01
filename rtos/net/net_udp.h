@@ -96,7 +96,7 @@ typedef struct _udp_port_param
 } UDP_PORT_PARAM;
 
 /* Function prototypes. */
-void udp_initialize();
+void udp_initialize(void);
 void udp_register(UDP_PORT *, char *, SOCKET_ADDRESS *);
 void udp_unregister(UDP_PORT *);
 int32_t net_process_udp(FS_BUFFER *, uint32_t, uint32_t, uint32_t, uint32_t);

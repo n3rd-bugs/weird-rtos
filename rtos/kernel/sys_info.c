@@ -36,7 +36,7 @@ static uint64_t sys_clock_base;
  * mark_task_entry
  * This function marks the entry of a task if we are in one.
  */
-void mark_task_entry()
+void mark_task_entry(void)
 {
     /* If we do have a current task. */
     if (current_task != NULL)
@@ -54,7 +54,7 @@ void mark_task_entry()
  * mark_task_exit
  * This function marks the exit of current task if we are in one.
  */
-void mark_task_exit()
+void mark_task_exit(void)
 {
     /* If we do have a current task. */
     if (current_task != NULL)
@@ -72,7 +72,7 @@ void mark_task_exit()
  * usage_reset
  * This function reset the CPU usage statistics for all the tasks and system.
  */
-void usage_reset()
+void usage_reset(void)
 {
     TASK *tcb = sch_task_list.head;
 
@@ -189,7 +189,7 @@ uint32_t util_task_calc_free_stack(TASK *tcb)
  * util_system_calc_free_stack
  * This function returns the number of bytes free on the system stack.
  */
-uint32_t util_system_calc_free_stack()
+uint32_t util_system_calc_free_stack(void)
 {
     uint32_t free = 0;
 
@@ -209,7 +209,7 @@ uint32_t util_system_calc_free_stack()
  * util_print_sys_info
  * This function prints generalized information about the operating system.
  */
-void util_print_sys_info()
+void util_print_sys_info(void)
 {
     /* Get the first task. */
     TASK *tcb = sch_task_list.head;
@@ -306,7 +306,7 @@ void util_print_sys_info()
  * This function prints generalized information about the operating system
  * on the serial port in assert mode.
  */
-void util_print_sys_info_assert()
+void util_print_sys_info_assert(void)
 {
     /* Get the first task. */
     TASK *tcb = sch_task_list.head;
@@ -365,7 +365,7 @@ void util_print_sys_info_assert()
 
 #ifdef SYS_STACK_SIZE
     /* Get number of bytes free on the system stack. */
-    stack_free = util_system_calc_free_stack(tcb);
+    stack_free = util_system_calc_free_stack();
 
     P_STR_NCPY(str, P_STR("SYSTEM"), sizeof(str));
     serial_assert_puts((uint8_t *)str, 0);
@@ -535,7 +535,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 
 #ifdef SYS_STACK_SIZE
     /* Get number of bytes free on the system stack. */
-    stack_free = util_system_calc_free_stack(tcb);
+    stack_free = util_system_calc_free_stack();
 
     P_STR_NCPY(str, P_STR("SYSTEM"), sizeof(str));
     status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);

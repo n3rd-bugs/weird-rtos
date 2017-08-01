@@ -19,7 +19,7 @@
 #ifdef CONFIG_FS
 
 /* Function prototypes. */
-void fs_avr_init();
+void fs_avr_init(void);
 
 #endif /* CONFIG_FS */
 #endif /* _FS_AVR_H_ */

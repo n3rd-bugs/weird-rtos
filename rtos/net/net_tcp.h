@@ -251,7 +251,7 @@ typedef struct _tcp_port_param
 } TCP_PORT_PARAM;
 
 /* Function prototypes. */
-void tcp_initialize();
+void tcp_initialize(void);
 void tcp_register(TCP_PORT *, char *, SOCKET_ADDRESS *);
 void tcp_unregister(TCP_PORT *);
 int32_t net_process_tcp(FS_BUFFER *, uint32_t, uint32_t, uint32_t, uint32_t);

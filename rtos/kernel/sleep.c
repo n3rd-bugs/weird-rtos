@@ -56,7 +56,7 @@ static uint8_t sleep_task_sort(void *node, void *task)
  * This function is will be called at each system tick to see if we need to
  * resume any of the sleeping tasks.
  */
-void sleep_process_system_tick()
+void sleep_process_system_tick(void)
 {
     TASK *tcb = NULL, *tcb_break = NULL;
 

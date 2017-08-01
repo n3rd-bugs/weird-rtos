@@ -29,7 +29,7 @@ static STM32F407_SPI enc28j60_spi;
  * enc28j60_stm32f407_init
  * This function will initialize enc28j60 device for stm32f407 platform.
  */
-void enc28j60_stm32f407_init()
+void enc28j60_stm32f407_init(void)
 {
     /* Clear the enc28j60 device structures. */
     memset(&enc28j60, 0, sizeof(ENC28J60));
@@ -104,7 +104,7 @@ void enc28j60_stm32f407_init()
  * enc28j60_stm32f407_handle_interrupt
  * This function will handle interrupt for given enc28j60 device.
  */
-void enc28j60_stm32f407_handle_interrupt()
+void enc28j60_stm32f407_handle_interrupt(void)
 {
     /* Disable interrupt until we process it. */
     enc28j60.flags &= (uint8_t)~(ENC28J60_INT_ENABLE);

@@ -37,7 +37,7 @@ static int32_t udp_write_data(void *, const uint8_t *, int32_t);
  * udp_initialize
  * This function will initialize UDP stack.
  */
-void udp_initialize()
+void udp_initialize(void)
 {
     SYS_LOG_FUNCTION_ENTRY(UDP);
 

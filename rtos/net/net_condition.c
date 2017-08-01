@@ -40,7 +40,7 @@ static uint8_t net_condition_stack[NET_COND_STACK_SIZE];
  * net_condition_init
  * This will initialize networking stack conditions.
  */
-void net_condition_init()
+void net_condition_init(void)
 {
     CONDITION *condition;
     NET_CONDITION_PROCESS *process;
@@ -71,7 +71,7 @@ void net_condition_init()
  * net_condition_updated
  * This will refresh the networking conditions if required.
  */
-void net_condition_updated()
+void net_condition_updated(void)
 {
     TASK *tcb = get_current_task();
 

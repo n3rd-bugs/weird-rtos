@@ -624,7 +624,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
  * net_dhcp_client_initialize
  * This function will initialize the DHCP client.
  */
-void net_dhcp_client_initialize()
+void net_dhcp_client_initialize(void)
 {
     SOCKET_ADDRESS sock_addr;
     CONDITION *condition;

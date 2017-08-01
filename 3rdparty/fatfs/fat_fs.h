@@ -43,7 +43,7 @@ typedef struct _fat_file
 } FAT_FILE;
 
 /* Function prototypes. */
-void fatfs_init();
+void fatfs_init(void);
 
 #endif /* FS_FAT */
 #endif /* CONFIG_FS */

@@ -22,14 +22,14 @@
 static NET_ROUTE routes[NET_NUM_ROUTES];
 
 /* Internal function prototypes. */
-static int32_t route_lock();
-static void route_unlock();
+static int32_t route_lock(void);
+static void route_unlock(void);
 
 /*
  * route_lock
  * This function will get lock for route database.
  */
-static int32_t route_lock()
+static int32_t route_lock(void)
 {
     SYS_LOG_FUNCTION_ENTRY(ROUTE);
 
@@ -47,7 +47,7 @@ static int32_t route_lock()
  * route_unlock
  * This function will release lock for route database.
  */
-static void route_unlock()
+static void route_unlock(void)
 {
     SYS_LOG_FUNCTION_ENTRY(ROUTE);
 
@@ -340,7 +340,7 @@ int32_t route_get(FD *device, uint32_t destination, uint32_t *iface_addr, uint32
  * route_print
  * This function will print all the routes in the system.
  */
-void route_print()
+void route_print(void)
 {
     int32_t i;
 

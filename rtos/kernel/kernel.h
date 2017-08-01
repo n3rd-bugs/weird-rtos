@@ -100,18 +100,18 @@ extern uint32_t current_tick;
 #define KERNEL_RUNNING()            ((current_task != NULL) || (return_task != NULL))
 
 /* Kernel macro definitions. */
-#define get_current_task()          (current_task)
+#define get_current_task(void)      (current_task)
 #define set_current_task(task)      current_task = task
-#define process_system_tick()       current_tick ++
+#define process_system_tick(void)   current_tick ++
 
 /* Public function prototypes. */
-void kernel_run();
-void task_yield();
-uint32_t current_system_tick();
+void kernel_run(void);
+void task_yield(void);
+uint32_t current_system_tick(void);
 
 #if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
-void mark_task_entry();
-void mark_task_exit();
+void mark_task_entry(void);
+void mark_task_exit(void);
 #endif /*  (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE)) */
 
 #endif /* _KERNEL_H_ */

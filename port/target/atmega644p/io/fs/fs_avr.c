@@ -33,7 +33,7 @@ static FATFS fat_fs;
  * fs_avr_init
  * This function is responsible for initializing file systems for AVR.
  */
-void fs_avr_init()
+void fs_avr_init(void)
 {
 #if (defined(FS_FAT) && defined(CONFIG_MMC))
     char mount_point[4] = "0:\\";

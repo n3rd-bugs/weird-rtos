@@ -230,7 +230,7 @@ static SUSPEND adc_suspend;
 void adc_data_callback(uint32_t);
 void adc_sample_process(void *, int32_t);
 
-void generator_self()
+void generator_self(void)
 {
     uint32_t i, loop;
     INT_LVL interrupt_level;

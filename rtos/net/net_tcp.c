@@ -59,7 +59,7 @@ static void tcp_rtx_free_all(TCP_PORT *);
  * tcp_initialize
  * This function will initialize TCP stack.
  */
-void tcp_initialize()
+void tcp_initialize(void)
 {
     SYS_LOG_FUNCTION_ENTRY(TCP);
 

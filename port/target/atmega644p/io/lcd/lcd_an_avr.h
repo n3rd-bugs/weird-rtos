@@ -79,7 +79,7 @@
 #define LCD_AN_AVR_PIN_BL           (3)
 
 /* Function prototypes. */
-void lcd_an_avr_init();
+void lcd_an_avr_init(void);
 
 #endif /* CONFIG_LCD_AN */
 

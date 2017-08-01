@@ -26,7 +26,7 @@ SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
  * sys_log_init
  * This function will initialize system logging module.
  */
-void sys_log_init()
+void sys_log_init(void)
 {
 #ifdef SYS_LOG_RUNTIME_UPDATE
     uint32_t i;

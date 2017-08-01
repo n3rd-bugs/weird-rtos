@@ -59,7 +59,7 @@
 #include <tasks.h>
 
 /* Following functions must be implemented by target porting layer. */
-void system_tick_Init();
+void system_tick_Init(void);
 void stack_init(TASK *, TASK_ENTRY *, void *);
 
 /* This must be implemented by application. */

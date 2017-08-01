@@ -76,7 +76,7 @@ extern SERIAL *debug_serial;
 #endif /* FS_CONSOLE */
 
 /* Function prototypes. */
-void serial_init();
+void serial_init(void);
 void serial_register(SERIAL *, const char *, void *, uint32_t);
 void serial_assert_puts(uint8_t *, int32_t);
 

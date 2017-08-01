@@ -31,7 +31,7 @@ static uint8_t scheduler_task_sort(void *, void *);
  * This function initializes scheduler, this must be called before adding any
  * tasks in the system.
  */
-void scheduler_init()
+void scheduler_init(void)
 {
     /* Clear the schedule lists. */
 #ifdef CONFIG_TASK_STATS
@@ -104,7 +104,7 @@ void scheduler_task_remove(TASK *tcb)
  * This function will disable preemption for this task so that it cannot be
  * preempted.
  */
-void scheduler_lock()
+void scheduler_lock(void)
 {
     TASK *tcb = get_current_task();
 
@@ -125,7 +125,7 @@ void scheduler_lock()
  * This function will enable preemption for this task so that it can be
  * preempted.
  */
-void scheduler_unlock()
+void scheduler_unlock(void)
 {
     TASK *tcb = get_current_task();
 
@@ -158,7 +158,7 @@ void scheduler_unlock()
  * This function is called by system tick to get the next task that is needed to
  * run next.
  */
-TASK *scheduler_get_next_task()
+TASK *scheduler_get_next_task(void)
 {
     TASK *tcb = NULL;
 

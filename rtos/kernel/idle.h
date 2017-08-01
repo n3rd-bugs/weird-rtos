@@ -41,8 +41,8 @@ typedef struct _idle_work
 } IDLE_WORK;
 
 /* Function prototypes. */
-void idle_task_init();
-TASK *idle_task_get();
+void idle_task_init(void);
+TASK *idle_task_get(void);
 int32_t idle_add_work(IDLE_DO *, void *);
 int32_t idle_remove_work(IDLE_DO *, void *);
 

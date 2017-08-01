@@ -48,7 +48,7 @@ typedef struct _console_data
 } CONSOLE_DATA;
 
 /* Function prototypes. */
-void console_init();
+void console_init(void);
 void console_register(CONSOLE *console);
 void console_unregister(CONSOLE *console);
 

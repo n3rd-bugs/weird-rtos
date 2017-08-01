@@ -53,7 +53,7 @@ typedef struct _net_buffer_fs
 extern FD net_buff_fd;
 
 /* Function prototypes. */
-void net_buffer_init();
+void net_buffer_init(void);
 void net_buffer_get_condition(CONDITION **, SUSPEND *, NET_CONDITION_PROCESS **);
 
 #endif /* CONFIG_NET */

@@ -20,7 +20,7 @@
  * adc_init
  * This function is responsible for initializing ADC subsystem.
  */
-void adc_init()
+void adc_init(void)
 {
 #ifdef ADC_TGT_INIT
     /* Initialize ADC hardware. */
@@ -57,7 +57,7 @@ void adc_channel_unselect(uint32_t channel)
  * adc_read
  * This function will take a reading from the ADC.
  */
-uint32_t adc_read()
+uint32_t adc_read(void)
 {
     /* Take an ADC reading and return it's value. */
     return (ADC_TGT_READ());

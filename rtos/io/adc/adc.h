@@ -26,10 +26,10 @@ typedef void ADC_DATA_CALLBACK (uint32_t);
 #include <adc_target.h>
 
 /* Function prototypes. */
-void adc_init();
+void adc_init(void);
 void adc_channel_select(uint32_t);
 void adc_channel_unselect(uint32_t);
-uint32_t adc_read();
+uint32_t adc_read(void);
 uint32_t adc_read_average(uint32_t);
 
 #endif /* CONFIG_ADC */

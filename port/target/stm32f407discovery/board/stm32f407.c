@@ -24,7 +24,7 @@ uint32_t clock_64_high_32 = 0;
  * This is responsible for initializing system timer tick. This will not
  * enable the interrupt as it will be enabled after first context switch.
  */
-void system_tick_Init()
+void system_tick_Init(void)
 {
     /* Configure system tick. */
     SysTick_Config((SYS_FREQ/SOFT_TICKS_PER_SEC));
@@ -80,7 +80,7 @@ ISR_FUN isr_clock64_tick(void)
  * This returns value of a 64-bit hardware timer running at half of peripheral
  * frequency.
  */
-uint64_t current_hardware_tick()
+uint64_t current_hardware_tick(void)
 {
     /* Add and return current timer value. */
     return (((uint64_t)(clock_64_high_32 + ((TIM2->SR & TIM_DIER_UIE) ? 1 : 0)) * 0xFFFFFFFF) + (uint64_t)(TIM2->CNT));

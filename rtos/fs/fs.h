@@ -162,7 +162,7 @@ typedef struct _node_param
 #endif
 
 /* Function prototypes. */
-void fs_init();
+void fs_init(void);
 
 /* File APIs. */
 FD fs_open(char *, uint32_t);

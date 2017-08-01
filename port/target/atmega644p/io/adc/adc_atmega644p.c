@@ -57,7 +57,7 @@ ISR(ADC_vect, ISR_NAKED)
  * This function is responsible for initializing ADC hardware for atmega644p
  * platform.
  */
-void adc_atmega644_init()
+void adc_atmega644_init(void)
 {
     /* Initialize ADC multiplexer configuration. */
     ADMUX = (ADC_ATMEGA644P_REF);
@@ -103,7 +103,7 @@ void adc_atmega644_channel_unselect(uint32_t channel)
  * adc_atmega644_read
  * This function will take a reading from the given ADC channel.
  */
-uint32_t adc_atmega644_read()
+uint32_t adc_atmega644_read(void)
 {
     /* Start ADC conversion. */
     ADCSRA |= (1 << ADSC);
@@ -150,7 +150,7 @@ void adc_atmega644_periodic_read_start(ADC_DATA_CALLBACK *callback, uint32_t per
  * @period: Hardware ticks after which a ADC sample is required.
  * This function will start periodic sampling on ADC.
  */
-void adc_atmega644_periodic_read_stop()
+void adc_atmega644_periodic_read_stop(void)
 {
     /* Move back to free running mode. */
     ADCSRA &= (uint8_t) ~(1 << ADATE);

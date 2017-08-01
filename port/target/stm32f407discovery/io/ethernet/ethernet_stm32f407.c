@@ -26,7 +26,7 @@
  * exti2_interrupt
  * This function is interrupt handler for EXTI2 interrupt.
  */
-ISR_FUN exti2_interrupt()
+ISR_FUN exti2_interrupt(void)
 {
     ISR_ENTER();
 
@@ -47,7 +47,7 @@ ISR_FUN exti2_interrupt()
  * ethernet_stm32f407_init
  * This function will initialize ethernet devices for stm32f407 platform.
  */
-void ethernet_stm32f407_init()
+void ethernet_stm32f407_init(void)
 {
 #ifdef ETHERNET_ENC28J60
     /* Initialize ENC28j60 ethernet controller. */

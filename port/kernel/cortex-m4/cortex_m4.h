@@ -104,8 +104,8 @@ extern uint32_t dynamic_start;
 extern uint32_t dynamic_end;
 
 /* Function prototypes. */
-void run_first_task();
-void control_to_system();
+void run_first_task(void);
+void control_to_system(void);
 
 /* System interrupt definitions. */
 ISR_FUN cpu_interrupt(void);

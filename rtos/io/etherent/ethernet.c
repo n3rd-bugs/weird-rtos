@@ -32,7 +32,7 @@ static void ethernet_unlock(void *);
  * ethernet_init
  * This function will initialize ethernet devices.
  */
-void ethernet_init()
+void ethernet_init(void)
 {
     /* Do target initialization for ethernet. */
     ETHERENET_TGT_INIT();

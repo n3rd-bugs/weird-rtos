@@ -38,7 +38,7 @@ static uint8_t fd_do_resume(void *, void *);
  * This function will initialize file system layer. This function must be
  * called before using any other APIs.
  */
-void fs_init()
+void fs_init(void)
 {
     /* Clear the global file system data. */
     memset(&file_data, 0, sizeof(FS_DATA));

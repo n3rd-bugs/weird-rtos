@@ -37,12 +37,12 @@ extern TASK_LIST sch_task_list;
 #endif
 
 /* Function prototypes. */
-void scheduler_init();
+void scheduler_init(void);
 void scheduler_task_add(TASK *, uint8_t);
 void scheduler_task_remove(TASK *);
-void scheduler_lock();
-void scheduler_unlock();
-TASK *scheduler_get_next_task();
+void scheduler_lock(void);
+void scheduler_unlock(void);
+TASK *scheduler_get_next_task(void);
 void scheduler_task_yield(TASK *, uint8_t);
 
 #endif /* _SCHEDULER_H_ */

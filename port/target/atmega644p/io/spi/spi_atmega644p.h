@@ -37,7 +37,7 @@
 #define ATMEGA644P_SPI_TIMEOUT      (100)
 
 /* Function prototypes. */
-void spi_atmega644_init();
+void spi_atmega644_init(SPI_DEVICE *device);
 void spi_atmega644_slave_select(SPI_DEVICE *);
 void spi_atmega644_slave_unselect(SPI_DEVICE *);
 int32_t spi_atmega644_message(SPI_DEVICE *, SPI_MSG *) SPEEDOPTIMIZATION;

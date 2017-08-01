@@ -43,7 +43,7 @@ static SEMAPHORE fat_lock;
  * fatfs_init
  * This function will initialize FAT file system.
  */
-void fatfs_init()
+void fatfs_init(void)
 {
     uint32_t i;
 

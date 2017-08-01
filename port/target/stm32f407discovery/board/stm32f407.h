@@ -42,11 +42,11 @@ extern uint32_t _ebss;
 #define SYS_STACK_SIZE                  (STM32F407_STACK_END - (uint32_t)SYSTEM_STACK)
 
 /* Function prototypes. */
-uint64_t current_hardware_tick();
+uint64_t current_hardware_tick(void);
 
 /* Helper functions. */
 void system_entry(void);
-void sysclock_init();
-void wdt_disbale();
+void sysclock_init(void);
+void wdt_disbale(void);
 
 #endif /* _STM32F407_H_ */

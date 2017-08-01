@@ -24,7 +24,7 @@ static PPP usart1_ppp;
  * ppp_stm32f407_init
  * This will initialize PPP interface(s) for this target.
  */
-void ppp_stm32f407_init()
+void ppp_stm32f407_init(void)
 {
     FD fd;
 

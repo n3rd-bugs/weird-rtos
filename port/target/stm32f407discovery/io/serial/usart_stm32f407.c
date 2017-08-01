@@ -25,8 +25,8 @@
 /* Internal function prototypes. */
 static int32_t usart_stm32f407_init(void *);
 #ifdef SERIAL_INTERRUPT_MODE
-static void usart1_handle_tx_interrupt();
-static void usart1_handle_rx_interrupt();
+static void usart1_handle_tx_interrupt(void);
+static void usart1_handle_rx_interrupt(void);
 static void usart_stm32f407_enable_interrupt(void *);
 #endif /* SERIAL_INTERRUPT_MODE */
 static void usart_stm32f407_disable_interrupt(void *);
@@ -46,7 +46,7 @@ static FS_BUFFER usart1_buffer_lists[SERIAL_NUM_BUFFER_LIST];
  * serial_stm32f407_init
  * This will initialize serial interface(s) for this target.
  */
-void serial_stm32f407_init()
+void serial_stm32f407_init(void)
 {
     /* Initialize serial device data. */
     usart1.device.init = &usart_stm32f407_init;
@@ -150,7 +150,7 @@ static int32_t usart_stm32f407_init(void *data)
  * usart1_interrupt
  * This function is interrupt handler for USART1 interrupt.
  */
-ISR_FUN usart1_interrupt()
+ISR_FUN usart1_interrupt(void)
 {
     ISR_ENTER();
 
@@ -176,7 +176,7 @@ ISR_FUN usart1_interrupt()
  * usart1_handle_tx_interrupt
  * This function handles TX interrupt.
  */
-static void usart1_handle_tx_interrupt()
+static void usart1_handle_tx_interrupt(void)
 {
     FS_BUFFER *buffer;
     uint8_t chr;
@@ -218,7 +218,7 @@ static void usart1_handle_tx_interrupt()
  * usart1_handle_rx_interrupt
  * This function handles RX interrupt.
  */
-static void usart1_handle_rx_interrupt()
+static void usart1_handle_rx_interrupt(void)
 {
     FS_BUFFER *buffer;
     uint8_t chr;

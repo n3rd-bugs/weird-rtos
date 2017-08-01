@@ -105,7 +105,7 @@ extern FD lcd_an_fd;
 #endif
 
 /* Function prototypes. */
-void lcd_an_init();
+void lcd_an_init(void);
 void lcd_an_register(LCD_AN *);
 
 #endif /* CONFIG_LCD_AN */

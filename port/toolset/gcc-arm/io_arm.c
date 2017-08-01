@@ -22,7 +22,7 @@ extern int errno;
  * io_arm_init
  * This will initialize IO routines for ARM.
  */
-void io_arm_init()
+void io_arm_init(void)
 {
 #ifndef IO_BUFFERED
     /* Disable buffering on the SDIO files. */

@@ -30,7 +30,7 @@ static uint8_t idle_task_stack[IDLE_TASK_STACK_SIZE];
  * idle_task_init
  * This will initialize the idle task.
  */
-void idle_task_init()
+void idle_task_init(void)
 {
     /* Initialize idle task's control block and stack. */
     task_create(&idle_task, P_STR("Idle"), idle_task_stack, IDLE_TASK_STACK_SIZE, &idle_task_entry, (void *)0x00, TASK_NO_RETURN);
@@ -47,7 +47,7 @@ void idle_task_init()
  * idle_task_get
  * This will return the control block for the idle task.
  */
-TASK *idle_task_get()
+TASK *idle_task_get(void)
 {
     /* Return control block for the idle task. */
     return (&idle_task);

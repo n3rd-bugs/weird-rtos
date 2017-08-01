@@ -19,7 +19,7 @@
 #ifdef CONFIG_SLEEP
 
 /* Function prototypes. */
-void sleep_process_system_tick();
+void sleep_process_system_tick(void);
 void sleep_add_to_list(TASK *, uint32_t);
 void sleep_remove_from_list(TASK *);
 void sleep_ticks(uint32_t);

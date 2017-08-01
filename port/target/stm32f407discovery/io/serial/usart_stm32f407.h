@@ -30,9 +30,9 @@
 #define SERIAL_THRESHOLD_BUFFER_LIST    2
 
 /* Function prototypes. */
-void serial_stm32f407_init();
+void serial_stm32f407_init(void);
 #ifdef SERIAL_INTERRUPT_MODE
-ISR_FUN usart1_interrupt();
+ISR_FUN usart1_interrupt(void);
 #endif /* SERIAL_INTERRUPT_MODE */
 
 #endif /* CONFIG_SERIAL */

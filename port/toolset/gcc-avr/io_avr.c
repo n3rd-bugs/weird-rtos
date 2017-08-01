@@ -26,7 +26,7 @@ static FILE stdio;
  * io_avr_init
  * This will initialize IO routines for AVR.
  */
-void io_avr_init()
+void io_avr_init(void)
 {
     /* Initialize SDIO stream. */
     fdev_setup_stream(&stdio, &io_avr_put, &io_avr_get, _FDEV_SETUP_RW);

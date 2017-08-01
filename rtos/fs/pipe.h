@@ -75,7 +75,7 @@ typedef struct _pipe_data
 } PIPE_DATA;
 
 /* Function prototypes. */
-void pipe_init();
+void pipe_init(void);
 void pipe_create(PIPE *pipe, char *, uint8_t *, uint32_t);
 void pipe_destroy(PIPE *);
 

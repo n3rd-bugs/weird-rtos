@@ -99,7 +99,7 @@ struct _dhcp_client_device
 };
 
 /* Function prototypes. */
-void net_dhcp_client_initialize();
+void net_dhcp_client_initialize(void);
 void net_dhcp_client_initialize_device(NET_DEV *, DHCP_CLIENT_DEVICE *);
 void net_dhcp_client_start(NET_DEV *);
 void net_dhcp_client_stop(NET_DEV *);

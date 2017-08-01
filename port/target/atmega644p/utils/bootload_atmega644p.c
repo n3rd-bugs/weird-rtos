@@ -26,9 +26,9 @@
 #ifndef BOOTLOADER_LOADED
 
 /* Internal function definitions. */
-static void bootload_application() BOOTLOAD_SECTION;
+static void bootload_application(void) BOOTLOAD_SECTION;
 #ifdef BOOTLOAD_MMC
-static int32_t bootload_mmc() BOOTLOAD_SECTION;
+static int32_t bootload_mmc(void) BOOTLOAD_SECTION;
 static uint8_t bootload_chrtodec(uint8_t) BOOTLOAD_SECTION;
 static uint8_t bootload_hextoint8(uint8_t *) BOOTLOAD_SECTION;
 #ifdef BOOTLOAD_MMC_HEX_NONLINEAR
@@ -36,11 +36,11 @@ static uint16_t bootload_hextoint16(uint8_t *) BOOTLOAD_SECTION;
 #endif /* BOOTLOAD_MMC_HEX_NONLINEAR */
 #endif /* BOOTLOAD_MMC */
 #ifdef BOOTLOAD_STK
-static int32_t bootload_stk() BOOTLOAD_SECTION;
+static int32_t bootload_stk(void) BOOTLOAD_SECTION;
 static void stk500_reply(uint8_t) BOOTLOAD_SECTION;
-static void stk500_empty_reply() BOOTLOAD_SECTION;
+static void stk500_empty_reply(void) BOOTLOAD_SECTION;
 static void bootload_atmega644p_putc(volatile uint8_t) BOOTLOAD_SECTION;
-static uint8_t bootload_atmega644p_getc() BOOTLOAD_SECTION;
+static uint8_t bootload_atmega644p_getc(void) BOOTLOAD_SECTION;
 #endif /* BOOTLOAD_STK */
 #if (defined(BOOTLOAD_MMC) || defined(BOOTLOAD_STK))
 static void bootload_atmega644p_flush_buffer(uint8_t *, uint32_t, uint32_t) BOOTLOAD_SECTION;
@@ -54,7 +54,7 @@ static void bootload_atmega644p_flush_buffer(uint8_t *, uint32_t, uint32_t) BOOT
  * This function will jump to already flashed boot loader's reset vector
  * causing boot loader to execute.
  */
-void bootload_atmega644p()
+void bootload_atmega644p(void)
 {
     /* Jump to boot loader reset vector. */
     asm volatile (
@@ -64,8 +64,8 @@ void bootload_atmega644p()
 } /* bootload_atmega644p */
 
 /* Stubbed vector table definition. */
-void bootvector_table() STACK_LESS BOOTVECTOR_SECTION;
-void bootvector_table()
+void bootvector_table(void) STACK_LESS BOOTVECTOR_SECTION;
+void bootvector_table(void)
 {
     ;
 } /* bootvector_table */
@@ -73,8 +73,8 @@ void bootvector_table()
 #else
 
 /* Boot loader vector table definition. */
-void bootvector_table() STACK_LESS BOOTVECTOR_SECTION;
-void bootvector_table()
+void bootvector_table(void) STACK_LESS BOOTVECTOR_SECTION;
+void bootvector_table(void)
 {
     asm volatile (
                   "jmp    bootload_atmega644p   \n\t"
@@ -121,7 +121,7 @@ void bootvector_table()
  * This function is responsible for performing boot loader operation if
  * required.
  */
-void bootload_atmega644p()
+void bootload_atmega644p(void)
 {
     int32_t status = SUCCESS;
 
@@ -184,7 +184,7 @@ void bootload_atmega644p()
  * bootload_application
  * This function will reset the target to start the application.
  */
-static void bootload_application()
+static void bootload_application(void)
 {
     /* Trigger a soft reset using watch dog timer. */
     wdt_enable(WDTO_15MS);
@@ -198,7 +198,7 @@ static void bootload_application()
  *  successfully completed, otherwise success will be returned.
  * This function will perform MMC boot-load process.
  */
-static int32_t bootload_mmc()
+static int32_t bootload_mmc(void)
 {
     int32_t status = SUCCESS;
     uint32_t i, offset, page_offset = 0, start_offset;
@@ -415,7 +415,7 @@ static uint16_t bootload_hextoint16(uint8_t *hex)
  *  successfully completed.
  * This function will perform STK boot-load process.
  */
-static int32_t bootload_stk()
+static int32_t bootload_stk(void)
 {
     int32_t status = SUCCESS;
     uint32_t load_address = 0,  i;
@@ -798,7 +798,7 @@ static void stk500_reply(uint8_t byte)
  * stk500_empty_reply
  * This function sends an empty reply to the other end.
  */
-static void stk500_empty_reply()
+static void stk500_empty_reply(void)
 {
     /* If we have a valid byte. */
     if (bootload_atmega644p_getc() == STK_CRC_EOP)
@@ -834,7 +834,7 @@ static void bootload_atmega644p_putc(volatile uint8_t byte)
  * bootload_atmega644p_getc
  * This function will read and return a byte from the serial.
  */
-static uint8_t bootload_atmega644p_getc()
+static uint8_t bootload_atmega644p_getc(void)
 {
     volatile uint8_t byte;
 

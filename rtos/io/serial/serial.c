@@ -38,7 +38,7 @@ static int32_t serial_read(void *, uint8_t *, int32_t);
  * serial_init
  * This will initialize serial sub system.
  */
-void serial_init()
+void serial_init(void)
 {
 #ifdef SERIAL_TGT_INIT
     /* Initialize serial target. */

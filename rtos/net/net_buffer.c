@@ -36,7 +36,7 @@ static int32_t net_buffer_read(void *, uint8_t *, int32_t);
  * This function will initialize the buffer file system for out networking
  * stack.
  */
-void net_buffer_init()
+void net_buffer_init(void)
 {
     SYS_LOG_FUNCTION_ENTRY(NET_BUFFER);
 

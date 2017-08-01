@@ -158,11 +158,11 @@ extern SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
             sys_log_hexdump((uint8_t *)#component, (uint8_t *)("%s " message), (uint8_t *)bytes, num_bytes, __func__);  \
         }
 #endif /* SYS_LOG_RUNTIME_UPDATE */
-#endif /* SYS_LOG_NONE */
 
 /* Function prototypes. */
-void sys_log_init();
+void sys_log_init(void);
 void sys_log(uint8_t *, const uint8_t *, ...);
 void sys_log_hexdump(uint8_t *, const uint8_t *, uint8_t *, uint32_t, ...);
+#endif /* SYS_LOG_NONE */
 
 #endif

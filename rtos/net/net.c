@@ -36,7 +36,7 @@
  * net_init
  * This function will initialize the networking stack.
  */
-void net_init()
+void net_init(void)
 {
     SYS_LOG_FUNCTION_ENTRY(NET);
 
@@ -79,7 +79,7 @@ void net_init()
  * This function will generate a random 16-bit port number and return it's
  * value.
  */
-uint16_t net_port_random()
+uint16_t net_port_random(void)
 {
     /* Return a random port number. */
     return ((uint16_t)(current_hardware_tick() & 0xFFFF));

@@ -51,12 +51,12 @@
 #define ADC_ATMEGA644P_TIMER_PRESCALE   (TIMER0_ATMEGA644P_DIV_64)
 
 /* Function prototypes. */
-void adc_atmega644_init();
+void adc_atmega644_init(void);
 void adc_atmega644_channel_select(uint32_t);
 void adc_atmega644_channel_unselect(uint32_t);
-uint32_t adc_atmega644_read();
+uint32_t adc_atmega644_read(void);
 void adc_atmega644_periodic_read_start(ADC_DATA_CALLBACK *, uint32_t);
-void adc_atmega644_periodic_read_stop();
+void adc_atmega644_periodic_read_stop(void);
 
 #endif /* CONFIG_ADC */
 #endif /* _ADC_ATMEGA644P_H_ */

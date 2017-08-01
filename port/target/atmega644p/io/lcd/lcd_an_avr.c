@@ -117,7 +117,7 @@ static LCD_AN avr_lcd_an =
  * lcd_an_avr_init
  * This function is responsible for initializing LCD subsystem for AVR.
  */
-void lcd_an_avr_init()
+void lcd_an_avr_init(void)
 {
 #ifdef CONFIG_LCD_PCF8574
     /* Register PCF8574 LCD device. */

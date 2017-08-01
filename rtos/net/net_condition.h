@@ -47,8 +47,8 @@ typedef struct _net_condition
 extern TASK net_condition_tcb;
 
 /* Function prototypes. */
-void net_condition_init();
-void net_condition_updated();
+void net_condition_init(void);
+void net_condition_updated(void);
 void net_condition_add(CONDITION *, SUSPEND *, NET_CONDITION_PROCESS *, void *);
 void net_condition_remove(CONDITION *);
 

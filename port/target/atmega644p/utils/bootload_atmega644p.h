@@ -46,9 +46,9 @@
 
 /* Function prototypes. */
 #ifdef BOOTLOADER_LOADED
-void bootload_atmega644p();
+void bootload_atmega644p(void);
 #else
-void bootload_atmega644p() BOOTLOAD_SECTION;
+void bootload_atmega644p(void) BOOTLOAD_SECTION;
 
 int32_t bootload_disk_initialize(uint8_t *) BOOTLOAD_SECTION;
 int32_t bootload_disk_read(uint8_t, uint8_t *, uint32_t, uint32_t, uint32_t *) BOOTLOAD_SECTION;

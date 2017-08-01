@@ -22,15 +22,15 @@
 #endif
 
 /* Function prototypes. */
-void usage_reset();
+void usage_reset(void);
 uint64_t usage_calculate(TASK *, uint64_t);
 uint32_t util_task_calc_free_stack(TASK *);
-void util_print_sys_info();
+void util_print_sys_info(void);
 #ifdef SYS_STACK_SIZE
-uint32_t util_system_calc_free_stack();
+uint32_t util_system_calc_free_stack(void);
 #endif
 #ifdef CONFIG_SERIAL
-void util_print_sys_info_assert();
+void util_print_sys_info_assert(void);
 #endif
 #ifdef CONFIG_FS
 int32_t util_print_sys_info_buffer(FS_BUFFER *);

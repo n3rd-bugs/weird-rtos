@@ -35,7 +35,7 @@ static int32_t lcd_an_ioctl(void *, uint32_t, void *);
  * lcd_an_init
  * This function is responsible for initializing LCD subsystem.
  */
-void lcd_an_init()
+void lcd_an_init(void)
 {
 #ifdef LCD_AN_TGT_INIT
     /* Initialize LCD subsystem. */

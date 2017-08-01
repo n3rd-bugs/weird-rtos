@@ -32,7 +32,7 @@ uint32_t current_tick = 0;
  * continue to run after this is called. This function will also enable
  * interrupts when required.
  */
-void task_yield()
+void task_yield(void)
 {
     INT_LVL interrupt_level;
     uint8_t in_isr = FALSE;
@@ -90,7 +90,7 @@ void task_yield()
  * This function returns the number of system ticks elapsed from the system
  * boot.
  */
-uint32_t current_system_tick()
+uint32_t current_system_tick(void)
 {
     uint32_t return_tick;
     INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
@@ -114,7 +114,7 @@ uint32_t current_system_tick()
  * This function starts the operating system. In normal operation this function
  * should never return.
  */
-void kernel_run()
+void kernel_run(void)
 {
 #ifndef SYS_LOG_NONE
     /* Initialize system logging. */

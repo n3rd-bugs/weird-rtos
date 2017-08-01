@@ -60,7 +60,7 @@ void stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
  * run_first_task
  * This is responsible for running first task.
  */
-void run_first_task()
+void run_first_task(void)
 {
     /* Disable interrupts. */
     DISABLE_INTERRUPTS();
@@ -98,7 +98,7 @@ void run_first_task()
 /*
  * control_to_system
  */
-void control_to_system()
+void control_to_system(void)
 {
     /* If we have not already scheduled a context switch. */
     if (last_task == NULL)

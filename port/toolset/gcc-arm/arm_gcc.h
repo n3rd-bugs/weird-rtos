@@ -33,7 +33,7 @@
 #define IO_BUFFERED
 
 /* Function prototypes. */
-void io_arm_init();
+void io_arm_init(void);
 int _write(int, char *, int);
 int _read(int, char *, int);
 

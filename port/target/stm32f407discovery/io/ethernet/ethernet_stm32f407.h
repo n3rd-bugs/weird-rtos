@@ -18,7 +18,7 @@
 #ifdef CONFIG_ETHERNET
 
 /* Function prototypes. */
-void ethernet_stm32f407_init();
+void ethernet_stm32f407_init(void);
 
 #endif /* CONFIG_ETHERNET */
 #endif /* _ETHERNET_STM32F407_H_ */

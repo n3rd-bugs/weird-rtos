@@ -47,7 +47,7 @@ MEM_DYN_CFG mem_dyn_cfg [NUM_PAGES] =
  * mem_init
  * This function initializes memory managers.
  */
-void mem_init()
+void mem_init(void)
 {
 
 #ifdef MEMGR_STATIC

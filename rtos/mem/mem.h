@@ -46,7 +46,7 @@ extern MEM_DYNAMIC mem_dynamic_pool;
 #endif
 
 /* Function prototypes. */
-void mem_init();
+void mem_init(void);
 
 #ifdef MEMGR_STATIC
 #define mem_static_alloc(size)      mem_static_alloc_region(&mem_static_pool, size)

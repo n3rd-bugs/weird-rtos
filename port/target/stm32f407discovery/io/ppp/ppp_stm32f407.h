@@ -18,7 +18,7 @@
 #ifdef CONFIG_PPP
 
 /* Function prototypes. */
-void ppp_stm32f407_init();
+void ppp_stm32f407_init(void);
 
 #endif /* CONFIG_PPP */
 #endif /* _PPP_STM32F407_H_ */

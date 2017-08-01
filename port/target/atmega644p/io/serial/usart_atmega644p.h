@@ -30,7 +30,7 @@
 #define SERIAL_THRESHOLD_BUFFER_LIST    0
 
 /* Function prototypes. */
-void serial_atmega644p_init();
+void serial_atmega644p_init(void);
 
 #endif /* CONFIG_SERIAL */
 #endif /* _USART_ATMEGA664P_H_ */

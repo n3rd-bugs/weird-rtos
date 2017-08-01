@@ -115,7 +115,7 @@ typedef struct _eth_device
 } ETH_DEVICE;
 
 /* Function prototypes. */
-void ethernet_init();
+void ethernet_init(void);
 void ethernet_regsiter(ETH_DEVICE *, ETH_INIT *, ETH_TRANSMIT *, ETH_INTERRUPT *, ETH_WDT *, ETH_INT_POLL *);
 uint8_t *ethernet_random_mac(ETH_DEVICE *);
 uint8_t *ethernet_get_mac_address(FD);

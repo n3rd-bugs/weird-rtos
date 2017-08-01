@@ -114,7 +114,7 @@ ISR(TIMER1_COMPA_vect, ISR_NAKED)
  * @return: This function will return hardware system tick.
  * This function will return current hardware tick.
  */
-uint64_t current_hardware_tick()
+uint64_t current_hardware_tick(void)
 {
     /* Return hardware system tick. */
     return (((uint64_t)(current_system_tick() + (uint64_t)((TIFR1 & (1 << OCF1A)) ? 1 : 0)) * (uint64_t)(SYS_FREQ / SOFT_TICKS_PER_SEC / 64)) + (uint64_t)TCNT1);
@@ -126,7 +126,7 @@ uint64_t current_hardware_tick()
  * This initializes system tick. On AVR we are using Timer1 with CCP1 module to
  * reload the timer when expired.
  */
-void system_tick_Init()
+void system_tick_Init(void)
 {
     /* Using 16bit timer 1 to generate the system tick. */
     TCNT1 = 0x00;
@@ -181,7 +181,7 @@ void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
 /*
  * control_to_system
  */
-NAKED_FUN control_to_system()
+NAKED_FUN control_to_system(void)
 {
     /* Save context for either a task or an ISR. */
     SAVE_CONTEXT_CTS();

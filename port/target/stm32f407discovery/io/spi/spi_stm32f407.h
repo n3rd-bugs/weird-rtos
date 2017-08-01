@@ -72,7 +72,7 @@ typedef struct _stm32f407_spi
 } STM32F407_SPI;
 
 /* Function prototypes. */
-void spi_stm32f407_init();
+void spi_stm32f407_init(void);
 void spi_stm32f407_slave_select(SPI_DEVICE *);
 void spi_stm32f407_slave_unselect(SPI_DEVICE *);
 int32_t spi_stm32f407_message(SPI_DEVICE *, SPI_MSG *);

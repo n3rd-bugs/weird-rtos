@@ -83,7 +83,7 @@ typedef struct _net_dev_data
 extern NET_DEV_DATA net_dev_data;
 
 /* Function prototypes. */
-void net_devices_init();
+void net_devices_init(void);
 void net_register_fd(NET_DEV *, FD, NET_TX *, NET_RX *);
 NET_DEV *net_device_get_fd(FD);
 void net_device_set_mtu(FD, uint32_t);
