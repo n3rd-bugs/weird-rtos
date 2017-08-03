@@ -1,4 +1,4 @@
-# Add sub directories.
+# Add subdirectories.
 add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/adc)
 add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/etherent)
 add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/gpio)
