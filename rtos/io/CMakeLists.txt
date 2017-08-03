@@ -1,0 +1,11 @@
+# Add sub directories.
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/adc)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/etherent)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/gpio)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/i2c)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/io)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/lcd)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/mmc)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/ppp)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/serial)
+add_subdirectory( ${CMAKE_CURRENT_SOURCE_DIR}/spi)

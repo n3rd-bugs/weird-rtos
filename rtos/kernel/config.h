@@ -14,6 +14,9 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
+/* If we are not building from cmake. */
+#ifndef CMAKE_BUILD
+
 /* Helper API configuration. */
 #define CONFIG_SLEEP
 #define CONFIG_SEMAPHORE
@@ -44,4 +47,5 @@
 //#define CONFIG_TFTPS
 //#define CONFIG_BOOTLOAD
 
+#endif /* CMAKE_BUILD */
 #endif /* _CONFIG_H_ */
