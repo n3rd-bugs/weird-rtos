@@ -14,6 +14,14 @@ setup_option(CONFIG_LCD_PCF8574 ON BOOL)
 setup_option(CONFIG_ETHERNET ON BOOL)
 setup_option(CONFIG_WEIRD_VIEW ON BOOL)
 
+# Setup IDLE task options.
+setup_option(IDLE_WORK_MAX 1 INT)
+setup_option(IDLE_TASK_STACK_SIZE 196 INT)
+
+# Setup task options.
+setup_option(CONFIG_TASK_STATS ON BOOL)
+setup_option(CONFIG_TASK_USAGE ON BOOL)
+
 # Setup target configuration.
 setup_option(MCU atmega644 STRING)
 setup_option(F_CPU 20000000UL STRING)
