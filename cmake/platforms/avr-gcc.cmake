@@ -27,8 +27,10 @@ set(CMAKE_EXE_LINKER_FLAGS "${AVR_MCU} ${AVR_LINK_FLAGS}" CACHE STRING "" FORCE)
 
 # This function will setup a target for AVR.
 function (setup_target target_name sources)
+    # Add CMAKE_BUILD to disable manual configurations.
+    add_definitions(-DCMAKE_BUILD)
+
     # Add an executable target.
-    add_definitions(${RTOS_DEFS})
     add_executable(${target_name} ${RTOS_LINK_SOURCES} ${${sources}})
     target_link_libraries(${target_name} ${RTOS_LIB})
     target_include_directories(${target_name} PUBLIC ${RTOS_INCLUDES})
