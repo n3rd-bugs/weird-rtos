@@ -52,6 +52,7 @@ void lcd_an_init(void)
 void lcd_an_register(LCD_AN *lcd)
 {
     int32_t status = SUCCESS;
+    uint8_t i;
 
     /* Initialize LCD. */
     lcd->clr_rs(lcd);
@@ -63,30 +64,14 @@ void lcd_an_register(LCD_AN *lcd)
     sleep_fms(LCD_AN_INIT_DELAY);
 #endif
 
-    /* Send first 0x3. */
-    lcd_an_send_nibble(lcd, 0x3);
-
-    /* Controller still think that we are using 8bit mode so we can still read
-     * the status bit. */
-    status = lcd_an_wait_8bit(lcd);
-
-    if (status == SUCCESS)
+    /* Send couple of 0x3's to reset the display. */
+    for (i = 0; i < 4; i++)
     {
-        /* Send second 0x3. */
-        lcd->clr_rw(lcd);
+        /* Send a 0x3. */
         lcd_an_send_nibble(lcd, 0x3);
 
-        /* Wait for LCD to process the command in 8 bit mode. */
-        status = lcd_an_wait_8bit(lcd);
-    }
-
-    if (status == SUCCESS)
-    {
-        /* Send third 0x3. */
-        lcd->clr_rw(lcd);
-        lcd_an_send_nibble(lcd, 0x3);
-
-        /* Wait for LCD to process the command in 8 bit mode. */
+        /* Controller still think that we are using 8bit mode so we can
+         * still read the status bit. */
         status = lcd_an_wait_8bit(lcd);
     }
 
