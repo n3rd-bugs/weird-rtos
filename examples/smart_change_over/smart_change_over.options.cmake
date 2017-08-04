@@ -1,5 +1,5 @@
 # Include helpers.
-include(${RTOS_ROOT}/cmake/helper.cmake)
+include(${RTOS_ROOT}/cmake/modules/helper.cmake)
 
 # Initialize RTOS configurations.
 setup_option(CONFIG_FS ON BOOL)

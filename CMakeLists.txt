@@ -22,7 +22,7 @@ if (HAS_PARENT)
 endif ()
 
 # Include helpers.
-include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/helper.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/helper.cmake)
 
 # Initialize global variables.
 set(RTOS_SOURCES "" CACHE INTERNAL "RTOS_SOURCES" FORCE)
