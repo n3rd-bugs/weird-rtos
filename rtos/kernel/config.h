@@ -14,8 +14,10 @@
 #ifndef _CONFIG_H_
 #define _CONFIG_H_
 
-/* If we are not building from cmake. */
-#ifndef CMAKE_BUILD
+/* If we are building from cmake. */
+#ifdef CMAKE_BUILD
+#include <config_cmake.h>
+#else
 
 /* Helper API configuration. */
 #define CONFIG_SLEEP
