@@ -28,8 +28,11 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/helper.cmake)
 set(RTOS_SOURCES "" CACHE INTERNAL "RTOS_SOURCES" FORCE)
 set(RTOS_LINK_SOURCES "" CACHE INTERNAL "RTOS_LINK_SOURCES" FORCE)
 set(RTOS_INCLUDES "" CACHE INTERNAL "RTOS_INCLUDES" FORCE)
-set(RTOS_DEFS -DCMAKE_BUILD CACHE INTERNAL "RTOS_DEFS" FORCE)
+set(RTOS_DEFS "" CACHE INTERNAL "RTOS_DEFS" FORCE)
 set(RTOS_LIB ${PROJECT_NAME} CACHE INTERNAL "RTOS_LIB" FORCE)
+
+# Add CMAKE_BUILD to disable manual configurations.
+add_definitions(-DCMAKE_BUILD)
 
 # Add RTOS folders.
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
@@ -37,7 +40,10 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/api)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/port)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/rtos)
 
+# Write a configuration file.
+generate_configuration(${RTOS_DEFS} ${CMAKE_BINARY_DIR}/config/ config_cmake.h)
+set(RTOS_INCLUDES ${RTOS_INCLUDES} ${CMAKE_BINARY_DIR}/config/ CACHE INTERNAL "RTOS_INCLUDES" FORCE)
+
 # Create an RTOS library from the collected sources.
-add_definitions(${RTOS_DEFS})
 add_library(${RTOS_LIB} STATIC ${RTOS_SOURCES})
 target_include_directories(${RTOS_LIB} PUBLIC ${RTOS_INCLUDES})
