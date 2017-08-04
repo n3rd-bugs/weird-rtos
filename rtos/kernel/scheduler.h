@@ -17,7 +17,9 @@
 #include <kernel.h>
 
 /* Scheduler lock configuration. */
+#ifndef CMAKE_BUILD
 #define SCHEDULER_MAX_LOCK          (5)
+#endif /* CMAKE_BUILD */
 
 /* Defines the origin from which this task is being yielded.  */
 #define YIELD_INIT                  (0x00)

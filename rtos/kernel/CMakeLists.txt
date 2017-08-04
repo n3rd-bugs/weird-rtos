@@ -9,3 +9,4 @@ SET(RTOS_INCLUDES ${RTOS_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "R
 include(${CMAKE_CURRENT_SOURCE_DIR}/global_options.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/idle_options.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/assert_options.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/scheduler_options.cmake)
