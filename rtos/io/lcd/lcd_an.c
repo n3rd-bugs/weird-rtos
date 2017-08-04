@@ -23,7 +23,6 @@ FD lcd_an_fd;
 #endif
 
 /* Internal function prototypes. */
-static int32_t lcd_an_wait_8bit(LCD_AN *);
 static void lcd_an_send_nibble(LCD_AN *, uint8_t);
 static int32_t lcd_an_write_register(LCD_AN *, uint8_t, uint8_t);
 static int32_t lcd_an_read_register(LCD_AN *, uint8_t, uint8_t *);
@@ -52,7 +51,6 @@ void lcd_an_init(void)
 void lcd_an_register(LCD_AN *lcd)
 {
     int32_t status = SUCCESS;
-    uint8_t i;
 
     /* Initialize LCD. */
     lcd->clr_rs(lcd);
@@ -64,46 +62,19 @@ void lcd_an_register(LCD_AN *lcd)
     sleep_fms(LCD_AN_INIT_DELAY);
 #endif
 
-    /* Send couple of 0x3's to reset the display. */
-    for (i = 0; i < 4; i++)
-    {
-        /* Send a 0x3. */
-        lcd_an_send_nibble(lcd, 0x3);
+    /* Initialize LCD in 4-bit mode ignore status from initial commands. */
+    lcd_an_write_register(lcd, LCD_IGNORE_WAIT, 0x33);
+    lcd_an_write_register(lcd, LCD_IGNORE_WAIT, 0x32);
+    status = lcd_an_write_register(lcd, 0, 0x28);
 
-        /* Controller still think that we are using 8bit mode so we can
-         * still read the status bit. */
-        status = lcd_an_wait_8bit(lcd);
+    if (status == SUCCESS)
+    {
+        status = lcd_an_write_register(lcd, 0, 0x08);
     }
 
     if (status == SUCCESS)
     {
-        /* Switch to 4-bit mode. */
-        lcd->clr_rw(lcd);
-        lcd_an_send_nibble(lcd, 0x2);
-
-        /* Wait for LCD to process the command in 8 bit mode. */
-        status = lcd_an_wait_8bit(lcd);
-    }
-
-    /* LCD configuration. */
-    if (status == SUCCESS)
-    {
-        status = lcd_an_write_register(lcd, FALSE, 0x28);
-    }
-
-    if (status == SUCCESS)
-    {
-        status = lcd_an_write_register(lcd, FALSE, 0x28);
-    }
-
-    if (status == SUCCESS)
-    {
-        status = lcd_an_write_register(lcd, FALSE, 0x08);
-    }
-
-    if (status == SUCCESS)
-    {
-        status = lcd_an_write_register(lcd, FALSE, 0x01);
+        status = lcd_an_write_register(lcd, 0, 0x01);
 
 #if (LCD_AN_CLEAR_DELAY > 0)
         /* Wait for sometime before writing any more data. */
@@ -113,12 +84,12 @@ void lcd_an_register(LCD_AN *lcd)
 
     if (status == SUCCESS)
     {
-        status = lcd_an_write_register(lcd, FALSE, 0x06);
+        status = lcd_an_write_register(lcd, 0, 0x06);
     }
 
     if (status == SUCCESS)
     {
-        status = lcd_an_write_register(lcd, FALSE, 0x0C);
+        status = lcd_an_write_register(lcd, 0, 0x0C);
     }
 
     if (status == SUCCESS)
@@ -140,59 +111,6 @@ void lcd_an_register(LCD_AN *lcd)
     }
 
 } /* lcd_an_register */
-
-/*
- * lcd_an_wait_8bit
- * @lcd: LCD driver on which a command is needed to be sent.
- * @return: Success will be returned if LCD came out of busy successfully
- *  LCD_TIME_OUT will be returned if we timed out waiting for LCD.
- * This function sends a nibble to the LCD.
- */
-static int32_t lcd_an_wait_8bit(LCD_AN *lcd)
-{
-#if (LCD_AN_8_BIT_DELAY == 0)
-    uint32_t sys_time;
-#endif
-    int32_t status = SUCCESS;
-
-#if (LCD_AN_8_BIT_DELAY > 0)
-    UNUSED_PARAM(lcd);
-
-    /* Rather waiting on status bit just busy wait here. */
-    sleep_fms(LCD_AN_8_BIT_DELAY);
-#else
-
-    /* Read the command register. */
-    lcd->set_rw(lcd);
-    lcd->set_en(lcd);
-
-    /* Save current system time. */
-    sys_time = current_system_tick();
-
-    /* Read the first 4 bit and wait for the busy bit. */
-    while ((INT32CMP(current_system_tick(), sys_time) < (MS_TO_TICK(LCD_AN_BUSY_TIMEOUT))) &&
-           (lcd->read_data(lcd) & (1 << 3)))
-    {
-        lcd->clr_en(lcd);
-        task_yield();
-        lcd->set_en(lcd);
-    }
-
-    /* If we timed out waiting for the LCD. */
-    if (lcd->read_data(lcd) & (1 << 3))
-    {
-        /* Return error to the caller. */
-        status = LCD_AN_TIME_OUT;
-    }
-
-    /* Clear the enable pin. */
-    lcd->clr_en(lcd);
-#endif
-
-    /* Return status to the caller. */
-    return (status);
-
-} /* lcd_an_wait_8bit */
 
 /*
  * lcd_an_send_nibble
@@ -249,11 +167,11 @@ static int32_t lcd_an_write_register(LCD_AN *lcd, uint8_t rs, uint8_t byte)
     } while ((current_system_tick() - sys_time) < (MS_TO_TICK(LCD_AN_BUSY_TIMEOUT)) && (cmd_byte & (1 << 7)));
 
     /* If we did not timeout waiting for the LCD. */
-    if ((cmd_byte & (1 << 7)) == 0)
+    if (((cmd_byte & (1 << 7)) == 0) || (rs & LCD_IGNORE_WAIT))
 #endif /* LCD_AN_NO_BUSY_WAIT */
     {
         /* Select required register. */
-        if (rs == TRUE)
+        if (rs & LCD_DATA_REG)
         {
             /* Select data register. */
             lcd->set_rs(lcd);
@@ -366,22 +284,22 @@ static int32_t lcd_an_create_custom_char(LCD_AN *lcd, uint8_t index, uint8_t *bi
     uint8_t ddram_addr;
 
     /* Get the DDRAM address. */
-    status = lcd_an_read_register(lcd, FALSE, &ddram_addr);
+    status = lcd_an_read_register(lcd, 0, &ddram_addr);
 
     if (status == SUCCESS)
     {
         /* Move to required index in the CGRAM. */
-        status = lcd_an_write_register(lcd, FALSE, 0x40 + (index << 3));
+        status = lcd_an_write_register(lcd, 0, 0x40 + (index << 3));
 
         /* Write the bitmap of the character. */
         for (i = 0; ((status == SUCCESS) && (i < 8)); i++)
         {
             /* Write the bitmap in the CGRAM. */
-            status = lcd_an_write_register(lcd, TRUE, bitmap[i]);
+            status = lcd_an_write_register(lcd, LCD_DATA_REG, bitmap[i]);
         }
 
         /* Revert to old DDRAM address. */
-        (void)lcd_an_write_register(lcd, FALSE, (ddram_addr | (1 << 7)));
+        (void)lcd_an_write_register(lcd, 0, (ddram_addr | (1 << 7)));
     }
 
     /* Return status to the caller. */
@@ -418,7 +336,7 @@ static int32_t lcd_an_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
         case '\f':
 
             /* Clear display. */
-            status = lcd_an_write_register(lcd, FALSE, 0x01);
+            status = lcd_an_write_register(lcd, 0, 0x01);
 
             /* If display was successfully cleared. */
             if (status == SUCCESS)
@@ -513,7 +431,7 @@ static int32_t lcd_an_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
             if (status == SUCCESS)
             {
                 /* Update cursor location on the LCD. */
-                status = lcd_an_write_register(lcd, FALSE, address);
+                status = lcd_an_write_register(lcd, 0, address);
             }
 
             break;
@@ -525,7 +443,7 @@ static int32_t lcd_an_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
             if (lcd->cur_column < lcd->column)
             {
                 /* Write a data register. */
-                status = lcd_an_write_register(lcd, TRUE, *buf);
+                status = lcd_an_write_register(lcd, LCD_DATA_REG, *buf);
 
                 /* Move LCD cursor to next column. */
                 lcd->cur_column ++;

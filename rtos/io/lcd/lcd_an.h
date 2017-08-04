@@ -29,15 +29,15 @@
 #endif
 
 #define LCD_AN_DEBUG
-#define LCD_AN_NO_BUSY_WAIT
+//#define LCD_AN_NO_BUSY_WAIT
 
 /* Alphanumeric LCD configurations */
-#define LCD_AN_BUSY_TIMEOUT     (500)
+#define LCD_AN_BUSY_TIMEOUT     (100)
 #define LCD_AN_TAB_SIZE         (3)
 
 /* LCD delay configurations. */
 #define LCD_AN_8_BIT_DELAY      (10)
-#define LCD_AN_INIT_DELAY       (20)
+#define LCD_AN_INIT_DELAY       (0)
 #define LCD_AN_CLEAR_DELAY      (10)
 #define LCD_AN_READ_DELAY       (5)
 
@@ -46,6 +46,10 @@
 #define LCD_AN_COLUMN_FULL      -1301
 #define LCD_AN_ROW_FULL         -1302
 #define LCD_AN_INTERNAL_ERROR   -1303
+
+/* LCD register flags. */
+#define LCD_DATA_REG            0x01
+#define LCD_IGNORE_WAIT         0x02
 
 /* LCD IOCTL commands. */
 #define LCD_AN_CUSTOM_CHAR     (1)
