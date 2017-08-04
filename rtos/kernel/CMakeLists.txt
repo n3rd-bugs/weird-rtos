@@ -7,4 +7,4 @@ SET(RTOS_INCLUDES ${RTOS_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "R
 
 # Inlcude configuration options.
 include(${CMAKE_CURRENT_SOURCE_DIR}/global_options.cmake)
-add_definitions(-DTEST_OPTION)
+include(${CMAKE_CURRENT_SOURCE_DIR}/assert_options.cmake)

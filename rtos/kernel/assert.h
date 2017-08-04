@@ -18,8 +18,10 @@
 #include <kernel.h>
 
 /* Assert configuration. */
+#ifndef CMAKE_BUILD
 #define ASSERT_NONE
 #define ASSERT_FILE_INFO
+#endif /* CMAKE_BUILD */
 
 /* Error handling. */
 #ifdef ASSERT_NONE
