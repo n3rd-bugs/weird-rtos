@@ -126,7 +126,7 @@ void log_entry(void *argv);
 #define ADC_CHANNEL_DELAY       (200)
 #define ADC_MAX_WAVES           (25)
 #define ADC_NUM_SAMPLES         (ADC_MAX_WAVES * ADC_SAMPLE_PER_WAVE)
-#define ENABLE_WDT              FALSE
+#define ENABLE_WDT              TRUE
 #define COMPUTE_AVG             FALSE
 #define COMPUTE_APPROX          TRUE
 #define ENABLE_COUTERMEASURE    TRUE
@@ -1212,7 +1212,7 @@ void log_entry(void *argv)
         hour = (uint8_t)((systick / (3600LU * SOFT_TICKS_PER_SEC)) - ((uint32_t)day * 24LU));
         min = (uint8_t)((systick / (60LU * SOFT_TICKS_PER_SEC)) - (((uint32_t)day * 1440LU) + ((uint32_t)hour * 60LU)));
         sec = (uint8_t)((systick / (SOFT_TICKS_PER_SEC)) - (((uint32_t)day * 86400LU) + ((uint32_t)hour * 3600LU) + ((uint32_t)min * 60LU)));
-        milisec = (uint8_t)((systick) - (((uint32_t)day * 86400LU) + (((uint32_t)hour * 3600LU) + ((uint32_t)min * 60LU) + ((uint32_t)sec)) * SOFT_TICKS_PER_SEC));
+        milisec = (uint8_t)((systick) - ((((uint32_t)day * 86400LU) + ((uint32_t)hour * 3600LU) + ((uint32_t)min * 60LU) + ((uint32_t)sec)) * SOFT_TICKS_PER_SEC));
         P_STR_CPY(str, P_STR("\f\t%02u:"));
         printf(str, day);
         P_STR_CPY(str, P_STR("%02u:"));
