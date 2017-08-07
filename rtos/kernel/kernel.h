@@ -15,8 +15,8 @@
 #define _KERNEL_H_
 
 #include <stdint.h>
-#include <kernel_target.h>
 #include <config.h>
+#include <kernel_target.h>
 #include <tasks.h>
 #include <scheduler.h>
 #include <assert.h>

@@ -28,9 +28,11 @@
 #define TOOL_ARM_GCC        0x02
 
 /* RTOS configuration. */
+#ifndef CMAKE_BUILD
 #define PLAT_TARGET         PLAT_ATMEGA644P
 #define RTOS_TARGET         TARGET_AVR
 #define TOOL_TARGET         TOOL_AVR_GCC
+#endif
 
 /* Toolset includes. */
 #if (TOOL_TARGET == TOOL_AVR_GCC)
