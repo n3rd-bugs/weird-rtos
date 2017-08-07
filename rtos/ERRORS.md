@@ -55,6 +55,7 @@ This list is needed to be updated whenever a new error code is added.
     MMC_SPI_SELECT_ERROR    -1503
     MMC_SPI_RESUME_ERROR    -1504
     MMC_SPI_INVALID_PARAM   -1505
+    I2C_MSG_NACKED          -1600
     ENC28J60_DISCONNECTED   -11000
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001
