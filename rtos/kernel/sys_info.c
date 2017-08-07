@@ -19,8 +19,8 @@
 #ifdef CONFIG_TASK_STATS
 #ifdef CONFIG_FS
 #include <fs.h>
-#include <string.h>
 #endif
+#include <string.h>
 
 #ifdef CONFIG_TASK_USAGE
 /* Number of ticks system context was active. */
