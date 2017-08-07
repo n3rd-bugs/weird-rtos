@@ -221,10 +221,10 @@ static int32_t net_condition_do_remove(void *data)
     if (index != (int32_t)(net_condition_data.num - 1))
     {
         /* Align conditions. */
-        memcpy(&net_condition_data.condition[index], &net_condition_data.condition[index + 1], (sizeof(CONDITION *) * ((net_condition_data.num - 1) - (uint32_t)index)));
-        memcpy(&net_condition_data.suspend[index], &net_condition_data.suspend[index + 1], (sizeof(SUSPEND *) * ((net_condition_data.num - 1) - (uint32_t)index)));
-        memcpy(&net_condition_data.process[index], &net_condition_data.process[index + 1], (sizeof(NET_CONDITION_PROCESS *) * ((net_condition_data.num - 1) - (uint32_t)index)));
-        memcpy(&net_condition_data.data[index], &net_condition_data.data[index + 1], (sizeof(NET_CONDITION_PROCESS *) * ((net_condition_data.num - 1) - (uint32_t)index)));
+        memcpy(&net_condition_data.condition[index], &net_condition_data.condition[index + 1], (sizeof(CONDITION *) * (uint8_t)((net_condition_data.num - 1) - index)));
+        memcpy(&net_condition_data.suspend[index], &net_condition_data.suspend[index + 1], (sizeof(SUSPEND *) * (uint8_t)((net_condition_data.num - 1) - (uint8_t)index)));
+        memcpy(&net_condition_data.process[index], &net_condition_data.process[index + 1], (sizeof(NET_CONDITION_PROCESS *) * (uint8_t)((net_condition_data.num - 1) - index)));
+        memcpy(&net_condition_data.data[index], &net_condition_data.data[index + 1], (sizeof(NET_CONDITION_PROCESS *) * (uint8_t)((net_condition_data.num - 1) - index)));
     }
 
     /* Clear the last condition. */
@@ -234,7 +234,7 @@ static int32_t net_condition_do_remove(void *data)
     net_condition_data.data[net_condition_data.num - 1] = NULL;
 
     /* Decrement the number of conditions. */
-    net_condition_data.num = (uint32_t)(net_condition_data.num - 1);
+    net_condition_data.num = (uint8_t)(net_condition_data.num - 1);
 
     SYS_LOG_FUNCTION_MSG(NET_CONDITION, SYS_LOG_DEBUG, "removed a condition %d", index);
 

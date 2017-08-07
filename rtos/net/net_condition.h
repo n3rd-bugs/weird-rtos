@@ -39,7 +39,10 @@ typedef struct _net_condition
     void            *data[NET_COND_NUM_TOTAL];
 
     /* Number of conditions on which network stack is listening. */
-    uint32_t    num;
+    uint8_t         num;
+
+    /* Structure padding. */
+    uint8_t         pad[3];
 
 } NET_CONDITION;
 
