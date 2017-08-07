@@ -652,7 +652,7 @@ static void enc28j60_link_changed(ENC28J60 *device)
 
 #ifndef DHCP_CLIENT
             /* Set static IP address for this device. */
-            ipv4_set_device_address(fd, 0xC0A80032, 0xFFFFFF00);
+            ipv4_set_device_address(fd, ENC28J60_DEFAULT_IP, ENC28J60_DEFAULT_SUBNET);
 #endif
 
             /* Process any frames needed to be sent. */

@@ -37,6 +37,7 @@
 /* Error code definitions. */
 #define ENC28J60_DISCONNECTED       -11000
 
+#ifndef BUILD_CMAKE
 /* ENC28J60 watch dog configuration. */
 #define ENC28J60_WDT_TIMEOUT        (1000)
 
@@ -51,10 +52,6 @@
 /* ENC28J60 device configuration. */
 #define ENC28J60_REV_ID             (0x06)
 
-/* ENC28J60 device flag definitions. */
-#define ENC28J60_IN_TX              (0x01)
-#define ENC28J60_INT_ENABLE         (0x02)
-
 /* Buffer configuration for a enc28j60 device. */
 #define ENC28J60_MAX_BUFFER_SIZE    (32)
 #define ENC28J60_NUM_BUFFERS        (32)
@@ -65,6 +62,15 @@
 /* Networking configuration for a enc28j60 device. */
 #define ENC28J60_NUM_ARP            (4)
 #define ENC28J60_NUM_IPV4_FRAGS     (2)
+
+/* Default IP configuration. */
+#define ENC28J60_DEFAULT_IP         (0xC0A80032)
+#define ENC28J60_DEFAULT_SUBNET     (0xFFFFFF00)
+#endif /* BUILD_CMAKE */
+
+/* ENC28J60 device flag definitions. */
+#define ENC28J60_IN_TX              (0x01)
+#define ENC28J60_INT_ENABLE         (0x02)
 
 /* ENC28J60 receive packet definitions. */
 #define ENC28J60_RX_HEAD_SIZE       (6)
