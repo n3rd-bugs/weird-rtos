@@ -1,7 +1,6 @@
 # Load default configurations.
-set(PLATFORM stm32f407discovery CACHE STRING "")
-set(PLATFORM ${PLATFORM} CACHE STRING "Target platform.")
-set(TGT_TOOL "gcc-arm" CACHE STRING "Target Tools." FORCE)
+set(PLATFORM stm32f407discovery CACHE STRING "Target platform.")
+set(TGT_TOOL "gcc-arm" CACHE STRING "Target Tools.")
 
 # Find required tool-sets.
 find_program(ARM_CC arm-none-eabi-gcc)
