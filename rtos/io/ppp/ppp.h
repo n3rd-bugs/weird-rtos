@@ -26,7 +26,9 @@
 #include <net.h>
 
 /* PPP configuration. */
+#ifndef CMAKE_BUILD
 #define PPP_MODEM_CHAT
+#endif /* CMAKE_BUILD */
 
 /* Status codes. */
 #define PPP_INVALID_HEADER          -900

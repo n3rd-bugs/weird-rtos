@@ -19,8 +19,10 @@
 #ifdef CONFIG_PPP
 
 /* PPP IP configurations. */
+#ifndef BUILD_CMAKE
 #define PPP_LOCAL_IP_ADDRESS    {192, 168, 0, 1}
 #define PPP_REMOTE_IP_ADDRESS   {192, 168, 0, 2}
+#endif /* BUILD_CMAKE */
 
 /* IPCP option type definitions. */
 #define PPP_IPCP_OPT_IPS        1
