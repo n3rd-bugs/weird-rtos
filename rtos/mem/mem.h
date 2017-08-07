@@ -20,9 +20,11 @@
 #ifdef CONFIG_MEMGR
 
 /* Memory manager configuration. */
+#ifndef BUILD_CMAKE
 #define MEMGR_STATIC
 #define MEMGR_DYNAMIC
 #define MEMGR_STATS
+#endif /* BUILD_CMAKE */
 
 #ifdef MEMGR_STATIC
 #include <mem_static.h>

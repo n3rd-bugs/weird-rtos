@@ -22,9 +22,11 @@
 #include <semaphore.h>
 
 /* Dynamic memory configuration. */
+#ifndef BUILD_CMAKE
 #define MEM_BNDRY_CHECK
 #define MEM_FREE_CHECK
 #define MEM_ID_CHECK
+#endif /* BUILD_CMAKE */
 
 /* Memory page configuration flags. */
 #define MEM_PAGE_DEC        0x0001
