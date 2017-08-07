@@ -19,7 +19,7 @@
 
 /* Task configuration. */
 #ifndef CMAKE_BUILD
-#define CONFIG_TASK_STATS
+//#define CONFIG_TASK_STATS
 #define CONFIG_TASK_USAGE
 #define CONFIG_STACK_PATTERN    'A'
 #endif /* CMAKE_BUILD */
@@ -85,11 +85,6 @@ struct _task
 
     /* Current task status. */
     int32_t     status;
-
-#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
-    /* Structure padding. */
-    int8_t      pad[4];
-#endif
 
     /* Number of wait conditions on which this task is waiting. */
     uint8_t     num_conditions;
