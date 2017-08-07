@@ -25,6 +25,15 @@ setup_option(SOFT_TICKS_PER_SEC 10)
 setup_option(CONFIG_TASK_STATS ON)
 setup_option(CONFIG_TASK_USAGE ON)
 
+# Setup enc28j60 configurations.
+setup_option(ENC28J60_MAX_BUFFER_SIZE 64)
+setup_option(ENC28J60_NUM_BUFFERS 7)
+setup_option(ENC28J60_NUM_BUFFER_LISTS 4)
+setup_option(ENC28J60_NUM_THR_BUFFER 0)
+setup_option(ENC28J60_NUM_THR_LIST 0)
+setup_option(ENC28J60_NUM_ARP 1)
+setup_option(ENC28J60_NUM_IPV4_FRAGS 0)
+
 # Setup target configuration.
 setup_option(PLATFORM atmega644)
 setup_option(F_CPU 20000000UL)
