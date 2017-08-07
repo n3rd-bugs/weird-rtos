@@ -22,7 +22,9 @@
 #include <spi.h>
 
 /* Enable file system interface of MMC. */
+#ifndef BUILD_CMAKE
 #define MMC_SPI_FS
+#endif /* BUILD_CMAKE */
 
 #ifdef MMC_SPI_FS
 #include <fs.h>
