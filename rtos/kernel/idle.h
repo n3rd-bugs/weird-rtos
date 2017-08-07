@@ -19,8 +19,8 @@
 /* Idle work configurations. */
 #ifndef CMAKE_BUILD
 //#define IDLE_RUNTIME_UPDATE
-#define IDLE_WORK_MAX           (1)
-#define IDLE_TASK_STACK_SIZE    (196)
+#define IDLE_WORK_MAX           (0)
+#define IDLE_TASK_STACK_SIZE    (64)
 #endif /* CMAKE_BUILD */
 
 /* Error definitions. */
