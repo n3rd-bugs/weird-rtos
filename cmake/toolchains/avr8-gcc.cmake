@@ -1,6 +1,10 @@
 # Load default AVR configurations.
-set(MCU atmega644 CACHE STRING "Target MCU.")
-set(F_CPU 20000000UL CACHE STRING "Target frequency.")
+set(PLATFORM atmega644 CACHE STRING "")
+set(PLATFORM ${PLATFORM} CACHE STRING "Target platform.")
+set(F_CPU 20000000UL CACHE STRING "")
+set(F_CPU ${F_CPU} CACHE STRING "Target frequency." FORCE)
+
+message("Building for " ${PLATFORM})
 
 # Find required tool-sets.
 find_program(AVR_CC avr-gcc)
@@ -17,7 +21,7 @@ set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS ON)
 
 # Load default flags.
 set(AVR_C_FLAGS "-Wall -Os -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -Wextra -mrelax -Wstrict-prototypes")
-set(AVR_MCU "-mmcu=${MCU}")
+set(AVR_MCU "-mmcu=${PLATFORM}")
 set(AVR_FRQ "-DF_CPU=${F_CPU}")
 set(AVR_LINK_FLAGS "-Wl,--gc-sections -lm")
 
@@ -43,5 +47,5 @@ function (setup_target target_name sources)
     add_custom_target(${target_name}.lss ALL ${AVR_OBJDUMP} -h -S "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" > "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.lss" DEPENDS ${target_name})
     
     # Add a target to provide display analysis.
-    add_custom_target(${target_name}.size ALL ${AVR_SIZE} --format=avr --mcu=${MCU} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" DEPENDS ${target_name})
+    add_custom_target(${target_name}.size ALL ${AVR_SIZE} --format=avr --mcu=${PLATFORM} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" DEPENDS ${target_name})
 endfunction ()
