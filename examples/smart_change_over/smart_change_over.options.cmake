@@ -23,5 +23,5 @@ setup_option(CONFIG_TASK_STATS ON BOOL)
 setup_option(CONFIG_TASK_USAGE ON BOOL)
 
 # Setup target configuration.
-setup_option(MCU atmega644 STRING)
+setup_option(PLATFORM atmega644 STRING)
 setup_option(F_CPU 20000000UL STRING)
