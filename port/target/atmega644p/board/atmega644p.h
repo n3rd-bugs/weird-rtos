@@ -16,13 +16,15 @@
 
 #ifdef CONFIG_BOOTLOAD
 #include <bootload_atmega644p.h>
-#endif
+#endif /* CONFIG_BOOTLOAD */
 
+#ifdef CONFIG_SERIAL
 #include <usart_atmega644p.h>
+#endif /* CONFIG_SERIAL */
 
 #ifdef CONFIG_FS
 #include <fs_target.h>
-#endif
+#endif /* CONFIG_FS */
 
 /* Any other configuration is being managed by Eclipse plugin for avr-gcc. */
 

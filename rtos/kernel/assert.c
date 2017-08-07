@@ -14,9 +14,11 @@
 
 #include <kernel.h>
 #include <sys_info.h>
-#include <serial.h>
 #include <string.h>
 #include <stdlib.h>
+#ifdef CONFIG_SERIAL
+#include <serial.h>
+#endif /* CONFIG_SERIAL */
 
 /*
  * system_assert

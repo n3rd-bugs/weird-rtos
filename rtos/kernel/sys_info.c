@@ -14,7 +14,9 @@
 #include <stdio.h>
 #include <kernel.h>
 #include <sys_info.h>
+#ifdef CONFIG_SERIAL
 #include <serial.h>
+#endif /* CONFIG_SERIAL */
 
 #ifdef CONFIG_TASK_STATS
 #ifdef CONFIG_FS

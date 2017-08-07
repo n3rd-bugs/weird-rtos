@@ -13,7 +13,9 @@
  */
 #include <io.h>
 #include <lcd_an.h>
+#ifdef CONFIG_SERIAL
 #include <serial.h>
+#endif /* CONFIG_SERIAL */
 
 /*
  * io_puts

@@ -23,7 +23,6 @@
 #include <adc.h>
 #include <math.h>
 #include <lcd_an.h>
-#include <serial.h>
 #include <avr/wdt.h>
 
 /* Definitions to communicate with other side. */
