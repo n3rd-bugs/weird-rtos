@@ -4,3 +4,7 @@ set(RTOS_SOURCES ${RTOS_SOURCES} ${SOURCES} CACHE INTERNAL "RTOS_SOURCES" FORCE)
 
 # Add this directory to the include directory.
 SET(RTOS_INCLUDES ${RTOS_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "RTOS_INCLUDES" FORCE)
+
+# Add a configuration option for target CPU.
+setup_option_def(RTOS_TARGET "TARGET_CORTEX_M4" MACRO "Target CPU.")
+setup_option_hide(RTOS_TARGET)
