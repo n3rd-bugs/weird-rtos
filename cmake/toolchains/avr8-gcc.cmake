@@ -1,10 +1,10 @@
 # Load default AVR configurations.
 set(PLATFORM atmega644 CACHE STRING "")
 set(PLATFORM ${PLATFORM} CACHE STRING "Target platform.")
+set(TGT_CPU ${PLATFORM} CACHE STRING "Target CPU." FORCE)
+set(TGT_TOOL "gcc-avr" CACHE STRING "Target Tools." FORCE)
 set(F_CPU 20000000UL CACHE STRING "")
 set(F_CPU ${F_CPU} CACHE STRING "Target frequency." FORCE)
-
-message("Building for " ${PLATFORM})
 
 # Find required tool-sets.
 find_program(AVR_CC avr-gcc)
@@ -20,10 +20,10 @@ set(CMAKE_C_COMPILER ${AVR_CC})
 set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS ON)
 
 # Load default flags.
-set(AVR_C_FLAGS "-Wall -Os -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -Wextra -mrelax -Wstrict-prototypes")
-set(AVR_MCU "-mmcu=${PLATFORM}")
+set(AVR_C_FLAGS "-Wall -Os -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -Wextra -mrelax -Wstrict-prototypes" CACHE STRING "C flags.")
+set(AVR_MCU "-mmcu=${TGT_CPU}")
 set(AVR_FRQ "-DF_CPU=${F_CPU}")
-set(AVR_LINK_FLAGS "-Wl,--gc-sections -lm")
+set(AVR_LINK_FLAGS "-Wl,--gc-sections -lm" CACHE STRING "LD flags.")
 
 # Set c and link flags.
 set(CMAKE_C_FLAGS "${AVR_MCU} ${AVR_FRQ} ${AVR_C_FLAGS}" CACHE STRING "" FORCE)
@@ -46,6 +46,6 @@ function (setup_target target_name sources)
     # Add a target to create ASM listing.
     add_custom_target(${target_name}.lss ALL ${AVR_OBJDUMP} -h -S "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" > "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.lss" DEPENDS ${target_name})
     
-    # Add a target to provide display analysis.
-    add_custom_target(${target_name}.size ALL ${AVR_SIZE} --format=avr --mcu=${PLATFORM} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" DEPENDS ${target_name})
+    # Add a target to display size analysis.
+    add_custom_target(${target_name}.size ALL ${AVR_SIZE} --format=avr --mcu=${TGT_CPU} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" DEPENDS ${target_name})
 endfunction ()
