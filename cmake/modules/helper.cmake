@@ -1,13 +1,13 @@
 # This function will configure an option.
-function (setup_option configuration value type)    
-    # Pick configuration type.
-    if (${type} STREQUAL "BOOL")
-        set(cache_type BOOL)
-    else ()
-        set(cache_type STRING)
+function (setup_option configuration value)
+    if (DEFINED <variable>)
+        # The option was already configured.
+        
+        set(${configuration} ${value} CACHE INTERNAL "" FORCE)
+    elseif ()
+        # Set this option as provided.
+        set(${configuration} ${value} CACHE INTERNAL "" FORCE)
     endif ()
-    # Set this option as provided.
-    set(${configuration} ${value} CACHE ${cache_type} "")
 endfunction ()
 
 # This function will make an option hidden.
@@ -46,7 +46,7 @@ function (setup_option_def configuration default_value type description)
         SET(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \'${${configuration}}\'\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
     elseif (${type} STREQUAL "INT")
         # Add this to RTOS configuration list with an integral value.
-        SET(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} ${${configuration}}\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
+        SET(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \(${${configuration}}\)\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
     elseif (${type} STREQUAL "MACRO")
         # Add this to RTOS configuration list as a MACRO value.
         SET(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} ${${configuration}}\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
