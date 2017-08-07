@@ -1,7 +1,7 @@
 # Load default AVR configurations.
 set(PLATFORM atmega644 CACHE STRING "")
 set(PLATFORM ${PLATFORM} CACHE STRING "Target platform.")
-set(TGT_CPU ${PLATFORM} CACHE STRING "Target CPU." FORCE)
+set(TGT_CPU ${PLATFORM} CACHE INTERNAL "Target CPU." FORCE)
 set(TGT_TOOL "gcc-avr" CACHE STRING "Target Tools." FORCE)
 set(F_CPU 20000000UL CACHE STRING "")
 set(F_CPU ${F_CPU} CACHE STRING "Target frequency." FORCE)
