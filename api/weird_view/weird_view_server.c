@@ -186,7 +186,7 @@ static void weird_view_server_process(void *data, int32_t status)
                         for (j = 0; (received == SUCCESS) && (j < P_STR_LEN(weird_view->plugin[i].name)); j += this_size)
                         {
                             /* Pick the number of bytes we need to copy. */
-                            this_size = (P_STR_LEN(name) > sizeof(str)) ? sizeof(str) : P_STR_LEN(name);
+                            this_size = (uint8_t)((P_STR_LEN(name) > sizeof(str)) ? sizeof(str) : P_STR_LEN(name));
 
                             /* Copy the required bytes. */
                             P_MEM_CPY(str, name, this_size);
