@@ -30,9 +30,9 @@
 #include <net_device.h>
 
 /* Ethernet configuration. */
-#ifndef BUILD_CMAKE
+#ifndef CMAKE_BUILD
 #define ETHERNET_ENC28J60
-#endif /* BUILD_CMAKE */
+#endif /* CMAKE_BUILD */
 
 /* Ethernet error definitions. */
 #define ETH_TX_BLOCKED      -1100

@@ -37,7 +37,7 @@
 /* Error code definitions. */
 #define ENC28J60_DISCONNECTED       -11000
 
-#ifndef BUILD_CMAKE
+#ifndef CMAKE_BUILD
 /* ENC28J60 watch dog configuration. */
 #define ENC28J60_WDT_TIMEOUT        (1000)
 
@@ -66,7 +66,7 @@
 /* Default IP configuration. */
 #define ENC28J60_DEFAULT_IP         (0xC0A80032)
 #define ENC28J60_DEFAULT_SUBNET     (0xFFFFFF00)
-#endif /* BUILD_CMAKE */
+#endif /* CMAKE_BUILD */
 
 /* ENC28J60 device flag definitions. */
 #define ENC28J60_IN_TX              (0x01)

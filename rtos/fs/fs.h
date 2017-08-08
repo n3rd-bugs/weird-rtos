@@ -22,11 +22,11 @@
 #include <condition.h>
 
 /* File system configuration. */
-#ifndef BUILD_CMAKE
+#ifndef CMAKE_BUILD
 #define FS_CONSOLE
 //#define FS_PIPE
 //#define FS_FAT
-#endif /* BUILD_CMAKE */
+#endif /* CMAKE_BUILD */
 
 /* Error definitions. */
 #define FS_NODE_DELETED         -800

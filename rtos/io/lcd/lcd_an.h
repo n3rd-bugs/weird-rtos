@@ -28,7 +28,7 @@
 #error "Console driver is required for LCD_AN driver."
 #endif
 
-#ifndef BUILD_CMAKE
+#ifndef CMAKE_BUILD
 #define LCD_AN_DEBUG
 //#define LCD_AN_NO_BUSY_WAIT
 
@@ -40,7 +40,7 @@
 #define LCD_AN_INIT_DELAY       (0)
 #define LCD_AN_CLEAR_DELAY      (10)
 #define LCD_AN_READ_DELAY       (5)
-#endif /* BUILD_CMAKE */
+#endif /* CMAKE_BUILD */
 
 /* LCD error code definitions. */
 #define LCD_AN_TIME_OUT         -1300

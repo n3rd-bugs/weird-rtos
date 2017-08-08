@@ -22,9 +22,9 @@
 #include <console.h>
 
 /* UDP stack configuration. */
-#ifndef BUILD_CMAKE
+#ifndef CMAKE_BUILD
 #define UDP_CSUM
-#endif /* BUILD_CMAKE */
+#endif /* CMAKE_BUILD */
 
 /* UDP header definitions. */
 #define UDP_HRD_LENGTH              (8)

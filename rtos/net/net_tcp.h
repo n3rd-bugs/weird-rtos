@@ -23,7 +23,7 @@
 #include <console.h>
 
 /* TCP configuration. */
-#ifndef BUILD_CMAKE
+#ifndef CMAKE_BUILD
 #define TCP_WND_SIZE                (1024)
 #define TCP_WND_SCALE               (2)
 #define TCP_RTO                     (750)
@@ -31,7 +31,7 @@
 #define TCP_MSL                     (60000)
 #define TCP_NUM_RTX                 (16)
 #define TCP_MAX_CONG_WINDOW         (0xFFFF)
-#endif /* BUILD_CMAKE */
+#endif /* CMAKE_BUILD */
 
 /* TCP header definitions. */
 #define TCP_HRD_SIZE                (20)

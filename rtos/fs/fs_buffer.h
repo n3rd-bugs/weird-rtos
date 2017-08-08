@@ -18,9 +18,9 @@
 #ifdef CONFIG_FS
 
 /* Buffer configuration. */
-#ifndef BUILD_CMAKE
+#ifndef CMAKE_BUILD
 //#define FS_BUFFER_DEBUG
-#endif /* BUILD_CMAKE */
+#endif /* CMAKE_BUILD */
 
 /* Buffer type definition. */
 #define FS_BUFFER_ONE_FREE  1
