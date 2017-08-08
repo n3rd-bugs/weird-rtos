@@ -23,13 +23,15 @@
 #include <console.h>
 
 /* TCP configuration. */
+#ifndef BUILD_CMAKE
 #define TCP_WND_SIZE                (1024)
 #define TCP_WND_SCALE               (2)
-#define TCP_RTO                     ((SOFT_TICKS_PER_SEC * 3)/ 4)
-#define TCP_MAX_RTO                 (SOFT_TICKS_PER_SEC * 5)
-#define TCP_MSL                     (60 * SOFT_TICKS_PER_SEC)
+#define TCP_RTO                     (750)
+#define TCP_MAX_RTO                 (5000)
+#define TCP_MSL                     (60000)
 #define TCP_NUM_RTX                 (16)
 #define TCP_MAX_CONG_WINDOW         (0xFFFF)
+#endif /* BUILD_CMAKE */
 
 /* TCP header definitions. */
 #define TCP_HRD_SIZE                (20)

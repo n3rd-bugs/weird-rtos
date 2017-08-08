@@ -812,7 +812,7 @@ static void tcp_timeout_callback(void *data, int32_t status)
                     case TCP_SOCK_CLOSING:
 
                         /* Next time out will be at RTO. */
-                        port->rtx_timeout = current_system_tick() + TCP_RTO;
+                        port->rtx_timeout = current_system_tick() + MS_TO_TICK(TCP_RTO);
 
                         break;
 
@@ -823,10 +823,10 @@ static void tcp_timeout_callback(void *data, int32_t status)
                         port->rtx_time = port->rtx_time * 2;
 
                         /* If we exceeded the maximum value. */
-                        if (port->rtx_time > TCP_MAX_RTO)
+                        if (port->rtx_time > MS_TO_TICK(TCP_MAX_RTO))
                         {
                             /* Use the maximum value. */
-                            port->rtx_time = TCP_MAX_RTO;
+                            port->rtx_time = MS_TO_TICK(TCP_MAX_RTO);
                         }
 
                         /* Adjust the retransmission timer. */
@@ -958,9 +958,9 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                     if (port->rtx_timeout_enable == FALSE)
                     {
                         /* Save the tick at which we want this buffer to be retransmitted. */
-                        port->rtx_timeout = (current_system_tick() + TCP_RTO);
+                        port->rtx_timeout = (current_system_tick() + MS_TO_TICK(TCP_RTO));
                         port->rtx_timeout_enable = TRUE;
-                        port->rtx_time = TCP_RTO;
+                        port->rtx_time = MS_TO_TICK(TCP_RTO);
                     }
                 }
                 else
@@ -1858,8 +1858,8 @@ static uint8_t tcp_rtx_process_ack(TCP_PORT *port, uint32_t ack_num)
     if (do_rtx == TRUE)
     {
         /* Enable the retransmission timer. */
-        port->rtx_timeout = current_system_tick() + TCP_RTO;
-        port->rtx_time = TCP_RTO;
+        port->rtx_timeout = current_system_tick() + MS_TO_TICK(TCP_RTO);
+        port->rtx_time = (TCP_RTO);
         port->rtx_timeout_enable = TRUE;
     }
     else
@@ -2473,7 +2473,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                                 tcp_process_finbit(port, (seg_seq + seg_len));
 
                                                 /* Enable the event timer. */
-                                                port->event_timeout = current_system_tick() + (2 * TCP_MSL);
+                                                port->event_timeout = current_system_tick() + (2 * MS_TO_TICK(TCP_MSL));
                                                 port->event_timeout_enable = TRUE;
                                                 tcp_timeout_update(port);
 
@@ -2511,7 +2511,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                             tcp_process_finbit(port, (seg_seq + seg_len));
 
                                             /* Enable the event timer. */
-                                            port->event_timeout = current_system_tick() + (2 * TCP_MSL);
+                                            port->event_timeout = current_system_tick() + (2 * MS_TO_TICK(TCP_MSL));
                                             port->event_timeout_enable = TRUE;
                                             tcp_timeout_update(port);
 
@@ -2563,7 +2563,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                                         case TCP_SOCK_TIME_WAIT:
 
                                             /* Enable the event timer. */
-                                            port->event_timeout = current_system_tick() + (2 * TCP_MSL);
+                                            port->event_timeout = current_system_tick() + (2 * MS_TO_TICK(TCP_MSL));
                                             port->event_timeout_enable = TRUE;
                                             tcp_timeout_update(port);
 

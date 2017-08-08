@@ -18,12 +18,14 @@
 #ifdef CONFIG_NET
 
 /* Networking configuration. */
+#ifndef BUILD_CMAKE
 #define NET_IPV4
 #define NET_ICMP
 #define NET_UDP
-#define NET_TCP
+//#define NET_TCP
 #define NET_ARP
 #define NET_DHCP
+#endif /* BUILD_CMAKE */
 
 #include <net_buffer.h>
 #include <net_device.h>

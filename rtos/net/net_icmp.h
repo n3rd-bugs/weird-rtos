@@ -21,7 +21,9 @@
 #ifdef NET_ICMP
 
 /* ICMP configuration. */
+#ifndef BUILD_CMAKE
 #define ICMP_ENABLE_PING
+#endif /* BUILD_CMAKE */
 
 /* ICMP definitions. */
 #define ICMP_ECHO_REPLY         0

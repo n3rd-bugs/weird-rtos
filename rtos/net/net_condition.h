@@ -19,12 +19,16 @@
 #include <condition.h>
 
 /* Networking condition definitions. */
+#ifndef BUILD_CMAKE
 #define NET_COND_NUM_DEVICES    2
 #define NET_COND_NUM_INTERNAL   7
+#endif /* BUILD_CMAKE */
 #define NET_COND_NUM_TOTAL      (NET_COND_NUM_DEVICES + NET_COND_NUM_INTERNAL)
 
 /* Networking condition task data. */
-#define NET_COND_STACK_SIZE     1024
+#ifndef BUILD_CMAKE
+#define NET_COND_STACK_SIZE     512
+#endif /* BUILD_CMAKE */
 
 /* Networking condition process function. */
 typedef void NET_CONDITION_PROCESS (void *, int32_t);

@@ -26,12 +26,14 @@
 typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 #endif
 
+#ifndef BUILD_CMAKE
 /* IPv4 stack configuration. */
-#define IPV4_ENABLE_FRAG
+//#define IPV4_ENABLE_FRAG
 
 /* IPv4 fragmentation configuration. */
-#define IPV4_FRAG_TIMEOUT           (SOFT_TICKS_PER_SEC * 60)
-#define IPV4_FRAG_DROP_TIMEOUT      (SOFT_TICKS_PER_SEC * 5)
+#define IPV4_FRAG_TIMEOUT           (60000)
+#define IPV4_FRAG_DROP_TIMEOUT      (5000)
+#endif /* BUILD_CMAKE */
 
 /* Protocol definitions. */
 #define IP_PROTO_ICMP               (0x01)

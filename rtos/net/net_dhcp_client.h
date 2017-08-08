@@ -26,10 +26,12 @@
 #include <net_udp.h>
 
 /* DHCP client configuration. */
-#define DHCP_BASE_TIMEOUT       (2 * SOFT_TICKS_PER_SEC)
-#define DHCP_MAX_TIMEOUT        (64 * SOFT_TICKS_PER_SEC)
+#ifndef BUILD_CMAKE
+#define DHCP_BASE_TIMEOUT       (2000)
+#define DHCP_MAX_TIMEOUT        (64000)
 #define DHCP_MAX_RETRY          (4)
 #define DHCP_CLIENT_HOSTNAME    "weird-rtos"
+#endif /* BUILD_CMAKE */
 
 /* DHCP client states. */
 #define DHCP_CLI_DISCOVER       (0x00)

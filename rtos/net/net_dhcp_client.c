@@ -55,7 +55,7 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
     client_data->retry = 0;
 
     /* Process the state change. */
-    client_data->current_timeout = (DHCP_BASE_TIMEOUT / 2);
+    client_data->current_timeout = (MS_TO_TICK(DHCP_BASE_TIMEOUT) / 2);
 
     /* Enable DHCP timer. */
     client_data->suspend.timeout_enabled = TRUE;
@@ -232,7 +232,7 @@ static void dhcp_event(void *data, int32_t status)
         else
         {
             /* If current timeout is less than the maximum timeout. */
-            if (client_data->current_timeout < DHCP_MAX_TIMEOUT)
+            if (client_data->current_timeout < MS_TO_TICK(DHCP_MAX_TIMEOUT))
             {
                 /* Double the timeout. */
                 client_data->current_timeout = (uint16_t)(client_data->current_timeout * 2);

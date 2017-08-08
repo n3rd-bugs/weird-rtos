@@ -20,7 +20,9 @@
 #ifdef NET_IPV4
 
 /* Number of route entries to manage. */
-#define NET_NUM_ROUTES          (4)
+#ifndef BUILD_CMAKE
+#define NET_NUM_ROUTES          (2)
+#endif /* BUILD_CMAKE */
 
 /* Error definitions. */
 #define ROUTE_EXIST             -1400
