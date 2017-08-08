@@ -27,7 +27,7 @@
 
 /* Networking condition task data. */
 #ifndef CMAKE_BUILD
-#define NET_COND_STACK_SIZE     512
+#define NET_COND_STACK_SIZE     1024
 #endif /* CMAKE_BUILD */
 
 /* Networking condition process function. */

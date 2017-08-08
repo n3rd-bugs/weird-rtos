@@ -21,7 +21,7 @@
 
 /* Number of route entries to manage. */
 #ifndef CMAKE_BUILD
-#define NET_NUM_ROUTES          (2)
+#define NET_NUM_ROUTES          (4)
 #endif /* CMAKE_BUILD */
 
 /* Error definitions. */

@@ -22,7 +22,7 @@
 #define NET_IPV4
 #define NET_ICMP
 #define NET_UDP
-//#define NET_TCP
+#define NET_TCP
 #define NET_ARP
 #define NET_DHCP
 #endif /* CMAKE_BUILD */
