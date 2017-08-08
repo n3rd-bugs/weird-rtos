@@ -32,7 +32,7 @@
 /* Ethernet configuration. */
 #ifndef BUILD_CMAKE
 #define ETHERNET_ENC28J60
-#endif /* ETHERNET_ENC28J60 */
+#endif /* BUILD_CMAKE */
 
 /* Ethernet error definitions. */
 #define ETH_TX_BLOCKED      -1100

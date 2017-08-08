@@ -1,4 +1,4 @@
-# Setup assert configuration options.
+# Setup configuration options.
 setup_option_def(ENC28J60_WDT_TIMEOUT 1000 INT "Maximum number of milliseconds to wait for a TX frame to be sent before resetting a ENC28J60 device.")
 setup_option_def(ENC28J60_CLKRDY_TIMEOUT 100 INT "Maximum number of milliseconds to wait for ENC28J60's clock to become ready.")
 setup_option_def(ENC28J60_CLKRDY_DELAY 20 INT "Delay between each pool for CLKRDY signal.")
