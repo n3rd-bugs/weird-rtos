@@ -29,12 +29,12 @@
 #define ATMEGA644P_SPI_SPCR_SPR0_SHIFT  (0)
 
 /* SPSR register definitions. */
-#define ATMEGA644P_SPI_SPSR_SPIF    (0x80)
-#define ATMEGA644P_SPI_SPSR_WCOL    (0x40)
-#define ATMEGA644P_SPI_SPSR_SPI2X   (0x01)
+#define ATMEGA644P_SPI_SPSR_SPIF        (0x80)
+#define ATMEGA644P_SPI_SPSR_WCOL        (0x40)
+#define ATMEGA644P_SPI_SPSR_SPI2X       (0x01)
 
 /* Maximum timeout to wait for SPI message to process. */
-#define ATMEGA644P_SPI_TIMEOUT      (100)
+#define ATMEGA644P_SPI_TIMEOUT          (100)
 
 /* Function prototypes. */
 void spi_atmega644_init(SPI_DEVICE *device);

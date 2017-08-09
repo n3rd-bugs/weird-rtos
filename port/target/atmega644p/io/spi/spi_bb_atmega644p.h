@@ -18,9 +18,6 @@
 #ifdef CONFIG_SPI
 #include <spi.h>
 
-/* Maximum timeout to wait for SPI message to process. */
-#define ATMEGA644P_SPI_TIMEOUT      (100)
-
 /* Bit-bang SPI configuration structure. */
 typedef struct _spi_bb_avr
 {
