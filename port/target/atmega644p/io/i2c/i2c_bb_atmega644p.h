@@ -19,8 +19,10 @@
 #include <i2c.h>
 
 /* I2C configuration. */
+#ifndef CMAKE_BUILD
 #define ATMEGA644P_SLOW_I2C
 #define ATMEGA644P_I2C_DELAY        (1)
+#endif /* CMAKE_BUILD */
 
 /* Bit-bang I2C configuration structure. */
 typedef struct _i2c_bb_avr
