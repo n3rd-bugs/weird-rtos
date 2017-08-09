@@ -15,8 +15,11 @@
 #define _SYS_LOG_H_
 
 /* System log configuration. */
+#ifndef CMAKE_BUILD
 #define SYS_LOG_NONE
 //#define SYS_LOG_RUNTIME_UPDATE
+#define SYS_LOG_DEFAULT         ((SYS_LOG_INFO) | (SYS_LOG_WARN) | (SYS_LOG_ERROR))
+#endif /* CMAKE_BUILD */
 
 /* System logging level definitions. */
 #define SYS_LOG_FUNCTION_CALL   (0x01)
@@ -25,7 +28,6 @@
 #define SYS_LOG_WARN            (0x08)
 #define SYS_LOG_ERROR           (0x10)
 #define SYS_LOG_ALL             (0xFF)
-#define SYS_LOG_DEFAULT         ((SYS_LOG_INFO) | (SYS_LOG_WARN) | (SYS_LOG_ERROR))
 
 /* System logging level type definition. */
 typedef uint8_t SYS_LOG_LEVEL;

@@ -18,8 +18,10 @@
 #include <assert.h>
 
 /* SLL configuration. */
+#ifndef CMAKE_BUILD
 //#define SLL_INLINE
 //#define SLL_DEBUG
+#endif /* CMAKE_BUILD */
 
 /* Single SLL node definition. */
 typedef struct _sll_node
