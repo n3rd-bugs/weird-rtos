@@ -46,9 +46,11 @@
 #define TIMER0_ATMEGA644P_DIV_1024      (0x05)
 
 /* Default ADC configuration. */
+#ifndef CMAKE_BUILD
 #define ADC_ATMEGA644P_REF              (ADC_ATMEGA644P_REF_INT_2_56)
-#define ADC_ATMEGA644P_PRESCALE         (ADC_ATMEGA644P_DIV_128)
+#define ADC_ATMEGA644P_PRESCALE         (ADC_ATMEGA644P_DIV_64)
 #define ADC_ATMEGA644P_TIMER_PRESCALE   (TIMER0_ATMEGA644P_DIV_64)
+#endif /* CMAKE_BUILD */
 
 /* Function prototypes. */
 void adc_atmega644_init(void);
