@@ -20,8 +20,10 @@
 #include <enc28j60.h>
 
 /* ENC28J60 device configuration. */
+#ifndef CMAKE_BUILD
 #define ENC28J60_ATMEGA644P_RESET_DELAY     (100)
 #define ENC28J60_USE_SPI_BB                 (FALSE)
+#endif /* CMAKE_BUILD */
 
 /* Function prototypes. */
 void enc28j60_atmega644p_init(void);
