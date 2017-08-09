@@ -40,6 +40,9 @@ setup_option(IPV4_ENABLE_FRAG OFF)
 setup_option(NET_NUM_ROUTES 2)
 setup_option(NET_TCP OFF)
 
+# Setup AVR configurations.
+setup_option(ADC_ATMEGA644P_PRESCALE ADC_ATMEGA644P_DIV_64)
+
 # Setup target configuration.
 setup_option(PLATFORM atmega644)
 setup_option(F_CPU 20000000UL)
