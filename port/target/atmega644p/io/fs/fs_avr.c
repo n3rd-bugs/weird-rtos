@@ -44,13 +44,22 @@ void fs_avr_init(void)
 #endif /* MMC_SPI_FS */
 
     /* Populate the SPI bit-bang interface. */
-    mmc_spi_bb.pin_num_ss = 3;
-    mmc_spi_bb.pin_num_mosi = 5;
-    mmc_spi_bb.pin_num_miso = 0;
-    mmc_spi_bb.pin_num_sclk = 2;
-    mmc_spi_bb.pin_miso = mmc_spi_bb.pin_mosi = mmc_spi_bb.pin_ss = mmc_spi_bb.pin_sclk = 0x00;
-    mmc_spi_bb.ddr_miso = mmc_spi_bb.ddr_mosi = mmc_spi_bb.ddr_ss = mmc_spi_bb.ddr_sclk = 0x01;
-    mmc_spi_bb.port_miso = mmc_spi_bb.port_mosi = mmc_spi_bb.port_ss = mmc_spi_bb.port_sclk = 0x02;
+    mmc_spi_bb.pin_num_ss = MMC_ATMEGA644P_SPI_SS_BB;
+    mmc_spi_bb.pin_num_mosi = MMC_ATMEGA644P_SPI_MOSI_BB;
+    mmc_spi_bb.pin_num_miso = MMC_ATMEGA644P_SPI_MISO_BB;
+    mmc_spi_bb.pin_num_sclk = MMC_ATMEGA644P_SPI_SCLK_BB;
+    mmc_spi_bb.pin_ss = MMC_ATMEGA644P_SPI_PIN_SS_BB;
+    mmc_spi_bb.pin_mosi = MMC_ATMEGA644P_SPI_PIN_MOSI_BB;
+    mmc_spi_bb.pin_miso = MMC_ATMEGA644P_SPI_PIN_MISO_BB;
+    mmc_spi_bb.pin_sclk = MMC_ATMEGA644P_SPI_PIN_SCLK_BB;
+    mmc_spi_bb.ddr_ss = MMC_ATMEGA644P_SPI_DDR_SS_BB;
+    mmc_spi_bb.ddr_mosi = MMC_ATMEGA644P_SPI_DDR_MOSI_BB;
+    mmc_spi_bb.ddr_miso = MMC_ATMEGA644P_SPI_DDR_MISO_BB;
+    mmc_spi_bb.ddr_sclk = MMC_ATMEGA644P_SPI_DDR_SCLK_BB;
+    mmc_spi_bb.port_ss = MMC_ATMEGA644P_SPI_PORT_SS_BB;
+    mmc_spi_bb.port_mosi = MMC_ATMEGA644P_SPI_PORT_MOSI_BB;
+    mmc_spi_bb.port_miso = MMC_ATMEGA644P_SPI_PORT_MISO_BB;
+    mmc_spi_bb.port_sclk = MMC_ATMEGA644P_SPI_PORT_SCLK_BB;
 
     /* Hook-up SPI interface. */
     mmc_spi.spi.cfg_flags = SPI_CFG_MASTER;
