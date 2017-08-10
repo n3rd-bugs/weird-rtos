@@ -35,13 +35,14 @@ setup_option(ENC28J60_NUM_ARP 1)
 setup_option(ENC28J60_NUM_IPV4_FRAGS 0)
 
 # Setup networking stack configurations.
-setup_option(NET_COND_STACK_SIZE 512)
+setup_option(NET_COND_STACK_SIZE 544)
 setup_option(IPV4_ENABLE_FRAG OFF)
 setup_option(NET_NUM_ROUTES 2)
 setup_option(NET_TCP OFF)
 
 # Setup AVR configurations.
-setup_option(ADC_ATMEGA644P_PRESCALE ADC_ATMEGA644P_DIV_64)
+setup_option(ADC_ATMEGA644P_PRESCALE ADC_ATMEGA644P_DIV_16)
+setup_option(ADC_ATMEGA644P_TIMER_PRESCALE TIMER0_ATMEGA644P_DIV_256)
 setup_option(LCD_AN_AVR_PIN_SCL PIND)
 setup_option(LCD_AN_AVR_PIN_SDA PIND)
 setup_option(LCD_AN_AVR_DDR_SCL DDRD)
@@ -53,4 +54,4 @@ setup_option(LCD_AN_AVR_PIN_NUM_SDA 1)
 
 # Setup target configuration.
 setup_option(PLATFORM atmega644)
-setup_option(F_CPU 20000000UL)
+setup_option(F_CPU 16000000UL)

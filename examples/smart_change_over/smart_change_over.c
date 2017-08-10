@@ -22,8 +22,13 @@
 #include <weird_view_server.h>
 #include <adc.h>
 #include <math.h>
-#include <lcd_an.h>
 #include <avr/wdt.h>
+#ifdef CONFIG_LCD_AN
+#include <lcd_an.h>
+#endif /* CONFIG_LCD_AN */
+#ifdef CONFIG_SERIAL
+#include <serial.h>
+#endif
 
 /* Definitions to communicate with other side. */
 #define DEVICE_NAME         "Smart Change Over"
@@ -89,7 +94,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 };
 
 /* Control task definitions. */
-#define CONTROL_TASK_STACK_SIZE         160
+#define CONTROL_TASK_STACK_SIZE         192
 uint8_t control_stack[CONTROL_TASK_STACK_SIZE];
 TASK control_cb;
 void control_entry(void *argv);
@@ -101,9 +106,9 @@ TASK log_cb;
 void log_entry(void *argv);
 
 /* ADC configuration and data. */
-#define ADC_PRESCALE            ((uint32_t)61)
+#define ADC_PRESCALE            ((uint32_t)25)
 #define ADC_WAVE_FREQ           ((uint32_t)100)
-#define ADC_ATIMER_PRESCALE     ((uint32_t)64)
+#define ADC_ATIMER_PRESCALE     ((uint32_t)256)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
 
 /* Charge controller definitions. */
