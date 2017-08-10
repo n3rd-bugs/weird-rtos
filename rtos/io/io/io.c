@@ -12,7 +12,9 @@
  * outcome.
  */
 #include <io.h>
+#ifdef CONFIG_LCD_AN
 #include <lcd_an.h>
+#endif /* CONFIG_LCD_AN */
 #ifdef CONFIG_SERIAL
 #include <serial.h>
 #endif /* CONFIG_SERIAL */

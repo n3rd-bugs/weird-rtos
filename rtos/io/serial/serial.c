@@ -18,7 +18,9 @@
 #include <serial.h>
 #include <serial_target.h>
 #include <net.h>
+#ifdef CONFIG_LCD_AN
 #include <lcd_an.h>
+#endif /* CONFIG_LCD_AN */
 #include <string.h>
 
 #ifdef FS_CONSOLE
