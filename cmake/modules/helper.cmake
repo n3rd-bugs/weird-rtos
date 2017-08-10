@@ -1,5 +1,9 @@
 # This function will setup an RTOS configuration.
 function (setup_option_def configuration default_value type description)
+    # Get the value funtion if available.
+    set(options VALUE_FUN VALUE_LIST)
+    cmake_parse_arguments(setup_option_def "" "${options}" "" ${ARGN})
+
     # Pick configuration type.
     if (${type} STREQUAL "BOOL")
         set(cache_type BOOL)
@@ -14,6 +18,25 @@ function (setup_option_def configuration default_value type description)
     
     # Force to add option description.
     set(${configuration} ${${configuration}} CACHE ${cache_type} ${description} FORCE)
+    
+    # If a value funstion was provided.
+    if (setup_option_def_VALUE_FUN)
+        # Translate the value.
+        include(${${setup_option_def_VALUE_FUN}})
+        value_map(${${configuration}} configuration_value)
+    else ()
+        # Use the given value as it is.
+        set(configuration_value ${${configuration}} CACHE INTERNAL "" FORCE)
+    endif ()
+    
+    # If a value list was provided.
+    if (setup_option_def_VALUE_LIST)
+        # Set possible options for this configuration.
+        set_property(CACHE ${configuration} PROPERTY STRINGS ${${setup_option_def_VALUE_LIST}})
+        if(NOT ${${configuration}} IN_LIST ${setup_option_def_VALUE_LIST})
+            message(FATAL_ERROR "${configuration} must be one of ${${setup_option_def_VALUE_LIST}}")
+        endif()
+    endif ()
     
     # If this is a define option.
     if (${type} STREQUAL "DEFINE")
@@ -34,16 +57,16 @@ function (setup_option_def configuration default_value type description)
         endif ()
     elseif (${type} STREQUAL "STRING")
         # Add this to RTOS configuration list with a string value.
-        set(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \"${${configuration}}\"\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
+        set(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \"${configuration_value}\"\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
     elseif (${type} STREQUAL "CHAR")
         # Add this to RTOS configuration list with a character value.
-        set(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \'${${configuration}}\'\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
+        set(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \'${configuration_value}\'\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
     elseif (${type} STREQUAL "INT")
         # Add this to RTOS configuration list with an integral value.
-        set(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \(${${configuration}}\)\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
+        set(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \(${configuration_value}\)\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
     elseif (${type} STREQUAL "MACRO")
         # Add this to RTOS configuration list as a MACRO value.
-        set(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \(${${configuration}}\)\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
+        set(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \(${configuration_value}\)\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
     else ()
         # Option type is not supported.
         message(FATAL_ERROR "Unsupported option type." )
@@ -60,15 +83,6 @@ endfunction ()
 function (setup_option_hide configuration)
     # Force to to hide this option.
     set(${configuration} ${${configuration}} CACHE INTERNAL "" FORCE)
-endfunction ()
-
-# This function will set valid options for a configuration.
-function (setup_option_values configuration values)
-    # Set possible options for this configuration.
-    set_property(CACHE ${configuration} PROPERTY STRINGS ${${values}})
-    if(NOT ${${configuration}} IN_LIST ${values})
-        message(FATAL_ERROR "${configuration} must be one of ${${values}}")
-    endif()
 endfunction ()
 
 # This function will test if all the members in the given configuration do exist in the given list.
