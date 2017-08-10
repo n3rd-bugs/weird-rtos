@@ -37,8 +37,8 @@ add_definitions(-DCMAKE_BUILD)
 # Add RTOS folders.
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/api)
-add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/port)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/rtos)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/port)
 
 # Write a configuration file.
 generate_configuration(${RTOS_DEFS} ${CMAKE_BINARY_DIR}/config/ config_cmake.h)

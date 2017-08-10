@@ -18,6 +18,7 @@
 #ifdef CONFIG_FS
 
 #ifndef CMAKE_BUILD
+#if (defined(FS_FAT) && defined(CONFIG_MMC))
 /* Bit-bang SPI interface configuration for MMC card. */
 #define MMC_ATMEGA644P_SPI_SS_BB            (3)
 #define MMC_ATMEGA644P_SPI_PIN_SS_BB        (0x0)
@@ -35,6 +36,7 @@
 #define MMC_ATMEGA644P_SPI_PIN_SCLK_BB      (0x0)
 #define MMC_ATMEGA644P_SPI_DDR_SCLK_BB      (0x1)
 #define MMC_ATMEGA644P_SPI_PORT_SCLK_BB     (0x2)
+#endif /* (defined(FS_FAT) && defined(CONFIG_MMC)) */
 #endif /* CMAKE_BUILD */
 
 /* Function prototypes. */
