@@ -20,6 +20,7 @@
 #ifdef CONFIG_LCD_AN
 #include <lcd_an_target.h>
 
+#ifndef CMAKE_BUILD
 /* LCD configuration for AVR. */
 /* Number of rows and columns on this LCD. */
 #define LCD_AN_AVR_ROWS     (4)
@@ -77,6 +78,16 @@
 #define LCD_AN_AVR_PIN_D6           (6)
 #define LCD_AN_AVR_PIN_D7           (7)
 #define LCD_AN_AVR_PIN_BL           (3)
+
+#define LCD_AN_AVR_PIN_SCL          (0x3)
+#define LCD_AN_AVR_PIN_SDA          (0x3)
+#define LCD_AN_AVR_DDR_SCL          (0x4)
+#define LCD_AN_AVR_DDR_SDA          (0x4)
+#define LCD_AN_AVR_PORT_SCL         (0x5)
+#define LCD_AN_AVR_PORT_SDA         (0x5)
+#define LCD_AN_AVR_PIN_NUM_SCL      (0)
+#define LCD_AN_AVR_PIN_NUM_SDA      (1)
+#endif /* CMAKE_BUILD */
 
 /* Function prototypes. */
 void lcd_an_avr_init(void);

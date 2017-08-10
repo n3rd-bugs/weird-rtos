@@ -24,14 +24,14 @@
 static I2C_BB_AVR avr_lcd_i2c =
 {
     /* Initialize pin configuration. */
-    .pin_scl        = 3,
-    .pin_sda        = 3,
-    .ddr_scl        = 4,
-    .ddr_sda        = 4,
-    .port_scl       = 5,
-    .port_sda       = 5,
-    .pin_num_scl    = 0,
-    .pin_num_sda    = 1,
+    .pin_scl        = LCD_AN_AVR_PIN_SCL,
+    .pin_sda        = LCD_AN_AVR_PIN_SDA,
+    .ddr_scl        = LCD_AN_AVR_DDR_SCL,
+    .ddr_sda        = LCD_AN_AVR_DDR_SDA,
+    .port_scl       = LCD_AN_AVR_PORT_SCL,
+    .port_sda       = LCD_AN_AVR_PORT_SDA,
+    .pin_num_scl    = LCD_AN_AVR_PIN_NUM_SCL,
+    .pin_num_sda    = LCD_AN_AVR_PIN_NUM_SDA,
 };
 static LCD_AN_PCF8574 avr_lcd_an =
 {
