@@ -42,6 +42,14 @@ setup_option(NET_TCP OFF)
 
 # Setup AVR configurations.
 setup_option(ADC_ATMEGA644P_PRESCALE ADC_ATMEGA644P_DIV_64)
+setup_option(LCD_AN_AVR_PIN_SCL PIND)
+setup_option(LCD_AN_AVR_PIN_SDA PIND)
+setup_option(LCD_AN_AVR_DDR_SCL DDRD)
+setup_option(LCD_AN_AVR_DDR_SDA DDRD)
+setup_option(LCD_AN_AVR_PORT_SCL PORTD)
+setup_option(LCD_AN_AVR_PORT_SDA PORTD)
+setup_option(LCD_AN_AVR_PIN_NUM_SCL 0)
+setup_option(LCD_AN_AVR_PIN_NUM_SDA 1)
 
 # Setup target configuration.
 setup_option(PLATFORM atmega644)
