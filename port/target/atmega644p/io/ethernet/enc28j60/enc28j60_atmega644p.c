@@ -66,13 +66,22 @@ void enc28j60_atmega644p_init(void)
     /* Hook-up SPI for this device. */
 #if (ENC28J60_USE_SPI_BB == TRUE)
     /* Populate the SPI bit-bang interface. */
-    spi_bb_enc28j60.pin_num_ss = 4;
-    spi_bb_enc28j60.pin_num_mosi = 5;
-    spi_bb_enc28j60.pin_num_miso = 6;
-    spi_bb_enc28j60.pin_num_sclk = 7;
-    spi_bb_enc28j60.pin_miso = spi_bb_enc28j60.pin_mosi = spi_bb_enc28j60.pin_ss = spi_bb_enc28j60.pin_sclk = 0x03;
-    spi_bb_enc28j60.ddr_miso = spi_bb_enc28j60.ddr_mosi = spi_bb_enc28j60.ddr_ss = spi_bb_enc28j60.ddr_sclk = 0x04;
-    spi_bb_enc28j60.port_miso = spi_bb_enc28j60.port_mosi = spi_bb_enc28j60.port_ss = spi_bb_enc28j60.port_sclk = 0x05;
+    spi_bb_enc28j60.pin_num_ss = ENC28J60_ATMEGA644P_SPI_SS_BB;
+    spi_bb_enc28j60.pin_num_mosi = ENC28J60_ATMEGA644P_SPI_MOSI_BB;
+    spi_bb_enc28j60.pin_num_miso = ENC28J60_ATMEGA644P_SPI_MISO_BB;
+    spi_bb_enc28j60.pin_num_sclk = ENC28J60_ATMEGA644P_SPI_SCLK_BB;
+    spi_bb_enc28j60.pin_ss = ENC28J60_ATMEGA644P_SPI_PIN_SS_BB;
+    spi_bb_enc28j60.pin_mosi = ENC28J60_ATMEGA644P_SPI_PIN_MOSI_BB;
+    spi_bb_enc28j60.pin_miso = ENC28J60_ATMEGA644P_SPI_PIN_MISO_BB;
+    spi_bb_enc28j60.pin_sclk = ENC28J60_ATMEGA644P_SPI_PIN_SCLK_BB;
+    spi_bb_enc28j60.ddr_ss = ENC28J60_ATMEGA644P_SPI_DDR_SS_BB;
+    spi_bb_enc28j60.ddr_mosi = ENC28J60_ATMEGA644P_SPI_DDR_MOSI_BB;
+    spi_bb_enc28j60.ddr_miso = ENC28J60_ATMEGA644P_SPI_DDR_MISO_BB;
+    spi_bb_enc28j60.ddr_sclk = ENC28J60_ATMEGA644P_SPI_DDR_SCLK_BB;
+    spi_bb_enc28j60.port_ss = ENC28J60_ATMEGA644P_SPI_PORT_SS_BB;
+    spi_bb_enc28j60.port_mosi = ENC28J60_ATMEGA644P_SPI_PORT_MOSI_BB;
+    spi_bb_enc28j60.port_miso = ENC28J60_ATMEGA644P_SPI_PORT_MISO_BB;
+    spi_bb_enc28j60.port_sclk = ENC28J60_ATMEGA644P_SPI_PORT_SCLK_BB;
 
     /* Initialize enc28j60 SPI device. */
     enc28j60.spi.data = &spi_bb_enc28j60;
