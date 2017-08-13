@@ -15,7 +15,6 @@
 #define _HEADER_H_
 
 #include <kernel.h>
-#include <fs.h>
 
 /* Header type flags. */
 #define HEADER_BIT          0x0001

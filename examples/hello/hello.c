@@ -13,8 +13,12 @@
  */
 #include <kernel.h>
 #include <string.h>
+#ifdef CONFIG_FS
 #include <fs.h>
+#endif /* CONFIG_FS */
+#ifdef CONFIG_SERIAL
 #include <serial.h>
+#endif /* CONFIG_SERIAL */
 #include <stdio.h>
 
 /* Function prototypes. */
