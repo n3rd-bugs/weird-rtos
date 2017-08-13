@@ -10,22 +10,21 @@ find_program(AVR_OBJCOPY avr-objcopy)
 find_program(AVR_OBJDUMP avr-objdump)
 find_program(AVR_SIZE avr-size)
 
-# Set default compiler.
-set(CMAKE_SYSTEM_NAME Generic)
-set(CMAKE_C_COMPILER ${AVR_CC})
-
 # Enable RESPONSE files to resolve linker errors.
 set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS ON)
 
 # Load default flags.
-set(AVR_C_FLAGS "-Wall -Os -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -Wextra -mrelax -Wstrict-prototypes" CACHE STRING "C flags.")
+set(AVR_C_FLAGS "-Os -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -Wextra -mrelax -Wall -Wstrict-prototypes" CACHE STRING "C flags.")
 set(AVR_MCU "-mmcu=${TGT_CPU}")
 set(AVR_FRQ "-DF_CPU=${F_CPU}")
-set(AVR_LINK_FLAGS "-Wl,--gc-sections -lm" CACHE STRING "LD flags.")
+set(AVR_LINK_FLAGS "-Wl,--gc-sections ${AVR_MCU}" CACHE STRING "LD flags.")
 
-# Set c and link flags.
+# Setup c compiler.
+set(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_C_COMPILER ${AVR_CC})
 set(CMAKE_C_FLAGS "${AVR_MCU} ${AVR_FRQ} ${AVR_C_FLAGS}" CACHE STRING "" FORCE)
-set(CMAKE_EXE_LINKER_FLAGS "${AVR_MCU} ${AVR_LINK_FLAGS}" CACHE STRING "" FORCE)
+set(CMAKE_EXE_LINKER_FLAGS "${AVR_LINK_FLAGS}" CACHE STRING "" FORCE)
+set(CMAKE_C_LINK_EXECUTABLE "${AVR_CC} <LINK_FLAGS> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>" CACHE STRING "" FORCE)
 
 # This function will setup a target for AVR.
 function (setup_target target_name sources)
@@ -34,7 +33,7 @@ function (setup_target target_name sources)
 
     # Add an executable target.
     add_executable(${target_name} ${RTOS_LINK_SOURCES} ${${sources}})
-    target_link_libraries(${target_name} ${RTOS_LIB})
+    target_link_libraries(${target_name} ${RTOS_LIB} m)
     target_include_directories(${target_name} PUBLIC ${RTOS_INCLUDES})
     set_target_properties(${target_name} PROPERTIES OUTPUT_NAME ${target_name}.elf LINK_FLAGS "-Wl,-Map,${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.map")
     
