@@ -22,8 +22,13 @@
 #include <weird_view_server.h>
 #include <adc.h>
 #include <math.h>
-#include <lcd_an.h>
 #include <avr/wdt.h>
+#ifdef CONFIG_LCD_AN
+#include <lcd_an.h>
+#endif /* CONFIG_LCD_AN */
+#ifdef CONFIG_SERIAL
+#include <serial.h>
+#endif
 
 /* Definitions to communicate with other side. */
 #define DEVICE_NAME         "Smart Change Over"
