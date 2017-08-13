@@ -269,6 +269,7 @@ void generator_self(void)
 
         /* Self the generator. */
         PORT_SELFON_IND |= (1 << PIN_SELFON_IND);
+        DDR_GENSELF_ON |= (1 << PIN_GENSELF_ON);
         PORT_GENSELF_ON |= (1 << PIN_GENSELF_ON);
 
         /* Restore old interrupt level. */
@@ -285,6 +286,7 @@ void generator_self(void)
 
         /* Release the self. */
         PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
+        DDR_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
         PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
 
         /* Restore old interrupt level. */
@@ -302,6 +304,7 @@ void generator_self(void)
 #ifdef ENABLE_COUTERMEASURE
             /* Release the self here in any case. */
             PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
+            DDR_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
             PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
 #endif /* ENABLE_COUTERMEASURE */
 
@@ -406,7 +409,9 @@ void control_entry(void *argv)
     PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
 
     /* Turn off generator power and self. */
+    DDR_GENPWR_ON &= (uint8_t)(~(1 << PIN_GENPWR_ON));
     PORT_GENPWR_ON &= (uint8_t)(~(1 << PIN_GENPWR_ON));
+    DDR_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
     PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
 
     /* Turn off the change over. */
@@ -433,6 +438,7 @@ void control_entry(void *argv)
 #ifdef ENABLE_COUTERMEASURE
         /* Release the self here in any case. */
         PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
+        DDR_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
         PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
 #endif /* ENABLE_COUTERMEASURE */
 
@@ -594,6 +600,7 @@ void control_entry(void *argv)
                 if ((switch_count > (SWITCH_DELAY / STATE_DELAY)) || (do_gen_off == TRUE))
                 {
                     /* Turn off the generator. */
+                    DDR_GENPWR_ON &= (uint8_t)(~(1 << PIN_GENPWR_ON));
                     PORT_GENPWR_ON &= (uint8_t)(~(1 << PIN_GENPWR_ON));
 
                     /* Generator is no longer on and clear the self-ed flag. */
@@ -626,6 +633,7 @@ void control_entry(void *argv)
                 if (switch_count > (SWITCH_DELAY / STATE_DELAY))
                 {
                     /* Turn-on generator. */
+                    DDR_GENPWR_ON |= (1 << PIN_GENPWR_ON);
                     PORT_GENPWR_ON |= (1 << PIN_GENPWR_ON);
 
                     /* Generator is turned on. */
@@ -1315,9 +1323,9 @@ int main(void)
 #endif
 
     /* Configure and turn off the generator self and power. */
-    DDR_GENPWR_ON |= (1 << PIN_GENPWR_ON);
+    DDR_GENPWR_ON &= (uint8_t)(~(1 << PIN_GENPWR_ON));
     PORT_GENPWR_ON &= (uint8_t)(~(1 << PIN_GENPWR_ON));
-    DDR_GENSELF_ON |= (1 << PIN_GENSELF_ON);
+    DDR_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
     PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
 
     /* Configure and turn off the change over. */
