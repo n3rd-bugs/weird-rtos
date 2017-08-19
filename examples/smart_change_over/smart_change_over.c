@@ -106,10 +106,11 @@ TASK log_cb;
 void log_entry(void *argv);
 
 /* ADC configuration and data. */
-#define ADC_PRESCALE            ((uint32_t)61)
+#define ADC_PRESCALE            ((uint32_t)100)
 #define ADC_WAVE_FREQ           ((uint32_t)100)
 #define ADC_ATIMER_PRESCALE     ((uint32_t)64)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
+#define ADC_NUM_APPROX_SAMPLES  ((ADC_SAMPLE_PER_WAVE * 3) / 2)
 
 /* Charge controller definitions. */
 #define ADC_CHN_MAIN            (1)
@@ -127,12 +128,13 @@ void log_entry(void *argv);
 #define GENERATOR_ON_DELAY      (10000)
 #define GENERATOR_SELF_RETRY    (3)
 #define SWITCH_DELAY            (5000)
-#define ADC_CHANNEL_DELAY       (200)
-#define ADC_MAX_WAVES           (25)
+#define ADC_CHANNEL_DELAY       (100)
+#define ADC_MAX_WAVES           (20)
 #define ADC_NUM_SAMPLES         (ADC_MAX_WAVES * ADC_SAMPLE_PER_WAVE)
 #define ENABLE_WDT              TRUE
 #define COMPUTE_AVG             FALSE
 #define COMPUTE_APPROX          TRUE
+#define DEBUG_WAVE              FALSE
 #define ENABLE_COUTERMEASURE    TRUE
 
 /* IO configurations. */
@@ -221,9 +223,10 @@ static uint8_t current_channel = 0;
 static uint8_t auto_start = FALSE;
 #if (COMPUTE_APPROX == TRUE)
 static uint8_t adc_got_wave = FALSE;
+static uint8_t adc_num_samples = 0;
 static int8_t last_sample_channel = -1;
-static uint16_t adc_wave[ADC_SAMPLE_PER_WAVE];
-static uint16_t adc_wave_copy[ADC_SAMPLE_PER_WAVE];
+static uint16_t adc_wave[ADC_NUM_APPROX_SAMPLES];
+static uint16_t adc_wave_copy[ADC_NUM_APPROX_SAMPLES];
 static uint32_t main_approx, generator_approx;
 #endif /* (COMPUTE_APPROX == TRUE) */
 static uint32_t adc_sample;
@@ -806,7 +809,7 @@ static int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER *buffer)
     if (status == SUCCESS)
     {
         /* Push ADC sample on the buffer. */
-        status = fs_buffer_push(buffer, (uint8_t *)adc_wave_copy, (ADC_SAMPLE_PER_WAVE * sizeof(uint16_t)), 0);
+        status = fs_buffer_push(buffer, (uint8_t *)adc_wave_copy, (ADC_NUM_APPROX_SAMPLES * sizeof(uint16_t)), 0);
     }
 #else
 
@@ -874,15 +877,16 @@ void adc_data_callback(uint32_t data)
             /* If this is a positive edge. */
             if (last_sample < data)
             {
-                /* If wave do start from a zero value. */
-                if (((wave_index == 0) && (last_sample == 0)) || ((wave_index != 0) && (adc_wave[0] == 0)))
+                /* Reset the wave. */
+                edge = 0;
+                wave_index = 0;
+
+                /* We did start from a zero. */
+                if (last_sample == 0)
                 {
                     /* Let's save starting values. */
                     adc_wave[wave_index++] = last_sample;
                     adc_wave[wave_index++] = data;
-
-                    /* Reset the edge. */
-                    edge = 0;
 
                     /* This may be a good wave. */
                     adc_got_wave = TRUE;
@@ -892,11 +896,8 @@ void adc_data_callback(uint32_t data)
                 }
                 else
                 {
-                    /* Reset the wave index. */
-                    wave_index = 0;
-
-                    /* Reset the edge. */
-                    edge = 0;
+                    /* This is not a good wave. */
+                    adc_got_wave = FALSE;
                 }
             }
         }
@@ -904,7 +905,7 @@ void adc_data_callback(uint32_t data)
     else
     {
         /* If we don't have a complete good wave. */
-        if (wave_index != ADC_SAMPLE_PER_WAVE)
+        if (edge != 2)
         {
             /* If we are still at positive edge. */
             if (edge == 0)
@@ -918,32 +919,48 @@ void adc_data_callback(uint32_t data)
             }
             else
             {
-                /* If we encountered a positive edge. */
+                /* If we again encountered a positive edge. */
                 if (last_sample < data)
                 {
-                    /* This wave is not good. */
-                    adc_got_wave = FALSE;
+                    /* If previous sample was zero. */
+                    if (last_sample == 0)
+                    {
+                        /* We now have the wave. */
+                        edge = 2;
+                    }
+                    else
+                    {
+                        /* This wave is not good. */
+                        adc_got_wave = FALSE;
 
-                    /* Reset the wave index. */
-                    wave_index = 0;
+                        /* Reset the wave index. */
+                        wave_index = 0;
 
-                    /* Let's save starting value. */
-                    adc_wave[wave_index++] = last_sample;
+                        /* Start looking for next negative edge. */
+                        edge = 0;
+                    }
                 }
             }
 
-            /* Pick a wave sample. */
-            adc_wave[wave_index++] = data;
+            /* If we are still acquiring this wave. */
+            if ((edge != 2) && (adc_got_wave == TRUE))
+            {
+                /* Pick a wave sample. */
+                adc_wave[wave_index++] = data;
+            }
 
-            /* If the wave does not terminate a zero value or we did process a
-             * system tick. */
-            if (((wave_index == ADC_SAMPLE_PER_WAVE) && (adc_wave[ADC_SAMPLE_PER_WAVE -1] != 0)) || (sample_tick != current_system_tick()))
+            /* If we processed a system tick while acquiring this sample or we
+             * have exhausted the sample buffer. */
+            if ((sample_tick != current_system_tick()) || (wave_index == ADC_NUM_APPROX_SAMPLES))
             {
                 /* This wave is not good. */
                 adc_got_wave = FALSE;
 
                 /* Reset the wave index. */
                 wave_index = 0;
+
+                /* Start looking for next negative edge. */
+                edge = 0;
             }
         }
     }
@@ -959,7 +976,7 @@ void adc_data_callback(uint32_t data)
     /* If we have processed the maximum number of samples or we do have a
      * stable wave. */
 #if (COMPUTE_APPROX == TRUE)
-    if ((n == ADC_NUM_SAMPLES) || ((adc_got_wave == TRUE) && (wave_index == ADC_SAMPLE_PER_WAVE)))
+    if ((n == ADC_NUM_SAMPLES) || ((adc_got_wave == TRUE) && (edge == 2)))
 #else
     if (n == ADC_NUM_SAMPLES)
 #endif
@@ -968,8 +985,13 @@ void adc_data_callback(uint32_t data)
         n = 0;
 
 #if (COMPUTE_APPROX == TRUE)
-        /* If we did not pick a complete wave. */
-        if (wave_index != ADC_SAMPLE_PER_WAVE)
+        /* If we did pick a wave. */
+        if (edge == 2)
+        {
+            /* Save the number of samples we picked. */
+            adc_num_samples = wave_index;
+        }
+        else
         {
             /* This wave is not good. */
             adc_got_wave = FALSE;
@@ -1039,21 +1061,21 @@ void adc_sample_process(void *data, int32_t status)
         {
             /* Calculate sum of all the values. */
             avrg = 0;
-            for (i = 0; i < ADC_SAMPLE_PER_WAVE; i++)
+            for (i = 0; i < adc_num_samples; i++)
             {
                 avrg += (double)adc_wave[i];
             }
 
             /* Compute sample average. */
-            avrg = avrg / ADC_SAMPLE_PER_WAVE;
+            avrg = avrg / adc_num_samples;
 
             /* Calculate standard deviation. */
             sd = 0;
-            for (i = 0; i < ADC_SAMPLE_PER_WAVE; i++)
+            for (i = 0; i < adc_num_samples; i++)
             {
                 sd += pow(((double)adc_wave[i] - avrg), 2);
             }
-            sd /= ADC_SAMPLE_PER_WAVE;
+            sd /= adc_num_samples;
             sd = sqrt(sd);
 
             /* Alpha is sd(samples) / sd(sin(x)). */
@@ -1062,8 +1084,8 @@ void adc_sample_process(void *data, int32_t status)
             /* For beta avrg(samples) - (alpha * avrg(sin(x))). */
             approx_beta = avrg - ((approx_alpha * 2) / (3.141592));
         }
-#if 0
-        for (i = 0; i < ADC_SAMPLE_PER_WAVE; i++)
+#if DEBUG_WAVE
+        for (i = 0; i < adc_num_samples; i++)
         {
             printf("%d\r\n", adc_wave[i]);
         }
@@ -1099,10 +1121,6 @@ void adc_sample_process(void *data, int32_t status)
             {
                 /* Compute the wave max using the approximation constants. */
                 main_approx = approx_alpha - approx_beta;
-                adc_got_wave = FALSE;
-
-                /* Make a copy of this sample. */
-                memcpy(adc_wave_copy, adc_wave, sizeof(uint16_t) * ADC_SAMPLE_PER_WAVE);
 
                 /* Mark this as an okay sample. */
                 last_sample_channel = ADC_CHN_MAIN;
@@ -1128,10 +1146,6 @@ void adc_sample_process(void *data, int32_t status)
             {
                 /* Compute the wave max using the approximation constants. */
                 generator_approx = approx_alpha - approx_beta;
-                adc_got_wave = FALSE;
-
-                /* Make a copy of this sample. */
-                memcpy(adc_wave_copy, adc_wave, sizeof(uint16_t) * ADC_SAMPLE_PER_WAVE);
 
                 /* Mark this as an okay sample. */
                 last_sample_channel = ADC_CHN_GENERATOR;
@@ -1145,6 +1159,18 @@ void adc_sample_process(void *data, int32_t status)
 
             break;
         }
+#if (COMPUTE_APPROX == TRUE)
+        /* If we do have a good wave. */
+        if (adc_got_wave == TRUE)
+        {
+            /* Reset the wave flag. */
+            adc_got_wave = FALSE;
+
+            /* Make a copy of this sample. */
+            memcpy(adc_wave_copy, adc_wave, sizeof(uint16_t) * ADC_NUM_APPROX_SAMPLES);
+            memset(adc_wave, 0, sizeof(uint16_t) * ADC_NUM_APPROX_SAMPLES);
+        }
+#endif /* (COMPUTE_APPROX == TRUE) */
 
         /* Restore old interrupt level. */
         SET_INTERRUPT_LEVEL(interrupt_level);
