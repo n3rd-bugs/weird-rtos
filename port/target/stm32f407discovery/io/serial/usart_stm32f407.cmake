@@ -1,0 +1,10 @@
+# Setup configuration options.
+setup_option_def(BAUD_RATE 19200 INT "USART boudrate.")
+setup_option_def(SERIAL_INTERRUPT_MODE OFF DEFINE "Use interrupts to transfer data over USART.")
+if (${SERIAL_INTERRUPT_MODE})
+    setup_option_def(SERIAL_MAX_BUFFER_SIZE 128 INT "Buffer size for the serial device (interrupt mode).")
+    setup_option_def(SERIAL_NUM_BUFFERS 128 INT "Number of buffer for the serial device (interrupt mode).")
+    setup_option_def(SERIAL_NUM_BUFFER_LIST 64 INT "Number of buffer lists for the serial device (interrupt mode).")
+    setup_option_def(SERIAL_THRESHOLD_BUFFER 6 INT "Number of threshold buffers for the serial device (interrupt mode).")
+    setup_option_def(SERIAL_THRESHOLD_BUFFER_LIST 2 INT "Number of threshold buffer lists for the serial device (interrupt mode).")
+endif ()

@@ -19,8 +19,8 @@
 #include <stm32f407xx.h>
 
 /* Peripheral clock configuration. */
-#define SYS_FREQ                168000000
-#define PCLK_FREQ               84000000
+#define SYS_FREQ                        168000000
+#define PCLK_FREQ                       84000000
 
 /* Required definitions for scheduling. */
 #define CORTEX_M4_PEND_SV_REG           (SCB->ICSR)
@@ -40,6 +40,9 @@ extern uint32_t _ebss;
 #define SYSTEM_STACK                    ((uint8_t *)&_ebss)
 #define STM32F407_STACK_END             (0x20020000)
 #define SYS_STACK_SIZE                  (STM32F407_STACK_END - (uint32_t)SYSTEM_STACK)
+
+/* System registers. */
+#define STM32_UUID                      ((uint8_t *)0x1FFF7A10)
 
 /* Function prototypes. */
 uint64_t current_hardware_tick(void);
