@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
 # Initialize RTOS project.
-project(w3rd-rtos VERSION "00.00.01" LANGUAGES C)
+project(w3rd-rtos VERSION "00.00.02" LANGUAGES C)
 
 # Setup verbose option.
 set(BUILD_VERBOSE OFF CACHE BOOL "Verbose build mode.")
