@@ -9,7 +9,7 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 - *Condition* to create application specific signalling mechanisms like timers, events etc.
 - *Semaphore* with optional specific interrupt protection
 - *File system* based pipes to support data queues
-- Support for suspending a task on multiple conditions to eliminate multiple tasks.
+- Support for suspending a single task on multiple conditions to eliminate multiple tasks.
 - A small networking stack with IPv4, ARP, UDP, TCP.
 - Support for idle work to offload low priority work from main tasks.
 
@@ -30,14 +30,39 @@ _* with size optimizations_
 _** hello.c example with serial disabled, not including system stack_
 
 ## Building
-Weird RTOS uses eclipse as build system and provides sample projects for each supported platform. Please checkout branch of the required platform and import it in eclipse. For more help please see the following pages
-- [AVR Eclipse Setup](docs/build/AVR-ECLIPSE.md)
+### Building as Library
+To build the RTOS as library follow these steps:
+1. Create a build folder
+    `mkdir lib-build`
+    `cd lib-build`
+2. Configure the library project for a platform
+    `cmake -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=<path-to-root>/cmake/toolchains/<cross-tool>.cmake <path-to-root>`
+3. Build the library
+    `make`
+
+The created library can be used to build sample applications using other tools.
+
+### Building a Sample
+To build an example project please follow these steps:
+1. Create a build folder
+    `mkdir build`
+    `cd build`
+2. Configure the example project for a platform
+    `cmake -G "Unix Makefiles" -DCMAKE_TOOLCHAIN_FILE=<path-to-root>/cmake/toolchains/<cross-tool>.cmake <path-to-root>/examples/<example>`
+3. Build the sample
+    `make`
+
+## Configurations
+Weird-RTOS provides various configuration options that can be best viewed if project is configured through cmake-gui. These allow user to adjust various RTOS features according to his requirements.
 
 ## Source Organization
 
 ```
 +-- 3rdparty - 3rd party components
 +-- api - Higher level components including TFTP, weird-view IoT framework
++-- cmake - Cmake project files
+|   +-- modules - Implements various helper APIs for cmake
+|   +-- toolchains - Provides toolchain files
 +-- docs - Related documentation
 +-- examples - Some usage examples
 +-- port - Target specific bits
@@ -48,7 +73,6 @@ Weird RTOS uses eclipse as build system and provides sample projects for each su
 |           +-- io - Device drivers
 |           +-- schematics - Platform schematics if applicable
 |           +-- utils - Broad utilities
-|           +-- eclipse_config.txt - Eclipse configurations
 |   +-- toolset - Toolset specific definitions
 +-- rtos - Operating system generic components
 |   +-- fs - File system
