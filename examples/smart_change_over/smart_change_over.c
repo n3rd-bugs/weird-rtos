@@ -22,6 +22,7 @@
 #include <weird_view_server.h>
 #include <adc.h>
 #include <math.h>
+#include <idle.h>
 #include <avr/wdt.h>
 #ifdef CONFIG_LCD_AN
 #include <lcd_an.h>
@@ -106,7 +107,7 @@ TASK log_cb;
 void log_entry(void *argv);
 
 /* ADC configuration and data. */
-#define ADC_PRESCALE            ((uint32_t)100)
+#define ADC_PRESCALE            ((uint32_t)78)
 #define ADC_WAVE_FREQ           ((uint32_t)100)
 #define ADC_ATIMER_PRESCALE     ((uint32_t)64)
 #define ADC_SAMPLE_PER_WAVE     ((uint32_t)PCLK_FREQ / (ADC_ATIMER_PRESCALE * ADC_PRESCALE * ADC_WAVE_FREQ))
@@ -136,6 +137,7 @@ void log_entry(void *argv);
 #define COMPUTE_APPROX          TRUE
 #define DEBUG_WAVE              FALSE
 #define ENABLE_COUTERMEASURE    TRUE
+#define ENFORCE_ZERO_CROSSING   TRUE
 
 /* IO configurations. */
 #define BOARD_REV               1
@@ -881,8 +883,10 @@ void adc_data_callback(uint32_t data)
                 edge = 0;
                 wave_index = 0;
 
+#if ENFORCE_ZERO_CROSSING
                 /* We did start from a zero. */
                 if (last_sample == 0)
+#endif /* ENFORCE_ZERO_CROSSING */
                 {
                     /* Let's save starting values. */
                     adc_wave[wave_index++] = last_sample;
@@ -894,11 +898,13 @@ void adc_data_callback(uint32_t data)
                     /* Save the current system tick. */
                     sample_tick = current_system_tick();
                 }
+#if ENFORCE_ZERO_CROSSING
                 else
                 {
                     /* This is not a good wave. */
                     adc_got_wave = FALSE;
                 }
+#endif /* ENFORCE_ZERO_CROSSING */
             }
         }
     }
@@ -922,12 +928,15 @@ void adc_data_callback(uint32_t data)
                 /* If we again encountered a positive edge. */
                 if (last_sample < data)
                 {
+#if ENFORCE_ZERO_CROSSING
                     /* If previous sample was zero. */
                     if (last_sample == 0)
+#endif /* ENFORCE_ZERO_CROSSING */
                     {
                         /* We now have the wave. */
                         edge = 2;
                     }
+#if ENFORCE_ZERO_CROSSING
                     else
                     {
                         /* This wave is not good. */
@@ -939,6 +948,7 @@ void adc_data_callback(uint32_t data)
                         /* Start looking for next negative edge. */
                         edge = 0;
                     }
+#endif /* ENFORCE_ZERO_CROSSING */
                 }
             }
 
@@ -951,7 +961,7 @@ void adc_data_callback(uint32_t data)
 
             /* If we processed a system tick while acquiring this sample or we
              * have exhausted the sample buffer. */
-            if ((sample_tick != current_system_tick()) || (wave_index == ADC_NUM_APPROX_SAMPLES))
+            if ((sample_tick != current_system_tick()) || (return_task != idle_task_get()) || (wave_index == ADC_NUM_APPROX_SAMPLES))
             {
                 /* This wave is not good. */
                 adc_got_wave = FALSE;
