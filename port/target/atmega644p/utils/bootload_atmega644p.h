@@ -17,10 +17,12 @@
 #include <kernel.h>
 
 #ifdef CONFIG_BOOTLOAD
+#ifndef CMAKE_BUILD
 #define BOOTLOADER_LOADED
 #define BOOTLOAD_MMC
 #define BOOTLOAD_STK
 //#define BOOTLOAD_MMC_HEX_NONLINEAR
+#endif /* CMAKE_BUILD */
 
 #define BOOTLOAD_COMPLETE   -21000
 #define BOOTLOAD_ERROR      -21001

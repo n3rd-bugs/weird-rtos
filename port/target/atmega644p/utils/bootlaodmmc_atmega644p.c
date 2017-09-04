@@ -49,27 +49,41 @@
 #ifdef BOOTLOAD_MMC
 
 /* Status code definitions. */
-#define STA_NOINIT      0x01    /* Drive not initialized */
-#define STA_NODISK      0x02    /* No medium in the drive */
-#define STA_PROTECT     0x04    /* Write protected */
-
+#define STA_NOINIT                  0x01                /* Drive not initialized */
+#define STA_NODISK                  0x02                /* No medium in the drive */
+#define STA_PROTECT                 0x04                /* Write protected */
 /* MMC card type flags (MMC_GET_TYPE) */
-#define CT_MMC          0x01    /* MMC ver 3 */
-#define CT_SD1          0x02    /* SD ver 1 */
-#define CT_SD2          0x04    /* SD ver 2 */
-#define CT_SDC          (CT_SD1|CT_SD2) /* SD */
-#define CT_BLOCK        0x08    /* Block addressing */
+#define CT_MMC                      0x01                /* MMC ver 3 */
+#define CT_SD1                      0x02                /* SD ver 1 */
+#define CT_SD2                      0x04                /* SD ver 2 */
+#define CT_SDC                      (CT_SD1|CT_SD2)     /* SD */
+#define CT_BLOCK                    0x08                /* Block addressing */
 
-#define INIT_PORT()     init_port()                     /* Initialize MMC control port (CS=H, CLK=L, DI=H, DO=pu) */
-#define DLY_US(n)       _delay_us(n)                    /* Delay n microseconds */
+#define INIT_PORT()                 init_port()         /* Initialize MMC control port (CS=H, CLK=L, DI=H, DO=pu) */
+#define DLY_US(n)                   _delay_us(n)        /* Delay n microseconds */
 
-#define CS_H()          (PORTA |= (1 << 3))             /* Set MMC_CS "high" */
-#define CS_L()          (PORTA &= (uint8_t)~(1 << 3))   /* Set MMC_CS "low" */
-#define CK_H()          (PORTA |= (1 << 2))             /* Set MMC_SCLK "high" */
-#define CK_L()          (PORTA &= (uint8_t)~(1 << 2))   /* Set MMC_SCLK "low" */
-#define DI_H()          (PORTA |= (1 << 5))             /* Set MMC_DI "high" */
-#define DI_L()          (PORTA &= (uint8_t)~(1 << 5))   /* Set MMC_DI "low" */
-#define DO              (PINA & (1 << 0))               /* Test for MMC_DO ('H':true, 'L':false) */
+#ifndef CMAKE_BUILD
+#define BOOTLOAD_MMC_CS_PIN_NUM     (3)
+#define BOOTLOAD_MMC_CS_DDR         (DDRA)
+#define BOOTLOAD_MMC_CS_PORT        (PORTA)
+#define BOOTLOAD_MMC_CLK_PIN_NUM    (2)
+#define BOOTLOAD_MMC_CLK_DDR        (DDRA)
+#define BOOTLOAD_MMC_CLK_PORT       (PORTA)
+#define BOOTLOAD_MMC_DI_PIN_NUM     (5)
+#define BOOTLOAD_MMC_DI_DDR         (DDRA)
+#define BOOTLOAD_MMC_DI_PORT        (PORTA)
+#define BOOTLOAD_MMC_DO_PIN_NUM     (0)
+#define BOOTLOAD_MMC_DO_DDR         (DDRA)
+#define BOOTLOAD_MMC_DO_PIN         (PINA)
+#endif /* CMAKE_BUILD */
+
+#define CS_H()                      (BOOTLOAD_MMC_CS_PORT |= (1 << BOOTLOAD_MMC_CS_PIN_NUM))                /* Set MMC_CS "high" */
+#define CS_L()                      (BOOTLOAD_MMC_CS_PORT &= (uint8_t)~(1 << BOOTLOAD_MMC_CS_PIN_NUM))      /* Set MMC_CS "low" */
+#define CK_H()                      (BOOTLOAD_MMC_CLK_PORT |= (1 << BOOTLOAD_MMC_CLK_PIN_NUM))              /* Set MMC_SCLK "high" */
+#define CK_L()                      (BOOTLOAD_MMC_CLK_PORT &= (uint8_t)~(1 << BOOTLOAD_MMC_CLK_PIN_NUM))    /* Set MMC_SCLK "low" */
+#define DI_H()                      (BOOTLOAD_MMC_DI_PORT |= (1 << BOOTLOAD_MMC_DI_PIN_NUM))                /* Set MMC_DI "high" */
+#define DI_L()                      (BOOTLOAD_MMC_DI_PORT &= (uint8_t)~(1 << BOOTLOAD_MMC_DI_PIN_NUM))      /* Set MMC_DI "low" */
+#define DO                          (BOOTLOAD_MMC_DO_PIN & (1 << BOOTLOAD_MMC_DO_PIN_NUM))                  /* Test for MMC_DO ('H':true, 'L':false) */
 
 /* Results of Disk Functions */
 enum {
@@ -125,8 +139,10 @@ static
 void init_port (void)
 {
     /* Initialize the GPIO port MMC attached (CS=High, SCLK=Low, DI=High, DO=In/pullup) */
-    DDRA |= ((1 << 2) | (1 << 3) | (1 << 5));
-    DDRA &= ((uint8_t)~(1 << 0));
+    BOOTLOAD_MMC_CS_DDR |= (1 << BOOTLOAD_MMC_CS_PIN_NUM);
+    BOOTLOAD_MMC_CLK_DDR |= (1 << BOOTLOAD_MMC_CLK_PIN_NUM);
+    BOOTLOAD_MMC_DI_DDR |= (1 << BOOTLOAD_MMC_DI_PIN_NUM);
+    BOOTLOAD_MMC_DO_DDR &= (uint8_t)(~(1 << BOOTLOAD_MMC_DO_PIN_NUM));
     CS_H();
     CK_L();
     DI_H();
