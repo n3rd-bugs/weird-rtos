@@ -16,8 +16,12 @@
 #include <kernel.h>
 
 #ifdef CONFIG_SERIAL
+#ifdef CONFIG_FS
 #include <fs.h>
+#ifdef FS_CONSOLE
 #include <console.h>
+#endif /* FS_CONSOLE */
+#endif  /* CONFIG_FS */
 #include <stdarg.h>
 
 /* Serial device flag definitions. */

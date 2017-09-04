@@ -17,7 +17,9 @@
 #include <stdio.h>
 #include <serial.h>
 #include <serial_target.h>
+#ifdef CONFIG_NET
 #include <net.h>
+#endif /* CONFIG_NET */
 #ifdef CONFIG_LCD_AN
 #include <lcd_an.h>
 #endif /* CONFIG_LCD_AN */
