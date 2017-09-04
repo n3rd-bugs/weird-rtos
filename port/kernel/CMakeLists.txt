@@ -1,5 +1,7 @@
-# Add subdirectories.
+# Add a architecture folder according to target.
 if (${TGT_CPU} STREQUAL "atmega644")
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/avr)
+elseif (${TGT_CPU} STREQUAL "atmega1284")
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/avr)
 elseif (${TGT_CPU} STREQUAL "cortex-m4")
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/cortex-m4)
