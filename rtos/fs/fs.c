@@ -24,7 +24,9 @@
 #include <console.h>
 #include <pipe.h>
 #include <fs_target.h>
+#ifdef CONFIG_NET
 #include <net.h>
+#endif /* CONFIG_NET */
 
 /* Global variables. */
 static FS_DATA file_data;
