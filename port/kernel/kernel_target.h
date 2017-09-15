@@ -20,7 +20,7 @@
 #define TARGET_CORTEX_M4    0x3
 
 /* Target platform definitions. */
-#define PLAT_ATMEGA644P     0x01
+#define PLAT_ATMEGAXX4      0x01
 #define PLAT_STM32F407_DISC 0x02
 
 /* Target toolset configuration. */
@@ -29,7 +29,7 @@
 
 /* RTOS configuration. */
 #ifndef CMAKE_BUILD
-#define PLAT_TARGET         PLAT_ATMEGA644P
+#define PLAT_TARGET         PLAT_ATMEGAXX4
 #define RTOS_TARGET         TARGET_AVR
 #define TOOL_TARGET         TOOL_AVR_GCC
 #endif
@@ -51,8 +51,8 @@
 #endif
 
 /* Platform includes. */
-#if (PLAT_TARGET == PLAT_ATMEGA644P)
-#include <atmega644p.h>
+#if (PLAT_TARGET == PLAT_ATMEGAXX4)
+#include <atmegaxx4.h>
 #elif (PLAT_TARGET == PLAT_STM32F407_DISC)
 #include <stm32f407.h>
 #endif

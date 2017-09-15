@@ -1014,7 +1014,7 @@ void adc_data_callback(uint32_t data)
 #endif /* (COMPUTE_APPROX == TRUE) */
 
         /* Stop ADC sampling. */
-        adc_atmega644_periodic_read_stop();
+        adc_avr_periodic_read_stop();
 
         /* Set the ping flag for ADC condition. */
         adc_condition.flags |= CONDITION_PING;
@@ -1052,7 +1052,7 @@ void adc_sample_process(void *data, int32_t status)
         adc_suspend.timeout_enabled = FALSE;
 
         /* Start periodic ADC conversion. */
-        adc_atmega644_periodic_read_start(&adc_data_callback, (ADC_PRESCALE - 1));
+        adc_avr_periodic_read_start(&adc_data_callback, (ADC_PRESCALE - 1));
     }
 
     else

@@ -41,7 +41,7 @@ setup_option(NET_NUM_ROUTES 2)
 setup_option(NET_TCP OFF)
 
 # Setup AVR configurations.
-setup_option(ADC_ATMEGA644P_PRESCALE ADC_ATMEGA644P_DIV_64)
+setup_option(ADC_AVR_PRESCALE ADC_AVR_DIV_64)
 setup_option(LCD_AN_AVR_PIN_SCL PIND)
 setup_option(LCD_AN_AVR_PIN_SDA PIND)
 setup_option(LCD_AN_AVR_DDR_SCL DDRD)

@@ -20,7 +20,7 @@
 #include <net_udp.h>
 #include <sys_info.h>
 #include <weird_view_server.h>
-#if (PLAT_TARGET == PLAT_ATMEGA644P)
+#if (PLAT_TARGET == PLAT_ATMEGAXX4)
 #include <adc.h>
 #endif
 #include <math.h>
@@ -137,7 +137,7 @@ void heartbeat_entry(void *argv)
 
     while(1)
     {
-#if (PLAT_TARGET == PLAT_ATMEGA644P)
+#if (PLAT_TARGET == PLAT_ATMEGAXX4)
         /* Toggle LED. */
         PORTC ^= (1 << 3);
 
@@ -230,7 +230,7 @@ int32_t weird_view_demo_switch_data(uint16_t id, uint8_t *state)
         /* Switch is off. */
         *state = FALSE;
     }
-#elif (PLAT_TARGET == PLAT_ATMEGA644P)
+#elif (PLAT_TARGET == PLAT_ATMEGAXX4)
     /* If LED is active. */
     if (PORTC & (1 << 2))
     {
@@ -272,7 +272,7 @@ void weird_view_demo_switch_req(uint16_t id, uint8_t state)
         /* Turn OFF the LED. */
         GPIOD->ODR &= (uint32_t)(~(1 << 12));
     }
-#elif (PLAT_TARGET == PLAT_ATMEGA644P)
+#elif (PLAT_TARGET == PLAT_ATMEGAXX4)
     /* If on requested. */
     if (state == TRUE)
     {
@@ -331,7 +331,7 @@ void adc_data_callback(uint32_t data)
     static int32_t n = 0;
     INT_LVL interrupt_level;
 
-#if (PLAT_TARGET == PLAT_ATMEGA644P)
+#if (PLAT_TARGET == PLAT_ATMEGAXX4)
     /* Toggle an LED show sample rate. */
     PORTC ^= (1 << 4);
 #endif
@@ -348,7 +348,7 @@ void adc_data_callback(uint32_t data)
         /* Reset the sample counter. */
         n = 0;
 
-#if (PLAT_TARGET == PLAT_ATMEGA644P)
+#if (PLAT_TARGET == PLAT_ATMEGAXX4)
         /* Stop ADC sampling. */
         adc_atmega644_periodic_read_stop();
 #endif
@@ -392,7 +392,7 @@ void adc_sample_process(void *data, int32_t status)
         /* Stop the ADC timer. */
         adc_suspend.timeout = MAX_WAIT;
 
-#if (PLAT_TARGET == PLAT_ATMEGA644P)
+#if (PLAT_TARGET == PLAT_ATMEGAXX4)
         /* Start periodic ADC conversion. */
         adc_atmega644_periodic_read_start(&adc_data_callback, (ADC_PRESCALE - 1));
 #endif
@@ -400,7 +400,7 @@ void adc_sample_process(void *data, int32_t status)
 
     else
     {
-#if (PLAT_TARGET == PLAT_ATMEGA644P)
+#if (PLAT_TARGET == PLAT_ATMEGAXX4)
         /* Toggle an LED show a sample. */
         PORTC ^= (1 << 5);
 #endif
@@ -421,7 +421,7 @@ void adc_sample_process(void *data, int32_t status)
             /* Calculate number of remaining samples. */
             num_samples = (DEMO_SAMPLES - i);
 
-#if (PLAT_TARGET == PLAT_ATMEGA644P)
+#if (PLAT_TARGET == PLAT_ATMEGAXX4)
             /* Find the last zero crossing. */
             while (num_samples > 0)
             {
@@ -465,7 +465,7 @@ void adc_sample_process(void *data, int32_t status)
             adc_channel = 0;
         }
 
-#if (PLAT_TARGET == PLAT_ATMEGA644P)
+#if (PLAT_TARGET == PLAT_ATMEGAXX4)
         switch (adc_channel)
         {
         case 0:
@@ -546,7 +546,7 @@ int main(void)
 
     /* By default Turn ON the LED. */
     GPIOD->ODR |= (1 << 12);
-#elif (PLAT_TARGET == PLAT_ATMEGA644P)
+#elif (PLAT_TARGET == PLAT_ATMEGAXX4)
     /* Configure PC2 as output. */
     DDRC |= ((1 << 2) | (1 << 3) | (1 << 4) | (1 << 5));
 
