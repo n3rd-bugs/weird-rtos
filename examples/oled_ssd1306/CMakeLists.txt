@@ -16,4 +16,3 @@ add_subdirectory(${RTOS_ROOT} "${CMAKE_CURRENT_BINARY_DIR}/rtos_build")
 # Setup target.
 set(PROJECT_SRCS "${CMAKE_SOURCE_DIR}/ssd1306.c")
 setup_target(${PROJECT_NAME} PROJECT_SRCS)
-setup_dude(${PROJECT_NAME})

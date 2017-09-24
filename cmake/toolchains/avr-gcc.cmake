@@ -46,15 +46,10 @@ function (setup_target target_name sources)
 
     # Add a target to display size analysis.
     add_custom_target(${target_name}.size ALL ${AVR_SIZE} --format=avr --mcu=${TGT_CPU} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" DEPENDS ${target_name})
-endfunction ()
 
-# This function will setup AVR dude.
-function (setup_dude target_name)
-    # If we have avr-dude configuration
+    # If we have AVR dude configuration.
     if (${PLATFORM}_DUDE_MCU)
         # Add a target for AVR dude.
         add_custom_target(${target_name}.dude ${AVR_DUDE} -p${${PLATFORM}_DUDE_MCU} -c${${PLATFORM}_DUDE_DRIVER} -P${${PLATFORM}_DUDE_SER} -b${${PLATFORM}_DUDE_BOUD} -D -Uflash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.hex:a DEPENDS ${target_name}.hex)
-    else ()
-        message("avrdude option are not known for this target.")
     endif ()
 endfunction ()
