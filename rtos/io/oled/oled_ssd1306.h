@@ -45,7 +45,7 @@
 #define SSD1306_SETDISPLAYCLOCKDIV  (0xD5)
 #define SSD1306_SETPRECHARGE        (0xD9)
 #define SSD1306_SETCOMPINS          (0xDA)
-#define SSD1306_SETVCOMDETECT       (0xDB)
+#define SSD1306_SETVCOMDESELECT     (0xDB)
 
 /* OLED configuration flags. */
 #define SSD1306_EXTERNAL_VCC        (0x01)
@@ -67,7 +67,7 @@ typedef struct _ssd1306
 
 /* Function prototypes. */
 void oled_ssd1306_init(void);
-void oled_ssd1306_register(SSD1306 *);
+int32_t oled_ssd1306_register(SSD1306 *);
 int32_t oled_ssd1306_display(SSD1306 *, uint8_t *, uint8_t, uint8_t, uint8_t, uint8_t);
 int32_t oled_ssd1306_invert(SSD1306 *, uint8_t);
 

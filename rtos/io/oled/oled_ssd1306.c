@@ -38,78 +38,200 @@ void oled_ssd1306_init(void)
  * @oled: SSD1306 device data.
  * This function will register a OLED-SSD1306 driver.
  */
-void oled_ssd1306_register(SSD1306 *oled)
+int32_t oled_ssd1306_register(SSD1306 *oled)
 {
+    int32_t status;
+
     /* Initialize I2C device. */
     i2c_init(&oled->i2c);
 
     /* Initialize SSD1306. */
 
     /* Turn off display. */
-    oled_ssd1306_command(oled, SSD1306_DISPLAYOFF);
+    status = oled_ssd1306_command(oled, SSD1306_DISPLAYOFF);
 
     /* Configure OLED clock. */
-    oled_ssd1306_command(oled, SSD1306_SETDISPLAYCLOCKDIV);
-    oled_ssd1306_command(oled, 0x80);
+    if (status == SUCCESS)
+    {
+        /* Send clock command. */
+        status = oled_ssd1306_command(oled, SSD1306_SETDISPLAYCLOCKDIV);
+
+        if (status == SUCCESS)
+        {
+            /* Set clock divider to 0x80. */
+            status = oled_ssd1306_command(oled, 0x80);
+        }
+    }
 
     /* Set multiplexer. */
-    oled_ssd1306_command(oled, SSD1306_SETMULTIPLEX);
-    oled_ssd1306_command(oled, oled->height - 1);
+    if (status == SUCCESS)
+    {
+        /* Send multiplexer command. */
+        status = oled_ssd1306_command(oled, SSD1306_SETMULTIPLEX);
+
+        if (status == SUCCESS)
+        {
+            /* Set multiplex to the height of OLED. */
+            status = oled_ssd1306_command(oled, oled->height - 1);
+        }
+    }
 
     /* Set display offset and starting line.. */
-    oled_ssd1306_command(oled, SSD1306_SETDISPLAYOFFSET);
-    oled_ssd1306_command(oled, 0x0);
-    oled_ssd1306_command(oled, SSD1306_SETSTARTLINE | 0x0);
+    if (status == SUCCESS)
+    {
+        /* Send display offset command. */
+        status = oled_ssd1306_command(oled, SSD1306_SETDISPLAYOFFSET);
 
-    /* Conifgure charge pump. */
-    oled_ssd1306_command(oled, SSD1306_CHARGEPUMP);
-    if (oled->flags & SSD1306_EXTERNAL_VCC)
-    {
-        oled_ssd1306_command(oled, 0x10);
+        if (status == SUCCESS)
+        {
+            /* Reset the display offset. */
+            status = oled_ssd1306_command(oled, 0x0);
+        }
     }
-    else
+
+    if (status == SUCCESS)
     {
-        oled_ssd1306_command(oled, 0x14);
+        /* Reset the start line. */
+        status = oled_ssd1306_command(oled, SSD1306_SETSTARTLINE | 0x0);
+    }
+
+    /* Configure charge pump. */
+    if (status == SUCCESS)
+    {
+        /* Send the charge pump command. */
+        status = oled_ssd1306_command(oled, SSD1306_CHARGEPUMP);
+
+        if (status == SUCCESS)
+        {
+            /* Set the charge pump according to power source. */
+            if (oled->flags & SSD1306_EXTERNAL_VCC)
+            {
+                status = oled_ssd1306_command(oled, 0x10);
+            }
+            else
+            {
+                status = oled_ssd1306_command(oled, 0x14);
+            }
+        }
     }
 
     /* Configure memory mode. */
-    oled_ssd1306_command(oled, SSD1306_MEMORYMODE);
-    oled_ssd1306_command(oled, 0x00);
-    oled_ssd1306_command(oled, SSD1306_SEGREMAP | 0x1);
-    oled_ssd1306_command(oled, SSD1306_COMSCANDEC);
-    oled_ssd1306_command(oled, SSD1306_SETCOMPINS);
-    oled_ssd1306_command(oled, 0x12);
+    if (status == SUCCESS)
+    {
+        /* Send the memory mode command. */
+        status = oled_ssd1306_command(oled, SSD1306_MEMORYMODE);
+
+        if (status == SUCCESS)
+        {
+            /* Set horizontal addressing mode. */
+            status = oled_ssd1306_command(oled, 0x00);
+        }
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Configure the segment re-map. */
+        status = oled_ssd1306_command(oled, SSD1306_SEGREMAP | 0x1);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Set COM output scan direction. */
+        status = oled_ssd1306_command(oled, SSD1306_COMSCANDEC);
+    }
+
+    /* Configure COM pins. */
+    if (status == SUCCESS)
+    {
+        /* Send COM pin command. */
+        status = oled_ssd1306_command(oled, SSD1306_SETCOMPINS);
+
+        if (status == SUCCESS)
+        {
+            /* Set COM pin configuration. */
+            status = oled_ssd1306_command(oled, 0x12);
+        }
+    }
 
     /* Set contrast. */
-    oled_ssd1306_command(oled, SSD1306_SETCONTRAST);
-    if (oled->flags & SSD1306_EXTERNAL_VCC)
+    if (status == SUCCESS)
     {
-        oled_ssd1306_command(oled, 0x9F);
-    }
-    else
-    {
-        oled_ssd1306_command(oled, 0xCF);
+        /* Send contrast command. */
+        status = oled_ssd1306_command(oled, SSD1306_SETCONTRAST);
+
+        if (status == SUCCESS)
+        {
+            /* Configure contrast according to voltage source. */
+            if (oled->flags & SSD1306_EXTERNAL_VCC)
+            {
+                status = oled_ssd1306_command(oled, 0x9F);
+            }
+            else
+            {
+                status = oled_ssd1306_command(oled, 0xCF);
+            }
+        }
     }
 
     /* Configure pre-charge. */
-    oled_ssd1306_command(oled, SSD1306_SETPRECHARGE);
-    if (oled->flags & SSD1306_EXTERNAL_VCC)
+    if (status == SUCCESS)
     {
-        oled_ssd1306_command(oled, 0x22);
-    }
-    else
-    {
-        oled_ssd1306_command(oled, 0xF1);
+        /* Send pre-charge command. */
+        status = oled_ssd1306_command(oled, SSD1306_SETPRECHARGE);
+
+        if (status == SUCCESS)
+        {
+            /* Configure pre-charge according to voltage source. */
+            if (oled->flags & SSD1306_EXTERNAL_VCC)
+            {
+                status = oled_ssd1306_command(oled, 0x22);
+            }
+            else
+            {
+                status = oled_ssd1306_command(oled, 0xF1);
+            }
+        }
     }
 
-    oled_ssd1306_command(oled, SSD1306_SETVCOMDETECT);
-    oled_ssd1306_command(oled, 0x40);
+    /* Configure VCOM de-select level. */
+    if (status == SUCCESS)
+    {
+        /* Send VCOM de-select level command. */
+        status = oled_ssd1306_command(oled, SSD1306_SETVCOMDESELECT);
 
-    /* Turn on the display in normal mode. */
-    oled_ssd1306_command(oled, SSD1306_DISPLAYALLON_RESUME);
-    oled_ssd1306_command(oled, SSD1306_NORMALDISPLAY);
-    oled_ssd1306_command(oled, SSD1306_DEACTIVATE_SCROLL);
-    oled_ssd1306_command(oled, SSD1306_DISPLAYON);
+        if (status == SUCCESS)
+        {
+            /* Adjust de-select level to 0x40. */
+            status = oled_ssd1306_command(oled, 0x40);
+        }
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Turn on the entire display. */
+        status = oled_ssd1306_command(oled, SSD1306_DISPLAYALLON_RESUME);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Show display normally. */
+        status = oled_ssd1306_command(oled, SSD1306_NORMALDISPLAY);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Deactivate scrolling. */
+        status = oled_ssd1306_command(oled, SSD1306_DEACTIVATE_SCROLL);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Turn-on the display. */
+        status = oled_ssd1306_command(oled, SSD1306_DISPLAYON);
+    }
+
+    /* Return status to the caller. */
+    return (status);
 
 } /* oled_ssd1306_register */
 
@@ -129,31 +251,36 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
     uint8_t display_buffer[17];
     I2C_MSG msg;
 
-    /* Set column start and end address. */
+    /* Set column address. */
     status = oled_ssd1306_command(oled, SSD1306_COLUMNADDR);
 
     if (status == SUCCESS)
     {
+        /* Set the column start address. */
         status = oled_ssd1306_command(oled, col);
 
         if (status == SUCCESS)
         {
+            /* Set the column end address. */
             status = oled_ssd1306_command(oled, (col + num_col) - 1);
         }
     }
 
-    /* Set the page address. */
+    /* If column address was successfully set. */
     if (status == SUCCESS)
     {
+        /* Set the page address. */
         status = oled_ssd1306_command(oled, SSD1306_PAGEADDR);
 
         if (status == SUCCESS)
         {
+            /* Set the page start address. */
             status = oled_ssd1306_command(oled, (row / 8));
         }
 
         if (status == SUCCESS)
         {
+            /* Set the page end address. */
             status = oled_ssd1306_command(oled, ((row + num_row) / 8) - 1);
         }
     }
