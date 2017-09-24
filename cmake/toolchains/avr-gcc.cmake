@@ -9,6 +9,7 @@ find_program(AVR_CC avr-gcc)
 find_program(AVR_OBJCOPY avr-objcopy)
 find_program(AVR_OBJDUMP avr-objdump)
 find_program(AVR_SIZE avr-size)
+find_program(AVR_DUDE avrdude)
 
 # Enable RESPONSE files to resolve linker errors.
 set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS ON)
@@ -36,13 +37,24 @@ function (setup_target target_name sources)
     target_link_libraries(${target_name} ${RTOS_LIB} m)
     target_include_directories(${target_name} PUBLIC ${RTOS_INCLUDES})
     set_target_properties(${target_name} PROPERTIES OUTPUT_NAME ${target_name}.elf LINK_FLAGS "-Wl,-Map,${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.map")
-    
+
     # Add target to generate a HEX file for this build.
     add_custom_target(${target_name}.hex ALL ${AVR_OBJCOPY} -R .eeprom -R .fuse -R .lock -R .signature -O ihex "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.hex" DEPENDS ${target_name})
-    
+
     # Add a target to create ASM listing.
     add_custom_target(${target_name}.lss ALL ${AVR_OBJDUMP} -h -S "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" > "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.lss" DEPENDS ${target_name})
-    
+
     # Add a target to display size analysis.
     add_custom_target(${target_name}.size ALL ${AVR_SIZE} --format=avr --mcu=${TGT_CPU} "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" DEPENDS ${target_name})
+endfunction ()
+
+# This function will setup AVR dude.
+function (setup_dude target_name)
+    # If we have avr-dude configuration
+    if (${PLATFORM}_DUDE_MCU)
+        # Add a target for AVR dude.
+        add_custom_target(${target_name}.dude ${AVR_DUDE} -p${${PLATFORM}_DUDE_MCU} -c${${PLATFORM}_DUDE_DRIVER} -P${${PLATFORM}_DUDE_SER} -b${${PLATFORM}_DUDE_BOUD} -D -Uflash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.hex:a DEPENDS ${target_name}.hex)
+    else ()
+        message("avrdude option are not known for this target.")
+    endif ()
 endfunction ()

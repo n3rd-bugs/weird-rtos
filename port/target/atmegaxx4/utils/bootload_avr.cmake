@@ -19,4 +19,12 @@ if (${CONFIG_BOOTLOAD})
         setup_option_def(BOOTLOAD_MMC_DO_PIN PINA MACRO "MMC SPI data-out (DO) PIN to be used by MMC bootloader." VALUE_LIST atmega_pin_values)
         
     endif ()
+    
+    # Setup AVR dude options.
+    if (PLATFORM STREQUAL atmega1284)
+        setup_option_def(${PLATFORM}_DUDE_MCU "m1284p" STRING "AVR dude MCU.")
+        setup_option_def(${PLATFORM}_DUDE_DRIVER "arduino" STRING "AVR dude driver.")
+        setup_option_def(${PLATFORM}_DUDE_SER "COM6" STRING "AVR dude serial port.")
+        setup_option_def(${PLATFORM}_DUDE_BOUD "115200" STRING "AVR dude boudrate.")
+     endif ()
 endif ()
