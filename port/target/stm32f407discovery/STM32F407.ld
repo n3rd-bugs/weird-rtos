@@ -1,8 +1,5 @@
 ENTRY(system_entry)
 
-__heap_size   = 0x800;
-__stack_size  = 0x800;
-
 MEMORY
 {
     m_interrupts    (RX): ORIGIN = 0x08000000, LENGTH = 0x000001E0
