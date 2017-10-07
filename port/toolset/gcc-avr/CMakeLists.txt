@@ -10,5 +10,6 @@ SET(RTOS_SOURCES ${RTOS_SOURCES} CACHE INTERNAL "RTOS_SOURCES" FORCE)
 SET(RTOS_INCLUDES ${RTOS_INCLUDES} CACHE INTERNAL "RTOS_INCLUDES" FORCE)
 
 # Add a configuration option for target tools.
-setup_option_def(TOOL_TARGET "TOOL_AVR_GCC" MACRO "Target tools.")
-setup_option_hide(TOOL_TARGET)
+setup_option(TARGET_TOOLS "TOOL_AVR_GCC")
+setup_option_def(TARGET_TOOLS "TOOL_AVR_GCC" MACRO "Target tools." FORCE)
+setup_option_hide(TARGET_TOOLS)

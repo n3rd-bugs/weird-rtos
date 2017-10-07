@@ -6,5 +6,6 @@ set(RTOS_SOURCES ${RTOS_SOURCES} ${SOURCES} CACHE INTERNAL "RTOS_SOURCES" FORCE)
 SET(RTOS_INCLUDES ${RTOS_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "RTOS_INCLUDES" FORCE)
 
 # Add a configuration option for target CPU.
-setup_option_def(RTOS_TARGET "TARGET_AVR" MACRO "Target CPU.")
-setup_option_hide(RTOS_TARGET)
+setup_option(TARGET_CPU "TARGET_AVR")
+setup_option_def(TARGET_CPU "TARGET_AVR" MACRO "Target CPU.")
+setup_option_hide(TARGET_CPU)

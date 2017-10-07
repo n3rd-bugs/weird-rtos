@@ -52,5 +52,5 @@ setup_option(LCD_AN_AVR_PIN_NUM_SCL 0)
 setup_option(LCD_AN_AVR_PIN_NUM_SDA 1)
 
 # Setup target configuration.
-setup_option(PLATFORM atmega644)
+setup_option(TGT_PLATFORM atmega644)
 setup_option(F_CPU 20000000UL)

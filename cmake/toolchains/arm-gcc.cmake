@@ -1,5 +1,6 @@
 # Load default configurations.
-set(PLATFORM stm32f407discovery CACHE STRING "Target platform.")
+set(TGT_PLATFORM stm32f407discovery CACHE STRING "Target platform.")
+set_property(CACHE TGT_PLATFORM PROPERTY STRINGS "stm32f407discovery" "stm32f103c8t6")
 set(TGT_TOOL "gcc-arm" CACHE STRING "Target Tools.")
 
 # Find required tool-sets.
@@ -20,18 +21,21 @@ set(ARM_C_FLAGS "-Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata
 set(ARM_LINK_FLAGS "--specs=nosys.specs -Xlinker --gc-sections " CACHE STRING "LD flags.")
 
 # Select the target CPU.
-if (${PLATFORM} STREQUAL "stm32f407discovery")
+# If this is STM32F407Discovery.
+if (${TGT_PLATFORM} STREQUAL "stm32f407discovery")
     # We have a cortex-M4.
-    set(TGT_CPU "cortex-m4" CACHE STRING "Target CPU.")
-    
+    set(TGT_CPU "cortex-m4" CACHE STRING "Target CPU." FORCE)
+
     # Update c-flags.
-    set(ARM_C_FLAGS "-mcpu=${TGT_CPU} -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16 ${ARM_C_FLAGS}")
+    set(ARM_MCU_FLAGS "-mcpu=${TGT_CPU} -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16" CACHE INTERNAL "" FORCE)
+
+# Must be not supported.
 else()
-    message(FATAL_ERROR "Unsupported device ${PLATFORM}.")
+    message(FATAL_ERROR "Unsupported device ${TGT_PLATFORM}.")
 endif ()
 
 # Set c and link flags.
-set(CMAKE_C_FLAGS "${ARM_C_FLAGS}" CACHE STRING "" FORCE)
+set(CMAKE_C_FLAGS "${ARM_MCU_FLAGS} ${ARM_C_FLAGS}" CACHE STRING "" FORCE)
 set(CMAKE_EXE_LINKER_FLAGS "${ARM_LINK_FLAGS}" CACHE STRING "" FORCE)
 
 # This function will setup a target for ARM.
@@ -44,13 +48,13 @@ function (setup_target target_name sources)
     target_link_libraries(${target_name} ${RTOS_LIB})
     target_include_directories(${target_name} PUBLIC ${RTOS_INCLUDES})
     set_target_properties(${target_name} PROPERTIES OUTPUT_NAME ${target_name}.elf LINK_FLAGS "-Wl,-Map,${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.map")
-    
+
     # Add target to generate a HEX file for this build.
     add_custom_target(${target_name}.hex ALL ${ARM_OBJCOPY} -O ihex "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.hex" DEPENDS ${target_name})
-    
+
     # Add a target to create ASM listing.
     add_custom_target(${target_name}.lss ALL ${ARM_OBJDUMP} -h -S "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" > "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.lss" DEPENDS ${target_name})
-    
+
     # Add a target to display size analysis.
     add_custom_target(${target_name}.size ALL ${ARM_SIZE} --format=berkeley "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" DEPENDS ${target_name})
 endfunction ()

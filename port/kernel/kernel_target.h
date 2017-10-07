@@ -29,31 +29,31 @@
 
 /* RTOS configuration. */
 #ifndef CMAKE_BUILD
-#define PLAT_TARGET         PLAT_ATMEGAXX4
-#define RTOS_TARGET         TARGET_AVR
-#define TOOL_TARGET         TOOL_AVR_GCC
+#define TARGET_PLATFORM     PLAT_ATMEGAXX4
+#define TARGET_CPU          TARGET_AVR
+#define TARGET_TOOLS        TOOL_AVR_GCC
 #endif
 
 /* Toolset includes. */
-#if (TOOL_TARGET == TOOL_AVR_GCC)
+#if (TARGET_TOOLS == TOOL_AVR_GCC)
 #include <avr_gcc.h>
-#elif (TOOL_TARGET == TOOL_ARM_GCC)
+#elif (TARGET_TOOLS == TOOL_ARM_GCC)
 #include <arm_gcc.h>
 #endif
 
 /* Processor includes. */
-#if (RTOS_TARGET == TARGET_AVR)
+#if (TARGET_CPU == TARGET_AVR)
 #include <avr.h>
-#elif (RTOS_TARGET == TARGET_CORTEX_M3)
+#elif (TARGET_CPU == TARGET_CORTEX_M3)
 #include <cortex_m3.h>
-#elif (RTOS_TARGET == TARGET_CORTEX_M4)
+#elif (TARGET_CPU == TARGET_CORTEX_M4)
 #include <cortex_m4.h>
 #endif
 
 /* Platform includes. */
-#if (PLAT_TARGET == PLAT_ATMEGAXX4)
+#if (TARGET_PLATFORM == PLAT_ATMEGAXX4)
 #include <atmegaxx4.h>
-#elif (PLAT_TARGET == PLAT_STM32F407_DISC)
+#elif (TARGET_PLATFORM == PLAT_STM32F407_DISC)
 #include <stm32f407.h>
 #endif
 
