@@ -14,7 +14,7 @@
 #include <kernel.h>
 
 #ifdef CONFIG_OLED
-#include "../../../../../rtos/io/oled/oled_ssd1306.h"
+#include <oled_ssd1306.h>
 #include <oled_avr.h>
 #include <i2c_bb_avr.h>
 

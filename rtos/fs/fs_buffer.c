@@ -20,7 +20,7 @@
 #include <header.h>
 
 #ifdef CONFIG_NET
-#include "net_condition.h"
+#include <net_condition.h>
 #endif
 
 /* Internal function prototypes. */
