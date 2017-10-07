@@ -49,6 +49,11 @@ extern INT_LVL sys_interrupt_level;
                                             asm("   ISB    ");                      \
                                             CORTEX_M3_PEND_SV_REG |= CORTEX_M3_PEND_SV_MAST;     \
                                             CORTEX_M3_SYS_TICK_REG &= ~(CORTEX_M3_SYS_TICK_MASK);\
+                                            asm volatile                            \
+                                            (                                       \
+                                            "   MOVS        r0, #1          \r\n"   \
+                                            "   MSR         BASEPRI, r0     \r\n"   \
+                                            );                                      \
                                         }
 
 #define CONTROL_TO_SYSTEM()             control_to_system()
