@@ -141,9 +141,6 @@ static int32_t usart_stm32f407_init(void *data)
     /* Enable transmission complete and receive data available interrupts. */
     USART1->CR1 |= (USART_CR1_TCIE | USART_CR1_RXNEIE);
 
-    /* Set the TX complete flag. */
-    USART1->SR |= (USART_SR_TC);
-
     /* Always return success. */
     return (SUCCESS);
 
