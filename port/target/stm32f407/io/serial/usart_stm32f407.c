@@ -86,6 +86,10 @@ static int32_t usart_stm32f407_init(void *data)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(data);
 
+    /* Reset USART1. */
+    RCC->APB2RSTR |= 0x10;
+    RCC->APB2RSTR &= (uint32_t)~(0x10);
+
     /* Enable clock for USART1. */
     RCC->APB2ENR |= 0x10;
 
