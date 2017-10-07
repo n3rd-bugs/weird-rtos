@@ -11,10 +11,14 @@
  * (in any form, direct or indirect) the author will not be liable for any
  * outcome.
  */
-#include <kernel.h>
 #include <isr.h>
-#include <enc28j60.h>
-#include <usart_stm32f407.h>
+#include <kernel.h>
+
+/* ISR definitions. */
+void __attribute__ ((weak, alias("cpu_interrupt"))) nmi_interrupt(void);
+void __attribute__ ((weak, alias("cpu_interrupt"))) hard_fault_interrupt(void);
+void __attribute__ ((weak, alias("cpu_interrupt"))) exti2_interrupt(void);
+void __attribute__ ((weak, alias("cpu_interrupt"))) usart1_interrupt(void);
 
 /* Initial vector table definition. */
 __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
@@ -45,11 +49,7 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x05  RCC                   */
         (isr)&cpu_interrupt,        /*  0x06  EXTI Line0            */
         (isr)&cpu_interrupt,        /*  0x07  EXTI Line1            */
-#if (defined(CONFIG_ETHERNET) && (ENC28J60_INT_POLL == FALSE))
         (isr)&exti2_interrupt,      /*  0x08  EXTI Line2            */
-#else
-        (isr)&cpu_interrupt,        /*  0x08  EXTI Line2            */
-#endif
         (isr)&cpu_interrupt,        /*  0x09  EXTI Line3            */
         (isr)&cpu_interrupt,        /*  0x0A  EXTI Line4            */
         (isr)&cpu_interrupt,        /*  0x0B  DMA1 Stream 0         */
@@ -65,10 +65,10 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x15  CAN1 RX1              */
         (isr)&cpu_interrupt,        /*  0x16  CAN1 SCE              */
         (isr)&cpu_interrupt,        /*  0x17  External Line[9:5]s   */
-        (isr)&cpu_interrupt,        /*  0x18  TIM1 Break and TIM9       */
-        (isr)&cpu_interrupt,        /*  0x19  TIM1 Update and TIM10     */
-        (isr)&cpu_interrupt,        /*  0x1A  TIM1 Trigger and Commutation and TIM1     */
-        (isr)&cpu_interrupt,        /*  0x1B  TIM1 Capture Compare      */
+        (isr)&cpu_interrupt,        /*  0x18  TIM1 Break and TIM9   */
+        (isr)&cpu_interrupt,        /*  0x19  TIM1 Update and TIM10 */
+        (isr)&cpu_interrupt,        /*  0x1A  TIM1 Trigger and Commutation and TIM1 */
+        (isr)&cpu_interrupt,        /*  0x1B  TIM1 Capture Compare  */
         (isr)&isr_clock64_tick,     /*  0x1C  TIM2                  */
         (isr)&cpu_interrupt,        /*  0x1D  TIM3                  */
         (isr)&cpu_interrupt,        /*  0x1E  TIM4                  */
@@ -78,20 +78,16 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x22  I2C2 Error            */
         (isr)&cpu_interrupt,        /*  0x23  SPI1                  */
         (isr)&cpu_interrupt,        /*  0x24  SPI2                  */
-#ifdef SERIAL_INTERRUPT_MODE
         (isr)&usart1_interrupt,     /*  0x25  USART1                */
-#else
-        (isr)&cpu_interrupt,        /*  0x25  USART1                */
-#endif
         (isr)&cpu_interrupt,        /*  0x26  USART2                */
         (isr)&cpu_interrupt,        /*  0x27  USART3                */
-        (isr)&cpu_interrupt,        /*  0x28  External Line[15:10]s     */
-        (isr)&cpu_interrupt,        /*  0x29  RTC Alarm (A and B) through EXTI Line     */
-        (isr)&cpu_interrupt,        /*  0x2A  USB OTG FS Wakeup through EXTI line       */
-        (isr)&cpu_interrupt,        /*  0x2B  TIM8 Break and TIM12      */
-        (isr)&cpu_interrupt,        /*  0x2C  TIM8 Update and TIM13     */
+        (isr)&cpu_interrupt,        /*  0x28  External Line[15:10]s */
+        (isr)&cpu_interrupt,        /*  0x29  RTC Alarm (A and B) through EXTI Line */
+        (isr)&cpu_interrupt,        /*  0x2A  USB OTG FS Wakeup through EXTI line   */
+        (isr)&cpu_interrupt,        /*  0x2B  TIM8 Break and TIM12  */
+        (isr)&cpu_interrupt,        /*  0x2C  TIM8 Update and TIM13 */
         (isr)&cpu_interrupt,        /*  0x2D  TIM8 Trigger and Commutation and TIM14    */
-        (isr)&cpu_interrupt,        /*  0x2E  TIM8 Capture Compare      */
+        (isr)&cpu_interrupt,        /*  0x2E  TIM8 Capture Compare  */
         (isr)&cpu_interrupt,        /*  0x2F  DMA1 Stream7          */
         (isr)&cpu_interrupt,        /*  0x30  FSMC                  */
         (isr)&cpu_interrupt,        /*  0x31  SDIO                  */
@@ -99,7 +95,7 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x33  SPI3                  */
         (isr)&cpu_interrupt,        /*  0x34  UART4                 */
         (isr)&cpu_interrupt,        /*  0x35  UART5                 */
-        (isr)&cpu_interrupt,        /*  0x36  TIM6 and DAC1&2 underrun errors           */
+        (isr)&cpu_interrupt,        /*  0x36  TIM6 and DAC1&2 underrun errors   */
         (isr)&cpu_interrupt,        /*  0x37  TIM7                  */
         (isr)&cpu_interrupt,        /*  0x38  DMA2 Stream 0         */
         (isr)&cpu_interrupt,        /*  0x39  DMA2 Stream 1         */
@@ -107,7 +103,7 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x3B  DMA2 Stream 3         */
         (isr)&cpu_interrupt,        /*  0x3C  DMA2 Stream 4         */
         (isr)&cpu_interrupt,        /*  0x3D  Ethernet              */
-        (isr)&cpu_interrupt,        /*  0x3E  Ethernet Wakeup through EXTI line         */
+        (isr)&cpu_interrupt,        /*  0x3E  Ethernet Wakeup through EXTI line */
         (isr)&cpu_interrupt,        /*  0x3F  CAN2 TX               */
         (isr)&cpu_interrupt,        /*  0x40  CAN2 RX0              */
         (isr)&cpu_interrupt,        /*  0x41  CAN2 RX1              */
@@ -129,3 +125,14 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x51  FPU                   */
     }
 }; /* system_isr_table */
+
+/*
+ * cpu_interrupt
+ * Default ISR callback.
+ */
+ISR_FUN cpu_interrupt(void)
+{
+    /* Assert the system. */
+    ASSERT(TRUE);
+
+} /* cpu_interrupt */

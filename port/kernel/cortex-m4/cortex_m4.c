@@ -265,36 +265,3 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
     RETURN_ENABLING_INTERRUPTS();
 
 } /* isr_pendsv_handle */
-
-/*
- * cpu_interrupt
- * Default ISR callback.
- */
-ISR_FUN cpu_interrupt(void)
-{
-    /* Assert the system. */
-    ASSERT(TRUE);
-
-} /* cpu_interrupt */
-
-/*
- * nmi_interrupt
- * NMI interrupt callback.
- */
-ISR_FUN nmi_interrupt(void)
-{
-    /* Assert the system. */
-    ASSERT(TRUE);
-
-} /* nmi_interrupt */
-
-/*
- * hard_fault_interrupt
- * Hard fault interrupt callback.
- */
-ISR_FUN hard_fault_interrupt(void)
-{
-    /* Assert the system. */
-    ASSERT(TRUE);
-
-} /* hard_fault_interrupt */
