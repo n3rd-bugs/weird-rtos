@@ -29,6 +29,14 @@ if (${TGT_PLATFORM} STREQUAL "stm32f407discovery")
     # Update c-flags.
     set(ARM_MCU_FLAGS "-mcpu=${TGT_CPU} -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16" CACHE INTERNAL "" FORCE)
 
+# If this is STM32F103C8T6.
+elseif (${TGT_PLATFORM} STREQUAL "stm32f103c8t6")
+    # We have a cortex-M3.
+    set(TGT_CPU "cortex-m3" CACHE STRING "Target CPU." FORCE)
+
+    # Update c-flags.
+    set(ARM_MCU_FLAGS "-mcpu=${TGT_CPU} -mthumb" CACHE INTERNAL "" FORCE)
+
 # Must be not supported.
 else()
     message(FATAL_ERROR "Unsupported device ${TGT_PLATFORM}.")

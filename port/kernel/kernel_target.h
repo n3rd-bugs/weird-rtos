@@ -22,6 +22,7 @@
 /* Target platform definitions. */
 #define PLAT_ATMEGAXX4      0x01
 #define PLAT_STM32F407_DISC 0x02
+#define PLAT_STM32F103C8T6  0x03
 
 /* Target toolset configuration. */
 #define TOOL_AVR_GCC        0x01
@@ -55,6 +56,8 @@
 #include <atmegaxx4.h>
 #elif (TARGET_PLATFORM == PLAT_STM32F407_DISC)
 #include <stm32f407.h>
+#elif (TARGET_PLATFORM == PLAT_STM32F103C8T6)
+#include <stm32f103.h>
 #endif
 
 #include <p_string.h>
