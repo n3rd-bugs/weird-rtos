@@ -62,9 +62,6 @@ void stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
  */
 void run_first_task(void)
 {
-    /* Disable interrupts. */
-    DISABLE_INTERRUPTS();
-
     /* We are running the first task so there is no last task. */
     last_task = NULL;
 
@@ -87,6 +84,9 @@ void run_first_task(void)
     "   MSR     MSP, R0           \n"
     );
 
+    /* Mark entry to a new task. */
+    MARK_ENTRY();
+
     /* Enable interrupts. */
     ENABLE_INTERRUPTS();
 
@@ -103,6 +103,9 @@ void control_to_system(void)
     /* If we have not already scheduled a context switch. */
     if (last_task == NULL)
     {
+        /* We may switch to a new task so mark an exit. */
+        MARK_EXIT();
+
         /* Save the task from which we will be switching. */
         last_task = current_task;
 
@@ -112,11 +115,17 @@ void control_to_system(void)
         /* Check if we need to switch context. */
         if (current_task != last_task)
         {
+            /* Mark entry to a new task. */
+            MARK_ENTRY();
+
             /* Schedule a context switch. */
             PEND_SV();
 
             /* Enable interrupts. */
             ENABLE_INTERRUPTS();
+
+            /* Again mark an exit. */
+            MARK_EXIT();
         }
 
         else
@@ -124,6 +133,9 @@ void control_to_system(void)
             /* We are not scheduling a context switch. */
             last_task = NULL;
         }
+
+        /* Mark entry to a new task. */
+        MARK_ENTRY();
     }
 
 } /* control_to_system */
@@ -134,11 +146,11 @@ void control_to_system(void)
  */
 ISR_FUN isr_sysclock_handle(void)
 {
-    /* Disable interrupts. */
-    DISABLE_INTERRUPTS();
-
     /* Process system tick. */
     process_system_tick();
+
+    /* We may switch to a new task so mark an exit. */
+    MARK_EXIT();
 
     /* If we have not already scheduled a context switch. */
     if (last_task == NULL)
@@ -176,8 +188,8 @@ ISR_FUN isr_sysclock_handle(void)
         }
     }
 
-    /* Enable interrupts. */
-    ENABLE_INTERRUPTS();
+    /* Mark entry to a new task. */
+    MARK_ENTRY();
 
 } /* isr_sysclock_handle */
 
