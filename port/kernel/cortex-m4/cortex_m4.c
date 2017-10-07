@@ -209,7 +209,10 @@ ISR_FUN isr_sysclock_handle(void)
 NAKED_ISR_FUN isr_pendsv_handle(void)
 {
     /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
+    asm volatile
+    (
+    "   CPSID       I                   \r\n"
+    );
 
     /* Check if need to save last task context. */
     if (last_task)
@@ -262,6 +265,12 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
     CORTEX_M4_SYS_TICK_REG |= (CORTEX_M4_SYS_TICK_MASK);
 
     /* Enable interrupts and return from this function. */
-    RETURN_ENABLING_INTERRUPTS();
+    asm volatile
+    (
+    "   DSB                             \r\n"
+    "   ISB                             \r\n"
+    "   CPSIE       I                   \r\n"
+    "   BX          LR                  \r\n"
+    );
 
 } /* isr_pendsv_handle */

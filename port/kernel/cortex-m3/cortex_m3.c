@@ -187,20 +187,31 @@ ISR_FUN isr_sysclock_handle(void)
  */
 NAKED_ISR_FUN isr_pendsv_handle(void)
 {
+    register int *stack asm ("r2");
+
     /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
+    asm volatile
+    (
+    "   CPSID       I                   \r\n"
+    );
 
     /* Check if need to save last task context. */
     if (last_task)
     {
+        /* Force usage of R2 to store the stack pointer. */
+        stack = (int *)last_task->tos;
+
         /* Save last task context on stack. */
         asm volatile
         (
-        "   MRS     %[sp], PSP              \r\n"
-        "   STMDB   %[sp]!, {R4 - R11}      \r\n"
+        "   MRS     %[sp], PSP          \r\n"
+        "   STMDB   %[sp]!, {R4 - R11}  \r\n"
         :
-        [sp] "=r" (last_task->tos)
+        [sp] "=r" (stack)
         );
+
+        /* Save the stack pointer. */
+        last_task->tos = (uint8_t *)stack;
 
 #ifdef CONFIG_TASK_STATS
         /* Break the task stack pattern. */
@@ -221,10 +232,23 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
     [sp] "r" (current_task->tos)
     );
 
+    /* Clear the priority mask to enable other interrupts. */
+    asm volatile
+    (
+    "   MOVS        R0, #0              \r\n"
+    "   MSR         BASEPRI, R0         \r\n"
+    );
+
     /* Just enable system tick interrupt. */
     CORTEX_M3_SYS_TICK_REG |= CORTEX_M3_SYS_TICK_MASK;
 
     /* Enable interrupts and return from this function. */
-    RETURN_ENABLING_INTERRUPTS();
+    asm volatile
+    (
+    "   DSB                             \r\n"
+    "   ISB                             \r\n"
+    "   CPSIE       I                   \r\n"
+    "   BX          LR                  \r\n"
+    );
 
 } /* isr_pendsv_handle */
