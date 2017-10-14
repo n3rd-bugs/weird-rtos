@@ -87,8 +87,8 @@ static int32_t usart_stm32f103_init(void *data)
     UNUSED_PARAM(data);
 
     /* Reset USART1. */
-    RCC->APB1RSTR |= RCC_APB2Periph_USART1;
-    RCC->APB1RSTR &= (uint32_t)~RCC_APB2Periph_USART1;
+    RCC->APB2RSTR |= RCC_APB2Periph_USART1;
+    RCC->APB2RSTR &= (uint32_t)~RCC_APB2Periph_USART1;
 
     /* Enable clock for USART1. */
     RCC->APB2ENR |= RCC_APB2Periph_USART1;
