@@ -33,10 +33,10 @@
 #define CORTEX_M3_INT_SYS_PRI           (0x1)
 
 /* End of BSS marks the start of system stack. */
-extern uint32_t _ebss;
+extern uint32_t _stack_start;
 
 /* Memory configuration. */
-#define SYSTEM_STACK                    ((uint8_t *)&_ebss)
+#define SYSTEM_STACK                    ((uint8_t *)&_stack_start)
 #define STM32F103_STACK_END             (0x20005000)
 #define SYS_STACK_SIZE                  (STM32F103_STACK_END - (uint32_t)SYSTEM_STACK)
 
