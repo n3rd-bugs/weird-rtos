@@ -245,7 +245,7 @@ static int32_t lcd_an_read_register(LCD_AN *lcd, uint8_t rs, uint8_t *byte)
     sleep_us(LCD_AN_READ_DELAY);
 
     /* Read first 4 bits. */
-    ret_byte = lcd->read_data(lcd) << 4;
+    ret_byte = (uint8_t)(lcd->read_data(lcd) << 4);
 
     /* Clear the LCD data line. */
     lcd->clr_en(lcd);
@@ -289,7 +289,7 @@ static int32_t lcd_an_create_custom_char(LCD_AN *lcd, uint8_t index, uint8_t *bi
     if (status == SUCCESS)
     {
         /* Move to required index in the CGRAM. */
-        status = lcd_an_write_register(lcd, 0, 0x40 + (index << 3));
+        status = lcd_an_write_register(lcd, 0, (uint8_t)(0x40 + (index << 3)));
 
         /* Write the bitmap of the character. */
         for (i = 0; ((status == SUCCESS) && (i < 8)); i++)
@@ -387,13 +387,13 @@ static int32_t lcd_an_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
             case '\t':
 
                 /* Calculate the indent size. */
-                indent_size = LCD_AN_TAB_SIZE - ((lcd->cur_column) % LCD_AN_TAB_SIZE);
+                indent_size = (uint8_t)(LCD_AN_TAB_SIZE - ((lcd->cur_column) % LCD_AN_TAB_SIZE));
 
                 /* Check if we can add required indentation. */
                 if ((lcd->cur_column + indent_size) < lcd->column)
                 {
                     /* Move the cursor to required column. */
-                    lcd->cur_column += indent_size;
+                    lcd->cur_column = (uint16_t)(lcd->cur_column + indent_size);
                 }
                 else
                 {
@@ -410,16 +410,16 @@ static int32_t lcd_an_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
                 switch (lcd->cur_row)
                 {
                 case 0:
-                    address = 0x80 + lcd->cur_column;
+                    address = (uint8_t)(0x80 + lcd->cur_column);
                     break;
                 case 1:
-                    address = 0xc0 + lcd->cur_column;
+                    address = (uint8_t)(0xc0 + lcd->cur_column);
                     break;
                 case 2:
-                    address = 0x94 + lcd->cur_column;
+                    address = (uint8_t)(0x94 + lcd->cur_column);
                     break;
                 case 3:
-                    address = 0xd4 + lcd->cur_column;
+                    address = (uint8_t)(0xd4 + lcd->cur_column);
                     break;
                 default:
                     /* Unsupported row. */
@@ -495,7 +495,7 @@ static int32_t lcd_an_ioctl(void *priv_data, uint32_t cmd, void *param)
         data = (LCD_AN_IOCTL_DATA *)param;
 
         /* Create a custom LCD character. */
-        status = lcd_an_create_custom_char(lcd, data->index,
+        status = lcd_an_create_custom_char(lcd, (uint8_t)data->index,
                                            (uint8_t *)data->param);
 
         break;

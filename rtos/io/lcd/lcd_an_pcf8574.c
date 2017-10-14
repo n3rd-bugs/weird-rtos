@@ -66,7 +66,7 @@ static void lcd_an_pcf8574_set_en(LCD_AN *lcd)
     LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
 
     /* Set the EN pin. */
-    lcd_pcf->gpio.out_data |= (1 << lcd_pcf->en_pin);
+    lcd_pcf->gpio.out_data |= (uint8_t)(1 << lcd_pcf->en_pin);
 
     /* Update the GPIO controller. */
     pcf8574_write(&lcd_pcf->gpio);
@@ -100,7 +100,7 @@ static void lcd_an_pcf8574_set_rs(LCD_AN *lcd)
     LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
 
     /* Set the RS pin. */
-    lcd_pcf->gpio.out_data |= (1 << lcd_pcf->rs_pin);
+    lcd_pcf->gpio.out_data |= (uint8_t)(1 << lcd_pcf->rs_pin);
 
     /* Update the GPIO controller. */
     pcf8574_write(&lcd_pcf->gpio);
@@ -134,7 +134,7 @@ static void lcd_an_pcf8574_set_rw(LCD_AN *lcd)
     LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
 
     /* Set the RW pin. */
-    lcd_pcf->gpio.out_data |= (1 << lcd_pcf->rw_pin);
+    lcd_pcf->gpio.out_data |= (uint8_t)(1 << lcd_pcf->rw_pin);
 
     /* Configure D7, D6, D5, D4 as input. */
     lcd_pcf->gpio.out_mask &= (uint8_t)(~((1 << lcd_pcf->d7_pin) | (1 << lcd_pcf->d6_pin) | (1 << lcd_pcf->d5_pin) | (1 << lcd_pcf->d4_pin)));
@@ -157,7 +157,7 @@ static void lcd_an_pcf8574_clr_rw(LCD_AN *lcd)
     lcd_pcf->gpio.out_data &= (uint8_t)(~(1 << lcd_pcf->rw_pin));
 
     /* Configure D7, D6, D5, D4 as output. */
-    lcd_pcf->gpio.out_mask |= ((1 << lcd_pcf->d7_pin) | (1 << lcd_pcf->d6_pin) | (1 << lcd_pcf->d5_pin) | (1 << lcd_pcf->d4_pin));
+    lcd_pcf->gpio.out_mask |= (uint8_t)((1 << lcd_pcf->d7_pin) | (1 << lcd_pcf->d6_pin) | (1 << lcd_pcf->d5_pin) | (1 << lcd_pcf->d4_pin));
 
     /* Update the GPIO controller. */
     pcf8574_write(&lcd_pcf->gpio);
@@ -177,7 +177,7 @@ static void lcd_an_pcf8574_put_data(LCD_AN *lcd, uint8_t nibble)
     if (nibble & (1 << 0))
     {
         /* Set D4 PIN. */
-        lcd_pcf->gpio.out_data |= (1 << lcd_pcf->d4_pin);
+        lcd_pcf->gpio.out_data |= (uint8_t)(1 << lcd_pcf->d4_pin);
     }
     else
     {
@@ -188,7 +188,7 @@ static void lcd_an_pcf8574_put_data(LCD_AN *lcd, uint8_t nibble)
     if (nibble & (1 << 1))
     {
         /* Set D5 PIN. */
-        lcd_pcf->gpio.out_data |= (1 << lcd_pcf->d5_pin);
+        lcd_pcf->gpio.out_data |= (uint8_t)(1 << lcd_pcf->d5_pin);
     }
     else
     {
@@ -199,7 +199,7 @@ static void lcd_an_pcf8574_put_data(LCD_AN *lcd, uint8_t nibble)
     if (nibble & (1 << 2))
     {
         /* Set D6 PIN. */
-        lcd_pcf->gpio.out_data |= (1 << lcd_pcf->d6_pin);
+        lcd_pcf->gpio.out_data |= (uint8_t)(1 << lcd_pcf->d6_pin);
     }
     else
     {
@@ -210,7 +210,7 @@ static void lcd_an_pcf8574_put_data(LCD_AN *lcd, uint8_t nibble)
     if (nibble & (1 << 3))
     {
         /* Set D7 PIN. */
-        lcd_pcf->gpio.out_data |= (1 << lcd_pcf->d7_pin);
+        lcd_pcf->gpio.out_data |= (uint8_t)(1 << lcd_pcf->d7_pin);
     }
     else
     {

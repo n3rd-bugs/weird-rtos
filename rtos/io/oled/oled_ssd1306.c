@@ -72,7 +72,7 @@ int32_t oled_ssd1306_register(SSD1306 *oled)
         if (status == SUCCESS)
         {
             /* Set multiplex to the height of OLED. */
-            status = oled_ssd1306_command(oled, oled->height - 1);
+            status = oled_ssd1306_command(oled, (uint8_t)(oled->height - 1));
         }
     }
 
@@ -262,7 +262,7 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
         if (status == SUCCESS)
         {
             /* Set the column end address. */
-            status = oled_ssd1306_command(oled, (col + num_col) - 1);
+            status = oled_ssd1306_command(oled, (uint8_t)((col + num_col) - 1));
         }
     }
 
@@ -281,7 +281,7 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
         if (status == SUCCESS)
         {
             /* Set the page end address. */
-            status = oled_ssd1306_command(oled, ((row + num_row) / 8) - 1);
+            status = oled_ssd1306_command(oled, (uint8_t)(((row + num_row) / 8) - 1));
         }
     }
 
@@ -315,7 +315,7 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
             }
 
             /* Copy buffer data. */
-            memcpy(&display_buffer[1], &buffer[i], this_bytes);
+            memcpy(&display_buffer[1], &buffer[i], (uint8_t)this_bytes);
 
             /* Send this chunk on I2C bus. */
             status = i2c_message(&oled->i2c, &msg, 1);

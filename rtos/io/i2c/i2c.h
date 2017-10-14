@@ -50,8 +50,7 @@ struct _i2c_device
     uint8_t     address;
 
     /* Structure padding. */
-    uint8_t     pad[2];
-
+    uint8_t     pad[3];
 };
 
 /* I2C message structure. */

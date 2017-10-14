@@ -63,6 +63,9 @@ typedef struct _ssd1306
     /* Flags. */
     uint8_t     flags;
 
+    /* Structure padding. */
+    uint8_t     pad[1];
+
 } SSD1306;
 
 /* Function prototypes. */
