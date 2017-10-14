@@ -260,10 +260,10 @@ void util_print_sys_info(void)
         printf(str);
         P_STR_NCPY(str, P_STR("\t%lu\t%lu\t%lu\t"), sizeof(str));
         printf(str, tcb->stack_size, stack_free, tcb->stack_size - stack_free);
-        P_STR_NCPY(str, P_STR("%li\t%lu\t%lut"), sizeof(str));
+        P_STR_NCPY(str, P_STR("%li\t%lu\t%lu\t"), sizeof(str));
         printf(str, tcb->status, tcb->scheduled, tcb->tick_sleep);
 #ifdef CONFIG_TASK_USAGE
-        P_STR_NCPY(str, P_STR("\t%lu"), sizeof(str));
+        P_STR_NCPY(str, P_STR("%lu"), sizeof(str));
         printf(str, usage);
 #endif /* CONFIG_TASK_USAGE */
         if (tcb == get_current_task())
