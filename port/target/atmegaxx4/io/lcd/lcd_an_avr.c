@@ -57,10 +57,10 @@ static LCD_AN_PCF8574 avr_lcd_an =
     {
         .i2c =
         {
-            .data      = &avr_lcd_i2c,
-            .init      = &i2c_bb_avr_init,
-            .msg       = &i2c_bb_avr_message,
-            .address   = LCD_AN_AVR_I2C_ADDRESS,
+            .data       = &avr_lcd_i2c,
+            .init       = &i2c_bb_avr_init,
+            .msg        = &i2c_bb_avr_message,
+            .address    = LCD_AN_AVR_I2C_ADDRESS,
         },
     },
 
