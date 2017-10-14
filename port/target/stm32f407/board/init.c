@@ -115,7 +115,7 @@ NAKED_FUN system_entry(void)
 {
 #ifdef CONFIG_TASK_STATS
     register uint32_t sp asm ("sp");
-    uint8_t *stack = (uint8_t *)&_ebss;
+    uint8_t *stack = (uint8_t *)SYSTEM_STACK;
 #endif /* CONFIG_TASK_STATS */
 
     /* Adjust system vector table pointer. */

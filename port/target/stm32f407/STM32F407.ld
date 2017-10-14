@@ -8,6 +8,8 @@ MEMORY
     m_cram          (RX): ORIGIN = 0x10000000, LENGTH = 0x00010000
 }
 
+heap_size = 512;
+
 SECTIONS
 {
     . = ALIGN(4);
@@ -53,6 +55,17 @@ SECTIONS
         . = ALIGN(4);
         _ebss = .;
 
-        PROVIDE ( end = .);
+    } > m_data
+
+    . = ALIGN(4);
+    .heap :
+    {
+        PROVIDE(end = .);
+        PROVIDE(_heap_start = .);
+
+        . = . + heap_size;
+
+        PROVIDE(_heap_end = .);
+        PROVIDE(_stack_start = .);
     } > m_data
 }
