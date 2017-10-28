@@ -17,14 +17,47 @@
 
 #ifdef CONFIG_I2C
 #include <i2c.h>
+#ifdef STM_I2C_INT_MODE
+#include <condition.h>
+#endif /* STM_I2C_INT_MODE */
 
 /* I2C configuration. */
 #ifndef CMAKE_BUILD
-#define STM_I2C_WAIT        (250)
+//#define STM_I2C_BUSY_YIELD
+#define STM_I2C_INT_TIMEOUT         50
+//#define STM_I2C_INT_MODE
 #endif /* CMAKE_BUILD */
 
+/* I2C error flags. */
+#define I2C_STM32_NACK              0x01
+#define I2C_STM32_ERROR             0x02
+
 /* Helper macros. */
-#define I2C_STM_IS_EVENT(i2c, event)    ((((uint32_t)(i2c)->i2c_reg->SR1 | ((uint32_t)(i2c)->i2c_reg->SR2 << 16)) & event) == event)
+#ifdef STM_I2C_BUSY_YIELD
+#define I2C_STM_TIMED(expression)   {                                                                                                   \
+                                        timeout = current_system_tick();                                                                \
+                                        while ((expression) && ((current_system_tick() - timeout) < MS_TO_TICK(STM_I2C_INT_TIMEOUT)))   \
+                                        {                                                                                               \
+                                            task_yield();                                                                               \
+                                        }                                                                                               \
+                                        if ((current_system_tick() - timeout) >= MS_TO_TICK(STM_I2C_INT_TIMEOUT))                       \
+                                        {                                                                                               \
+                                            status = I2C_TIMEOUT;                                                                       \
+                                        }                                                                                               \
+                                    }
+#else
+#define I2C_STM_TIMED(expression)   {                                                                                                   \
+                                        timeout = current_system_tick();                                                                \
+                                        while ((expression) && ((current_system_tick() - timeout) < MS_TO_TICK(STM_I2C_INT_TIMEOUT)))   \
+                                        {                                                                                               \
+                                            ;                                                                                           \
+                                        }                                                                                               \
+                                        if ((current_system_tick() - timeout) >= MS_TO_TICK(STM_I2C_INT_TIMEOUT))                       \
+                                        {                                                                                               \
+                                            status = I2C_TIMEOUT;                                                                       \
+                                        }                                                                                               \
+                                    }
+#endif /* STM_I2C_BUSY_YIELD */
 
 /* STM32F103 I2C configuration structure. */
 typedef struct _i2c_stm
@@ -35,17 +68,43 @@ typedef struct _i2c_stm
     /* Speed for I2C device.  */
     uint32_t    speed;
 
+#ifdef STM_I2C_INT_MODE
+    /* I2C message being sent. */
+    I2C_MSG     *msg;
+
+    /* Condition to suspend on the interrupt. */
+    CONDITION   condition;
+
+    /* Suspend criteria. */
+    SUSPEND     suspend;
+#endif /* STM_I2C_INT_MODE */
+
     /* I2C device number. */
     uint8_t     device_num;
 
+#ifdef STM_I2C_INT_MODE
+    /* Number of bytes to be sent. */
+    uint8_t     bytes_transfered;
+
+    /* Error flags. */
+    uint8_t     flags;
+
+    /* Structure padding. */
+    uint8_t     pad[1];
+#else
     /* Structure padding. */
     uint8_t     pad[3];
+#endif /* STM_I2C_INT_MODE */
 
 } I2C_STM32;
 
 /* Function prototypes. */
 void i2c_stm32f103_init(I2C_DEVICE *);
 int32_t i2c_stm32f103_message(I2C_DEVICE *, I2C_MSG *);
+#ifdef STM_I2C_INT_MODE
+ISR_FUN i2c1_event_interrupt(void);
+ISR_FUN i2c1_error_interrupt(void);
+#endif /* STM_I2C_INT_MODE */
 
 #endif /* CONFIG_I2C */
 #endif /* _I2C_STM32F103_H_ */
