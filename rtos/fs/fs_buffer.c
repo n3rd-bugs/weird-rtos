@@ -25,7 +25,7 @@
 /* Internal function prototypes. */
 static uint8_t fs_buffer_do_suspend(void *, void *);
 static uint8_t fs_buffer_do_resume(void *, void *);
-static int32_t fs_buffer_suspend(FD, uint32_t, uint32_t);
+static int32_t fs_buffer_suspend(FD, uint32_t, uint32_t, uint32_t);
 
 /*
  * fs_buffer_dataset
@@ -288,7 +288,7 @@ static uint8_t fs_buffer_do_suspend(void *data, void *suspend_data)
     case FS_BUFFER_ONE_FREE:
 
         /* Check if we have required number of buffers. */
-        if (fs->buffer->free_buffer_list.buffers > param->num_buffers)
+        if (fs->buffer->free_buffer_list.buffers >= param->num_buffers)
         {
             /* Don't need to suspend. */
             do_suspend = FALSE;
@@ -300,7 +300,7 @@ static uint8_t fs_buffer_do_suspend(void *data, void *suspend_data)
     case FS_BUFFER_LIST:
 
         /* Check if we have required number of buffers. */
-        if (fs->buffer->buffers_list.buffers > param->num_buffers)
+        if (fs->buffer->buffers_list.buffers >= param->num_buffers)
         {
             /* Don't need to suspend. */
             do_suspend = FALSE;
@@ -330,7 +330,7 @@ static uint8_t fs_buffer_do_resume(void *param_resume, void *param_suspend)
     uint8_t resume = FALSE;
 
     /* Check if we have the number of buffers we were waiting for. */
-    if (fs_resume->num_buffers > fs_suspend->num_buffers)
+    if (fs_resume->num_buffers >= fs_suspend->num_buffers)
     {
         /* Resume this task. */
         resume = TRUE;
@@ -382,11 +382,12 @@ void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_
  * @type: Type of buffer needed to be added.
  *  FS_BUFFER_ONE_FREE: If a free buffer is needed.
  *  FS_BUFFER_LIST: If a list buffer is needed.
+ * @num_buffers: Number of buffer we would wait.
  * @flags: Operation flags.
  *  FS_BUFFER_TH: We need to maintain threshold while allocating a buffer.
  * This function will suspend on a buffer condition.
  */
-static int32_t fs_buffer_suspend(FD fd, uint32_t type, uint32_t flags)
+static int32_t fs_buffer_suspend(FD fd, uint32_t type, uint32_t num_buffers, uint32_t flags)
 {
     FS_BUFFER_DATA *data = ((FS *)fd)->buffer;
     SUSPEND buffer_suspend, *suspend_ptr = &buffer_suspend;
@@ -400,7 +401,7 @@ static int32_t fs_buffer_suspend(FD fd, uint32_t type, uint32_t flags)
 #endif
 
     /* Get buffer condition. */
-    fs_buffer_condition_get(fd, &condition, suspend_ptr, &param, ((flags & FS_BUFFER_TH) ? ((type == FS_BUFFER_ONE_FREE) ? data->threshold_buffers : data->threshold_lists) : 0), type);
+    fs_buffer_condition_get(fd, &condition, suspend_ptr, &param, ((flags & FS_BUFFER_TH) ? ((type == FS_BUFFER_ONE_FREE) ? data->threshold_buffers : data->threshold_lists) : 0) + num_buffers, type);
 
     /* We are already in the locked state. */
     status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
@@ -751,10 +752,10 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
         {
             /* Suspend if required on this buffer. */
             /* Check if we have required number of buffers. */
-            if (data->free_buffer_list.buffers <= ((flags & FS_BUFFER_TH) ? data->threshold_buffers : 0))
+            if (data->free_buffer_list.buffers < (((flags & FS_BUFFER_TH) ? data->threshold_buffers : 0) + 1))
             {
                 /* Suspend to wait for buffers. */
-                status = fs_buffer_suspend(fd, type, flags);
+                status = fs_buffer_suspend(fd, type, 1, flags);
             }
         }
 
@@ -853,10 +854,10 @@ FS_BUFFER *fs_buffer_get(FD fd, uint32_t type, uint32_t flags)
         if (flags & FS_BUFFER_SUSPEND)
         {
             /* Check if we have required number of buffers. */
-            if (data->buffers_list.buffers <= ((flags & FS_BUFFER_TH) ? data->threshold_lists : 0))
+            if (data->buffers_list.buffers < (((flags & FS_BUFFER_TH) ? data->threshold_lists : 0) + 1))
             {
                 /* Suspend to wait for buffers. */
-                status = fs_buffer_suspend(fd, type, flags);
+                status = fs_buffer_suspend(fd, type, 1, flags);
             }
         }
 
@@ -1058,7 +1059,7 @@ int32_t fs_buffer_pull_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
                 buffer->total_length = (buffer->total_length - this_size);
             }
 
-            /* If we are not pulling data in place. */
+            /* If we are pulling data in place. */
             if (flags & FS_BUFFER_INPLACE)
             {
                 /* Reset the offset as this will not be required for next buffers. */
@@ -1097,11 +1098,18 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
 {
     int32_t status = SUCCESS;
     FS_BUFFER_ONE *one = NULL;
-    uint32_t this_size, this_offset = offset;
+    uint32_t this_size, num_buffers, this_offset = offset;
+    FS_BUFFER_DATA *buffer_data = ((FS *)buffer->fd)->buffer;
 #ifdef LITTLE_ENDIAN
     uint8_t reverse = (uint8_t)(((flags & FS_BUFFER_PACKED) != 0) ^ (((flags & FS_BUFFER_HEAD) != 0) && ((flags & FS_BUFFER_UPDATE) == 0) && (offset == 0)));
 #endif
     uint8_t *from;
+#ifdef FS_BUFFER_DEBUG
+    uint8_t should_not_fail = FALSE;
+#endif /* FS_BUFFER_DEBUG */
+
+    /* Should never happen. */
+    ASSERT(data == NULL);
 
     /* If an offset was given. */
     if (offset != 0)
@@ -1144,6 +1152,110 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
         {
             /* There is no space in this buffer. */
             status = FS_BUFFER_NO_SPACE;
+        }
+    }
+
+    /* If we have some data to copy. */
+    if ((status == SUCCESS) && (size > 0))
+    {
+        /* Reset the required number of buffers. */
+        num_buffers = 0;
+
+        /* If we need to push data on the head. */
+        if (flags & FS_BUFFER_HEAD)
+        {
+            /* If we are not updating the existing value. */
+            if ((flags & FS_BUFFER_UPDATE) == 0)
+            {
+                /* Pick the head buffer. */
+                one = buffer->list.head;
+                this_size =  0;
+
+                /* If we have a one buffer and there is some space on it. */
+                if ((one) && (FS_BUFFER_SPACE(one) > 0))
+                {
+                    /* Pick the number of bytes we can copy on this buffer. */
+                    this_size = FS_BUFFER_SPACE(one);
+
+                    /* If we have more space then we require. */
+                    if (this_size > size)
+                    {
+                        /* Copy the required amount of data. */
+                        this_size = size;
+                    }
+                }
+
+                /* If we have more data to copy. */
+                if ((size - this_size) > 0)
+                {
+                    /* Calculate the required number of buffers. */
+                    num_buffers += CEIL_DIV((size - this_size), buffer_data->buffer_size);
+                }
+            }
+        }
+
+        else
+        {
+            /* Pick the tail buffer. */
+            one = buffer->list.tail;
+            this_size =  0;
+
+            /* If we have a one buffer and there is some space on it. */
+            if ((one) && (FS_BUFFER_TAIL_ROOM(one) > 0))
+            {
+                /* Pick the number of bytes we can copy on this buffer. */
+                this_size = FS_BUFFER_TAIL_ROOM(one);
+
+                /* If we have more space then we require. */
+                if (this_size > size)
+                {
+                    /* Copy the required amount of data. */
+                    this_size = size;
+                }
+            }
+
+            /* If we have more data to copy. */
+            if ((size - this_size) > 0)
+            {
+                /* Calculate the required number of buffers. */
+                num_buffers += CEIL_DIV((size - this_size), buffer_data->buffer_size);
+            }
+        }
+
+        /* If we will need to allocate buffers. */
+        if (num_buffers > 0)
+        {
+            /* Check if we don't have the required number of buffers. */
+            if (buffer_data->free_buffer_list.buffers < (((flags & FS_BUFFER_TH) ? buffer_data->threshold_buffers : 0) + num_buffers))
+            {
+                /* If we can suspend on buffers. */
+                if (flags & FS_BUFFER_SUSPEND)
+                {
+                    /* Suspend to wait for buffers to become available. */
+                    status = fs_buffer_suspend(buffer->fd, FS_BUFFER_ONE_FREE, num_buffers, flags);
+                }
+                else
+                {
+                    /* There is no space on the file descriptor. */
+                    status = FS_BUFFER_NO_SPACE;
+                }
+            }
+        }
+
+        /* If required buffers were successfully allocated. */
+        if (status == SUCCESS)
+        {
+#ifdef FS_BUFFER_DEBUG
+            /* If we would wait for the buffer. */
+            if (flags & FS_BUFFER_SUSPEND)
+            {
+                /* We should never fail. */
+                should_not_fail = TRUE;
+            }
+#endif /* FS_BUFFER_DEBUG */
+
+            /* Never suspend on buffers afterwards. */
+            flags &= (uint8_t)~(FS_BUFFER_SUSPEND);
         }
     }
 
@@ -1299,6 +1411,15 @@ int32_t fs_buffer_push_offset(FS_BUFFER *buffer, void *data, uint32_t size, uint
             }
         }
     }
+
+#ifdef FS_BUFFER_DEBUG
+    /* If we failed. */
+    if (status != SUCCESS)
+    {
+        /* Test if we should not have failed. */
+        ASSERT(should_not_fail);
+    }
+#endif
 
     /* Return status to the caller. */
     return (status);

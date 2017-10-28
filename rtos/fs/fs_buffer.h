@@ -59,31 +59,34 @@ struct _fs_buffer_one
     uint32_t    length;
 };
 
+/* List of one buffers. */
+typedef struct _fs_buffer_list
+{
+    FS_BUFFER_ONE   *head;
+    FS_BUFFER_ONE   *tail;
+} FS_BUFFER_ONE_LIST;
+
 /* File system buffer structure. */
 struct _fs_buffer
 {
     /* Buffer list member. */
-    FS_BUFFER   *next;
+    FS_BUFFER           *next;
 
     /* List of buffers in this chain. */
-    struct _fs_buffer_list
-    {
-        FS_BUFFER_ONE   *head;
-        FS_BUFFER_ONE   *tail;
-    } list;
+    FS_BUFFER_ONE_LIST  list;
 
     /* Total length of buffers. */
-    uint32_t    total_length;
+    uint32_t            total_length;
 
     /* File descriptor from which this chain was allocated. */
-    FD          fd;
+    FD                  fd;
 
     /* If set this function will be called to submit this buffer back to
      * the user. */
     FS_RETURN_BUFFER    *free;
 
     /* Private data to be passed to the user. */
-    void        *free_data;
+    void                *free_data;
 
 };
 
@@ -104,7 +107,7 @@ typedef struct _fs_buffer_data
         FS_BUFFER   *head;
         FS_BUFFER   *tail;
 #ifdef FS_BUFFER_DEBUG
-        uint32_t        buffers;
+        uint32_t    buffers;
 #endif
     } tx_buffer_list;
 
@@ -114,7 +117,7 @@ typedef struct _fs_buffer_data
         FS_BUFFER   *head;
         FS_BUFFER   *tail;
 #ifdef FS_BUFFER_DEBUG
-        uint32_t        buffers;
+        uint32_t    buffers;
 #endif
     } rx_buffer_list;
 
@@ -149,7 +152,7 @@ typedef struct _fs_buffer_data
  * buffer. */
 typedef struct _fs_buffer_param
 {
-    /* Number of buffers or which we are waiting. */
+    /* Number of buffers for which we are waiting. */
     uint32_t    num_buffers;
 
     /* Type of buffer for which we are waiting. */
@@ -181,7 +184,6 @@ void fs_buffer_add_list(FS_BUFFER *, uint32_t, uint32_t);
 void fs_buffer_add_buffer_list(FS_BUFFER *, uint32_t, uint32_t);
 void fs_buffer_add(FD, void *, uint32_t, uint32_t);
 FS_BUFFER *fs_buffer_get(FD, uint32_t, uint32_t);
-
 
 /* File system buffer manipulation APIs. */
 #define fs_buffer_pull(b, d, l, f)      fs_buffer_pull_offset((b), (d), (l), 0, (f))
