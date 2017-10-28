@@ -412,7 +412,7 @@ int32_t pipe_read(void *fd, uint8_t *buffer, int32_t size)
             part_size = (uint32_t)nbytes;
         }
 
-        /* Copy data for the pipe in to the giver buffer. */
+        /* Copy data for the pipe in to the given buffer. */
         memcpy(buffer, (char *)(message + 1), part_size);
         memcpy(buffer + part_size, pipe->data, (uint32_t)nbytes - part_size);
 

@@ -428,7 +428,7 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
         /* Enable preemption. */
         scheduler_unlock();
 
-        /* Lock all conditions except the one which caused an error.  */
+        /* Lock all conditions except the one which caused an error. */
         suspend_lock_condition(condition, num_conditions, ((task_status != TASK_RESUME) && (task_status != TASK_RESUME_SLEEP)) ? resume_condition : NULL);
 
         /* Check if we are resumed due to a timeout. */

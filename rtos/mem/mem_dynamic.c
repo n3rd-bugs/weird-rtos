@@ -336,7 +336,7 @@ static uint8_t mem_dynamic_get_max(void *node, void *param)
  * mem_dynamic_alloc_region
  * @mem_dynamic: Dynamic memory descriptor to be used to allocate this memory.
  * @size: Size of memory to be allocated.
- * This function will allocate a memory from the giver memory region.
+ * This function will allocate a memory from the given memory region.
  */
 uint8_t *mem_dynamic_alloc_region(MEM_DYNAMIC *mem_dynamic, uint32_t size)
 {

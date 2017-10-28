@@ -217,7 +217,7 @@ static int32_t serial_read(void *fs, uint8_t *buf, int32_t nbytes)
  * serial_assert_puts
  * @buffer: Buffer to be printed on the debug serial.
  * @nbytes: Number of bytes to be printed.
- * This function prints a giver buffer on the debug serial, this is usually
+ * This function prints a given buffer on the debug serial, this is usually
  * called from the context of the assert.
  */
 void serial_assert_puts(uint8_t *buffer, int32_t nbytes)

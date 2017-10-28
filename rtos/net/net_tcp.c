@@ -575,7 +575,7 @@ static int32_t tcp_add_options(FS_BUFFER *buffer, TCP_PORT *port, uint8_t opt_fl
 /*
  * tcp_timer_register
  * @port: TCP port for which timer is needed to be registered.
- * This function will register timer for giver TCP port.
+ * This function will register timer for given TCP port.
  */
 static void tcp_timer_register(TCP_PORT *port)
 {

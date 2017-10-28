@@ -218,7 +218,7 @@ void usart0_handle_rx_interrupt(void)
 
 /*
  * usart_avr_enable_interrupt.
- * This function will enable interrupts for the giver USART.
+ * This function will enable interrupts for the given USART.
  */
 static void usart_avr_enable_interrupt(void *data)
 {
@@ -233,7 +233,7 @@ static void usart_avr_enable_interrupt(void *data)
 
 /*
  * usart_avr_disable_interrupt.
- * This function will disable interrupts for the giver USART.
+ * This function will disable interrupts for the given USART.
  */
 static void usart_avr_disable_interrupt(void *data)
 {
