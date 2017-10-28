@@ -35,23 +35,24 @@ static uint8_t lcd_an_pcf8574_read_data(LCD_AN *);
 void lcd_an_pcf8574_init(LCD_AN_PCF8574 *lcd_an)
 {
     /* Initialize GPIO controller. */
-    pcf8574_init(&lcd_an->gpio);
+    if (pcf8574_init(&lcd_an->gpio) == SUCCESS)
+    {
+        /* Set driver hooks. */
+        lcd_an->lcd.set_en     = &lcd_an_pcf8574_set_en;
+        lcd_an->lcd.clr_en     = &lcd_an_pcf8574_clr_en;
+        lcd_an->lcd.set_rs     = &lcd_an_pcf8574_set_rs;
+        lcd_an->lcd.clr_rs     = &lcd_an_pcf8574_clr_rs;
+        lcd_an->lcd.set_rw     = &lcd_an_pcf8574_set_rw;
+        lcd_an->lcd.clr_rw     = &lcd_an_pcf8574_clr_rw;
+        lcd_an->lcd.put_data   = &lcd_an_pcf8574_put_data;
+        lcd_an->lcd.read_data  = &lcd_an_pcf8574_read_data;
 
-    /* Set driver hooks. */
-    lcd_an->lcd.set_en     = &lcd_an_pcf8574_set_en;
-    lcd_an->lcd.clr_en     = &lcd_an_pcf8574_clr_en;
-    lcd_an->lcd.set_rs     = &lcd_an_pcf8574_set_rs;
-    lcd_an->lcd.clr_rs     = &lcd_an_pcf8574_clr_rs;
-    lcd_an->lcd.set_rw     = &lcd_an_pcf8574_set_rw;
-    lcd_an->lcd.clr_rw     = &lcd_an_pcf8574_clr_rw;
-    lcd_an->lcd.put_data   = &lcd_an_pcf8574_put_data;
-    lcd_an->lcd.read_data  = &lcd_an_pcf8574_read_data;
+        /* Configure all pins as output and high. */
+        lcd_an->gpio.out_mask = lcd_an->gpio.out_data = 0xFF;
 
-    /* Configure all pins as output and high. */
-    lcd_an->gpio.out_mask = lcd_an->gpio.out_data = 0xFF;
-
-    /* Register PCF8574 LCD device. */
-    lcd_an_register(&lcd_an->lcd);
+        /* Register PCF8574 LCD device. */
+        lcd_an_register(&lcd_an->lcd);
+    }
 
 } /* lcd_pcf8574_init */
 
