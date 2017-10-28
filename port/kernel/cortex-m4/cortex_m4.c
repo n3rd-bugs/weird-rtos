@@ -57,10 +57,10 @@ void stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
     init_soft_stack_frame = (software_stack_farme *)(tcb->tos);
     init_soft_stack_frame->r14 = 0xFFFFFFFD;
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     /* Break the task stack pattern. */
     *(tcb->tos - 1) = 0x00;
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 
 } /* stack_init */
 
@@ -230,10 +230,10 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
         [sp] "=r" (last_task->tos)
         );
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
         /* Break the task stack pattern. */
         *(last_task->tos - 1) = 0x00;
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
     }
 
     /* Clear the last task. */

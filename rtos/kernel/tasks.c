@@ -34,12 +34,12 @@ void task_create(TASK *tcb, P_STR_T name, uint8_t *stack, uint32_t stack_size, T
     /* Clear the task structure. */
     memset(tcb, 0, sizeof(TASK));
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     /* If user has provided a task name. */
     tcb->name = name;
 
     /* Fill the task stack with a pre-defined constant. */
-    memset(stack, CONFIG_STACK_PATTERN, stack_size);
+    memset(stack, TASK_STACK_PATTERN, stack_size);
 
     /* Store the stack information for this task. */
     tcb->stack_size = stack_size;
@@ -49,7 +49,7 @@ void task_create(TASK *tcb, P_STR_T name, uint8_t *stack, uint32_t stack_size, T
     UNUSED_PARAM(name);
     UNUSED_PARAM(stack);
     UNUSED_PARAM(stack_size);
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 
     /* Initialize task information. */
     tcb->entry = entry;

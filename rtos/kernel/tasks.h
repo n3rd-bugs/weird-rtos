@@ -18,9 +18,9 @@
 
 /* Task configuration. */
 #ifndef CMAKE_BUILD
-//#define CONFIG_TASK_STATS
-#define CONFIG_TASK_USAGE
-#define CONFIG_STACK_PATTERN    'A'
+//#define TASK_STATS
+#define TASK_USAGE
+#define TASK_STACK_PATTERN  'A'
 #endif /* CMAKE_BUILD */
 
 /* These defines different task flags. */
@@ -34,13 +34,13 @@ typedef void TASK_ENTRY (void *argv);
 typedef struct _task TASK;
 struct _task
 {
-#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
+#if (defined(TASK_STATS) && defined(TASK_USAGE))
     /* Number of ticks this task was scheduled. */
     uint64_t    total_active_ticks;
 
     /* Tick at which this task was last scheduled. */
     uint64_t    last_active_tick;
-#endif /* (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE)) */
+#endif /* (defined(TASK_STATS) && defined(TASK_USAGE)) */
 
     /* Task entry function. */
     TASK_ENTRY  *entry;
@@ -51,7 +51,7 @@ struct _task
     /* Task list member. */
     TASK        *next;
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     /* Number of times this task was scheduled. */
     uint32_t    scheduled;
 
@@ -66,7 +66,7 @@ struct _task
 
     /* Name for this task. */
     P_STR_T     name;
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 
     /* This holds current stack pointer of this task. */
     uint8_t     *tos;

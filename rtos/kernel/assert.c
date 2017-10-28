@@ -61,10 +61,10 @@ void system_assert(int32_t code, char *file, uint32_t line, TASK *task)
     serial_assert_puts((uint8_t *)"\r\n", 0);
 #endif /* ASSERT_FILE_INFO */
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     /* Print current system information. */
     util_print_sys_info_assert();
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 #endif /* CONFIG_SERIAL */
 
     /* For now there are no recovery mechanisms defined. */

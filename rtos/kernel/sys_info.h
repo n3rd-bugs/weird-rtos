@@ -12,10 +12,9 @@
  */
 #ifndef _SYS_INFO_H_
 #define _SYS_INFO_H_
-
 #include <kernel.h>
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
 #ifdef CONFIG_FS
 #include <fs.h>
 #endif
@@ -35,6 +34,5 @@ void util_print_sys_info_assert(void);
 int32_t util_print_sys_info_buffer(FS_BUFFER *);
 #endif
 
-#endif /* CONFIG_TASK_STATS */
-
+#endif /* TASK_STATS */
 #endif /* _SYS_INFO_H_ */

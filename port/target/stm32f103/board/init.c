@@ -107,10 +107,10 @@ void sysclock_init(void)
  */
 NAKED_FUN system_entry(void)
 {
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     register uint32_t sp asm ("sp");
     uint8_t *stack = (uint8_t *)SYSTEM_STACK;
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 
     /* Adjust system vector table pointer. */
     SCB->VTOR = (uint32_t)(&system_isr_table);
@@ -145,18 +145,18 @@ NAKED_FUN system_entry(void)
     "   bcc     CLEAR_REGION    \r\n"
     );
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     /* Load a predefined pattern on the system stack until we hit the
      * stack pointer. */
     while ((uint8_t *)sp > stack)
     {
         /* Load a predefined pattern. */
-        *(stack++) = CONFIG_STACK_PATTERN;
+        *(stack++) = TASK_STACK_PATTERN;
     }
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 
     /* Initialize IO. */
-    io_arm_init();
+    rtl_arm_init();
 
     /* Initialize system clock. */
     sysclock_init();

@@ -78,13 +78,13 @@ extern uint32_t current_tick;
                                     CPU_ISR_EXIT();
 #endif
 
-#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
+#if (defined(TASK_STATS) && defined(TASK_USAGE))
 #define MARK_ENTRY()                mark_task_entry()
 #define MARK_EXIT()                 mark_task_exit()
 #else
 #define MARK_ENTRY()
 #define MARK_EXIT()
-#endif /*  (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE)) */
+#endif /*  (defined(TASK_STATS) && defined(TASK_USAGE)) */
 
 #define ISR_ENTER()                 CPU_ISR_ENTER();                            \
                                     return_task = get_current_task();           \
@@ -110,9 +110,9 @@ void kernel_run(void);
 void task_yield(void);
 uint32_t current_system_tick(void);
 
-#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
+#if (defined(TASK_STATS) && defined(TASK_USAGE))
 void mark_task_entry(void);
 void mark_task_exit(void);
-#endif /*  (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE)) */
+#endif /*  (defined(TASK_STATS) && defined(TASK_USAGE)) */
 
 #endif /* _KERNEL_H_ */

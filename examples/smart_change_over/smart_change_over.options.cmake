@@ -22,8 +22,8 @@ setup_option(IDLE_TASK_STACK_SIZE 196)
 setup_option(SOFT_TICKS_PER_SEC 10)
 
 # Setup task options.
-setup_option(CONFIG_TASK_STATS ON)
-setup_option(CONFIG_TASK_USAGE ON)
+setup_option(TASK_STATS ON)
+setup_option(TASK_USAGE ON)
 
 # Setup enc28j60 configurations.
 setup_option(ENC28J60_MAX_BUFFER_SIZE 64)

@@ -17,13 +17,13 @@
 #include <serial.h>
 #endif /* CONFIG_SERIAL */
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
 #ifdef CONFIG_FS
 #include <fs.h>
 #endif
 #include <string.h>
 
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
 /* Number of ticks system context was active. */
 static uint64_t sys_total_active_ticks;
 
@@ -159,7 +159,7 @@ uint64_t usage_calculate(TASK *task, uint64_t scale)
     return (usage);
 
 } /* usage_calculate */
-#endif /* CONFIG_TASK_USAGE */
+#endif /* TASK_USAGE */
 
 /*
  * util_task_calc_free_stack
@@ -175,7 +175,7 @@ uint32_t util_task_calc_free_stack(TASK *tcb)
 
     /* Calculate the number of bytes intact on this task's
      * stack. */
-    while (tcb->stack_start[free] == CONFIG_STACK_PATTERN)
+    while (tcb->stack_start[free] == TASK_STACK_PATTERN)
     {
         free ++;
     }
@@ -195,7 +195,7 @@ uint32_t util_system_calc_free_stack(void)
     uint32_t free = 0;
 
     /* Calculate the number of bytes intact on the system stack. */
-    while (SYSTEM_STACK[free] == CONFIG_STACK_PATTERN)
+    while (SYSTEM_STACK[free] == TASK_STACK_PATTERN)
     {
         free ++;
     }
@@ -216,9 +216,9 @@ void util_print_sys_info(void)
     TASK *tcb = sch_task_list.head;
     uint32_t stack_free;
     char str[16];
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
     uint32_t usage;
-#endif /* CONFIG_TASK_USAGE */
+#endif /* TASK_USAGE */
 
     /* Print current system tick. */
     P_STR_NCPY(str, P_STR("System tick: "), sizeof(str));
@@ -235,10 +235,10 @@ void util_print_sys_info(void)
     printf(str);
     P_STR_NCPY(str, P_STR("s(T)"), sizeof(str));
     printf(str);
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
     P_STR_NCPY(str, P_STR("\tCPU(%%)"), sizeof(str));
     printf(str);
-#endif /* CONFIG_TASK_USAGE */
+#endif /* TASK_USAGE */
     P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
     printf(str);
 
@@ -248,10 +248,10 @@ void util_print_sys_info(void)
         /* Calculate number of bytes still intact on the task's stack. */
         stack_free = util_task_calc_free_stack(tcb);
 
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
         /* Calculate % CPU usage for this task. */
         usage = (uint32_t)usage_calculate(tcb, 100);
-#endif /* CONFIG_TASK_USAGE */
+#endif /* TASK_USAGE */
 
         /* Print task information. */
         P_STR_NCPY(str, tcb->name, (P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name));
@@ -261,10 +261,10 @@ void util_print_sys_info(void)
         printf(str, tcb->stack_size, stack_free, tcb->stack_size - stack_free);
         P_STR_NCPY(str, P_STR("%li\t%lu\t%lu\t"), sizeof(str));
         printf(str, tcb->status, tcb->scheduled, tcb->tick_sleep);
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
         P_STR_NCPY(str, P_STR("%lu"), sizeof(str));
         printf(str, usage);
-#endif /* CONFIG_TASK_USAGE */
+#endif /* TASK_USAGE */
         if (tcb == get_current_task())
         {
             P_STR_NCPY(str, P_STR("\t<Running>"), sizeof(str));
@@ -281,20 +281,20 @@ void util_print_sys_info(void)
     /* Get number of bytes free on the system stack. */
     stack_free = util_system_calc_free_stack();
 
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
     /* Calculate % CPU usage for system. */
     usage = (uint32_t)usage_calculate(NULL, 100);
-#endif /* CONFIG_TASK_USAGE */
+#endif /* TASK_USAGE */
 
     /* Print system stack information. */
     P_STR_NCPY(str, P_STR("SYSTEM\t%lu\t"), sizeof(str));
     printf(str, (uint32_t)SYS_STACK_SIZE);
     P_STR_NCPY(str, P_STR("%lu\t%lu\t-\t-\t-"), sizeof(str));
     printf(str, stack_free, SYS_STACK_SIZE - stack_free);
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
     P_STR_NCPY(str, P_STR("\t%lu"), sizeof(str));
     printf(str, usage);
-#endif /* CONFIG_TASK_USAGE */
+#endif /* TASK_USAGE */
     P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
     printf(str);
 #endif /* SYS_STACK_SIZE */
@@ -401,9 +401,9 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
     char str[16];
     char str_fmt[10];
     int32_t status;
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
     uint32_t usage;
-#endif /* CONFIG_TASK_USAGE */
+#endif /* TASK_USAGE */
 
     /* Print current system tick. */
     P_STR_NCPY(str, P_STR("System tick: "), sizeof(str));
@@ -446,7 +446,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
         if (status == SUCCESS)
         {
             P_STR_NCPY(str, P_STR("\tCPU(%)"), sizeof(str));
@@ -511,7 +511,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
             status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
         if (status == SUCCESS)
         {
             /* Calculate % CPU usage for this task. */
@@ -569,7 +569,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
         status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
-#ifdef CONFIG_TASK_USAGE
+#ifdef TASK_USAGE
     if (status == SUCCESS)
     {
         /* Calculate % CPU usage for this task. */
@@ -595,4 +595,4 @@ int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
 } /* util_print_sys_info_buffer */
 #endif /* CONFIG_FS */
 
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */

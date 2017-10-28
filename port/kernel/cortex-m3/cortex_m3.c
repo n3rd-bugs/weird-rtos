@@ -224,10 +224,10 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
         /* Save the stack pointer. */
         last_task->tos = (uint8_t *)stack;
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
         /* Break the task stack pattern. */
         *(last_task->tos - 1) = 0x00;
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
     }
 
     /* Clear the last task. */

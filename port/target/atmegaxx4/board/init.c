@@ -21,7 +21,7 @@
 void avr_stack_fill(void) __attribute__((naked)) __attribute__((section(".init1")));
 void avr_stack_fill(void)
 {
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     uint8_t *stack = &__heap_start;
 
     /* Load a predefined pattern on the system stack until we hit the
@@ -29,9 +29,9 @@ void avr_stack_fill(void)
     while ((uint8_t *)SP > stack)
     {
         /* Load a predefined pattern. */
-        *(stack++) = CONFIG_STACK_PATTERN;
+        *(stack++) = TASK_STACK_PATTERN;
     }
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 } /* avr_stack_fill */
 
 /*

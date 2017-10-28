@@ -50,13 +50,13 @@ This defines control block for a task.
 ```
 typedef struct _task
 {
-#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
+#if (defined(TASK_STATS) && defined(TASK_USAGE))
     /* Number of ticks this task was scheduled. */
     uint64_t    total_active_ticks;
 
     /* Tick at which this task was last scheduled. */
     uint64_t    last_active_tick;
-#endif /* (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE)) */
+#endif /* (defined(TASK_STATS) && defined(TASK_USAGE)) */
 
     /* Task entry function. */
     TASK_ENTRY  *entry;
@@ -67,7 +67,7 @@ typedef struct _task
     /* Task list member. */
     TASK        *next;
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     /* Number of times this task was scheduled. */
     uint32_t    scheduled;
 
@@ -82,7 +82,7 @@ typedef struct _task
 
     /* Name for this task. */
     char        name[8];
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 
     /* This holds current stack pointer of this task. */
     uint8_t     *tos;
@@ -101,7 +101,7 @@ typedef struct _task
     /* Current task status. */
     int32_t     status;
 
-#if (defined(CONFIG_TASK_STATS) && defined(CONFIG_TASK_USAGE))
+#if (defined(TASK_STATS) && defined(TASK_USAGE))
     /* Structure padding. */
     int8_t      pad[4];
 #endif
