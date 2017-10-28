@@ -49,6 +49,7 @@ typedef void *FD;
 #define FS_BLOCK            0x00010000
 #define FS_BUFFERED         0x00020000
 #define FS_FLUSH_WRITE      0x00040000
+#define FS_WRITE_NO_BLOCK   0x00080000
 
 /* Suspend flags. */
 #define FS_BLOCK_READ       0x00000001

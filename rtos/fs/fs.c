@@ -751,16 +751,22 @@ int32_t fs_write(FD fd, const uint8_t *buffer, int32_t nbytes)
                     if ((get_current_task() != NULL) &&
 
                         /* Check if we can block on write for this FD and there
-                         * is no space. */
+                         * is no space and we do have to wait. */
                         ((fs->flags & FS_BLOCK) &&
-                         (!(fs->flags & FS_SPACE_AVAILABLE))))
+                         (!(fs->flags & FS_SPACE_AVAILABLE)) &&
+
+                         /* If this is a buffered file, and we are not supposed
+                          * to wait for any other event that would tell us that
+                          * space is available. */
+                         (!((fs->flags & FS_BUFFERED) &&
+                            (fs->flags & FS_WRITE_NO_BLOCK)))))
                     {
                         /* Suspend on space to become available. */
                         status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
                     }
 
                     /* Check if some space is available. */
-                    if ((status == SUCCESS) && (fs->flags & FS_SPACE_AVAILABLE))
+                    if ((status == SUCCESS) && ((fs->flags & FS_SPACE_AVAILABLE) || (((fs->flags & FS_BUFFERED) && (fs->flags & FS_WRITE_NO_BLOCK)))))
                     {
                         /* Transfer call to underlying API. */
                         status = fs->write((void *)fs, buffer, nbytes);
