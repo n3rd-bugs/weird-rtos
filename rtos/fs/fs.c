@@ -1023,6 +1023,13 @@ int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
     {
         /* Use the debug FD. */
         n = fs_write(fs, buf, n);
+
+        /* If file was not written and we tried to write a buffer. */
+        if ((n < 0) && (fs->flags & FS_BUFFERED))
+        {
+            /* Free this buffer. */
+            fs_buffer_add(fs, (FS_BUFFER *)buf, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        }
     }
     else
     {
