@@ -17,6 +17,8 @@
 void __attribute__ ((weak, alias("cpu_interrupt"))) nmi_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) hard_fault_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) exti2_interrupt(void);
+void __attribute__ ((weak, alias("cpu_interrupt"))) i2c1_event_interrupt(void);
+void __attribute__ ((weak, alias("cpu_interrupt"))) i2c1_error_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) usart1_interrupt(void);
 
 /* Initial vector table definition. */
@@ -71,8 +73,8 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&isr_clock64_tick,     /*  0x1C  TIM2                  */
         (isr)&cpu_interrupt,        /*  0x1D  TIM3                  */
         (isr)&cpu_interrupt,        /*  0x1E  TIM4                  */
-        (isr)&cpu_interrupt,        /*  0x1F  I2C1 Event            */
-        (isr)&cpu_interrupt,        /*  0x20  I2C1 Error            */
+        (isr)&i2c1_event_interrupt, /*  0x1F  I2C1 Event            */
+        (isr)&i2c1_error_interrupt, /*  0x20  I2C1 Error            */
         (isr)&cpu_interrupt,        /*  0x21  I2C2 Event            */
         (isr)&cpu_interrupt,        /*  0x22  I2C2 Error            */
         (isr)&cpu_interrupt,        /*  0x23  SPI1                  */
