@@ -257,7 +257,7 @@ static void usart1_handle_rx_interrupt(void)
 
 /*
  * usart_stm32f407_enable_interrupt.
- * This function will enable interrupts for the giver USART.
+ * This function will enable interrupts for the given USART.
  */
 static void usart_stm32f407_enable_interrupt(void *data)
 {
@@ -272,7 +272,7 @@ static void usart_stm32f407_enable_interrupt(void *data)
 
 /*
  * usart_stm32f407_disable_interrupt.
- * This function will disable interrupts for the giver USART.
+ * This function will disable interrupts for the given USART.
  */
 static void usart_stm32f407_disable_interrupt(void *data)
 {
