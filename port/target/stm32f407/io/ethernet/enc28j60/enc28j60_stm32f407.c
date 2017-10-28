@@ -45,7 +45,7 @@ void enc28j60_stm32f407_init(void)
     /* Enable GPIO A clock. */
     RCC->AHB1ENR |= 0x00000001;
 
-    /* Configure GPIO mode input for GPIOA.2 and output for GPIOA.3. */
+    /* Configure GPIO mode output for GPIOA.2 and output for GPIOA.3. */
     GPIOA->MODER &= ~((GPIO_MODER_MODER0 << (2 * 2)) | (GPIO_MODER_MODER0 << (3 * 2)));
     GPIOA->MODER |= (0x01 << (3 * 2));
 
