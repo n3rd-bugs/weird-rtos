@@ -38,6 +38,6 @@
 #define P_MEM_CPY           memcpy_P
 
 /* Function prototypes. */
-void io_avr_init(void);
+void rtl_avr_init(void);
 
 #endif /* _AVR_GCC_H_ */

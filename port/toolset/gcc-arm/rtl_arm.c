@@ -1,15 +1,14 @@
 /*
- * io_arm.c
+ * rtl_arm.c
  *
- * Copyright (c) 2017 Usama Masood <mirzaon@gmail.com>
+ * Copyright (c) 2017 Usama Masood <mirzaon@gmail.com> All rights reserved.
  *
- * Standard MIT License apply on this source code, with the inclusion of below
- * clause.
+ * This file is part of a non-commercial software. For more details please
+ * refer to the license agreement that comes with this software.
  *
- * This source is for educational purpose only, and should never be used for
- * any other purpose. If this source is used for other than educational purpose
- * (in any form, direct or indirect) the author will not be liable for any
- * outcome.
+ * If you have not received a license file please contact:
+ *  Usama Masood <mirzaon@gmail.com>
+ *
  */
 #include <kernel.h>
 #include <io.h>
@@ -19,10 +18,10 @@
 extern int errno;
 
 /*
- * io_arm_init
- * This will initialize IO routines for ARM.
+ * rtl_arm_init
+ * This will initialize RTL for ARM.
  */
-void io_arm_init(void)
+void rtl_arm_init(void)
 {
 #ifndef IO_BUFFERED
     /* Disable buffering on the SDIO files. */
@@ -31,7 +30,7 @@ void io_arm_init(void)
     setvbuf(stderr, NULL, _IONBF, 0);
 #endif
 
-} /* io_arm_init */
+} /* rtl_arm_init */
 
 /*
  * _write
@@ -94,3 +93,35 @@ int _read(int file, char *ptr, int len)
     return (status);
 
 } /* _read */
+
+/*
+ * _sbrk
+ * @incr: Number of bytes to move ahead.
+ * @return: Return the start of newly allocated region.
+ * This will move the heap pointer by the given number of bytes.
+ */
+void *_sbrk(int incr)
+{
+   static char  *heap_end = (char *)&_ebss;
+   char         *prev_heap_end;
+
+   /* Pick the previous heap end. */
+    prev_heap_end = heap_end;
+
+    /* If we may pass the heap boundary. */
+    if (((heap_end - (char *)&_ebss) + incr) > TARGET_HEAP_SIZE)
+    {
+        /* There is no memory available. */
+        errno = ENOMEM;
+
+        /* Return error to the caller. */
+        return ((void *)-1);
+    }
+
+    /* Update  the heap pointer to new location. */
+    heap_end += incr;
+
+    /* Return the start of new memory. */
+    return (prev_heap_end);
+
+} /* _sbrk */

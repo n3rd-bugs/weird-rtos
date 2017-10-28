@@ -70,6 +70,6 @@ void avr_sys_stack_pointer_save(void)
     system_stack_end = (uint8_t *)SP;
 
     /* Hook STDIO. */
-    io_avr_init();
+    rtl_avr_init();
 
 } /* avr_sys_stack_pointer_save */
