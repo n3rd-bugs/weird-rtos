@@ -111,8 +111,12 @@ void control_to_system(void)
     /* If we have not already scheduled a context switch. */
     if (last_task == NULL)
     {
-        /* We may switch to a new task so mark an exit. */
-        MARK_EXIT();
+        /* If we are not in an ISR. */
+        if (return_task == NULL)
+        {
+            /* We may switch to a new task so mark an exit. */
+            MARK_EXIT();
+        }
 
         /* Save the task from which we will be switching. */
         last_task = current_task;
@@ -123,8 +127,12 @@ void control_to_system(void)
         /* Check if we need to switch context. */
         if (current_task != last_task)
         {
-            /* Mark entry to a new task. */
-            MARK_ENTRY();
+            /* If we are not in an ISR. */
+            if (return_task == NULL)
+            {
+                /* Mark entry to a new task. */
+                MARK_ENTRY();
+            }
 
             /* Schedule a context switch. */
             PEND_SV();
@@ -132,8 +140,12 @@ void control_to_system(void)
             /* Enable interrupts. */
             ENABLE_INTERRUPTS();
 
-            /* Again mark an exit. */
-            MARK_EXIT();
+            /* If we are not in an ISR. */
+            if (return_task == NULL)
+            {
+                /* Again mark an exit. */
+                MARK_EXIT();
+            }
         }
 
         else
@@ -142,8 +154,12 @@ void control_to_system(void)
             last_task = NULL;
         }
 
-        /* Mark entry to a new task. */
-        MARK_ENTRY();
+        /* If we are not in ISR. */
+        if (return_task == NULL)
+        {
+            /* Mark entry to a new task. */
+            MARK_ENTRY();
+        }
     }
 
 } /* control_to_system */
