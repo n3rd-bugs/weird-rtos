@@ -266,7 +266,7 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
     "   MSR         BASEPRI, R0         \r\n"
     );
 
-    /* Just enable system tick interrupt. */
+    /* Enable system tick interrupt. */
     CORTEX_M3_SYS_TICK_REG |= CORTEX_M3_SYS_TICK_MASK;
 
     /* Enable interrupts and return from this function. */
