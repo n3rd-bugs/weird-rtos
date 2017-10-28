@@ -12,6 +12,7 @@
  */
 #ifndef _FS_TARGET_H_
 #define _FS_TARGET_H_
+#include <kernel.h>
 
 #ifdef CONFIG_FS
 #include <fs_avr.h>
