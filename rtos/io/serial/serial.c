@@ -122,8 +122,9 @@ void serial_register(SERIAL *serial, const char *name, void *buffer, uint32_t fl
             /* Initialize buffer data. */
             fs_buffer_dataset(serial, buffer_data);
 
-            /* This is a buffered descriptor. */
-            serial->console.fs.flags |= FS_BUFFERED;
+            /* This is a buffered descriptor, and we don't want the write to
+             * block for space. */
+            serial->console.fs.flags |= (FS_BUFFERED | FS_WRITE_NO_BLOCK);
 
             /* Assign interrupt data. */
             semaphore_set_interrupt_data(&serial->console.lock, serial->device.data, serial->device.int_lock, serial->device.int_unlock);
