@@ -39,7 +39,7 @@ void spi_avr_init(SPI_DEVICE *device)
      */
 
     /* Calculate the required baudrate prescaler. */
-    baud_scale = PCLK_FREQ / device->baudrate;
+    baud_scale = CEIL_DIV(PCLK_FREQ, device->baudrate);
     if (baud_scale >= 128)
     {
         /* Use baud scale 6. */

@@ -97,7 +97,7 @@ void spi_stm32f407_init(SPI_DEVICE *device)
     }
 
     /* Calculate the required baudrate prescaler. */
-    baud_scale = PCLK_FREQ / device->baudrate;
+    baud_scale = CEIL_DIV(PCLK_FREQ, device->baudrate);
     if (baud_scale >= 256)
     {
         /* Use baud scale 7. */
