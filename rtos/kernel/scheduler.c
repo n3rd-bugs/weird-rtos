@@ -17,7 +17,7 @@
 #include <idle.h>
 
 /* A list of all the tasks in the system. */
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
 TASK_LIST sch_task_list;
 #endif
 TASK_LIST sch_ready_task_list;
@@ -33,7 +33,7 @@ static uint8_t scheduler_task_sort(void *, void *);
 void scheduler_init(void)
 {
     /* Clear the schedule lists. */
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     memset(&sch_task_list, 0, sizeof(TASK_LIST));
 #endif
     memset(&sch_ready_task_list, 0, sizeof(TASK_LIST));
@@ -64,10 +64,10 @@ void scheduler_task_add(TASK *tcb, uint8_t priority)
     /* Enqueue this task in the ready list. */
     scheduler_task_yield(tcb, YIELD_INIT);
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     /* Append this task to the global task list. */
     sll_append(&sch_task_list, tcb, OFFSETOF(TASK, next_global));
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 
     /* Restore old interrupt level. */
     SET_INTERRUPT_LEVEL(interrupt_level);
@@ -88,10 +88,10 @@ void scheduler_task_remove(TASK *tcb)
     /* Task should be in finished state. */
     ASSERT(tcb->status != TASK_FINISHED);
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     /* Remove this task from global task list. */
     sll_remove(&sch_task_list, tcb, OFFSETOF(TASK, next_global));
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 
     /* Enable scheduling. */
     scheduler_unlock();
@@ -170,10 +170,10 @@ TASK *scheduler_get_next_task(void)
     /* We should always have a task to execute. */
     ASSERT(tcb == NULL);
 
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
     /* Increment the number of times this task was scheduled. */
     tcb->scheduled ++;
-#endif /* CONFIG_TASK_STATS */
+#endif /* TASK_STATS */
 
     /* Return the task to run. */
     return (tcb);

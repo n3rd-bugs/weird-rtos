@@ -33,7 +33,7 @@
 #define TASK_FINISHED               (3)
 
 /* Global task list. */
-#ifdef CONFIG_TASK_STATS
+#ifdef TASK_STATS
 extern TASK_LIST sch_task_list;
 #endif
 
