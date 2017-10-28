@@ -19,6 +19,7 @@
 /* I2C error definitions. */
 #define I2C_MSG_NACKED          -1600
 #define I2C_TIMEOUT             -1601
+#define I2C_IO_ERROR            -1602
 
 /* I2C configuration flags. */
 
