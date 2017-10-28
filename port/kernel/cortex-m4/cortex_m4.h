@@ -22,7 +22,6 @@ extern volatile INT_LVL sys_interrupt_level;
                                             asm("   CPSID   I   ");     \
                                             sys_interrupt_level = 0;    \
                                         }
-
 #define ENABLE_INTERRUPTS()             {                               \
                                             sys_interrupt_level = 1;    \
                                             asm("   DSB         ");     \
@@ -40,7 +39,6 @@ extern volatile INT_LVL sys_interrupt_level;
                                                 ENABLE_INTERRUPTS();    \
                                             }                           \
                                         }
-
 #define RESTORE_CONTEXT_FIRST()         run_first_task()
 #define PEND_SV()                       {                                           \
                                             asm("   DSB    ");                      \
@@ -53,21 +51,12 @@ extern volatile INT_LVL sys_interrupt_level;
                                             "   MSR         BASEPRI, r0     \r\n"   \
                                             );                                      \
                                         }
-
 #define CONTROL_TO_SYSTEM()             control_to_system()
-
 #define RETURN_ENABLING_INTERRUPTS()    {                               \
                                             ENABLE_INTERRUPTS();        \
                                             asm("   BX      LR  ");     \
                                         }
-
 #define INITIAL_XPSR                    0x01000000
-
-/* Memory definitions. */
-#define STATIC_MEM_START                ((uint8_t *)(&static_start))
-#define STATIC_MEM_END                  ((uint8_t *)(&static_end))
-#define DYNAMIC_MEM_START               ((uint8_t *)(&dynamic_start))
-#define DYNAMIC_MEM_END                 ((uint8_t *)(&dynamic_end))
 
 typedef struct _hardware_stack_farme
 {
