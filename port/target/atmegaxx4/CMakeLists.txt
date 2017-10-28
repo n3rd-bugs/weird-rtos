@@ -17,3 +17,6 @@ endif ()
 setup_option(TARGET_PLATFORM "PLAT_ATMEGAXX4")
 setup_option_def(TARGET_PLATFORM "PLAT_ATMEGAXX4" MACRO "Target platform.")
 setup_option_hide(TARGET_PLATFORM)
+
+# Set heap size for this platform.
+setup_option_def(TARGET_HEAP_SIZE "0" MACRO "Target heap size.")

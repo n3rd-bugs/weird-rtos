@@ -27,8 +27,8 @@
 #define PCLK_FREQ               SYS_FREQ
 #define AVR_HARD_RESET          FALSE
 #define HW_TICKS_PER_SEC        (PCLK_FREQ / 64)
-#define SYS_STACK_SIZE          (system_stack_end - (&__heap_start))
-#define SYSTEM_STACK            (&__heap_start)
+#define SYSTEM_STACK            (((uint8_t *)&__heap_start) + TARGET_HEAP_SIZE)
+#define SYS_STACK_SIZE          (system_stack_end - (uint32_t)SYSTEM_STACK)
 
 /* System interrupt level. */
 extern volatile uint8_t sys_interrupt_level;

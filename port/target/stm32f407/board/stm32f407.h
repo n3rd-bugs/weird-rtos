@@ -33,10 +33,10 @@
 #define CORTEX_M4_FPU                   (TRUE)
 
 /* End of BSS marks the start of system stack. */
-extern uint32_t _stack_start;
+extern uint32_t _ebss;
 
 /* Memory configuration. */
-#define SYSTEM_STACK                    ((uint8_t *)&_stack_start)
+#define SYSTEM_STACK                    (((uint8_t *)&_ebss) + TARGET_HEAP_SIZE)
 #define STM32F407_STACK_END             (0x20020000)
 #define SYS_STACK_SIZE                  (STM32F407_STACK_END - (uint32_t)SYSTEM_STACK)
 

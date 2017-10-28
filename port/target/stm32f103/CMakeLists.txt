@@ -11,3 +11,6 @@ set(CMAKE_EXE_LINKER_FLAGS ${CMAKE_EXE_LINKER_FLAGS} CACHE STRING "" FORCE)
 setup_option(TARGET_PLATFORM "PLAT_STM32F103C8T6")
 setup_option_def(TARGET_PLATFORM "PLAT_STM32F103C8T6" MACRO "Target platform.")
 setup_option_hide(TARGET_PLATFORM)
+
+# Set heap size for this platform.
+setup_option_def(TARGET_HEAP_SIZE "2048" MACRO "Target heap size.")
