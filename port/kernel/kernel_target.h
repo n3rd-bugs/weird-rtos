@@ -1,15 +1,14 @@
 /*
  * kernel_target.h
  *
- * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com>
+ * Copyright (c) 2014 Usama Masood <mirzaon@gmail.com> All rights reserved.
  *
- * Standard MIT License apply on this source code, with the inclusion of below
- * clause.
+ * This file is part of a non-commercial software. For more details please
+ * refer to the license agreement that comes with this software.
  *
- * This source is for educational purpose only, and should never be used for
- * any other purpose. If this source is used for other than educational purpose
- * (in any form, direct or indirect) the author will not be liable for any
- * outcome.
+ * If you have not received a license file please contact:
+ *  Usama Masood <mirzaon@gmail.com>
+ *
  */
 #ifndef _KERNEL_TARGET_H_
 #define _KERNEL_TARGET_H_
