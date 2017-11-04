@@ -92,4 +92,4 @@ Weird-RTOS provides various configuration options that can be best viewed if pro
 - [System Logging](docs/kernel/LOGGING.md)
 
 ## Licensing
-Weird RTOS is protected by three-clause MIT license, for more details see [License Agreement](LICENSE.md).
+This is a _non-commercial_ RTOS, for more details see [License Agreement](LICENSE.md).
