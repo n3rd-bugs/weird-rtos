@@ -64,12 +64,30 @@ void spi_stm32f103_init(SPI_DEVICE *device)
         /* SPI2 device. */
         ((STM32F103_SPI *)device->data)->reg = SPI2;
 
-        /* Reset SPI1. */
+        /* Reset SPI2. */
         RCC->APB1RSTR |= RCC_APB1Periph_SPI2;
         RCC->APB1RSTR &= (uint32_t)~RCC_APB1Periph_SPI2;
 
         /* Enable AHB clock for SPI2. */
         RCC->APB1ENR |= RCC_APB1ENR_SPI2EN;
+
+        /* Enable clock for GPIOB. */
+        RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
+
+        /* Set alternate function for PB13 (SCLK) and PB15 (MOSI). */
+        GPIOB->CRH &= (uint32_t)(~((0x0F << ((13 - 8) << 2)) | (0x0F << ((15 - 8) << 2))));
+        GPIOB->CRH |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((13 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((15 - 8) << 2)));
+
+        /* Set PB14 (MISO) as input. */
+        GPIOB->CRH &= (uint32_t)(~(0x0F << ((14 - 8) << 2)));
+        GPIOB->CRH |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((14 - 8) << 2));
+
+        /* Set PB12 (NSS) as output. */
+        GPIOB->CRH &= (uint32_t)(~(0x0F << ((12 - 8) << 2)));
+        GPIOB->CRH |= (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0x0F) << ((12 - 8) << 2));
+
+        /* Set the PB12 (CS). */
+        GPIOB->BSRR |= (1 << 12);
 
         break;
 
@@ -78,7 +96,7 @@ void spi_stm32f103_init(SPI_DEVICE *device)
         /* SPI3 device. */
         ((STM32F103_SPI *)device->data)->reg = SPI3;
 
-        /* Reset SPI1. */
+        /* Reset SPI3. */
         RCC->APB1RSTR |= RCC_APB1Periph_SPI3;
         RCC->APB1RSTR &= (uint32_t)~RCC_APB1Periph_SPI3;
 
@@ -154,9 +172,21 @@ void spi_stm32f103_slave_select(SPI_DEVICE *device)
 {
     switch (((STM32F103_SPI *)device->data)->device_num)
     {
+    /* If this is SPI1. */
     case 1:
+
         /* Reset the PA4 (CS). */
         GPIOA->BSRR |= (1 << (4 + 16));
+
+        break;
+
+    /* If this is SPI2. */
+    case 2:
+
+        /* Reset the PB12 (CS). */
+        GPIOB->BSRR |= (1 << (12 + 16));
+
+        break;
     }
 
 } /* spi_stm32f103_slave_select */
@@ -169,9 +199,21 @@ void spi_stm32f103_slave_unselect(SPI_DEVICE *device)
 {
     switch (((STM32F103_SPI *)device->data)->device_num)
     {
+    /* If this is SPI1. */
     case 1:
+
         /* Set the PA4 (CS). */
         GPIOA->BSRR |= (1 << 4);
+
+        break;
+
+    /* If this is SPI2. */
+    case 2:
+
+        /* Reset the PB12 (CS). */
+        GPIOB->BSRR |= (1 << 12);
+
+        break;
     }
 
 } /* spi_stm32f103_slave_unselect */
