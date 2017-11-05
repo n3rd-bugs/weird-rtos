@@ -1,5 +1,5 @@
 /*
- * fs_target.h
+ * fs_stm32f103.h
  *
  * Copyright (c) 2017 Usama Masood <mirzaon@gmail.com> All rights reserved.
  *
@@ -10,16 +10,14 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
-#ifndef _FS_TARGET_H_
-#define _FS_TARGET_H_
+#ifndef _FS_STM32F103_H_
+#define _FS_STM32F103_H_
 #include <kernel.h>
 
 #ifdef CONFIG_FS
-#include <fs_stm32f103.h>
 
-/* Hook-up FS OS stack. */
-#define FS_TGT_INIT()           fs_stm32_init()
+/* Function prototypes. */
+void fs_stm32_init(void);
 
 #endif /* CONFIG_FS */
-#endif /* _FS_TARGET_H_ */
+#endif /* _FS_STM32F103_H_ */
