@@ -28,7 +28,7 @@ TASK    fat_demo_cb;
 void fat_demo_entry(void *argv);
 
 #define FAT_DEMO_FILE_SIZE      (1024UL * 1024UL * 1UL) /* 1 MB */
-uint8_t test_buffer[SERIAL_PRINTF_BUFFER_SIZE];
+uint8_t test_buffer[64];
 
 /*
  * fat_demo_entry
