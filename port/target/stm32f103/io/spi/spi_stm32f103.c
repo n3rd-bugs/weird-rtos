@@ -228,7 +228,7 @@ int32_t spi_stm32f103_message(SPI_DEVICE *device, SPI_MSG *message)
     /* If we are only reading. */
     case SPI_MSG_READ:
 
-        /* While we have a byte to write and read. */
+        /* While we have a byte to read. */
         while (bytes < message->length)
         {
             /* Wait while TX buffer is not empty. */
