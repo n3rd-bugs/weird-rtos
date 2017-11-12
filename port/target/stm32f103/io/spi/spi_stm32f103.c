@@ -43,13 +43,9 @@ void spi_stm32f103_init(SPI_DEVICE *device)
         /* Enable clock for GPIOA. */
         RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
 
-        /* Set alternate function for PA5 (SCLK) and PA7 (MOSI). */
-        GPIOA->CRL &= (uint32_t)(~((0x0F << (5 << 2)) | (0x0F << (7 << 2))));
-        GPIOA->CRL |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << (5 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << (7 << 2)));
-
-        /* Set PA6 (MISO) as input. */
-        GPIOA->CRL &= (uint32_t)(~(0x0F << (6 << 2)));
-        GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << (6 << 2));
+        /* Set alternate function for PA5 (SCLK), PA6 (MISO) and PA7 (MOSI). */
+        GPIOA->CRL &= (uint32_t)(~((0x0F << (5 << 2)) | (0x0F << (6 << 2)) | (0x0F << (7 << 2))));
+        GPIOA->CRL |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << (5 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << (6 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << (7 << 2)));
 
         /* Set PA4 (NSS) as output. */
         GPIOA->CRL &= (uint32_t)(~(0x0F << (4 << 2)));
@@ -74,13 +70,9 @@ void spi_stm32f103_init(SPI_DEVICE *device)
         /* Enable clock for GPIOB. */
         RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 
-        /* Set alternate function for PB13 (SCLK) and PB15 (MOSI). */
-        GPIOB->CRH &= (uint32_t)(~((0x0F << ((13 - 8) << 2)) | (0x0F << ((15 - 8) << 2))));
-        GPIOB->CRH |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((13 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((15 - 8) << 2)));
-
-        /* Set PB14 (MISO) as input. */
-        GPIOB->CRH &= (uint32_t)(~(0x0F << ((14 - 8) << 2)));
-        GPIOB->CRH |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((14 - 8) << 2));
+        /* Set alternate function for PB13 (SCLK), PB14 (MISO) and PB15 (MOSI). */
+        GPIOB->CRH &= (uint32_t)(~((0x0F << ((13 - 8) << 2)) | (0x0F << ((14 - 8) << 2)) | (0x0F << ((15 - 8) << 2))));
+        GPIOB->CRH |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((13 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((14 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((15 - 8) << 2)));
 
         /* Set PB12 (NSS) as output. */
         GPIOB->CRH &= (uint32_t)(~(0x0F << ((12 - 8) << 2)));
@@ -230,56 +222,118 @@ int32_t spi_stm32f103_message(SPI_DEVICE *device, SPI_MSG *message)
     int32_t bytes = 0, timeout;
     uint8_t byte;
 
-    /* While we have a byte to write and read. */
-    while (bytes < message->length)
+    /* Process the message request. */
+    switch (message->flags & (SPI_MSG_WRITE | SPI_MSG_READ))
     {
-        /* Wait while TX buffer is not empty. */
-        timeout = 0;
-        while (((((STM32F103_SPI *)device->data)->reg->SR & STM32F103_SPI_SR_TXE) == 0) && (timeout++ < STM32F103_SPI_TIMEOUT));
+    /* If we are only reading. */
+    case SPI_MSG_READ:
 
-        /* If we did not timeout for this request. */
-        if (timeout < STM32F103_SPI_TIMEOUT)
+        /* While we have a byte to write and read. */
+        while (bytes < message->length)
         {
-            /* Send a byte. */
-            ((STM32F103_SPI *)device->data)->reg->DR = message->buffer[bytes];
-        }
-        else
-        {
-            /* Return error to the caller. */
-            bytes = SPI_TIMEOUT;
+            /* Wait while TX buffer is not empty. */
+            timeout = 0;
+            while (((((STM32F103_SPI *)device->data)->reg->SR & STM32F103_SPI_SR_TXE) == 0) && (timeout++ < STM32F103_SPI_TIMEOUT));
 
-            /* Stop processing any more data for this message. */
-            break;
-        }
-
-        /* Wait while we don't have any data to read. */
-        timeout = 0;
-        while (((((STM32F103_SPI *)device->data)->reg->SR & STM32F103_SPI_SR_RXNE) == 0) && (timeout++ < STM32F103_SPI_TIMEOUT));
-
-        /* If we did not timeout for this request. */
-        if (timeout < STM32F103_SPI_TIMEOUT)
-        {
-            /* Save the data read from the device. */
-            byte = (uint8_t)((STM32F103_SPI *)device->data)->reg->DR;
-
-            /* Check if we are also reading. */
-            if (message->flags & SPI_MSG_READ)
+            /* If we did not timeout for this request. */
+            if (timeout < STM32F103_SPI_TIMEOUT)
             {
-                /* Save the byte read from SPI. */
-                message->buffer[bytes] = byte;
+                /* Send a byte. */
+                ((STM32F103_SPI *)device->data)->reg->DR = 0xFF;
+            }
+            else
+            {
+                /* Return error to the caller. */
+                bytes = SPI_TIMEOUT;
+
+                /* Stop processing any more data for this message. */
+                break;
             }
 
-            /* Get next byte to send and update. */
-            bytes++;
-        }
-        else
-        {
-            /* Return error to the caller. */
-            bytes = SPI_TIMEOUT;
+            /* Wait while we don't have any data to read. */
+            timeout = 0;
+            while (((((STM32F103_SPI *)device->data)->reg->SR & STM32F103_SPI_SR_RXNE) == 0) && (timeout++ < STM32F103_SPI_TIMEOUT));
 
-            /* Stop processing any more data for this message. */
-            break;
+            /* If we did not timeout for this request. */
+            if (timeout < STM32F103_SPI_TIMEOUT)
+            {
+                /* Save the data read from the device. */
+                byte = (uint8_t)((STM32F103_SPI *)device->data)->reg->DR;
+
+                /* Save the byte read from SPI. */
+                message->buffer[bytes] = byte;
+
+                /* Get next byte to send and update. */
+                bytes++;
+            }
+            else
+            {
+                /* Return error to the caller. */
+                bytes = SPI_TIMEOUT;
+
+                /* Stop processing any more data for this message. */
+                break;
+            }
         }
+
+        break;
+
+    /* Either writing, or writing while reading. */
+    default:
+
+        /* While we have a byte to write and read. */
+        while (bytes < message->length)
+        {
+            /* Wait while TX buffer is not empty. */
+            timeout = 0;
+            while (((((STM32F103_SPI *)device->data)->reg->SR & STM32F103_SPI_SR_TXE) == 0) && (timeout++ < STM32F103_SPI_TIMEOUT));
+
+            /* If we did not timeout for this request. */
+            if (timeout < STM32F103_SPI_TIMEOUT)
+            {
+                /* Send a byte. */
+                ((STM32F103_SPI *)device->data)->reg->DR = message->buffer[bytes];
+            }
+            else
+            {
+                /* Return error to the caller. */
+                bytes = SPI_TIMEOUT;
+
+                /* Stop processing any more data for this message. */
+                break;
+            }
+
+            /* Wait while we don't have any data to read. */
+            timeout = 0;
+            while (((((STM32F103_SPI *)device->data)->reg->SR & STM32F103_SPI_SR_RXNE) == 0) && (timeout++ < STM32F103_SPI_TIMEOUT));
+
+            /* If we did not timeout for this request. */
+            if (timeout < STM32F103_SPI_TIMEOUT)
+            {
+                /* Save the data read from the device. */
+                byte = (uint8_t)((STM32F103_SPI *)device->data)->reg->DR;
+
+                /* Check if we are also reading. */
+                if (message->flags & SPI_MSG_READ)
+                {
+                    /* Save the byte read from SPI. */
+                    message->buffer[bytes] = byte;
+                }
+
+                /* Get next byte to send and update. */
+                bytes++;
+            }
+            else
+            {
+                /* Return error to the caller. */
+                bytes = SPI_TIMEOUT;
+
+                /* Stop processing any more data for this message. */
+                break;
+            }
+        }
+
+        break;
     }
 
     /* If we did not encounter any error. */
