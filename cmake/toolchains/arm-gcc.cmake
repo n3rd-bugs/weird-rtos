@@ -17,7 +17,7 @@ set(CMAKE_C_COMPILER ${ARM_CC})
 set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS ON)
 
 # Load default flags.
-set(ARM_C_FLAGS "-Os -fmessage-length=0 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wpadded -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal -g3 -std=gnu11" CACHE STRING "C flags.")
+set(ARM_C_FLAGS "-Os -fmessage-length=0 -std=gnu99 -fsigned-char -ffunction-sections -fdata-sections -Wunused -Wuninitialized -Wall -Wextra -Wmissing-declarations -Wconversion -Wpointer-arith -Wpadded -Wshadow -Wlogical-op -Waggregate-return -Wfloat-equal -g3" CACHE STRING "C flags.")
 set(ARM_LINK_FLAGS "--specs=nosys.specs -Xlinker --gc-sections " CACHE STRING "LD flags.")
 
 # Select the target CPU.
