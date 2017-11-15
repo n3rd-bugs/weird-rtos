@@ -104,8 +104,4 @@ NAKED_ISR_FUN isr_pendsv_handle(void) NOOPTIMIZATION;
 ISR_FUN isr_sysclock_handle(void);
 ISR_FUN isr_clock64_tick(void);
 
-#ifdef CONFIG_ETHERNET
-ISR_FUN exti2_interrupt(void);
-#endif
-
 #endif /* _CORTEX_M4_H_ */
