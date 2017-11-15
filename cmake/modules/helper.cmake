@@ -67,6 +67,9 @@ function (setup_option_def configuration default_value type description)
     elseif (${type} STREQUAL "MACRO")
         # Add this to RTOS configuration list as a MACRO value.
         set(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} \(${configuration_value}\)\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
+    elseif (${type} STREQUAL "MACRO_OPEN")
+        # Add this to RTOS configuration list as a MACRO open value.
+        set(RTOS_DEFS "${RTOS_DEFS}#define ${configuration} ${configuration_value}\n" CACHE INTERNAL "RTOS_DEFS" FORCE)
     else ()
         # Option type is not supported.
         message(FATAL_ERROR "Unsupported option type." )
