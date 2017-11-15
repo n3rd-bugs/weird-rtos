@@ -22,7 +22,7 @@
 #include <ppp_target.h>
 
 /* PPP global data. */
-PPP_DATA ppp_data;
+static PPP_DATA ppp_data;
 
 /*
  * ppp_init
@@ -30,9 +30,6 @@ PPP_DATA ppp_data;
  */
 void ppp_init(void)
 {
-    /* Clear the global data. */
-    memset(&ppp_data, 0, sizeof(PPP_DATA));
-
 #ifdef PPP_TGT_INIT
     /* Initialize PPP target. */
     PPP_TGT_INIT();
