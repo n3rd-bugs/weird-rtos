@@ -15,6 +15,7 @@
 
 #include <kernel.h>
 #ifdef CONFIG_SERIAL
+#include <serial.h>
 #include <stdarg.h>
 
 #ifndef CMAKE_BUILD
@@ -30,11 +31,28 @@
 #define SERIAL_THRESHOLD_BUFFER_LIST    0
 #endif /* CMAKE_BUILD */
 
+/* STM32 USRAT device. */
+typedef struct _stm32_usart
+{
+    /* Serial device. */
+    SERIAL          serial;
+
+    /* Hardware register. */
+    USART_TypeDef   *reg;
+
+    /* Device number. */
+    uint32_t         device_num;
+
+    /* Baud rate. */
+    uint32_t         baud_rate;
+
+} STM32_USART;
+
 /* Function prototypes. */
 void serial_stm32f103_init(void);
-#ifdef SERIAL_INTERRUPT_MODE
+int32_t usart_stm32f103_register(STM32_USART *, const char *, FS_BUFFER_DATA *, uint8_t);
 ISR_FUN usart1_interrupt(void);
-#endif /* SERIAL_INTERRUPT_MODE */
+ISR_FUN usart2_interrupt(void);
 
 #endif /* CONFIG_SERIAL */
 #endif /* _USART_STM32F103_H_ */

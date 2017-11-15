@@ -13,7 +13,6 @@
 #include <kernel.h>
 #ifdef CONFIG_SERIAL
 #include <usart_stm32f103.h>
-#include <serial.h>
 
 #ifdef SERIAL_INTERRUPT_MODE
 #ifndef FS_CONSOLE
@@ -21,19 +20,20 @@
 #endif /* FS_CONSOLE */
 #endif /* SERIAL_INTERRUPT_MODE */
 
+/* Global port data. */
+static STM32_USART *usart1_data, *usart2_data;
+
 /* Internal function prototypes. */
 static int32_t usart_stm32f103_init(void *);
-#ifdef SERIAL_INTERRUPT_MODE
-static void usart1_handle_tx_interrupt(void);
-static void usart1_handle_rx_interrupt(void);
+static void usart_handle_tx_interrupt(STM32_USART *);
+static void usart_handle_rx_interrupt(STM32_USART *);
 static void usart_stm32f103_enable_interrupt(void *);
-#endif /* SERIAL_INTERRUPT_MODE */
 static void usart_stm32f103_disable_interrupt(void *);
 static int32_t usart_stm32f103_puts(void *, void *, const uint8_t *, int32_t, uint32_t);
 static int32_t usart_stm32f103_gets(void *, void *, uint8_t *, int32_t, uint32_t);
 
-/* Target serial port. */
-static SERIAL usart1;
+/* USART1 data. */
+static STM32_USART usart1;
 #ifdef SERIAL_INTERRUPT_MODE
 static FS_BUFFER_DATA usart1_buffer_data;
 static uint8_t usart1_buffer_space[SERIAL_MAX_BUFFER_SIZE * SERIAL_NUM_BUFFERS];
@@ -47,16 +47,6 @@ static FS_BUFFER usart1_buffer_lists[SERIAL_NUM_BUFFER_LIST];
  */
 void serial_stm32f103_init(void)
 {
-    /* Initialize serial device data. */
-    usart1.device.init = &usart_stm32f103_init;
-    usart1.device.puts = &usart_stm32f103_puts;
-    usart1.device.gets = &usart_stm32f103_gets;
-#ifdef SERIAL_INTERRUPT_MODE
-    usart1.device.int_lock = &usart_stm32f103_disable_interrupt;
-    usart1.device.int_unlock = &usart_stm32f103_enable_interrupt;
-#endif /* SERIAL_INTERRUPT_MODE */
-    usart1.device.data = &usart1;
-
 #ifdef SERIAL_INTERRUPT_MODE
     /* Register this serial device. */
     usart1_buffer_data.buffer_space = usart1_buffer_space;
@@ -67,69 +57,136 @@ void serial_stm32f103_init(void)
     usart1_buffer_data.num_buffer_lists = SERIAL_NUM_BUFFER_LIST;
     usart1_buffer_data.threshold_buffers = SERIAL_THRESHOLD_BUFFER;
     usart1_buffer_data.threshold_lists = SERIAL_THRESHOLD_BUFFER_LIST;
-    serial_register(&usart1, "usart1", &usart1_buffer_data, (SERIAL_DEBUG | SERIAL_INT));
+    usart_stm32f103_register(&usart1, "usart1", &usart1_buffer_data, TRUE);
 #else
-    serial_register(&usart1, "usart1", NULL, (SERIAL_DEBUG));
+    usart_stm32f103_register(&usart1, "usart1", NULL, TRUE);
 #endif /* SERIAL_INTERRUPT_MODE */
 
 } /* serial_stm32f103_init */
 
 /*
+ * usart_stm32f103_register
+ * This function will register a USART for STM32 platform.
+ */
+int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, FS_BUFFER_DATA *buffer_data, uint8_t is_debug)
+{
+    uint32_t usart_flags = ((is_debug == TRUE) ? SERIAL_DEBUG : 0);
+
+    /* Initialize USART GPIO. */
+    switch (usart->device_num)
+    {
+    /* If this is USART1 device. */
+    case 1:
+
+        /* Reset USART1. */
+        RCC->APB2RSTR |= RCC_APB2Periph_USART1;
+        RCC->APB2RSTR &= (uint32_t)~RCC_APB2Periph_USART1;
+
+        /* Enable clock for USART1. */
+        RCC->APB2ENR |= RCC_APB2Periph_USART1;
+
+        /* Enable clock for GPIOA. */
+        RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
+
+        /* Set alternate function for PA9 (TX) and PA10 (RX). */
+        GPIOA->CRH &= (uint32_t)(~((0x0F << ((9 - 8) << 2)) | (0x0F << ((10 - 8) << 2))));
+        GPIOA->CRH |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((9 - 8) << 2));
+        GPIOA->CRH |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((10 - 8) << 2));
+
+        /* Save the USART register. */
+        usart->reg = USART1;
+
+        /* Save the USART1 data. */
+        usart1_data = usart;
+
+        break;
+
+    /* If this is USART2 device. */
+    case 2:
+
+        /* Reset USART2. */
+        RCC->APB1RSTR |= RCC_APB1Periph_USART2;
+        RCC->APB1RSTR &= (uint32_t)~RCC_APB1Periph_USART2;
+
+        /* Enable clock for USART2. */
+        RCC->APB1ENR |= RCC_APB1Periph_USART2;
+
+        /* Save the USART register. */
+        usart->reg = USART2;
+
+        /* Save the USART2 data. */
+        usart2_data = usart;
+
+        break;
+    }
+
+    /* Initialize serial device data. */
+    usart->serial.device.init = &usart_stm32f103_init;
+    usart->serial.device.puts = &usart_stm32f103_puts;
+    usart->serial.device.gets = &usart_stm32f103_gets;
+
+    /* If we need to use interrupts for this USART. */
+    if (buffer_data)
+    {
+        /* Hook-up interrupt locks. */
+        usart->serial.device.int_lock = &usart_stm32f103_disable_interrupt;
+        usart->serial.device.int_unlock = &usart_stm32f103_enable_interrupt;
+
+        /* Update USART flags. */
+        usart_flags |= SERIAL_INT;
+    }
+
+    /* Save the device data. */
+    usart->serial.device.data = usart;
+
+    /* Register this USARt as a serial device. */
+    serial_register(&usart->serial, name, buffer_data, usart_flags);
+
+    /* Always return success. */
+    return (SUCCESS);
+
+} /* usart_stm32f103_register */
+
+/*
  * usart_stm32f103_init
- * This function initializes UART1 for STM32F103.
+ * @data: USART device data.
+ * @return: Will always return success.
+ * This function initializes USART1 for STM32F103.
  */
 static int32_t usart_stm32f103_init(void *data)
 {
+    STM32_USART *usart = (STM32_USART *)data;
     uint32_t temp, integral, fractional;
-
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(data);
-
-    /* Reset USART1. */
-    RCC->APB2RSTR |= RCC_APB2Periph_USART1;
-    RCC->APB2RSTR &= (uint32_t)~RCC_APB2Periph_USART1;
-
-    /* Enable clock for USART1. */
-    RCC->APB2ENR |= RCC_APB2Periph_USART1;
-
-    /* Enable clock for GPIOA. */
-    RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
-
-    /* Set alternate function for PA9 (TX) and PA10 (RX). */
-    GPIOA->CRH &= (uint32_t)(~((0x0F << ((9 - 8) << 2)) | (0x0F << ((10 - 8) << 2))));
-    GPIOA->CRH |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((9 - 8) << 2));
-    GPIOA->CRH |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((10 - 8) << 2));
 
     /* Enable RX and TX for this USART, also use 8-bit word length and
      * disable parity bit. */
-    USART1->CR1 &= (uint16_t)~((USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE));
-    USART1->CR1 |= (USART_CR1_RE | USART_CR1_TE);
+    usart->reg->CR1 &= (uint16_t)~((USART_CR1_M | USART_CR1_PCE | USART_CR1_PS | USART_CR1_TE | USART_CR1_RE));
+    usart->reg->CR1 |= (USART_CR1_RE | USART_CR1_TE);
 
     /* Use one stop bit for this USART. */
-    USART1->CR2 &= (uint16_t)~(USART_CR2_STOP);
+    usart->reg->CR2 &= (uint16_t)~(USART_CR2_STOP);
 
     /* Don't use CTS/RTS signals. */
-    USART1->CR3 &= (uint16_t)~((USART_CR3_RTSE | USART_CR3_CTSE));
+    usart->reg->CR3 &= (uint16_t)~((USART_CR3_RTSE | USART_CR3_CTSE));
 
     /* Calculate and set the baud rate parameters. */
-    integral = ((25 * PCLK_FREQ) / (4 * BAUD_RATE));
+    integral = ((25 * PCLK_FREQ) / (4 * usart->baud_rate));
     temp = (integral / 100) << 4;
     fractional = integral - (100 * (temp >> 4));
     temp |= ((((fractional * 16) + 50) / 100)) & (0x0F);
-    USART1->BRR = (uint16_t)temp;
+    usart->reg->BRR = (uint16_t)temp;
 
-    /* Enable USART1. */
-    USART1->CR1 |= USART_CR1_UE;
+    /* Enable USART. */
+    usart->reg->CR1 |= USART_CR1_UE;
 
     /* Enable transmission complete and receive data available interrupts. */
-    USART1->CR1 |= (USART_CR1_TCIE | USART_CR1_RXNEIE);
+    usart->reg->CR1 |= (USART_CR1_TCIE | USART_CR1_RXNEIE);
 
     /* Always return success. */
     return (SUCCESS);
 
 } /* usart_stm32f103_init */
 
-#ifdef SERIAL_INTERRUPT_MODE
 /*
  * usart1_interrupt
  * This function is interrupt handler for USART1 interrupt.
@@ -142,14 +199,14 @@ ISR_FUN usart1_interrupt(void)
     if (USART1->SR & USART_SR_TC)
     {
         /* Handle transmission complete interrupt. */
-        usart1_handle_tx_interrupt();
+        usart_handle_tx_interrupt(usart1_data);
     }
 
     /* If some data is available to read. */
     if (USART1->SR & USART_SR_RXNE)
     {
         /* Handle receive data available interrupt. */
-        usart1_handle_rx_interrupt();
+        usart_handle_rx_interrupt(usart1_data);
     }
 
     ISR_EXIT();
@@ -157,16 +214,43 @@ ISR_FUN usart1_interrupt(void)
 } /* usart1_interrupt */
 
 /*
- * usart1_handle_tx_interrupt
+ * usart2_interrupt
+ * This function is interrupt handler for USART2 interrupt.
+ */
+ISR_FUN usart2_interrupt(void)
+{
+    ISR_ENTER();
+
+    /* If a transmission was successfully completed. */
+    if (USART2->SR & USART_SR_TC)
+    {
+        /* Handle transmission complete interrupt. */
+        usart_handle_tx_interrupt(usart2_data);
+    }
+
+    /* If some data is available to read. */
+    if (USART2->SR & USART_SR_RXNE)
+    {
+        /* Handle receive data available interrupt. */
+        usart_handle_rx_interrupt(usart2_data);
+    }
+
+    ISR_EXIT();
+
+} /* usart2_interrupt */
+
+/*
+ * usart_handle_tx_interrupt
+ * @usart: Device data on which we need to process TX interrupt.
  * This function handles TX interrupt.
  */
-static void usart1_handle_tx_interrupt(void)
+static void usart_handle_tx_interrupt(STM32_USART *usart)
 {
     FS_BUFFER *buffer;
     uint8_t chr;
 
     /* Get a buffer to be transmitted. */
-    buffer = fs_buffer_get(&usart1, FS_BUFFER_TX, FS_BUFFER_INPLACE);
+    buffer = fs_buffer_get(usart, FS_BUFFER_TX, FS_BUFFER_INPLACE);
 
     /* If we have a buffer to transmit. */
     if (buffer != NULL)
@@ -178,54 +262,55 @@ static void usart1_handle_tx_interrupt(void)
         if (buffer->total_length == 0)
         {
             /* Actually remove this buffer. */
-            buffer = fs_buffer_get(&usart1, FS_BUFFER_TX, 0);
+            buffer = fs_buffer_get(usart, FS_BUFFER_TX, 0);
 
             /* Free this buffer. */
-            fs_buffer_add(&usart1, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add(usart, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
         }
 
         /* Put a byte on USART to continue TX. */
-        USART1->DR = ((uint32_t)chr) & 0xFF;
+        usart->reg->DR = ((uint32_t)chr) & 0xFF;
     }
     else
     {
         /* Just clear this interrupt status. */
-        USART1->SR &= (uint16_t)(~USART_SR_TC);
+        usart->reg->SR &= (uint16_t)(~USART_SR_TC);
 
         /* Clear the in TX flag. */
-        usart1.flags &= (uint32_t)(~SERIAL_IN_TX);
+        usart->serial.flags &= (uint32_t)(~SERIAL_IN_TX);
     }
 
-} /* usart1_handle_tx_interrupt */
+} /* usart_handle_tx_interrupt */
 
 /*
- * usart1_handle_rx_interrupt
+ * usart_handle_rx_interrupt
+ * @usart: Device data on which we need to process RX interrupt.
  * This function handles RX interrupt.
  */
-static void usart1_handle_rx_interrupt(void)
+static void usart_handle_rx_interrupt(STM32_USART *usart)
 {
     FS_BUFFER *buffer;
     uint8_t chr;
 
     /* Get a RX buffer. */
-    buffer = fs_buffer_get(&usart1, FS_BUFFER_RX, FS_BUFFER_INPLACE);
+    buffer = fs_buffer_get(usart, FS_BUFFER_RX, FS_BUFFER_INPLACE);
 
     /* If we don't have a buffer. */
     if (buffer == NULL)
     {
         /* Get a buffer. */
-        buffer = fs_buffer_get(&usart1, FS_BUFFER_LIST, 0);
+        buffer = fs_buffer_get(usart, FS_BUFFER_LIST, 0);
 
         /* If we do have a buffer. */
         if (buffer != NULL)
         {
             /* Add this buffer on the receive list. */
-            fs_buffer_add(&usart1, buffer, FS_BUFFER_RX, 0);
+            fs_buffer_add(usart, buffer, FS_BUFFER_RX, 0);
         }
     }
 
     /* Read the incoming data and also clear the interrupt status. */
-    chr = (uint8_t)USART1->DR;
+    chr = (uint8_t)usart->reg->DR;
 
     /* If we do have a buffer. */
     if (buffer != NULL)
@@ -234,10 +319,10 @@ static void usart1_handle_rx_interrupt(void)
         fs_buffer_push(buffer, &chr, 1, 0);
 
         /* Tell upper layers that some data is available to read. */
-        fd_data_available(&usart1);
+        fd_data_available(usart);
     }
 
-} /* usart1_handle_rx_interrupt */
+} /* usart_handle_rx_interrupt */
 
 /*
  * usart_stm32f103_enable_interrupt.
@@ -245,14 +330,29 @@ static void usart1_handle_rx_interrupt(void)
  */
 static void usart_stm32f103_enable_interrupt(void *data)
 {
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(data);
+    STM32_USART *usart = (STM32_USART *)data;
 
-    /* Enable the USART1 IRQ channel. */
-    NVIC->ISER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+    /* Process the according to USART device. */
+    switch (usart->device_num)
+    {
+    /* This is USART1 device. */
+    case 1:
+
+        /* Enable the USART1 IRQ channel. */
+        NVIC->ISER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+
+        break;
+
+    /* This is USART2 device. */
+    case 2:
+
+        /* Enable the USART2 IRQ channel. */
+        NVIC->ISER[USART2_IRQn >> 0x05] = (uint32_t)0x01 << (USART2_IRQn & (uint8_t)0x1F);
+
+        break;
+    }
 
 } /* usart_stm32f103_enable_interrupt */
-#endif /* SERIAL_INTERRUPT_MODE */
 
 /*
  * usart_stm32f103_disable_interrupt.
@@ -260,11 +360,27 @@ static void usart_stm32f103_enable_interrupt(void *data)
  */
 static void usart_stm32f103_disable_interrupt(void *data)
 {
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(data);
+    STM32_USART *usart = (STM32_USART *)data;
 
-    /* Disable the USART1 IRQ channel. */
-    NVIC->ICER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+    /* Process the according to USART device. */
+    switch (usart->device_num)
+    {
+    /* This is USART1 device. */
+    case 1:
+
+        /* Disable the USART1 IRQ channel. */
+        NVIC->ICER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+
+        break;
+
+    /* This is USART2 device. */
+    case 2:
+
+        /* Disable the USART2 IRQ channel. */
+        NVIC->ICER[USART2_IRQn >> 0x05] = (uint32_t)0x01 << (USART2_IRQn & (uint8_t)0x1F);
+
+        break;
+    }
 
 } /* usart_stm32f103_disable_interrupt */
 
@@ -280,18 +396,10 @@ static void usart_stm32f103_disable_interrupt(void *data)
 static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *buf, int32_t nbytes, uint32_t flags)
 {
     int32_t to_print = nbytes;
-    SERIAL *usart = (SERIAL *)priv_data;
-#ifdef SERIAL_INTERRUPT_MODE
+    STM32_USART *usart = (STM32_USART *)priv_data;
     FS_BUFFER *buffer;
     uint8_t chr;
-#else
 
-    /* Remove some compiler warnings. */
-    UNUSED_PARAM(fd);
-    UNUSED_PARAM(flags);
-#endif /* SERIAL_INTERRUPT_MODE */
-
-#ifdef SERIAL_INTERRUPT_MODE
     /* If we need to put this string using interrupts. */
     if (flags & SERIAL_INT)
     {
@@ -299,10 +407,10 @@ static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *bu
         buffer = fs_buffer_get(fd, FS_BUFFER_TX, FS_BUFFER_INPLACE);
 
         /* If we have a buffer and we are in TX. */
-        if ((buffer != NULL) && ((usart->flags & SERIAL_IN_TX) == 0))
+        if ((buffer != NULL) && ((usart->serial.flags & SERIAL_IN_TX) == 0))
         {
             /* Set the in TX flag. */
-            usart->flags |= SERIAL_IN_TX;
+            usart->serial.flags |= SERIAL_IN_TX;
 
             /* Pull a byte from the buffer. */
             fs_buffer_pull(buffer, &chr, 1, 0);
@@ -317,11 +425,10 @@ static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *bu
             }
 
             /* Put a byte on USART to start TX. */
-            USART1->DR = ((uint32_t)chr) & 0xFF;
+            usart->reg->DR = ((uint32_t)chr) & 0xFF;
         }
     }
     else
-#endif /* SERIAL_INTERRUPT_MODE */
     {
         /* Disable USART interrupts. */
         usart_stm32f103_disable_interrupt(usart);
@@ -330,7 +437,7 @@ static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *bu
         while (nbytes > 0)
         {
             /* Put a byte on USART. */
-            USART1->DR = ((uint32_t)*buf) & 0xFF;
+            usart->reg->DR = ((uint32_t)*buf) & 0xFF;
 
             /* Decrement number of bytes remaining. */
             nbytes --;
@@ -339,7 +446,7 @@ static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *bu
             buf++;
 
             /* Wait for transmission of the last byte. */
-            while (!(USART1->SR & USART_SR_TC))
+            while (!(usart->reg->SR & USART_SR_TC))
             {
                 ;
             }
@@ -363,26 +470,26 @@ static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *bu
 static int32_t usart_stm32f103_gets(void *fd, void *priv_data, uint8_t *buf, int32_t nbytes, uint32_t flags)
 {
     int32_t to_read = nbytes;
+    STM32_USART *usart = (STM32_USART *)priv_data;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(fd);
-    UNUSED_PARAM(priv_data);
     UNUSED_PARAM(flags);
 
     /* Disable USART interrupts. */
-    usart_stm32f103_disable_interrupt(&usart1);
+    usart_stm32f103_disable_interrupt(usart);
 
     /* While we have some data to be printed. */
     while (nbytes > 0)
     {
         /* While we have a byte to read. */
-        while (!(USART1->SR & USART_SR_RXNE))
+        while (!(usart->reg->SR & USART_SR_RXNE))
         {
             ;
         }
 
         /* Read a byte from USART. */
-        *buf = (uint8_t)USART1->DR;
+        *buf = (uint8_t)usart->reg->DR;
 
         /* Decrement number of bytes remaining. */
         nbytes --;
