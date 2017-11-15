@@ -57,20 +57,32 @@ void serial_stm32f103_init(void)
     usart1_buffer_data.num_buffer_lists = SERIAL_NUM_BUFFER_LIST;
     usart1_buffer_data.threshold_buffers = SERIAL_THRESHOLD_BUFFER;
     usart1_buffer_data.threshold_lists = SERIAL_THRESHOLD_BUFFER_LIST;
-    usart_stm32f103_register(&usart1, "usart1", &usart1_buffer_data, TRUE);
+    usart_stm32f103_register(&usart1, "usart1", 1, BAUD_RATE, &usart1_buffer_data, TRUE);
 #else
-    usart_stm32f103_register(&usart1, "usart1", NULL, TRUE);
+    usart_stm32f103_register(&usart1, "usart1", 1, BAUD_RATE, NULL, TRUE);
 #endif /* SERIAL_INTERRUPT_MODE */
 
 } /* serial_stm32f103_init */
 
 /*
  * usart_stm32f103_register
+ * @usart: STM32 USART instance t be registered.
+ * @name: Name of this USART instance.
+ * @device_num: USART device number we need to register.
+ * @boud_rate: USART baud rate.
+ * @buffer_data: Buffer data for this USART, if not null USART interrupt mode
+ *  will be enabled.
+ * @is_debug: If this USART is needed to be used as debug console.
+ * @return: Success will be returned if USART was successfully registered.
  * This function will register a USART for STM32 platform.
  */
-int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, FS_BUFFER_DATA *buffer_data, uint8_t is_debug)
+int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t device_num, uint32_t baud_rate, FS_BUFFER_DATA *buffer_data, uint8_t is_debug)
 {
     uint32_t usart_flags = ((is_debug == TRUE) ? SERIAL_DEBUG : 0);
+
+    /* Save the USART data. */
+    usart->device_num = device_num;
+    usart->baud_rate = baud_rate;
 
     /* Initialize USART GPIO. */
     switch (usart->device_num)
@@ -326,6 +338,7 @@ static void usart_handle_rx_interrupt(STM32_USART *usart)
 
 /*
  * usart_stm32f103_enable_interrupt.
+ * @data: USART for which interrupts are needed to be enabled.
  * This function will enable interrupts for the given USART.
  */
 static void usart_stm32f103_enable_interrupt(void *data)
@@ -356,6 +369,7 @@ static void usart_stm32f103_enable_interrupt(void *data)
 
 /*
  * usart_stm32f103_disable_interrupt.
+ * @data: USART for which interrupts are needed to be disabled.
  * This function will disable interrupts for the given USART.
  */
 static void usart_stm32f103_disable_interrupt(void *data)
@@ -391,6 +405,7 @@ static void usart_stm32f103_disable_interrupt(void *data)
  * @buf: Data needed to be sent over USART.
  * @nbytes: Number of bytes to be printed from the buffer.
  * @flags: Flags to specify the operation.
+ * @return: Number of bytes printed on the USART.
  * This function sends a buffer on the given USART.
  */
 static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *buf, int32_t nbytes, uint32_t flags)
@@ -465,6 +480,7 @@ static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *bu
  * @buf: Data received will be returned in this buffer.
  * @nbytes: Number of bytes received on serial port.
  * @flags: For now unused.
+ * @return: Number of bytes read from the USART.
  * This function receives and return data from a serial port.
  */
 static int32_t usart_stm32f103_gets(void *fd, void *priv_data, uint8_t *buf, int32_t nbytes, uint32_t flags)

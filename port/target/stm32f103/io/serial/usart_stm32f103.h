@@ -50,7 +50,7 @@ typedef struct _stm32_usart
 
 /* Function prototypes. */
 void serial_stm32f103_init(void);
-int32_t usart_stm32f103_register(STM32_USART *, const char *, FS_BUFFER_DATA *, uint8_t);
+int32_t usart_stm32f103_register(STM32_USART *, const char *, uint8_t, uint32_t, FS_BUFFER_DATA *, uint8_t);
 ISR_FUN usart1_interrupt(void);
 ISR_FUN usart2_interrupt(void);
 
