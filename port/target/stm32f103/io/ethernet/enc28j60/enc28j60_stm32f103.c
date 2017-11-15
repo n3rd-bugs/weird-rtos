@@ -45,29 +45,29 @@ void enc28j60_stm32f103_init(void)
     /* Enable clock for GPIOA. */
     RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
 
-    /* Configure GPIO mode input for PA2 (INT) and output for PA3 (RST). */
-    GPIOA->CRL &= (uint32_t)(~((0x0F << (2 << 2)) | (0x0F << (3 << 2))));
-    GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << (2 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0x0F) << (3 << 2));
+    /* Configure GPIO mode input for PA0 (INT) and output for PA1 (RST). */
+    GPIOA->CRL &= (uint32_t)(~((0x0F << (0 << 2)) | (0x0F << (1 << 2))));
+    GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << (0 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0x0F) << (1 << 2));
 
 #if (ENC28J60_INT_POLL == FALSE)
-    /* Set EXTI line for processing interrupts on PA2 (INT). */
-    AFIO->EXTICR[(0x02 >> 0x02)] &= (uint32_t)(~(0x0F << (0x04 * (0x02 & 0x03))));
-    AFIO->EXTICR[(0x02 >> 0x02)] |= (0x00 << (0x04 * (0x02 & 0x03)));
+    /* Set EXTI line for processing interrupts on PA0 (INT). */
+    AFIO->EXTICR[(0 >> 0x02)] &= (uint32_t)(~(0x0F << (0x04 * (0x00 & 0x03))));
+    AFIO->EXTICR[(0 >> 0x02)] |= (0x00 << (0x04 * (0x00 & 0x03)));
 
     /* Clear EXTI line configuration. */
-    EXTI->IMR &= (uint32_t)~(0x04);
-    EXTI->EMR &= (uint32_t)~(0x04);
-    EXTI->RTSR &= (uint32_t)~(0x04);
-    EXTI->FTSR &= (uint32_t)~(0x04);
+    EXTI->IMR &= (uint32_t)~(1 << 0);
+    EXTI->EMR &= (uint32_t)~(1 << 0);
+    EXTI->RTSR &= (uint32_t)~(1 << 0);
+    EXTI->FTSR &= (uint32_t)~(1 << 0);
 
     /* Enable interrupt mode. */
-    EXTI->IMR |= (0x04);
+    EXTI->IMR |= (1 << 0);
 
     /* Enable interrupt for falling edge. */
-    EXTI->FTSR |= (0x04);
+    EXTI->FTSR |= (1 << 0);
 
-    /* Set EXT2 IRQ channel priority. */
-    NVIC->IP[EXTI2_IRQn] = 2;
+    /* Set EXT0 IRQ channel priority. */
+    NVIC->IP[EXTI0_IRQn] = 0;
 #endif
 
     /* Initialize device APIs. */
@@ -114,8 +114,8 @@ void enc28j60_stm32f103_enable_interrupt(ENC28J60 *device)
     /* If we need to enable interrupts for this device. */
     if (device->flags & ENC28J60_INT_ENABLE)
     {
-        /* Enable the EXT2 IRQ channel. */
-        NVIC->ISER[EXTI2_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI2_IRQn & (uint8_t)0x1F);
+        /* Enable the EXT0 IRQ channel. */
+        NVIC->ISER[EXTI0_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI0_IRQn & (uint8_t)0x1F);
     }
 
 } /* enc28j60_stm32f103_enable_interrupt */
@@ -131,8 +131,8 @@ void enc28j60_stm32f103_disable_interrupt(ENC28J60 *device)
     /* For now unused. */
     UNUSED_PARAM(device);
 
-    /* Disable the EXT2 IRQ channel. */
-    NVIC->ICER[EXTI2_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI2_IRQn & (uint8_t)0x1F);
+    /* Disable the EXT0 IRQ channel. */
+    NVIC->ICER[EXTI0_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI0_IRQn & (uint8_t)0x1F);
 
 } /* enc28j60_stm32f103_disable_interrupt */
 #endif
@@ -149,7 +149,7 @@ uint8_t enc28j60_stm32f103_interrupt_pin(ENC28J60 *device)
     UNUSED_PARAM(device);
 
     /* Return if interrupt pin is high. */
-    return ((GPIOA->IDR & (1 << 2)) != FALSE);
+    return ((GPIOA->IDR & (1 << 0)) != FALSE);
 
 } /* enc28j60_stm32f103_interrupt_pin */
 
@@ -162,8 +162,8 @@ void enc28j60_stm32f103_reset(ENC28J60 *device)
 {
     FD *fd = (FD)device;
 
-    /* Clear the PA3 (RST). */
-    GPIOA->BSRR |= (1 << (3 + 16));
+    /* Clear the PA1 (RST). */
+    GPIOA->BSRR |= (1 << (1 + 16));
 
     /* Release lock for this device. */
     fd_release_lock(fd);
@@ -174,8 +174,8 @@ void enc28j60_stm32f103_reset(ENC28J60 *device)
     /* Acquire lock for this device. */
     ASSERT(fd_get_lock(fd) != SUCCESS);
 
-    /* Set the PA3 (RST). */
-    GPIOA->BSRR |= (1 << 3);
+    /* Set the PA1 (RST). */
+    GPIOA->BSRR |= (1 << 1);
 
 } /* enc28j60_stm32f103_reset */
 

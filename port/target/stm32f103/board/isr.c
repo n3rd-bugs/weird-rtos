@@ -16,7 +16,7 @@
 /* ISR definitions. */
 void __attribute__ ((weak, alias("cpu_interrupt"))) nmi_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) hard_fault_interrupt(void);
-void __attribute__ ((weak, alias("cpu_interrupt"))) exti2_interrupt(void);
+void __attribute__ ((weak, alias("cpu_interrupt"))) exti0_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) i2c1_event_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) i2c1_error_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) usart1_interrupt(void);
@@ -49,9 +49,9 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x03  RTC Wakeup through the EXTI line              */
         (isr)&cpu_interrupt,        /*  0x04  FLASH                 */
         (isr)&cpu_interrupt,        /*  0x05  RCC                   */
-        (isr)&cpu_interrupt,        /*  0x06  EXTI Line0            */
+        (isr)&exti0_interrupt,      /*  0x06  EXTI Line0            */
         (isr)&cpu_interrupt,        /*  0x07  EXTI Line1            */
-        (isr)&exti2_interrupt,      /*  0x08  EXTI Line2            */
+        (isr)&cpu_interrupt,        /*  0x08  EXTI Line2            */
         (isr)&cpu_interrupt,        /*  0x09  EXTI Line3            */
         (isr)&cpu_interrupt,        /*  0x0A  EXTI Line4            */
         (isr)&cpu_interrupt,        /*  0x0B  DMA1 Stream 0         */
