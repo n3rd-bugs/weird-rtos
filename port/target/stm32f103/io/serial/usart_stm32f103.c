@@ -21,7 +21,7 @@
 #endif /* SERIAL_INTERRUPT_MODE */
 
 /* Global port data. */
-static STM32_USART *usart1_data, *usart2_data;
+static STM32_USART *usart1_data, *usart2_data, *usart3_data;
 
 /* Internal function prototypes. */
 static int32_t usart_stm32f103_init(void *);
@@ -136,6 +136,32 @@ int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t d
 
         /* Save the USART2 data. */
         usart2_data = usart;
+
+        break;
+
+    /* If this is USART3 device. */
+    case 3:
+
+        /* Reset USART3. */
+        RCC->APB1RSTR |= RCC_APB1Periph_USART3;
+        RCC->APB1RSTR &= (uint32_t)~RCC_APB1Periph_USART3;
+
+        /* Enable clock for USART3. */
+        RCC->APB1ENR |= RCC_APB1Periph_USART3;
+
+        /* Enable clock for GPIOB. */
+        RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
+
+        /* Set alternate function for PB10 (TX) and PB11 (RX). */
+        GPIOB->CRH &= (uint32_t)(~((0x0F << ((10 - 8) << 2)) | (0x0F << ((11 - 8) << 2))));
+        GPIOB->CRH |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((10 - 8) << 2));
+        GPIOB->CRH |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((11 - 8) << 2));
+
+        /* Save the USART register. */
+        usart->reg = USART3;
+
+        /* Save the USART3 data. */
+        usart3_data = usart;
 
         break;
     }
@@ -267,6 +293,32 @@ ISR_FUN usart2_interrupt(void)
 } /* usart2_interrupt */
 
 /*
+ * usart3_interrupt
+ * This function is interrupt handler for USART3 interrupt.
+ */
+ISR_FUN usart3_interrupt(void)
+{
+    ISR_ENTER();
+
+    /* If a transmission was successfully completed. */
+    if (USART3->SR & USART_SR_TC)
+    {
+        /* Handle transmission complete interrupt. */
+        usart_handle_tx_interrupt(usart3_data);
+    }
+
+    /* If some data is available to read. */
+    if (USART3->SR & USART_SR_RXNE)
+    {
+        /* Handle receive data available interrupt. */
+        usart_handle_rx_interrupt(usart3_data);
+    }
+
+    ISR_EXIT();
+
+} /* usart3_interrupt */
+
+/*
  * usart_handle_tx_interrupt
  * @usart: Device data on which we need to process TX interrupt.
  * This function handles TX interrupt.
@@ -378,6 +430,14 @@ static void usart_stm32f103_enable_interrupt(void *data)
         NVIC->ISER[USART2_IRQn >> 0x05] = (uint32_t)0x01 << (USART2_IRQn & (uint8_t)0x1F);
 
         break;
+
+    /* This is USART3 device. */
+    case 3:
+
+        /* Enable the USART3 IRQ channel. */
+        NVIC->ISER[USART3_IRQn >> 0x05] = (uint32_t)0x01 << (USART3_IRQn & (uint8_t)0x1F);
+
+        break;
     }
 
 } /* usart_stm32f103_enable_interrupt */
@@ -407,6 +467,14 @@ static void usart_stm32f103_disable_interrupt(void *data)
 
         /* Disable the USART2 IRQ channel. */
         NVIC->ICER[USART2_IRQn >> 0x05] = (uint32_t)0x01 << (USART2_IRQn & (uint8_t)0x1F);
+
+        break;
+
+    /* This is USART3 device. */
+    case 3:
+
+        /* Disable the USART3 IRQ channel. */
+        NVIC->ICER[USART3_IRQn >> 0x05] = (uint32_t)0x01 << (USART3_IRQn & (uint8_t)0x1F);
 
         break;
     }

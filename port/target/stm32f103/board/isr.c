@@ -21,6 +21,7 @@ void __attribute__ ((weak, alias("cpu_interrupt"))) i2c1_event_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) i2c1_error_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) usart1_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) usart2_interrupt(void);
+void __attribute__ ((weak, alias("cpu_interrupt"))) usart3_interrupt(void);
 
 /* Initial vector table definition. */
 __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
@@ -82,7 +83,7 @@ __attribute__ ((section (".interrupts"))) VECTOR_TABLE system_isr_table =
         (isr)&cpu_interrupt,        /*  0x24  SPI2                  */
         (isr)&usart1_interrupt,     /*  0x25  USART1                */
         (isr)&usart2_interrupt,     /*  0x26  USART2                */
-        (isr)&cpu_interrupt,        /*  0x27  USART3                */
+        (isr)&usart3_interrupt,     /*  0x27  USART3                */
         (isr)&cpu_interrupt,        /*  0x28  External Line[15:10]s */
         (isr)&cpu_interrupt,        /*  0x29  RTC Alarm (A and B) through EXTI Line */
         (isr)&cpu_interrupt,        /*  0x2A  USB OTG FS Wakeup through EXTI line   */

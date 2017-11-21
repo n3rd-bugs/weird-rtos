@@ -53,6 +53,7 @@ void serial_stm32f103_init(void);
 int32_t usart_stm32f103_register(STM32_USART *, const char *, uint8_t, uint32_t, FS_BUFFER_DATA *, uint8_t);
 ISR_FUN usart1_interrupt(void);
 ISR_FUN usart2_interrupt(void);
+ISR_FUN usart3_interrupt(void);
 
 #endif /* CONFIG_SERIAL */
 #endif /* _USART_STM32F103_H_ */
