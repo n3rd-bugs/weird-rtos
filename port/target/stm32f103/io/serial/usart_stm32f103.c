@@ -123,6 +123,14 @@ int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t d
         /* Enable clock for USART2. */
         RCC->APB1ENR |= RCC_APB1Periph_USART2;
 
+        /* Enable clock for GPIOA. */
+        RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
+
+        /* Set alternate function for PA2 (TX) and PA3 (RX). */
+        GPIOA->CRL &= (uint32_t)(~((0x0F << ((2 - 0) << 2)) | (0x0F << ((3 - 0) << 2))));
+        GPIOA->CRL |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((2 - 0) << 2));
+        GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((3 - 0) << 2));
+
         /* Save the USART register. */
         usart->reg = USART2;
 
