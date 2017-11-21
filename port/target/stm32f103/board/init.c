@@ -68,13 +68,13 @@ void sysclock_init(void)
     /* HCLK = SYSCLK. */
     RCC->CFGR |= (uint32_t)RCC_CFGR_HPRE_DIV1;
 
+    /* PCLK1 = HCLK / 2. */
+    RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE1_DIV2;
+
     /* PCLK2 = HCLK. */
     RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE2_DIV1;
 
-    /* PCLK1 = HCLK. */
-    RCC->CFGR |= (uint32_t)RCC_CFGR_PPRE1_DIV2;
-
-    /*  PLL configuration: PLLCLK = HSE * 9 = 72 MHz. */
+    /* PLL configuration: PLLCLK = HSE * 9 = 72 MHz. */
     RCC->CFGR &= (uint32_t)((uint32_t)~(RCC_CFGR_PLLSRC | RCC_CFGR_PLLXTPRE |
                                         RCC_CFGR_PLLMULL));
     RCC->CFGR |= (uint32_t)(RCC_CFGR_PLLSRC_HSE | RCC_CFGR_PLLMULL9);

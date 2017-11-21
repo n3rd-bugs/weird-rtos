@@ -99,7 +99,7 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
     }
 
     /* Calculate CCR register value. */
-    ccr = (uint16_t)((uint32_t)PCLK_FREQ / (uint32_t)(i2c_stm->speed << 1));
+    ccr = (uint16_t)((uint32_t)PCLK1_FREQ / (uint32_t)(i2c_stm->speed << 1));
 
     /* If we have a very low value. */
     if (ccr < 0x4)
@@ -112,13 +112,13 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
     i2c_stm->i2c_reg->CR1 = I2C_CR1_ACK;
 
     /* Configure I2C clock and enable error interrupts. */
-    i2c_stm->i2c_reg->CR2 = (PCLK_FREQ / 1000000);
+    i2c_stm->i2c_reg->CR2 = (PCLK1_FREQ / 1000000);
 
     /* Update the CCR register. */
     i2c_stm->i2c_reg->CCR = ccr;
 
     /* Set the TRISE register. */
-    i2c_stm->i2c_reg->TRISE = (PCLK_FREQ / 1000000) + 1;
+    i2c_stm->i2c_reg->TRISE = (PCLK1_FREQ / 1000000) + 1;
 
     /* Enable 7-bit addressing. */
     i2c_stm->i2c_reg->OAR1 = 0x00;
@@ -169,13 +169,13 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
         i2c_stm->i2c_reg->CR1 = I2C_CR1_ACK;
 
         /* Configure I2C clock. */
-        i2c_stm->i2c_reg->CR2 = (PCLK_FREQ / 1000000);
+        i2c_stm->i2c_reg->CR2 = (PCLK1_FREQ / 1000000);
 
         /* Update the CCR register. */
         i2c_stm->i2c_reg->CCR = ccr;
 
         /* Set the TRISE register. */
-        i2c_stm->i2c_reg->TRISE = (PCLK_FREQ / 1000000) + 1;
+        i2c_stm->i2c_reg->TRISE = (PCLK1_FREQ / 1000000) + 1;
 
         /* Enable 7-bit addressing. */
         i2c_stm->i2c_reg->OAR1 = 0x00;

@@ -23,7 +23,7 @@
  */
 void spi_stm32f103_init(SPI_DEVICE *device)
 {
-    uint32_t baud_scale;
+    uint32_t baud_scale = 0;
     uint8_t bit_count = 0;
 
     /* Select the required SPI register and initialize GPIO. */
@@ -54,6 +54,9 @@ void spi_stm32f103_init(SPI_DEVICE *device)
         /* Set the CS. */
         GPIOA->BSRR |= (1 << 4);
 
+        /* Calculate the required baudrate prescaler. */
+        baud_scale = CEIL_DIV(PCLK2_FREQ, device->baudrate);
+
         break;
 
     case 2:
@@ -81,6 +84,9 @@ void spi_stm32f103_init(SPI_DEVICE *device)
         /* Set the PB12 (CS). */
         GPIOB->BSRR |= (1 << 12);
 
+        /* Calculate the required baudrate prescaler. */
+        baud_scale = CEIL_DIV(PCLK1_FREQ, device->baudrate);
+
         break;
 
 #if defined (STM32F10X_HD) || defined  (STM32F10X_CL)
@@ -95,6 +101,9 @@ void spi_stm32f103_init(SPI_DEVICE *device)
         /* Enable AHB clock for SPI3. */
         RCC->APB1ENR |= RCC_APB1ENR_SPI3EN;
 
+        /* Calculate the required baudrate prescaler. */
+        baud_scale = CEIL_DIV(PCLK1_FREQ, device->baudrate);
+
         break;
 
 #endif /* defined (STM32F10X_HD) || defined  (STM32F10X_CL) */
@@ -106,8 +115,6 @@ void spi_stm32f103_init(SPI_DEVICE *device)
         break;
     }
 
-    /* Calculate the required baudrate prescaler. */
-    baud_scale = CEIL_DIV(PCLK_FREQ, device->baudrate);
     if (baud_scale >= 256)
     {
         /* Use baud scale 7. */

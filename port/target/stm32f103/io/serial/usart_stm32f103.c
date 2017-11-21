@@ -182,7 +182,14 @@ static int32_t usart_stm32f103_init(void *data)
     usart->reg->CR3 &= (uint16_t)~((USART_CR3_RTSE | USART_CR3_CTSE));
 
     /* Calculate and set the baud rate parameters. */
-    integral = ((25 * PCLK_FREQ) / (4 * usart->baud_rate));
+    if (usart->reg == USART1)
+    {
+        integral = ((25 * PCLK2_FREQ) / (4 * usart->baud_rate));
+    }
+    else
+    {
+        integral = ((25 * PCLK1_FREQ) / (4 * usart->baud_rate));
+    }
     temp = (integral / 100) << 4;
     fractional = integral - (100 * (temp >> 4));
     temp |= ((((fractional * 16) + 50) / 100)) & (0x0F);

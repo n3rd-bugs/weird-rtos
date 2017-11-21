@@ -19,9 +19,10 @@
 #include <stm32f10x.h>
 
 /* Peripheral clock configuration. */
-#define SYS_FREQ                        72000000
-#define PCLK_FREQ                       SYS_FREQ
-#define HW_TICKS_PER_SEC                (PCLK_FREQ / 2)
+#define SYS_FREQ                        (72000000)
+#define PCLK1_FREQ                      (SYS_FREQ / 2)
+#define PCLK2_FREQ                      (SYS_FREQ)
+#define HW_TICKS_PER_SEC                (PCLK1_FREQ)
 
 /* Required definitions for scheduling. */
 #define CORTEX_M3_PEND_SV_REG           (SCB->ICSR)
