@@ -84,14 +84,6 @@ void run_first_task(void)
     /* Schedule a context switch. */
     PEND_SV();
 
-    __asm volatile
-    (
-    "   LDR     R0, =0xE000ED08   \n"
-    "   LDR     R0, [R0]          \n"
-    "   LDR     R0, [R0]          \n"
-    "   MSR     MSP, R0           \n"
-    );
-
     /* Mark entry to a new task. */
     MARK_ENTRY();
 
