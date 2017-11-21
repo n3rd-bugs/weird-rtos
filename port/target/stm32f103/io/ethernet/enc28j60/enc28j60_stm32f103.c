@@ -42,17 +42,20 @@ void enc28j60_stm32f103_init(void)
     enc28j60.spi.msg = &spi_stm32f103_message;
     enc28j60.spi.data = &enc28j60_spi;
 
-    /* Enable clock for GPIOA. */
-    RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
+    /* Enable clock for GPIOB. */
+    RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 
-    /* Configure GPIO mode input for PA0 (INT) and output for PA1 (RST). */
-    GPIOA->CRL &= (uint32_t)(~((0x0F << (0 << 2)) | (0x0F << (1 << 2))));
-    GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << (0 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0x0F) << (1 << 2));
+    /* Configure GPIO mode input for PB0 (INT) and output for PB1 (RST). */
+    GPIOB->CRL &= (uint32_t)(~((0x0F << (0 << 2)) | (0x0F << (1 << 2))));
+    GPIOB->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << (0 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0x0F) << (1 << 2));
 
 #if (ENC28J60_INT_POLL == FALSE)
-    /* Set EXTI line for processing interrupts on PA0 (INT). */
+    /* Enable clock for AFIO. */
+    RCC->APB2ENR |= RCC_APB2Periph_AFIO;
+
+    /* Set EXTI line for processing interrupts on PB0 (INT). */
     AFIO->EXTICR[(0 >> 0x02)] &= (uint32_t)(~(0x0F << (0x04 * (0x00 & 0x03))));
-    AFIO->EXTICR[(0 >> 0x02)] |= (0x00 << (0x04 * (0x00 & 0x03)));
+    AFIO->EXTICR[(0 >> 0x02)] |= (0x01 << (0x04 * (0x00 & 0x03)));
 
     /* Clear EXTI line configuration. */
     EXTI->IMR &= (uint32_t)~(1 << 0);
@@ -148,8 +151,8 @@ uint8_t enc28j60_stm32f103_interrupt_pin(ENC28J60 *device)
     /* For now unused. */
     UNUSED_PARAM(device);
 
-    /* Return if interrupt pin is high. */
-    return ((GPIOA->IDR & (1 << 0)) != FALSE);
+    /* Return if PB0 (INT) is high. */
+    return ((GPIOB->IDR & (1 << 0)) != FALSE);
 
 } /* enc28j60_stm32f103_interrupt_pin */
 
@@ -162,8 +165,8 @@ void enc28j60_stm32f103_reset(ENC28J60 *device)
 {
     FD *fd = (FD)device;
 
-    /* Clear the PA1 (RST). */
-    GPIOA->BSRR |= (1 << (1 + 16));
+    /* Clear the PB1 (RST). */
+    GPIOB->BSRR |= (1 << (1 + 16));
 
     /* Release lock for this device. */
     fd_release_lock(fd);
@@ -174,8 +177,8 @@ void enc28j60_stm32f103_reset(ENC28J60 *device)
     /* Acquire lock for this device. */
     ASSERT(fd_get_lock(fd) != SUCCESS);
 
-    /* Set the PA1 (RST). */
-    GPIOA->BSRR |= (1 << 1);
+    /* Set the PB1 (RST). */
+    GPIOB->BSRR |= (1 << 1);
 
 } /* enc28j60_stm32f103_reset */
 
