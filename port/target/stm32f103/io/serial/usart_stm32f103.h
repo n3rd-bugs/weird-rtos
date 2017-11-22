@@ -31,6 +31,9 @@
 #define SERIAL_THRESHOLD_BUFFER_LIST    0
 #endif /* CMAKE_BUILD */
 
+/* USART flags. */
+#define STM32_USART_HW_FCTRL            0x01
+
 /* STM32 USRAT device. */
 typedef struct _stm32_usart
 {
@@ -46,11 +49,14 @@ typedef struct _stm32_usart
     /* Baud rate. */
     uint32_t         baud_rate;
 
+    /* USART flags */
+    uint32_t         flags;
+
 } STM32_USART;
 
 /* Function prototypes. */
 void serial_stm32f103_init(void);
-int32_t usart_stm32f103_register(STM32_USART *, const char *, uint8_t, uint32_t, FS_BUFFER_DATA *, uint8_t);
+int32_t usart_stm32f103_register(STM32_USART *, const char *, uint8_t, uint32_t, FS_BUFFER_DATA *, uint8_t, uint8_t);
 ISR_FUN usart1_interrupt(void);
 ISR_FUN usart2_interrupt(void);
 ISR_FUN usart3_interrupt(void);

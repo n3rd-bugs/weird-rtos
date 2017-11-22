@@ -45,7 +45,7 @@ void ppp_stm32f103_init(void)
     usart2_buffer_data.num_buffer_lists = PPP_NUM_BUFFER_LIST;
     usart2_buffer_data.threshold_buffers = PPP_THRESHOLD_BUFFER;
     usart2_buffer_data.threshold_lists = PPP_THRESHOLD_BUFFER_LIST;
-    usart_stm32f103_register(&usart2, "usart2", 2, PPP_BAUD_RATE, &usart2_buffer_data, FALSE);
+    usart_stm32f103_register(&usart2, "usart2", 2, PPP_BAUD_RATE, &usart2_buffer_data, TRUE, FALSE);
 
     /* Open USART2 to be registered with PPP. */
     fd = fs_open("\\console\\usart2", 0);

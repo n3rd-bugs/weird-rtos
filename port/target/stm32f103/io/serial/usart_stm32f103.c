@@ -57,9 +57,9 @@ void serial_stm32f103_init(void)
     usart1_buffer_data.num_buffer_lists = SERIAL_NUM_BUFFER_LIST;
     usart1_buffer_data.threshold_buffers = SERIAL_THRESHOLD_BUFFER;
     usart1_buffer_data.threshold_lists = SERIAL_THRESHOLD_BUFFER_LIST;
-    usart_stm32f103_register(&usart1, "usart1", 1, BAUD_RATE, &usart1_buffer_data, TRUE);
+    usart_stm32f103_register(&usart1, "usart1", 1, BAUD_RATE, &usart1_buffer_data, FALSE, TRUE);
 #else
-    usart_stm32f103_register(&usart1, "usart1", 1, BAUD_RATE, NULL, TRUE);
+    usart_stm32f103_register(&usart1, "usart1", 1, BAUD_RATE, NULL, FALSE, TRUE);
 #endif /* SERIAL_INTERRUPT_MODE */
 
 } /* serial_stm32f103_init */
@@ -72,11 +72,12 @@ void serial_stm32f103_init(void)
  * @boud_rate: USART baud rate.
  * @buffer_data: Buffer data for this USART, if not null USART interrupt mode
  *  will be enabled.
+ * @hw_flow: If we need to enable hardware flow control for this USART.
  * @is_debug: If this USART is needed to be used as debug console.
  * @return: Success will be returned if USART was successfully registered.
  * This function will register a USART for STM32 platform.
  */
-int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t device_num, uint32_t baud_rate, FS_BUFFER_DATA *buffer_data, uint8_t is_debug)
+int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t device_num, uint32_t baud_rate, FS_BUFFER_DATA *buffer_data, uint8_t hw_flow, uint8_t is_debug)
 {
     uint32_t usart_flags = ((is_debug == TRUE) ? SERIAL_DEBUG : 0);
 
@@ -130,6 +131,18 @@ int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t d
         GPIOA->CRL &= (uint32_t)(~((0x0F << ((2 - 0) << 2)) | (0x0F << ((3 - 0) << 2))));
         GPIOA->CRL |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((2 - 0) << 2));
         GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((3 - 0) << 2));
+
+        /* If we need to enable hardware flow control for this USART. */
+        if (hw_flow)
+        {
+            /* Set alternate function for PA0 (CTS) and PA1 (RTS). */
+            GPIOA->CRL &= (uint32_t)(~((0x0F << ((0 - 0) << 2)) | (0x0F << ((1 - 0) << 2))));
+            GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((0 - 0) << 2));
+            GPIOA->CRL |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((1 - 0) << 2));
+
+            /* We will be using HW flow control for this USART. */
+            usart->flags |= STM32_USART_HW_FCTRL;
+        }
 
         /* Save the USART register. */
         usart->reg = USART2;
@@ -212,8 +225,12 @@ static int32_t usart_stm32f103_init(void *data)
     /* Use one stop bit for this USART. */
     usart->reg->CR2 &= (uint16_t)~(USART_CR2_STOP);
 
-    /* Don't use CTS/RTS signals. */
-    usart->reg->CR3 &= (uint16_t)~((USART_CR3_RTSE | USART_CR3_CTSE));
+    /* If we need to use hardware flow control. */
+    if (usart->flags & STM32_USART_HW_FCTRL)
+    {
+        /* Use CTS/RTS signals. */
+        usart->reg->CR3 |= ((USART_CR3_RTSE | USART_CR3_CTSE));
+    }
 
     /* Calculate and set the baud rate parameters. */
     if (usart->reg == USART1)
