@@ -100,6 +100,7 @@ void adc_avr_channel_unselect(uint32_t channel)
 
 /*
  * adc_avr_read
+ * @return: Returns the ADC reading.
  * This function will take a reading from the given ADC channel.
  */
 uint32_t adc_avr_read(void)
@@ -158,5 +159,4 @@ void adc_avr_periodic_read_stop(void)
     TIMSK0 &= (uint8_t)~0x02;
 
 } /* adc_avr_periodic_read_stop */
-
 #endif /* CONFIG_ADC */

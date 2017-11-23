@@ -17,6 +17,13 @@
 #ifdef CONFIG_ADC
 #include <adc.h>
 
+/* Default ADC configuration. */
+#ifndef CMAKE_BUILD
+#define ADC_AVR_REF                 (ADC_AVR_REF_INT_2_56)
+#define ADC_AVR_PRESCALE            (ADC_AVR_DIV_128)
+#define ADC_AVR_TIMER_PRESCALE      (TIMER0_AVR_DIV_64)
+#endif /* CMAKE_BUILD */
+
 /* ADC configuration macros. */
 /* ADMUX register definitions. */
 #define ADC_AVR_REF_AREF            (0)
@@ -41,13 +48,6 @@
 #define TIMER0_AVR_DIV_64           (0x03)
 #define TIMER0_AVR_DIV_256          (0x04)
 #define TIMER0_AVR_DIV_1024         (0x05)
-
-/* Default ADC configuration. */
-#ifndef CMAKE_BUILD
-#define ADC_AVR_REF                 (ADC_AVR_REF_INT_2_56)
-#define ADC_AVR_PRESCALE            (ADC_AVR_DIV_128)
-#define ADC_AVR_TIMER_PRESCALE      (TIMER0_AVR_DIV_64)
-#endif /* CMAKE_BUILD */
 
 /* Function prototypes. */
 void adc_avr_init(void);
