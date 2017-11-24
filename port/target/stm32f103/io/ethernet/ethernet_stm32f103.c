@@ -22,10 +22,10 @@
 
 #if (ENC28J60_INT_POLL == FALSE)
 /*
- * exti0_interrupt
- * This function is interrupt handler for EXTI0 interrupt.
+ * exti15_10_interrupt
+ * This function is interrupt handler for EXTI15_10 interrupt.
  */
-ISR_FUN exti0_interrupt(void)
+ISR_FUN exti15_10_interrupt(void)
 {
     ISR_ENTER();
 
@@ -34,12 +34,12 @@ ISR_FUN exti0_interrupt(void)
     enc28j60_stm32f103_handle_interrupt();
 #endif
 
-    /* Clear the interrupt pending bit or EXTI2 channel. */
-    EXTI->PR = (1 << 0);
+    /* Clear the interrupt pending bit or EXTI14 channel. */
+    EXTI->PR = (1 << 14);
 
     ISR_EXIT();
 
-} /* exti0_interrupt */
+} /* exti15_10_interrupt */
 #endif
 
 /*

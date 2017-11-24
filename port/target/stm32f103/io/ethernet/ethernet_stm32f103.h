@@ -18,7 +18,7 @@
 
 /* Function prototypes. */
 void ethernet_stm32f103_init(void);
-ISR_FUN exti0_interrupt(void);
+ISR_FUN exti15_10_interrupt(void);
 
 #endif /* CONFIG_ETHERNET */
 #endif /* _ETHERNET_STM32F103_H_ */

@@ -42,35 +42,35 @@ void enc28j60_stm32f103_init(void)
     enc28j60.spi.msg = &spi_stm32f103_message;
     enc28j60.spi.data = &enc28j60_spi;
 
-    /* Enable clock for GPIOB. */
-    RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
+    /* Enable clock for GPIOC. */
+    RCC->APB2ENR |= RCC_APB2Periph_GPIOC;
 
-    /* Configure GPIO mode input for PB0 (INT) and output for PB1 (RST). */
-    GPIOB->CRL &= (uint32_t)(~((0x0F << (0 << 2)) | (0x0F << (1 << 2))));
-    GPIOB->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << (0 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0x0F) << (1 << 2));
+    /* Configure GPIO mode input for PC14 (INT) and output for PC15 (RST). */
+    GPIOC->CRH &= (uint32_t)(~((0x0F << ((14 - 8) << 2)) | (0x0F << ((15 - 8) << 2))));
+    GPIOC->CRH |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((14 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0x0F) << ((15 - 8) << 2));
 
 #if (ENC28J60_INT_POLL == FALSE)
     /* Enable clock for AFIO. */
     RCC->APB2ENR |= RCC_APB2Periph_AFIO;
 
-    /* Set EXTI line for processing interrupts on PB0 (INT). */
-    AFIO->EXTICR[(0 >> 0x02)] &= (uint32_t)(~(0x0F << (0x04 * (0x00 & 0x03))));
-    AFIO->EXTICR[(0 >> 0x02)] |= (0x01 << (0x04 * (0x00 & 0x03)));
+    /* Set EXTI line for processing interrupts on PC14 (INT). */
+    AFIO->EXTICR[(14 >> 0x02)] &= (uint32_t)(~(0x0F << (0x04 * (14 & 0x03))));
+    AFIO->EXTICR[(14 >> 0x02)] |= (0x02 << (0x04 * (14 & 0x03)));
 
     /* Clear EXTI line configuration. */
-    EXTI->IMR &= (uint32_t)~(1 << 0);
-    EXTI->EMR &= (uint32_t)~(1 << 0);
-    EXTI->RTSR &= (uint32_t)~(1 << 0);
-    EXTI->FTSR &= (uint32_t)~(1 << 0);
+    EXTI->IMR &= (uint32_t)~(1 << 14);
+    EXTI->EMR &= (uint32_t)~(1 << 14);
+    EXTI->RTSR &= (uint32_t)~(1 << 14);
+    EXTI->FTSR &= (uint32_t)~(1 << 14);
 
     /* Enable interrupt mode. */
-    EXTI->IMR |= (1 << 0);
+    EXTI->IMR |= (1 << 14);
 
     /* Enable interrupt for falling edge. */
-    EXTI->FTSR |= (1 << 0);
+    EXTI->FTSR |= (1 << 14);
 
-    /* Set EXT0 IRQ channel priority. */
-    NVIC->IP[EXTI0_IRQn] = 0;
+    /* Set EXT15_10 IRQ channel priority. */
+    NVIC->IP[EXTI15_10_IRQn] = 0;
 #endif
 
     /* Initialize device APIs. */
@@ -117,8 +117,8 @@ void enc28j60_stm32f103_enable_interrupt(ENC28J60 *device)
     /* If we need to enable interrupts for this device. */
     if (device->flags & ENC28J60_INT_ENABLE)
     {
-        /* Enable the EXT0 IRQ channel. */
-        NVIC->ISER[EXTI0_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI0_IRQn & (uint8_t)0x1F);
+        /* Enable the EXT15_10 IRQ channel. */
+        NVIC->ISER[EXTI15_10_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI15_10_IRQn & (uint8_t)0x1F);
     }
 
 } /* enc28j60_stm32f103_enable_interrupt */
@@ -134,8 +134,8 @@ void enc28j60_stm32f103_disable_interrupt(ENC28J60 *device)
     /* For now unused. */
     UNUSED_PARAM(device);
 
-    /* Disable the EXT0 IRQ channel. */
-    NVIC->ICER[EXTI0_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI0_IRQn & (uint8_t)0x1F);
+    /* Disable the EXT15_10 IRQ channel. */
+    NVIC->ICER[EXTI15_10_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI15_10_IRQn & (uint8_t)0x1F);
 
 } /* enc28j60_stm32f103_disable_interrupt */
 #endif
@@ -151,8 +151,8 @@ uint8_t enc28j60_stm32f103_interrupt_pin(ENC28J60 *device)
     /* For now unused. */
     UNUSED_PARAM(device);
 
-    /* Return if PB0 (INT) is high. */
-    return ((GPIOB->IDR & (1 << 0)) != FALSE);
+    /* Return if PC14 (INT) is high. */
+    return ((GPIOC->IDR & (1 << 14)) != FALSE);
 
 } /* enc28j60_stm32f103_interrupt_pin */
 
@@ -165,8 +165,8 @@ void enc28j60_stm32f103_reset(ENC28J60 *device)
 {
     FD *fd = (FD)device;
 
-    /* Clear the PB1 (RST). */
-    GPIOB->BSRR |= (1 << (1 + 16));
+    /* Clear the PC15 (RST). */
+    GPIOC->BSRR |= (uint32_t)(1 << (15 + 16));
 
     /* Release lock for this device. */
     fd_release_lock(fd);
@@ -177,8 +177,8 @@ void enc28j60_stm32f103_reset(ENC28J60 *device)
     /* Acquire lock for this device. */
     ASSERT(fd_get_lock(fd) != SUCCESS);
 
-    /* Set the PB1 (RST). */
-    GPIOB->BSRR |= (1 << 1);
+    /* Set the PC15 (RST). */
+    GPIOC->BSRR |= (1 << 15);
 
 } /* enc28j60_stm32f103_reset */
 
