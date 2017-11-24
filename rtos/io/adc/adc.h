@@ -18,9 +18,6 @@
 
 #ifdef CONFIG_ADC
 
-/* This is callback function when ADC data is available to read. */
-typedef void ADC_DATA_CALLBACK (uint32_t);
-
 /* Include ADC target configuration. */
 #include <adc_target.h>
 

@@ -49,6 +49,9 @@
 #define TIMER0_AVR_DIV_256          (0x04)
 #define TIMER0_AVR_DIV_1024         (0x05)
 
+/* This is callback function when ADC data is available to read. */
+typedef void ADC_DATA_CALLBACK (uint32_t);
+
 /* Function prototypes. */
 void adc_avr_init(void);
 void adc_avr_channel_select(uint32_t);
