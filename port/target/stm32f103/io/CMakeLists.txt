@@ -1,4 +1,7 @@
 # Add subdirectories.
+if (${CONFIG_ADC})
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/adc)
+endif ()
 if (${CONFIG_ETHERNET})
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/ethernet)
 endif ()
