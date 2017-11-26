@@ -18,13 +18,15 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 | ------------ | ---- | -------- |
 | atmega644 | AVR 8-bit | USART, ADC, SPI, Ethernet, MMC, File system, Alpha Numeric LCD |
 | atmega1284 | AVR 8-bit | USART, ADC, SPI, Ethernet, MMC, File system, Alpha Numeric LCD |
-| STM32F407Discovery | Cortex | USART, SPI, Ethernet |
+| STM32F407Discovery | Cortex-M4 | USART, SPI, Ethernet |
+| STM32F103-stamp | Cortex-M3 | USART, ADC, SPI, Ethernet, MMC, File system, Alpha Numeric LCD |
 
 ## Minimum Requirements
 | Controller | ROM | ROM actual\* | RAM | RAM Actual\*\* |
 | ---------- | --- | ---------- | --- | ---------- |
-| AVR 8-bit | 4 KB | 2962 bytes | 1 KB | 239 bytes |
-| Cortex-M4 | 4 KB | 2755 bytes | 2 KB | 880 bytes |
+| AVR 8-bit | 4 KB | 3086 bytes | 1 KB | 345 bytes |
+| Cortex-M3 | 4 KB | 2075 bytes | 2 KB | 784 bytes |
+| Cortex-M4 | 4 KB | 2139 bytes | 2 KB | 960 bytes |
 
 _* with size optimizations_  
 _** hello.c example with serial disabled, not including system stack_
