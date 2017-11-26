@@ -134,6 +134,7 @@ void adc_stm32_channel_unselect(uint32_t channel)
 
 /*
  * adc_stm32_read
+ * @return: Returns the ADC reading.
  * This function will take a reading from the given ADC channel.
  */
 uint32_t adc_stm32_read(void)
