@@ -31,7 +31,9 @@
 void system_assert(int32_t code, char *file, uint32_t line, TASK *task)
 {
 #ifdef CONFIG_SERIAL
+#ifdef ASSERT_FILE_INFO
     uint8_t line_buf[12];
+#endif /* ASSERT_FILE_INFO */
 #endif
 
     /* Remove some compiler warnings. */
