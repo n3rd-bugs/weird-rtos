@@ -18,7 +18,8 @@
 #ifdef PPP_MODEM_CHAT
 
 /* Status code definitions. */
-#define MODEM_CHAT_IGNORE       -930
+#define MODEM_CHAT_INCOMPLETE   -930
+#define MODEM_CHAT_INVALID      -931
 
 /* Function prototypes. */
 int32_t modem_chat_process(FD, FS_BUFFER *);

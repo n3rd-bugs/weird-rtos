@@ -37,7 +37,6 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER *buffer, uint8_t acfc)
     /* First un-escape the data. */
     status = ppp_hdlc_unescape(buffer);
 
-
     /* RFC-1662:
      * +----------+----------+----------+----------+----------+----------+----------+
      * |   Flag   | Address  | Control  | Protocol |    PPP   |   FCS    |   Flag   |
@@ -203,7 +202,7 @@ void ppp_hdlc_unescape_one(FS_BUFFER_ONE *buffer, uint8_t *last_escaped)
         data[converted] = (buffer->buffer[0] ^ 0x20);
         converted ++;
 
-        /* Reest the escape flag. */
+        /* Reset the escape flag. */
         *last_escaped = FALSE;
 
         /* Consume this byte. */

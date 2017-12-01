@@ -25,7 +25,10 @@
  *  sent.
  * @rx_buffer: Buffer in which data was received.
  * @return: Returns SUCCESS if data was successfully processed.
- *  MODEM_CHAT_IGNORE is returned if data was not recognized.
+ *  MODEM_CHAT_INCOMPLETE is returned if we are in process of receiving the
+ *      complete message,
+ *  MODEM_CHAT_INVALID will be returned if received data is not recognized and
+ *      should be dropped.
  * This function will process modem initialization.
  */
 int32_t modem_chat_process(FD fd, FS_BUFFER *rx_buffer)
@@ -35,7 +38,7 @@ int32_t modem_chat_process(FD fd, FS_BUFFER *rx_buffer)
 
     /* For now we will just wait for the "CLIENT" string from the other end. */
     if (((rx_buffer)->total_length == (sizeof("CLIENT") - 1)) &&
-        (memcmp((rx_buffer)->list.head->data, "CLIENT", sizeof("CLIENT") - 1) == 0))
+        (memcmp((rx_buffer)->list.head->buffer, "CLIENT", sizeof("CLIENT") - 1) == 0))
     {
         /* Get a free buffer so that it can be populate with response. */
         tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, (FS_BUFFER_ACTIVE));
@@ -55,10 +58,19 @@ int32_t modem_chat_process(FD fd, FS_BUFFER *rx_buffer)
             ASSERT(fd_get_lock(fd) != SUCCESS);
         }
     }
+
+    /* If we have received the anticipated modem chat. */
+    else if (memcmp((rx_buffer)->list.head->buffer, "CLIENT", (rx_buffer)->total_length) == 0)
+    {
+        /* Just ignore this for now we will process it when we will have a
+         * complete message. */
+        status = MODEM_CHAT_INCOMPLETE;
+    }
+
     else
     {
-        /* Just ignore this packet. */
-        status = MODEM_CHAT_IGNORE;
+        /* We have not the anticipated data, drop this frame. */
+        status = MODEM_CHAT_INVALID;
     }
 
     /* Return status to the caller. */

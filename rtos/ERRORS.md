@@ -25,7 +25,8 @@ This list is needed to be updated whenever a new error code is added.
     PPP_INVALID_FD          -909
     PPP_INTERNAL_ERROR      -910
     HDLC_STREAM_ERROR       -920
-    MODEM_CHAT_IGNORE       -930
+    MODEM_CHAT_INCOMPLETE   -930
+    MODEM_CHAT_INVALID      -931
     NET_BUFFER_CONSUMED     -1000
     NET_NOT_SUPPORTED       -1001
     NET_UNKNOWN_PROTO       -1002
