@@ -36,6 +36,7 @@
 #define FS_BUFFER_HEAD      0x10
 #define FS_BUFFER_SUSPEND   0x20
 #define FS_BUFFER_TH        0x40
+#define FS_BUFFER_COPY      0x80
 
 /* Week definition of a buffer structure. */
 typedef struct _fs_buffer FS_BUFFER;
@@ -174,7 +175,7 @@ void fs_buffer_init(FS_BUFFER *, FD);
 void fs_buffer_one_init(FS_BUFFER_ONE *, void *, uint32_t);
 void fs_buffer_one_update(FS_BUFFER_ONE *, void *, uint32_t);
 void fs_buffer_move(FS_BUFFER *, FS_BUFFER *);
-void fs_buffer_move_data(FS_BUFFER *, FS_BUFFER *, uint8_t);
+int32_t fs_buffer_move_data(FS_BUFFER *, FS_BUFFER *, uint8_t);
 int32_t fs_buffer_num_remaining(FD, uint32_t);
 void fs_buffer_condition_init(FD);
 void fs_buffer_condition_get(FD, CONDITION **, SUSPEND *, FS_BUFFER_PARAM *, uint32_t, uint32_t);

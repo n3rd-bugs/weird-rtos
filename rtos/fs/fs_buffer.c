@@ -165,33 +165,55 @@ void fs_buffer_move(FS_BUFFER *dst_buffer, FS_BUFFER *src_buffer)
  * @dst: Buffer to which data will be moved.
  * @src: Buffer from which data will be moved.
  * @flags: Operation flags.
- *  FS_BUFFER_HEAD: If we need to add data on the head of existing data.
+ *  FS_BUFFER_HEAD: If we need to add data on the head of existing data,
+ *  FS_BUFFER_COPY: If we need to copy data from the source buffer.
+ * @return: Success will be returned if data was successfully copied from
+ *  buffer.
  * This function will move all the data from one buffer to the other buffer.
  */
-void fs_buffer_move_data(FS_BUFFER *dst, FS_BUFFER *src, uint8_t flags)
+int32_t fs_buffer_move_data(FS_BUFFER *dst, FS_BUFFER *src, uint8_t flags)
 {
+    int32_t status = SUCCESS;
+    FS_BUFFER_ONE *one;
+
     /* Move all the data from the source buffer to the destination buffer. */
 
-    /* If data is needed to be added at the start of existing data. */
-    if (flags & FS_BUFFER_HEAD)
+    /* If we are actually copying the data. */
+    if (flags & FS_BUFFER_COPY)
     {
-        /* Add data at the end of the existing data. */
-        src->list.tail->next = dst->list.head;
-        dst->list.head = src->list.head;
+        /* Traverse all the one buffers. */
+        for (one = src->list.head; ((status == SUCCESS) && (one != NULL)); one = one->next)
+        {
+            /* Copy data from one buffer. */
+            status = fs_buffer_push(dst, one->buffer, one->length, flags);
+        }
     }
     else
     {
-        /* Add data at the end of the existing data. */
-        dst->list.tail->next = src->list.head;
-        dst->list.tail = src->list.tail;
+        /* If data is needed to be added at the start of existing data. */
+        if (flags & FS_BUFFER_HEAD)
+        {
+            /* Add data at the end of the existing data. */
+            src->list.tail->next = dst->list.head;
+            dst->list.head = src->list.head;
+        }
+        else
+        {
+            /* Add data at the end of the existing data. */
+            dst->list.tail->next = src->list.head;
+            dst->list.tail = src->list.tail;
+        }
+
+        /* Increment number of bytes added. */
+        dst->total_length += src->total_length;
+
+        /* Clear the list for this buffer. */
+        src->list.head = src->list.tail = NULL;
+        src->total_length = 0;
     }
 
-    /* Increment number of bytes added. */
-    dst->total_length += src->total_length;
-
-    /* Clear the list for this buffer. */
-    src->list.head = src->list.tail = NULL;
-    src->total_length = 0;
+    /* Return status to the caller. */
+    return (status);
 
 } /* fs_buffer_move_data */
 
