@@ -59,8 +59,8 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
         i2c_stm->i2c_reg = I2C1;
 
 #ifdef STM_I2C_INT_MODE
-        /* We should not register same device again. */
-        ASSERT(i2c1_data != NULL);
+        /* We should not register same device again with different data. */
+        ASSERT((i2c1_data != NULL) && (i2c1_data != device));
 
         /* Save data for I2C1. */
         i2c1_data = device;
@@ -82,8 +82,8 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
         i2c_stm->i2c_reg = I2C2;
 
 #ifdef STM_I2C_INT_MODE
-        /* We should not register same device again. */
-        ASSERT(i2c1_data != NULL);
+        /* We should not register same device again with different data. */
+        ASSERT((i2c2_data != NULL) && (i2c2_data != device));
 
         /* Save data for I2C2. */
         i2c2_data = device;
