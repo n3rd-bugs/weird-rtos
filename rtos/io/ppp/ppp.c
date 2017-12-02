@@ -390,13 +390,13 @@ void ppp_process_frame(void *fd, PPP *ppp)
     else
     {
         /* Check if we have a flag in this buffer. */
-        for (buffer_one = ppp->rx_buffer->list.head; ((status != SUCCESS) && (buffer_one != NULL)); buffer_one = buffer_one->next)
+        for (buffer_one = ppp->rx_buffer->list.head; buffer_one != NULL; buffer_one = buffer_one->next)
         {
             /* Check if we have a flag in this buffer. */
             flag_ptr = memchr(buffer_one->buffer, PPP_FLAG, buffer_one->length);
 
             /* If this is the end of a frame. */
-            while ((status != SUCCESS) && (flag_ptr != NULL))
+            while (flag_ptr != NULL)
             {
                 /* We have a PPP flag. */
                 num_flags ++;
@@ -455,12 +455,18 @@ void ppp_process_frame(void *fd, PPP *ppp)
                         /* Check if we have an other flag in this buffer. */
                         flag_ptr = memchr((flag_ptr + 1), PPP_FLAG, buffer_one->length - (uint32_t)((flag_ptr + 1) - buffer_one->buffer));
                     }
-                    else
-                    {
-                        /* We don't have a flag after this. */
-                        flag_ptr = NULL;
-                    }
                 }
+                else
+                {
+                    /* We don't have a flag after this. */
+                    flag_ptr = NULL;
+                }
+            }
+
+            if (status == SUCCESS)
+            {
+                /* Break out of this loop. */
+                break;
             }
         }
     }
@@ -556,15 +562,18 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
     PPP *ppp;
     uint16_t protocol = 0;
     uint8_t net_proto;
+    FS_BUFFER *buffer_copy;
 
     /* Resolve required PPP buffer instance. */
     ppp = ppp_get_instance_fd(buffer->fd);
 
+    /* If we have a PPP instance. */
     if (ppp != NULL)
     {
         /* Skim the protocol from the buffer. */
         ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
 
+        /* Process this frame according to the protocol. */
         switch (net_proto)
         {
         /* IPv4 protocol. */
@@ -572,27 +581,56 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
 
             /* Pick the PPP IPv4 protocol. */
             protocol = PPP_PROTO_IPV4;
+
             break;
+
         default:
 
             /* Unknown protocol. */
             status = PPP_INVALID_PROTO;
+
             break;
+        }
+
+        /* If we have a free callback registered for this buffer. */
+        if ((status == SUCCESS) && (buffer->free != NULL))
+        {
+            /* Allocate a buffer to make a copy of this buffer. */
+            buffer_copy = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+
+            /* If we have a buffer to make a copy of this frame. */
+            if (buffer_copy)
+            {
+                /* Make a copy of this buffer. */
+                status = fs_buffer_move_data(buffer_copy, buffer, FS_BUFFER_COPY);
+
+                if (status == SUCCESS)
+                {
+                    /* Free the buffer. */
+                    fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+
+                    /* Use the buffer copy from now on. */
+                    buffer = buffer_copy;
+                }
+                else
+                {
+                    /* Free the buffer copy. */
+                    fs_buffer_add(buffer_copy->fd, buffer_copy, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+
+                    /* We will free the original buffer later. */
+                }
+            }
+            else
+            {
+                /* We don't have buffers to send this frame. */
+                status = FS_BUFFER_NO_SPACE;
+            }
         }
 
         if (status == SUCCESS)
         {
             /* Transmit this PPP buffer. */
             status = ppp_transmit_buffer_instance(ppp, buffer, protocol, flags);
-
-            if (status == SUCCESS)
-            {
-                /* Buffer is no longer required. */
-                buffer = NULL;
-
-                /* Buffer is now consumed. */
-                status = NET_BUFFER_CONSUMED;
-            }
         }
     }
     else
@@ -600,6 +638,15 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
         /* Return an error to the caller. */
         status = PPP_INVALID_FD;
     }
+
+    if (status != SUCCESS)
+    {
+        /* Free the buffer. */
+        fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    }
+
+    /* Buffer will always be consumed. */
+    status = NET_BUFFER_CONSUMED;
 
     /* Return status to the caller. */
     return (status);
