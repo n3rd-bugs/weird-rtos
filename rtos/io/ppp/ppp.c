@@ -420,12 +420,13 @@ void ppp_process_frame(void *fd, PPP *ppp)
                             ASSERT(fs_buffer_one_divide(fd, buffer_one, &new_buffer_one, 0, this_length) != SUCCESS);
 
                             /* Add this buffer on the new buffer. */
-                            fs_buffer_add_one(new_buffer, new_buffer_one, 0);
+                            fs_buffer_add_one(new_buffer, new_buffer_one, FS_BUFFER_HEAD);
                         }
 
                         /* Update the buffer list. */
                         tmp_buffer_one = buffer_one->next;
                         buffer_one->next = NULL;
+                        ppp->rx_buffer->list.tail = buffer_one;
                         ppp->rx_buffer->total_length -= (buffer_one->length - this_length);
 
                         /* Now add remaining one buffers in the buffer list. */
