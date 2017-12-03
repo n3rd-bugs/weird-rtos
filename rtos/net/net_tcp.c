@@ -665,6 +665,7 @@ static void tcp_timeout_update(TCP_PORT *port)
 static void tcp_fast_rtx(TCP_PORT *port, uint32_t seq_num)
 {
     uint32_t i;
+    FS_BUFFER *rtx_buffer;
 
     SYS_LOG_FUNCTION_ENTRY(TCP);
 
@@ -681,14 +682,23 @@ static void tcp_fast_rtx(TCP_PORT *port, uint32_t seq_num)
                 /* Clear the buffer returned flag. */
                 port->rtx[i].flags &= (uint8_t)~(TCP_RTX_BUFFER_RETURNED);
 
-                /* Lock the buffer descriptor. */
-                ASSERT(fd_get_lock(port->rtx[i].buffer->fd));
+                /* Save the RTX buffer. */
+                rtx_buffer = port->rtx[i].buffer;
+
+                /* Release the port lock. */
+                fd_release_lock(port);
+
+                /* Acquire the device lock. */
+                ASSERT(fd_get_lock(rtx_buffer->fd));
 
                 /* Retransmit a TCP buffer. */
-                net_device_buffer_transmit(port->rtx[i].buffer, NET_PROTO_IPV4, 0);
+                net_device_buffer_transmit(rtx_buffer, NET_PROTO_IPV4, 0);
 
                 /* Release the buffer lock. */
-                fd_release_lock(port->rtx[i].buffer->fd);
+                fd_release_lock(rtx_buffer->fd);
+
+                /* Acquire the port lock. */
+                ASSERT(fd_get_lock(port));
             }
         }
     }
@@ -711,6 +721,7 @@ static void tcp_timeout_callback(void *data, int32_t status)
     TCP_PORT *port = (TCP_PORT *)data;
     int32_t i, least_rtx = -1;
     uint8_t rtx_picked = FALSE;
+    FS_BUFFER *rtx_buffer;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(status);
@@ -784,13 +795,23 @@ static void tcp_timeout_callback(void *data, int32_t status)
                         /* Clear the buffer returned flag. */
                         port->rtx[least_rtx].flags &= (uint8_t)~(TCP_RTX_BUFFER_RETURNED);
 
-                        ASSERT(fd_get_lock(port->rtx[least_rtx].buffer->fd));
+                        /* Save the RTX buffer. */
+                        rtx_buffer = port->rtx[least_rtx].buffer;
+
+                        /* Release the port lock. */
+                        fd_release_lock(port);
+
+                        /* Acquire the device lock. */
+                        ASSERT(fd_get_lock(rtx_buffer->fd));
 
                         /* Retransmit a TCP buffer. */
-                        net_device_buffer_transmit(port->rtx[least_rtx].buffer, NET_PROTO_IPV4, 0);
+                        net_device_buffer_transmit(rtx_buffer, NET_PROTO_IPV4, 0);
 
                         /* Release the buffer lock. */
-                        fd_release_lock(port->rtx[least_rtx].buffer->fd);
+                        fd_release_lock(rtx_buffer->fd);
+
+                        /* Acquire the port lock. */
+                        ASSERT(fd_get_lock(port));
                     }
 
                     switch (port->state)
