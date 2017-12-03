@@ -124,8 +124,11 @@ struct _ppp
         uint8_t     ipcp_id;
     } state_data;
 
+    /* Flag to specify if we are discarding this frame. */
+    uint8_t     discard_this;
+
     /* Structure padding. */
-    uint8_t     pad[3];
+    uint8_t     pad[2];
 };
 
 /* PPP global data structure. */

@@ -664,6 +664,7 @@ void net_ppp_receive(void *data, int32_t status)
 {
     PPP *ppp = ppp_get_instance_fd((FD)data);
     FS_BUFFER *buffer;
+    uint8_t byte = 0;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(status);
@@ -674,27 +675,58 @@ void net_ppp_receive(void *data, int32_t status)
     /* Get the buffer from the receive list. */
     buffer = fs_buffer_get(ppp->fd, FS_BUFFER_RX, 0);
 
-    /* If we have a buffer. */
-    if (buffer)
+    /* If we have a buffer and we can process it. */
+    if ((ppp->discard_this == FALSE) && (buffer))
     {
         /* If we don't have a RX buffer. */
         if (ppp->rx_buffer == NULL)
         {
             /* Save this as PPP RX buffer. */
             ppp->rx_buffer = buffer;
+            buffer = NULL;
         }
         else
         {
             /* Add the received data to the current RX buffer. */
             if (fs_buffer_move_data(ppp->rx_buffer, buffer, FS_BUFFER_COPY) != SUCCESS)
             {
+                /* Let's discard this frame. */
+                ppp->discard_this = TRUE;
+
                 /* Free the receive buffer. */
                 fs_buffer_add(ppp->fd, ppp->rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
                 ppp->rx_buffer = NULL;
             }
+        }
+    }
 
-            /* Free the original buffer. */
-            fs_buffer_add(ppp->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    /* If we need to discard this frame. */
+    if (ppp->discard_this == TRUE)
+    {
+        /* Discard all the data till first PPP flag. */
+        while (byte != PPP_FLAG)
+        {
+            /* Pull data from buffer byte-by-byte. */
+            if (fs_buffer_pull(buffer, &byte, 1, FS_BUFFER_HEAD) != SUCCESS)
+            {
+                /* Break out of this loop. */
+                break;
+            }
+        }
+
+        /* If we did got a flag. */
+        if (byte == PPP_FLAG)
+        {
+            /* Clear the discard flag. */
+            ppp->discard_this = FALSE;
+
+            /* If we still have some data left on the buffer */
+            if (buffer->total_length > 0)
+            {
+                /* Add remaining buffer on the RX list. */
+                fs_buffer_add(ppp->fd, buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+                buffer = NULL;
+            }
         }
     }
 
@@ -732,6 +764,13 @@ void net_ppp_receive(void *data, int32_t status)
             /* Just break out of this switch. */
             break;
         }
+    }
+
+    /* If we have a buffer to free. */
+    if (buffer)
+    {
+        /* Free the original buffer. */
+        fs_buffer_add(ppp->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
     }
 
     /* Release lock for PPP. */
