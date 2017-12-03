@@ -2609,10 +2609,10 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                     /* Resume tasks for the calculated condition. */
                     tcp_resume_socket(port, resume_flags);
                 }
-            }
 
-            /* Release lock for this TCP port. */
-            fd_release_lock((FD)port);
+                /* Release lock for this TCP port. */
+                fd_release_lock((FD)port);
+            }
         }
 
         /* If this packet was intended for us. */
