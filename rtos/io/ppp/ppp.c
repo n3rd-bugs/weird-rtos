@@ -370,7 +370,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
 void ppp_process_frame(void *fd, PPP *ppp)
 {
     FS_BUFFER *new_buffer;
-    FS_BUFFER_ONE *buffer_one, *tmp_buffer_one, *new_buffer_one;
+    FS_BUFFER_ONE *buffer_one, *tmp_buffer_one, *new_buffer_one = NULL;
     PPP_PROTO *proto;
     int32_t status = PPP_PARTIAL_READ;
     uint32_t this_length;
@@ -407,20 +407,42 @@ void ppp_process_frame(void *fd, PPP *ppp)
                     /* Calculate the number of bytes still valid in this buffer. */
                     this_length = (uint32_t)((flag_ptr + 1) - buffer_one->buffer);
 
+                    /* We have successfully read a complete buffer. */
+                    status = SUCCESS;
+
                     /* If this is not at the end on this buffer. */
                     if ((buffer_one->length > this_length) || (buffer_one->next != NULL))
                     {
                         /* Get a buffer list. */
                         new_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
 
-                        /* If we have some data in the current buffer. */
-                        if (buffer_one->length > this_length)
+                        /* If we have some data left in the current buffer. */
+                        if ((buffer_one->length > this_length))
                         {
-                            /* Divide this buffer into two buffers. */
-                            ASSERT(fs_buffer_one_divide(fd, buffer_one, &new_buffer_one, 0, this_length) != SUCCESS);
+                            /* If buffer was successfully allocated. */
+                            if (new_buffer)
+                            {
+                                /* Divide this buffer into two buffers. */
+                                if (fs_buffer_one_divide(fd, buffer_one, &new_buffer_one, 0, this_length) == SUCCESS)
+                                {
+                                    /* Add this one buffer on the new buffer. */
+                                    fs_buffer_add_one(new_buffer, new_buffer_one, FS_BUFFER_HEAD);
+                                }
+                                else
+                                {
+                                    /* Free the allocated buffer. */
+                                    fs_buffer_add(fd, new_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                                    new_buffer = NULL;
 
-                            /* Add this buffer on the new buffer. */
-                            fs_buffer_add_one(new_buffer, new_buffer_one, FS_BUFFER_HEAD);
+                                    /* Reset the status as we will handle this condition. */
+                                    status = SUCCESS;
+                                }
+                            }
+                            else
+                            {
+                                /* Pull and discard extra data from this one buffer. */
+                                fs_buffer_one_pull(buffer_one, NULL, buffer_one->length - this_length, FS_BUFFER_TAIL);
+                            }
                         }
 
                         /* Update the buffer list. */
@@ -430,21 +452,37 @@ void ppp_process_frame(void *fd, PPP *ppp)
                         ppp->rx_buffer->total_length -= (buffer_one->length - this_length);
 
                         /* Now add remaining one buffers in the buffer list. */
-                        for (buffer_one = tmp_buffer_one; buffer_one != NULL; buffer_one = buffer_one->next)
+                        for (buffer_one = tmp_buffer_one; buffer_one != NULL; )
                         {
                             /* Update the buffer list. */
                             ppp->rx_buffer->total_length -= buffer_one->length;
 
-                            /* Add this buffer on the new buffer. */
-                            fs_buffer_add_one(new_buffer, buffer_one, 0);
+                            /* Save the next buffer. */
+                            tmp_buffer_one = buffer_one->next;
+
+                            /* If we have new buffer. */
+                            if (new_buffer)
+                            {
+                                /* Add this buffer on the new buffer. */
+                                fs_buffer_add_one(new_buffer, buffer_one, 0);
+                            }
+                            else
+                            {
+                                /* Free this one buffer. */
+                                fs_buffer_add(fd, new_buffer, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
+                            }
+
+                            /* Pick the next buffer. */
+                            buffer_one = tmp_buffer_one;
                         }
 
-                        /* Add new buffer on the receive list. */
-                        fs_buffer_add(fd, new_buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+                        /* If we have a buffer. */
+                        if (new_buffer)
+                        {
+                            /* Add new buffer on the receive list. */
+                            fs_buffer_add(fd, new_buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
+                        }
                     }
-
-                    /* We have successfully read a complete buffer. */
-                    status = SUCCESS;
                 }
 
                 /* If we have a buffer. */
@@ -664,7 +702,6 @@ void net_ppp_receive(void *data, int32_t status)
 {
     PPP *ppp = ppp_get_instance_fd((FD)data);
     FS_BUFFER *buffer;
-    uint8_t byte = 0;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(status);
@@ -676,7 +713,7 @@ void net_ppp_receive(void *data, int32_t status)
     buffer = fs_buffer_get(ppp->fd, FS_BUFFER_RX, 0);
 
     /* If we have a buffer and we can process it. */
-    if ((ppp->discard_this == FALSE) && (buffer))
+    if (buffer)
     {
         /* If we don't have a RX buffer. */
         if (ppp->rx_buffer == NULL)
@@ -690,42 +727,9 @@ void net_ppp_receive(void *data, int32_t status)
             /* Add the received data to the current RX buffer. */
             if (fs_buffer_move_data(ppp->rx_buffer, buffer, FS_BUFFER_COPY) != SUCCESS)
             {
-                /* Let's discard this frame. */
-                ppp->discard_this = TRUE;
-
                 /* Free the receive buffer. */
                 fs_buffer_add(ppp->fd, ppp->rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
                 ppp->rx_buffer = NULL;
-            }
-        }
-    }
-
-    /* If we need to discard this frame. */
-    if (ppp->discard_this == TRUE)
-    {
-        /* Discard all the data till first PPP flag. */
-        while (byte != PPP_FLAG)
-        {
-            /* Pull data from buffer byte-by-byte. */
-            if (fs_buffer_pull(buffer, &byte, 1, FS_BUFFER_HEAD) != SUCCESS)
-            {
-                /* Break out of this loop. */
-                break;
-            }
-        }
-
-        /* If we did got a flag. */
-        if (byte == PPP_FLAG)
-        {
-            /* Clear the discard flag. */
-            ppp->discard_this = FALSE;
-
-            /* If we still have some data left on the buffer */
-            if (buffer->total_length > 0)
-            {
-                /* Add remaining buffer on the RX list. */
-                fs_buffer_add(ppp->fd, buffer, FS_BUFFER_RX, FS_BUFFER_ACTIVE);
-                buffer = NULL;
             }
         }
     }
