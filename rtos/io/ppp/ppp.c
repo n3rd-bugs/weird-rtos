@@ -469,7 +469,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                             else
                             {
                                 /* Free this one buffer. */
-                                fs_buffer_add(fd, new_buffer, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
+                                fs_buffer_add(fd, buffer_one, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
                             }
 
                             /* Pick the next buffer. */
