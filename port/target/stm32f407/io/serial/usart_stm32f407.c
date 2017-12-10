@@ -162,7 +162,7 @@ ISR_FUN usart1_interrupt(void)
     }
 
     /* If some data is available to read. */
-    if (USART1->SR & USART_SR_RXNE)
+    else if ((USART1->SR & USART_SR_RXNE) || (USART1->SR & USART_SR_IDLE))
     {
         /* Handle receive data available interrupt. */
         usart1_handle_rx_interrupt();
@@ -223,34 +223,50 @@ static void usart1_handle_rx_interrupt(void)
     FS_BUFFER *buffer;
     uint8_t chr;
 
-    /* Get a RX buffer. */
-    buffer = fs_buffer_get(&usart1, FS_BUFFER_RX, FS_BUFFER_INPLACE);
-
-    /* If we don't have a buffer. */
-    if (buffer == NULL)
+    /* If data is available to be read. */
+    if (USART1->SR & USART_SR_RXNE)
     {
-        /* Get a buffer. */
-        buffer = fs_buffer_get(&usart1, FS_BUFFER_LIST, 0);
+        /* Get a RX buffer. */
+        buffer = fs_buffer_get(&usart1, FS_BUFFER_RX, FS_BUFFER_INPLACE);
+
+        /* If we don't have a buffer. */
+        if (buffer == NULL)
+        {
+            /* Get a buffer. */
+            buffer = fs_buffer_get(&usart1, FS_BUFFER_LIST, 0);
+
+            /* If we do have a buffer. */
+            if (buffer != NULL)
+            {
+                /* Add this buffer on the receive list. */
+                fs_buffer_add(&usart1, buffer, FS_BUFFER_RX, 0);
+            }
+        }
+
+        /* Read the incoming data and also clear the interrupt status. */
+        chr = (uint8_t)USART1->DR;
 
         /* If we do have a buffer. */
         if (buffer != NULL)
         {
-            /* Add this buffer on the receive list. */
-            fs_buffer_add(&usart1, buffer, FS_BUFFER_RX, 0);
+            /* Append received byte on the buffer. */
+            fs_buffer_push(buffer, &chr, 1, 0);
         }
     }
 
-    /* Read the incoming data and also clear the interrupt status. */
-    chr = (uint8_t)USART1->DR;
-
-    /* If we do have a buffer. */
-    if (buffer != NULL)
+    /* If line is idle. */
+    if (USART1->SR & USART_SR_IDLE)
     {
-        /* Append received byte on the buffer. */
-        fs_buffer_push(buffer, &chr, 1, 0);
-
         /* Tell upper layers that some data is available to read. */
         fd_data_available(&usart1);
+
+        /* Disable idle interrupt. */
+        USART1->CR1 &= (uint32_t)~(USART_CR1_IDLEIE);
+    }
+    else
+    {
+        /* Enable idle interrupt. */
+        USART1->CR1 |= (USART_CR1_IDLEIE);
     }
 
 } /* usart1_handle_rx_interrupt */
