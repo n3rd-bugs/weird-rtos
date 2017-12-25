@@ -419,6 +419,8 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
         CONTROL_TO_SYSTEM();
 
         /* Save task status and the condition from which we are resumed. */
+        /* It is assumed that the resume condition is also present in the
+         * condition list, otherwise it will cause invalid behavior. */
         task_status = tcb->status;
         resume_condition = tcb->suspend_data;
 
@@ -474,6 +476,21 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
                 /* Return the error returned by the task. */
                 status = task_status;
 
+                /* Break out of the loop. */
+                break;
+            }
+
+            /* If a ping resumed this condition. */
+            if (condition[return_num]->flags & CONDITION_PING)
+            {
+                /* Break out of the loop. */
+                break;
+            }
+
+            /* Check if we still don't need to suspend for the condition we
+             * resumed from. */
+            if ((condition[return_num]->do_suspend) && (condition[return_num]->do_suspend(condition[return_num]->data, suspend[return_num]->param) == FALSE))
+            {
                 /* Break out of the loop. */
                 break;
             }
