@@ -434,6 +434,9 @@ void ppp_process_frame(void *fd, PPP *ppp)
                                     fs_buffer_add(fd, new_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
                                     new_buffer = NULL;
 
+                                    /* Pull and discard extra data from this one buffer. */
+                                    fs_buffer_one_pull(buffer_one, NULL, buffer_one->length - this_length, FS_BUFFER_TAIL);
+
                                     /* Reset the status as we will handle this condition. */
                                     status = SUCCESS;
                                 }
