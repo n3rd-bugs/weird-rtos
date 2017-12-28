@@ -550,12 +550,18 @@ void ppp_process_frame(void *fd, PPP *ppp)
 
             case PPP_PROTO_IPV4:
 
-                /* Send this buffer to the networking stack. */
-                net_device_buffer_receive(ppp->rx_buffer, NET_PROTO_IPV4, 0);
-                ppp->rx_buffer = NULL;
+                /* Pass this buffer to the networking stack. */
+                status = net_device_buffer_receive(ppp->rx_buffer, NET_PROTO_IPV4, 0);
 
-                /* This buffer will now be handled by networking stack. */
-                status = PPP_BUFFER_FORWARDED;
+                /* If buffer was successfully passed. */
+                if (status == SUCCESS)
+                {
+                    /* Buffer is now forwarded to the stack. */
+                    ppp->rx_buffer = NULL;
+
+                    /* This buffer will now be handled by networking stack. */
+                    status = PPP_BUFFER_FORWARDED;
+                }
 
                 break;
 

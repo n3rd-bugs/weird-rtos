@@ -322,9 +322,6 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
             /* Move the generated buffer back to the original buffer. */
             fs_buffer_move(buffer, destination);
 
-            /* Free the destination buffer. */
-            fs_buffer_add(buffer->fd, destination, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
-
             /* Add start flag. */
             status = fs_buffer_push(buffer, (uint8_t []){ PPP_FLAG }, 1, (FS_BUFFER_HEAD | flags));
 
@@ -335,6 +332,9 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
                 status = fs_buffer_push(buffer, (uint8_t []){ PPP_FLAG }, 1, flags);
             }
         }
+
+        /* Free the destination buffer as it is no longer required. */
+        fs_buffer_add(buffer->fd, destination, FS_LIST_FREE, FS_BUFFER_ACTIVE);
     }
     else
     {
