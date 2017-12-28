@@ -47,6 +47,7 @@ void net_work_init(WORK_QUEUE *work_queue)
     work_queue->condition.unlock = &net_work_unlock;
     work_queue->suspend.timeout = MAX_WAIT;
     work_queue->suspend.timeout_enabled = FALSE;
+    work_queue->suspend.priority = NET_USER_PRIORITY;
 
     /* Register work queue data with networking stack. */
     net_condition_add(&work_queue->condition, &work_queue->suspend, net_work_condition_process, work_queue);
@@ -125,6 +126,9 @@ int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data
             /* Disable the timer as we are waiting indefinitely. */
             suspend_ptr->timeout_enabled = FALSE;
         }
+
+        /* Set user priority. */
+        suspend_ptr->priority = NET_USER_PRIORITY;
 
         /* Pick the condition on which we need to wait. */
         condition = &work_ptr->condition;

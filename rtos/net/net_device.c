@@ -73,6 +73,9 @@ void net_register_fd(NET_DEV *net_device, FD fd, NET_TX *tx, NET_RX *rx)
     ipv4_device_initialize(net_device);
 #endif
 
+    /* Set the file descriptor priority. */
+    ((FS *)fd)->priority = NET_DEVICE_PRIORITY;
+
     /* Enable scheduling. */
     scheduler_unlock();
 

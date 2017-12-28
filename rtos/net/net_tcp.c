@@ -99,6 +99,7 @@ void tcp_register(TCP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
     /* Register this TCP port as a console. */
     port->console.fs.name = name;
     port->console.fs.flags |= (FS_BLOCK);
+    port->console.fs.priority = NET_SOCKET_PRIORITY;
     console_register(&port->console);
 
     /* If this is buffered descriptor. */
@@ -587,6 +588,7 @@ static void tcp_timer_register(TCP_PORT *port)
     /* Disable retransmission timer by default. */
     port->timeout_suspend.suspend.timeout = MAX_WAIT;
     port->timeout_suspend.suspend.timeout_enabled = FALSE;
+    port->timeout_suspend.suspend.priority = NET_SOCKET_PRIORITY;
 
     /* Add networking condition to process retransmission timer events. */
     net_condition_add(&port->timeout_suspend.condition, &port->timeout_suspend.suspend, &tcp_timeout_callback, (FD)port);

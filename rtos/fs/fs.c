@@ -310,6 +310,7 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
     /* Initialize file system parameter. */
     param->flag = flag;
     suspend->param = param;
+    suspend->priority = fs->priority;
 
     /* If timeout is enabled for this descriptor. */
     if (fs->timeout != MAX_WAIT)

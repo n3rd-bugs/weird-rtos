@@ -14,10 +14,14 @@
 #define _CONDITION_H_
 
 /* Error codes. */
-#define CONDITION_TIMEOUT       -600
+#define CONDITION_TIMEOUT           -600
 
 /* Condition flags. */
-#define CONDITION_PING          0x01
+#define CONDITION_PING              0x01
+
+/* Suspend definitions. */
+#define SUSPEND_INVALID_PRIORITY    (255)
+#define SUSPEND_MIN_PRIORITY        (254)
 
 /* User call back to check if this task satisfy the criteria. */
 typedef uint8_t CONDITION_DO_RESUME (void *, void *);
@@ -51,8 +55,14 @@ struct _suspend
     /* Flag to specify if the timer is enabled. */
     uint8_t     timeout_enabled;
 
+    /* Priority for this suspend. */
+    uint8_t     priority;
+
+    /* Priority for this suspend. */
+    uint8_t     may_resume;
+
     /* Structure padding. */
-    uint8_t     pad[3];
+    uint8_t     pad[1];
 };
 
 /* Link list of suspend. */

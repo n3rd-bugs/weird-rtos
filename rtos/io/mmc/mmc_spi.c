@@ -59,6 +59,7 @@ void mmc_spi_fsregister(void *device, const char *name)
 
     /* There is always some space available to read or write. */
     mmc->fs.flags |= (FS_DATA_AVAILABLE | FS_SPACE_AVAILABLE);
+    mmc->fs.priority = SUSPEND_MIN_PRIORITY;
 
     /* Create MMC semaphore. */
     memset(&mmc->lock, 0, sizeof(SEMAPHORE));

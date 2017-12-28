@@ -173,21 +173,24 @@ static void suspend_condition_remove_all(CONDITION **condition, SUSPEND **suspen
 static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, uint8_t num, CONDITION *resume_condition, uint8_t *return_num)
 {
     uint8_t n;
+    uint8_t old_priority = SUSPEND_INVALID_PRIORITY;
 
     /* For all conditions remove this task. */
     for (n = 0; n < num; n++)
     {
         /* If this is the condition from which we got resumed. */
-        if (resume_condition == (*condition))
-        {
-            /* Return the condition index that matches. */
-            *return_num = n;
-        }
-        else
+        if (resume_condition != (*condition))
         {
             /* We are no longer waiting on this condition remove this task from
              * the condition. */
             ASSERT(sll_remove(&(*condition)->suspend_list, *suspend, OFFSETOF(SUSPEND, next)) != *suspend);
+        }
+
+        /* If we can resume from this suspend and it has a higher priority. */
+        if (((*suspend)->may_resume) && (old_priority > (*suspend)->priority))
+        {
+            /* Return this condition index. */
+            *return_num = n;
         }
 
         /* Pick next condition. */
@@ -212,6 +215,7 @@ static void suspend_condition_remove(CONDITION **condition, SUSPEND **suspend, u
 static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint8_t num, uint8_t *return_num)
 {
     uint8_t n, do_suspend = TRUE;
+    uint8_t old_priority = SUSPEND_INVALID_PRIORITY;
 
     /* For all conditions check if we need to suspend. */
     for (n = 0; n < num; n++)
@@ -223,11 +227,21 @@ static uint8_t suspend_do_suspend(CONDITION **condition, SUSPEND **suspend, uint
             /* We don't need to suspend for this condition. */
             do_suspend = FALSE;
 
-            /* Return index for this condition. */
-            *return_num = n;
+            /* If this suspend has the higher priority. */
+            if (old_priority > (*suspend)->priority)
+            {
+                /* Return index for this condition. */
+                *return_num = n;
 
-            /* Break out of this loop. */
-            break;
+                /* Update the old priority. */
+                old_priority = (*suspend)->priority;
+            }
+        }
+        else
+        {
+            /* Clear the may resume flag, as we might end up suspending for
+             * this. */
+            (*suspend)->may_resume = FALSE;
         }
 
         /* Pick next condition. */
@@ -576,6 +590,9 @@ void resume_condition(CONDITION *condition, RESUME *resume, uint8_t locked)
             /* Disable interrupts to protect access to resources from interrupts. */
             interrupt_level = GET_INTERRUPT_LEVEL();
             DISABLE_INTERRUPTS();
+
+            /* Mark as this suspend may resume. */
+            suspend->may_resume = TRUE;
 
             /* If task is actually suspended on this condition. */
             if ((suspend->task->status == TASK_SUSPENDED) && (suspend_is_task_waiting(suspend->task, condition) == TRUE))

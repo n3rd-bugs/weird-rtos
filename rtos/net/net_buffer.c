@@ -54,6 +54,7 @@ void net_buffer_init(void)
     /* Initial file system configurations. */
     net_buffers_fs.fs.flags = (FS_SPACE_AVAILABLE);
     net_buffers_fs.fs.timeout = MAX_WAIT;
+    net_buffers_fs.fs.priority = NET_DEMUX_PRIORITY;
 
     /* Initialize file system condition. */
     fs_condition_init(&net_buffers_fs.fs);

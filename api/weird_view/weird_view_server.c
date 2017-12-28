@@ -51,7 +51,7 @@ void weird_view_server_init(WEIRD_VIEW_SERVER *weird_view, SOCKET_ADDRESS *socke
     udp_register((FD)&weird_view->port, name, socket_address);
 
     /* Lets never block on this port. */
-    weird_view->port.console.fs.flags &= (uint32_t)~(FS_BLOCK);
+    weird_view->port.console.fs.flags &= (uint16_t)~(FS_BLOCK);
 
     /* Get read condition for UDP port. */
     fs_condition_get((FD)&weird_view->port, &weird_view->port_condition, &weird_view->port_suspend, &weird_view->port_fs_param, FS_BLOCK_READ);

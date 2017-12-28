@@ -652,6 +652,7 @@ void ipv4_fragment_set_data(FD fd, IPV4_FRAGMENT *fragments, uint32_t num)
 
     /* Initialize the IPv4 fragment condition. */
     net_device->ipv4.fargment.suspend.timeout_enabled = FALSE;
+    net_device->ipv4.fargment.suspend.priority = NET_IPV4_PRIORITY;
 
     /* Add condition for this fragment in networking stack. */
     net_condition_add(&net_device->ipv4.fargment.condition, &net_device->ipv4.fargment.suspend, &ipv4_fragment_expired, net_device);

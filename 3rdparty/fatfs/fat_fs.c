@@ -63,6 +63,7 @@ void fatfs_init(void)
 
         /* Space and data is always available. */
         fat_files[i].fs.flags |= (FS_SPACE_AVAILABLE | FS_DATA_AVAILABLE);
+        fat_files[i].fs.priority = SUSPEND_MIN_PRIORITY;
     }
 
     /* Register FAT file system. */

@@ -134,9 +134,6 @@ void pipe_create(PIPE *pipe, char *name, uint8_t *buffer, uint32_t size)
  */
 void pipe_destroy(PIPE *pipe)
 {
-    /* This could be a file descriptor chain, so destroy it. */
-    fs_destroy_chain((FD)&pipe->fs);
-
 #ifndef CONFIG_SEMAPHORE
     /* Lock the scheduler. */
     scheduler_lock();

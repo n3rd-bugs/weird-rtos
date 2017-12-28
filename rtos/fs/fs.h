@@ -43,13 +43,12 @@ typedef void *FD;
 #define FS_PRINTF_BUFFER_SIZE   64
 
 /* File system specific flags. */
-#define FS_DATA_AVAILABLE   0x00000001
-#define FS_SPACE_AVAILABLE  0x00000002
-#define FS_CHAIN_HEAD       0x00000004
-#define FS_BLOCK            0x00010000
-#define FS_BUFFERED         0x00020000
-#define FS_FLUSH_WRITE      0x00040000
-#define FS_WRITE_NO_BLOCK   0x00080000
+#define FS_DATA_AVAILABLE   0x0001
+#define FS_SPACE_AVAILABLE  0x0002
+#define FS_BLOCK            0x0100
+#define FS_BUFFERED         0x0200
+#define FS_FLUSH_WRITE      0x0400
+#define FS_WRITE_NO_BLOCK   0x0800
 
 /* Suspend flags. */
 #define FS_BLOCK_READ       0x00000001
@@ -92,7 +91,13 @@ struct _fs
     uint32_t    timeout;
 
     /* File system specific flags. */
-    uint32_t    flags;
+    uint16_t    flags;
+
+    /* File system priority, will be used as suspend priority. */
+    uint8_t     priority;
+
+    /* Structure padding. */
+    uint8_t     pad[1];
 };
 
 /* This holds the resumption criteria for a task waiting on a FS. */

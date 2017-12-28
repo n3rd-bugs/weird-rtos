@@ -392,6 +392,7 @@ void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_
     /* Initialize file system parameter. */
     suspend->param = param;
     suspend->timeout_enabled = FALSE;
+    suspend->priority = fs->priority;
 
     /* Return the condition for this file system buffer. */
     *condition = &(data->condition);

@@ -79,6 +79,7 @@ void ethernet_regsiter(ETH_DEVICE *device, ETH_INIT *initialize, ETH_TRANSMIT *t
 
     /* Disable timeout. */
     device->net_device.suspend.timeout_enabled = FALSE;
+    device->net_device.suspend.priority = device->fs.priority;
 
     /* Set MTU for this device. */
     net_device_set_mtu(fd, ETH_MTU_SIZE);

@@ -49,9 +49,10 @@ void tftp_server_init(TFTP_SERVER *tftp_server, SOCKET_ADDRESS *socket_address, 
 
     /* For now disable the timer. */
     tftp_server->port_suspend.timeout_enabled = FALSE;
+    tftp_server->port_suspend.priority = NET_SOCKET_PRIORITY;
 
     /* Lets never block on this socket. */
-    tftp_server->port.console.fs.flags &= (uint32_t)~(FS_BLOCK);
+    tftp_server->port.console.fs.flags &= (uint16_t)~(FS_BLOCK);
 
     /* Add a networking condition for this UDP port. */
     net_condition_add(tftp_server->port_condition, &tftp_server->port_suspend, &tftp_server_process, (void *)tftp_server);

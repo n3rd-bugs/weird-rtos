@@ -51,6 +51,14 @@
 /* Networking port definitions. */
 #define NET_PORT_UNSPEC         0
 
+/* Networking priority configurations. */
+#define NET_DEVICE_PRIORITY     (0)
+#define NET_DEMUX_PRIORITY      (1)
+#define NET_ARP_PRIORITY        (2)
+#define NET_IPV4_PRIORITY       (3)
+#define NET_SOCKET_PRIORITY     (4)
+#define NET_USER_PRIORITY       (SUSPEND_MIN_PRIORITY)
+
 /* Socket structure. */
 typedef struct _socket_address
 {

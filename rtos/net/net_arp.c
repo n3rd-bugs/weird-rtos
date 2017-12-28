@@ -628,6 +628,7 @@ void arp_set_data(FD fd, ARP_ENTRY *entry_list, uint32_t num_entries)
 
     /* Disable timer by default. */
     device->arp.suspend.timeout_enabled = FALSE;
+    device->arp.suspend.priority = NET_ARP_PRIORITY;
 
     /* Add networking condition to process ARP for this device. */
     net_condition_add(&device->arp.condition, &device->arp.suspend, &arp_event, fd);

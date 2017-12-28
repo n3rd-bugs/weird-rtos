@@ -118,6 +118,7 @@ void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEN
 {
     /* Initialize suspend criteria. */
     suspend->param = (void *)semaphore;
+    suspend->priority = SUSPEND_MIN_PRIORITY;
 
     /* If we don't want to wait indefinitely. */
     if (timeout != MAX_WAIT)

@@ -109,9 +109,6 @@ void console_register(CONSOLE *console)
  */
 void console_unregister(CONSOLE *console)
 {
-    /* This could be a file descriptor chain, so destroy it. */
-    fs_destroy_chain((FD)&console->fs);
-
 #ifndef CONFIG_SEMAPHORE
     /* Lock the scheduler. */
     scheduler_lock();

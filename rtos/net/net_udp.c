@@ -80,6 +80,7 @@ void udp_register(UDP_PORT *port, char *name, SOCKET_ADDRESS *socket_address)
     /* Register this UDP port as a console. */
     port->console.fs.name = name;
     port->console.fs.flags |= (FS_BLOCK | FS_SPACE_AVAILABLE);
+    port->console.fs.priority = NET_SOCKET_PRIORITY;
     console_register(&port->console);
 
     /* If this is buffer port. */
