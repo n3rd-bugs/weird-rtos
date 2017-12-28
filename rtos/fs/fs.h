@@ -109,7 +109,7 @@ typedef struct _fs_param
 /* File system list. */
 typedef struct _fs_data
 {
-    struct _fs_list
+    struct _fs_data_list
     {
         /* Link-list for the registered file systems. */
         FS          *head;

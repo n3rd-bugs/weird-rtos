@@ -38,8 +38,8 @@
 static void ipv4_fragment_update_timer(NET_DEV *);
 static void ipv4_fragment_expired(void *, int32_t);
 static uint8_t ipv4_frag_sort(void *, void *);
-static int32_t ipv4_frag_add(FS_BUFFER *, uint16_t);
-static int32_t ipv4_frag_merge(IPV4_FRAGMENT *, FS_BUFFER *);
+static int32_t ipv4_frag_add(FS_BUFFER_LIST *, uint16_t);
+static int32_t ipv4_frag_merge(IPV4_FRAGMENT *, FS_BUFFER_LIST *);
 #endif
 
 /*
@@ -251,7 +251,7 @@ NET_DEV *ipv4_get_source_device(uint32_t address)
  *  drop it silently.
  * This function will process an incoming IPv4 packet.
  */
-int32_t net_process_ipv4(FS_BUFFER *buffer, uint32_t flags)
+int32_t net_process_ipv4(FS_BUFFER_LIST *buffer, uint32_t flags)
 {
     int32_t status = SUCCESS;
     uint32_t ip_dst, ip_src, subnet, ip_iface = 0;
@@ -516,7 +516,7 @@ int32_t net_process_ipv4(FS_BUFFER *buffer, uint32_t flags)
  * will also be fragmented according to the MTU of the device on which this packet
  * will be sent.
  */
-int32_t ipv4_header_add(FS_BUFFER *buffer, uint8_t proto, uint32_t src_addr, uint32_t dst_addr, uint8_t flags)
+int32_t ipv4_header_add(FS_BUFFER_LIST *buffer, uint8_t proto, uint32_t src_addr, uint32_t dst_addr, uint8_t flags)
 {
     int32_t status = SUCCESS;
     HDR_GEN_MACHINE hdr_machine;
@@ -745,7 +745,7 @@ static void ipv4_fragment_expired(void *data, int32_t status)
                 ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
                 /* Free this buffer list. */
-                fs_buffer_add_buffer_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add_buffer_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
                 /* Release semaphore for the buffer. */
                 fd_release_lock(buffer_fd);
@@ -774,7 +774,7 @@ static void ipv4_fragment_expired(void *data, int32_t status)
  */
 static uint8_t ipv4_frag_sort(void *node, void *new_node)
 {
-    FS_BUFFER *this_buffer = (FS_BUFFER *)node, *buffer = (FS_BUFFER *)new_node;
+    FS_BUFFER_LIST *this_buffer = (FS_BUFFER_LIST *)node, *buffer = (FS_BUFFER_LIST *)new_node;
     uint16_t this_flag_offset, flag_offset;
     uint8_t insert = FALSE;
 
@@ -809,10 +809,10 @@ static uint8_t ipv4_frag_sort(void *node, void *new_node)
  *  don't have a free fragment or buffer list to process this packet.
  * This function will add a new fragment for the file descriptor.
  */
-static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
+static int32_t ipv4_frag_add(FS_BUFFER_LIST *buffer, uint16_t flag_offset)
 {
     NET_DEV *net_device = net_device_get_fd(buffer->fd);
-    FS_BUFFER *tmp_buffer;
+    FS_BUFFER_LIST *tmp_buffer;
     IPV4_FRAGMENT *fragment = NULL;
     uint32_t sa, n;
     int32_t status = FS_BUFFER_NO_SPACE;
@@ -868,7 +868,7 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
                 if (net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE)
                 {
                     /* Free any fragments we have already on this fragment list. */
-                    fs_buffer_add_buffer_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                    fs_buffer_add_buffer_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
                     /* Clear the buffer list for this fragment. */
                     net_device->ipv4.fargment.list[n].buffer_list.head = net_device->ipv4.fargment.list[n].buffer_list.tail = NULL;
@@ -889,7 +889,7 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
         else if ((fragment->flags & IPV4_FRAG_DROP) == 0)
         {
             /* Try to allocate a temporary buffer list keeping threshold buffers. */
-            tmp_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, FS_BUFFER_TH);
+            tmp_buffer = fs_buffer_get(buffer->fd, FS_LIST_FREE, FS_BUFFER_TH);
 
             /* If a temporary buffer list was successfully allocated. */
             if (tmp_buffer != NULL)
@@ -913,7 +913,7 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
                 fs_buffer_move(tmp_buffer, buffer);
 
                 /* Push this fragment on the fragment list. */
-                sll_insert(&fragment->buffer_list, tmp_buffer, &ipv4_frag_sort, OFFSETOF(FS_BUFFER, next));
+                sll_insert(&fragment->buffer_list, tmp_buffer, &ipv4_frag_sort, OFFSETOF(FS_BUFFER_LIST, next));
 
                 /* If this is last fragment. */
                 if ((flag_offset & IPV4_HDR_FRAG_MASK) == 0)
@@ -954,9 +954,9 @@ static int32_t ipv4_frag_add(FS_BUFFER *buffer, uint16_t flag_offset)
  * This function will merge all the fragments in to one buffer that can be
  * further processed.
  */
-static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER *buffer)
+static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER_LIST *buffer)
 {
-    FS_BUFFER *last_buffer, *next_buffer, *tmp_buffer;
+    FS_BUFFER_LIST *last_buffer, *next_buffer, *tmp_buffer;
     int32_t status = SUCCESS;
     uint16_t flag_offset, next_offset = 0;
     uint8_t ver_ihl;
@@ -1001,10 +1001,10 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER *buffer)
             next_buffer = next_buffer->next;
 
             /* Remove this buffer from the buffer list. */
-            ASSERT(sll_remove(&fragment->buffer_list, tmp_buffer, OFFSETOF(FS_BUFFER, next)) != tmp_buffer);
+            ASSERT(sll_remove(&fragment->buffer_list, tmp_buffer, OFFSETOF(FS_BUFFER_LIST, next)) != tmp_buffer);
 
             /* Add this buffer back to the buffer list. */
-            fs_buffer_add(tmp_buffer->fd, tmp_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add(tmp_buffer->fd, tmp_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
 
         else
@@ -1033,7 +1033,7 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER *buffer)
             fs_buffer_move(buffer, last_buffer);
 
             /* Free the fragment head. */
-            fs_buffer_add(last_buffer->fd, last_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add(last_buffer->fd, last_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
             /* Clear the fragment data. */
             memset(fragment, 0, sizeof(IPV4_FRAGMENT));

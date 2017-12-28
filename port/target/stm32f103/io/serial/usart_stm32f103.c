@@ -37,8 +37,8 @@ static STM32_USART usart1;
 #ifdef SERIAL_INTERRUPT_MODE
 static FS_BUFFER_DATA usart1_buffer_data;
 static uint8_t usart1_buffer_space[SERIAL_MAX_BUFFER_SIZE * SERIAL_NUM_BUFFERS];
-static FS_BUFFER_ONE usart1_buffer_ones[SERIAL_NUM_BUFFERS];
-static FS_BUFFER usart1_buffer_lists[SERIAL_NUM_BUFFER_LIST];
+static FS_BUFFER usart1_buffer_ones[SERIAL_NUM_BUFFERS];
+static FS_BUFFER_LIST usart1_buffer_lists[SERIAL_NUM_BUFFER_LIST];
 #endif /* SERIAL_INTERRUPT_MODE */
 
 /*
@@ -342,7 +342,7 @@ ISR_FUN usart3_interrupt(void)
  */
 static void usart_handle_tx_interrupt(STM32_USART *usart)
 {
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
     uint8_t chr;
 
     /* Get a buffer to be transmitted. */
@@ -361,7 +361,7 @@ static void usart_handle_tx_interrupt(STM32_USART *usart)
             buffer = fs_buffer_get(usart, FS_BUFFER_TX, 0);
 
             /* Free this buffer. */
-            fs_buffer_add(usart, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add(usart, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* Put a byte on USART to continue TX. */
@@ -385,7 +385,7 @@ static void usart_handle_tx_interrupt(STM32_USART *usart)
  */
 static void usart_handle_rx_interrupt(STM32_USART *usart)
 {
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
     uint8_t chr;
 
     /* If there is some data available to read. */
@@ -398,7 +398,7 @@ static void usart_handle_rx_interrupt(STM32_USART *usart)
         if (buffer == NULL)
         {
             /* Get a buffer. */
-            buffer = fs_buffer_get(usart, FS_BUFFER_LIST, 0);
+            buffer = fs_buffer_get(usart, FS_LIST_FREE, FS_BUFFER_TH);
 
             /* If we do have a buffer. */
             if (buffer != NULL)
@@ -528,7 +528,7 @@ static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *bu
 {
     int32_t to_print = nbytes;
     STM32_USART *usart = (STM32_USART *)priv_data;
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
     uint8_t chr;
 
     /* If we need to put this string using interrupts. */
@@ -552,7 +552,7 @@ static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *bu
                 buffer = fs_buffer_get(fd, FS_BUFFER_TX, 0);
 
                 /* Free this buffer. */
-                fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add(fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             }
 
             /* Put a byte on USART to start TX. */

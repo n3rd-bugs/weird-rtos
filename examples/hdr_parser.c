@@ -49,8 +49,8 @@ int32_t process_result(void *data, uint8_t *value, uint32_t length)
 void parser_demo_task(void *argv)
 {
     HDR_MACHINE machine;
-    FS_BUFFER buffer;
-    FS_BUFFER_ONE one;
+    FS_BUFFER_LIST buffer;
+    FS_BUFFER one;
 
     UNUSED_PARAM(argv);
 

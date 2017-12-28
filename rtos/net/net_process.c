@@ -30,7 +30,7 @@
  * caller that the buffer cannot be freed now.
  * This is will process a given buffer.
  */
-int32_t net_buffer_process(FS_BUFFER *buffer)
+int32_t net_buffer_process(FS_BUFFER_LIST *buffer)
 {
     int32_t status = SUCCESS;
     uint32_t flags;

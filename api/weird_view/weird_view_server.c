@@ -102,7 +102,7 @@ static void weird_view_server_process(void *data, int32_t status)
 {
     WEIRD_VIEW_SERVER *weird_view = (WEIRD_VIEW_SERVER *)data;
     WEIRD_VIEW_PLUGIN *plugin;
-    FS_BUFFER *rx_buffer;
+    FS_BUFFER_LIST *rx_buffer;
     uint32_t command, i, j, value, value_div, disp_max;
     int32_t received;
     uint16_t id;
@@ -113,7 +113,7 @@ static void weird_view_server_process(void *data, int32_t status)
     UNUSED_PARAM(status);
 
     /* Receive incoming data from the UDP port. */
-    received = fs_read(&weird_view->port, (uint8_t *)&rx_buffer, sizeof(FS_BUFFER));
+    received = fs_read(&weird_view->port, (uint8_t *)&rx_buffer, sizeof(FS_BUFFER_LIST));
 
     /* If some data was received. */
     if (received >= (int32_t)sizeof(uint32_t))
@@ -408,7 +408,7 @@ static void weird_view_server_process(void *data, int32_t status)
         if (received < 0)
         {
             /* Free this buffer. */
-            fs_buffer_add(rx_buffer->fd, rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add(rx_buffer->fd, rx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* Release lock for buffer file descriptor. */
@@ -423,7 +423,7 @@ static void weird_view_server_process(void *data, int32_t status)
             ipv4_get_device_address(rx_buffer->fd, &weird_view->port.destination_address.local_ip, NULL);
 
             /* Send received data back on the UDP port. */
-            received = fs_write(&weird_view->port, (uint8_t *)rx_buffer, sizeof(FS_BUFFER));
+            received = fs_write(&weird_view->port, (uint8_t *)rx_buffer, sizeof(FS_BUFFER_LIST));
         }
     }
 

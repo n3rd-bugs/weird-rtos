@@ -155,8 +155,8 @@ struct _enc28j60_device
     /* File system buffers. */
     FS_BUFFER_DATA  fs_buffer_data;
     uint8_t         buffer[ENC28J60_MAX_BUFFER_SIZE * ENC28J60_NUM_BUFFERS];
-    FS_BUFFER_ONE   fs_buffer[ENC28J60_NUM_BUFFERS];
-    FS_BUFFER       fs_buffer_list[ENC28J60_NUM_BUFFER_LISTS];
+    FS_BUFFER       fs_buffer[ENC28J60_NUM_BUFFERS];
+    FS_BUFFER_LIST  fs_list_free[ENC28J60_NUM_BUFFER_LISTS];
 
     /* SPI device structure. */
     SPI_DEVICE  spi;

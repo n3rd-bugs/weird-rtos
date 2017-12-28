@@ -34,11 +34,11 @@
  * This function will calculate pseudo checksum for the given packet and
  * protocol.
  */
-int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t dst_ip, uint8_t protocol, uint16_t length, uint32_t offset, uint8_t flags, uint16_t *csum)
+int32_t net_pseudo_csum_calculate(FS_BUFFER_LIST *buffer, uint32_t src_ip, uint32_t dst_ip, uint8_t protocol, uint16_t length, uint32_t offset, uint8_t flags, uint16_t *csum)
 {
     int32_t status;
     uint32_t ret_csum;
-    FS_BUFFER *csum_buffer;
+    FS_BUFFER_LIST *csum_buffer;
     HDR_GEN_MACHINE hdr_machine;
     HEADER pseudo_hdr[] =
     {
@@ -52,7 +52,7 @@ int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t d
     SYS_LOG_FUNCTION_ENTRY(NET_CSUM);
 
     /* Allocate a buffer and initialize a pseudo header. */
-    csum_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, flags);
+    csum_buffer = fs_buffer_get(buffer->fd, FS_LIST_FREE, flags);
 
     /* If we have to buffer to compute checksum. */
     if (csum_buffer != NULL)
@@ -77,7 +77,7 @@ int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t d
         }
 
         /* Free the pseudo header buffer. */
-        fs_buffer_add(buffer->fd, csum_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add(buffer->fd, csum_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
     }
     else
     {
@@ -100,9 +100,9 @@ int32_t net_pseudo_csum_calculate(FS_BUFFER *buffer, uint32_t src_ip, uint32_t d
  * This function will calculate and return the check of all the data in the
  * given buffer.
  */
-uint16_t net_csum_calculate(FS_BUFFER *buffer, int32_t num_bytes, uint32_t offset)
+uint16_t net_csum_calculate(FS_BUFFER_LIST *buffer, int32_t num_bytes, uint32_t offset)
 {
-    FS_BUFFER_ONE *one = buffer->list.head;
+    FS_BUFFER *one = buffer->list.head;
     uint32_t csum = 0, left = 0;
     uint16_t *bytes = (uint16_t *)one->buffer;
     uint8_t last_left = FALSE;

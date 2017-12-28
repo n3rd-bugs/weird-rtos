@@ -103,7 +103,7 @@ void net_buffer_get_condition(CONDITION **condition, SUSPEND *suspend, NET_CONDI
  */
 static void net_buffer_condition_callback(void *data, int32_t status)
 {
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
     FD buffer_fd;
 
     /* Remove some compiler warnings. */
@@ -115,7 +115,7 @@ static void net_buffer_condition_callback(void *data, int32_t status)
     SYS_LOG_FUNCTION_ENTRY(NET_BUFFER);
 
     /* Read a buffer pointer from the file descriptor. */
-    if (fs_read(net_buff_fd, (uint8_t *)&buffer, sizeof(FS_BUFFER *)) == sizeof(FS_BUFFER *))
+    if (fs_read(net_buff_fd, (uint8_t *)&buffer, sizeof(FS_BUFFER_LIST *)) == sizeof(FS_BUFFER_LIST *))
     {
         /* Save the file descriptor on which data was received. */
         buffer_fd = buffer->fd;
@@ -130,7 +130,7 @@ static void net_buffer_condition_callback(void *data, int32_t status)
         if (net_buffer_process(buffer) != NET_BUFFER_CONSUMED)
         {
             /* Free this buffer. */
-            fs_buffer_add_buffer_list(buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add_buffer_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* Release semaphore for the buffer. */
@@ -217,7 +217,7 @@ static int32_t net_buffer_write(void *fd, const uint8_t *data, int32_t nbytes)
     /* Caller already has the lock for net buffer data. */
 
     /* Push the buffer on the network buffer queue. */
-    sll_append(&net_buffer->buffer_list, (FS_BUFFER *)data, OFFSETOF(FS_BUFFER, next));
+    sll_append(&net_buffer->buffer_list, (FS_BUFFER_LIST *)data, OFFSETOF(FS_BUFFER_LIST, next));
 
     /* Tell the file system that there is some data available on this file descriptor. */
     fd_data_available(fd);
@@ -225,7 +225,7 @@ static int32_t net_buffer_write(void *fd, const uint8_t *data, int32_t nbytes)
     SYS_LOG_FUNCTION_EXIT(NET_BUFFER);
 
     /* Return the number of bytes. */
-    return (sizeof(FS_BUFFER *));
+    return (sizeof(FS_BUFFER_LIST *));
 
 } /* net_buffer_write */
 
@@ -242,8 +242,8 @@ static int32_t net_buffer_write(void *fd, const uint8_t *data, int32_t nbytes)
 static int32_t net_buffer_read(void *fd, uint8_t *buffer, int32_t size)
 {
     NET_BUFFER_FS *net_buffer = (NET_BUFFER_FS *)fd;
-    FS_BUFFER *fs_buffer;
-    int32_t nbytes = sizeof(FS_BUFFER *);
+    FS_BUFFER_LIST *fs_buffer;
+    int32_t nbytes = sizeof(FS_BUFFER_LIST *);
 
     /* Unused parameter. */
     UNUSED_PARAM(size);
@@ -253,7 +253,7 @@ static int32_t net_buffer_read(void *fd, uint8_t *buffer, int32_t size)
     /* Caller already has the lock for net buffer data. */
 
     /* Pull a networking buffer from the list. */
-    fs_buffer = sll_pop(&net_buffer->buffer_list, OFFSETOF(FS_BUFFER, next));
+    fs_buffer = sll_pop(&net_buffer->buffer_list, OFFSETOF(FS_BUFFER_LIST, next));
 
     /* If there is no buffer on the list to process. */
     if (fs_buffer == NULL)
@@ -267,7 +267,7 @@ static int32_t net_buffer_read(void *fd, uint8_t *buffer, int32_t size)
         fs_buffer->next = NULL;
 
         /* Return the buffer to the caller. */
-        *((FS_BUFFER **)buffer) = fs_buffer;
+        *((FS_BUFFER_LIST **)buffer) = fs_buffer;
     }
 
     /* If are not returning any data or the list is now empty. */

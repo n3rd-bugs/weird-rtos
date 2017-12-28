@@ -22,7 +22,7 @@
 #include <ethernet_target.h>
 
 /* Internal function prototypes. */
-static int32_t ethernet_buffer_transmit(FS_BUFFER *, uint8_t);
+static int32_t ethernet_buffer_transmit(FS_BUFFER_LIST *, uint8_t);
 static void ethernet_process(void *, int32_t);
 static int32_t ethernet_lock(void *, uint32_t);
 static void ethernet_unlock(void *);
@@ -250,7 +250,7 @@ static void ethernet_process(void *data, int32_t resume_status)
 {
     ETH_DEVICE *device = (ETH_DEVICE *)data;
     FD fd = (FD)data;
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
     int32_t status = SUCCESS;
 
     /* Remove some compiler warnings. */
@@ -310,7 +310,7 @@ static void ethernet_process(void *data, int32_t resume_status)
                     ASSERT(fs_buffer_pull(buffer, NULL, ETH_HRD_SIZE, 0) != SUCCESS);
 
                     /* Free this buffer. */
-                    fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                    fs_buffer_add(fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
                 }
                 else
                 {
@@ -369,7 +369,7 @@ int32_t ethernet_interrupt(ETH_DEVICE *device)
  * This function will process an ethernet frame and pass it to the networking
  * stack.
  */
-int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
+int32_t ethernet_buffer_receive(FS_BUFFER_LIST *buffer)
 {
     int32_t status = SUCCESS;
     uint32_t flags = 0;
@@ -450,7 +450,7 @@ int32_t ethernet_buffer_receive(FS_BUFFER *buffer)
  *  pushed in the ethernet transmission queue.
  * This function will transmit an ethernet frame.
  */
-static int32_t ethernet_buffer_transmit(FS_BUFFER *buffer, uint8_t flags)
+static int32_t ethernet_buffer_transmit(FS_BUFFER_LIST *buffer, uint8_t flags)
 {
     ETH_DEVICE *device = (ETH_DEVICE *)buffer->fd;
     int32_t status = SUCCESS;

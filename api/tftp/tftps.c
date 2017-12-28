@@ -68,7 +68,7 @@ void tftp_server_init(TFTP_SERVER *tftp_server, SOCKET_ADDRESS *socket_address, 
 static void tftp_server_process(void *data, int32_t resume_status)
 {
     TFTP_SERVER *tftp_server = (TFTP_SERVER *)data;
-    FS_BUFFER *rx_buffer;
+    FS_BUFFER_LIST *rx_buffer;
     uint32_t data_len;
     int32_t status = SUCCESS, received;
     uint16_t opcode, block;
@@ -98,7 +98,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
     }
 
     /* Receive incoming data from the UDP port. */
-    received = fs_read(&tftp_server->port, (uint8_t *)&rx_buffer, sizeof(FS_BUFFER));
+    received = fs_read(&tftp_server->port, (uint8_t *)&rx_buffer, sizeof(FS_BUFFER_LIST));
 
     /* If some data was received. */
     if (received >= (int32_t)sizeof(uint32_t))
@@ -566,7 +566,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
         if (status != SUCCESS)
         {
             /* Free the buffer. */
-            fs_buffer_add_buffer_list(rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add_buffer_list(rx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* Release lock for buffer file descriptor. */
@@ -580,7 +580,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
             ipv4_get_device_address(rx_buffer->fd, &tftp_server->port.destination_address.local_ip, NULL);
 
             /* Send received data back on the UDP port. */
-            received = fs_write(&tftp_server->port, (uint8_t *)rx_buffer, sizeof(FS_BUFFER));
+            received = fs_write(&tftp_server->port, (uint8_t *)rx_buffer, sizeof(FS_BUFFER_LIST));
         }
     }
 

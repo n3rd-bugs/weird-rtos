@@ -45,8 +45,8 @@ struct _udp_port
     /* UDP buffer lists. */
     struct _udp_port_buffer_list
     {
-        FS_BUFFER       *head;
-        FS_BUFFER       *tail;
+        FS_BUFFER_LIST  *head;
+        FS_BUFFER_LIST  *tail;
     } buffer_list;
 
     /* UDP port list member. */
@@ -100,8 +100,8 @@ typedef struct _udp_port_param
 void udp_initialize(void);
 void udp_register(UDP_PORT *, char *, SOCKET_ADDRESS *);
 void udp_unregister(UDP_PORT *);
-int32_t net_process_udp(FS_BUFFER *, uint32_t, uint32_t, uint32_t, uint32_t);
-int32_t udp_header_add(FS_BUFFER *, SOCKET_ADDRESS *, uint8_t);
+int32_t net_process_udp(FS_BUFFER_LIST *, uint32_t, uint32_t, uint32_t, uint32_t);
+int32_t udp_header_add(FS_BUFFER_LIST *, SOCKET_ADDRESS *, uint8_t);
 
 #endif /* NET_UDP */
 #endif /* CONFIG_NET */

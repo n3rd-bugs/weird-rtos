@@ -26,7 +26,7 @@
 #include <weird_view.h>
 
 /* Weird view log plugin function prototype. */
-typedef int32_t WV_GET_LOG_DATA (uint16_t, FS_BUFFER *);
+typedef int32_t WV_GET_LOG_DATA (uint16_t, FS_BUFFER_LIST *);
 
 /* Weird view switch plugin function prototype. */
 typedef int32_t WV_GET_SWITCH_DATA (uint16_t, uint8_t *);

@@ -32,10 +32,10 @@ typedef struct _net_buffer_fs
 
     /* Networking buffer list, this will contain the buffers we still need to
      * process. */
-    struct _net_buffer_fs_buffer_list
+    struct _net_buffer_list
     {
-        FS_BUFFER       *head;
-        FS_BUFFER       *tail;
+        FS_BUFFER_LIST  *head;
+        FS_BUFFER_LIST  *tail;
     } buffer_list;
 
 #ifdef CONFIG_SEMAPHORE

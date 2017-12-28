@@ -67,7 +67,7 @@
 /* Ethernet device API. */
 typedef void ETH_INIT (void *);
 typedef void ETH_INTERRUPT (void *);
-typedef int32_t ETH_TRANSMIT (void *, FS_BUFFER *);
+typedef int32_t ETH_TRANSMIT (void *, FS_BUFFER_LIST *);
 typedef void ETH_WDT (void *);
 typedef void ETH_INT_POLL (void *);
 
@@ -123,7 +123,7 @@ uint8_t *ethernet_get_mac_address(FD);
 void ethernet_wdt_enable(ETH_DEVICE *, uint32_t);
 void ethernet_wdt_disable(ETH_DEVICE *);
 int32_t ethernet_interrupt(ETH_DEVICE *);
-int32_t ethernet_buffer_receive(FS_BUFFER *);
+int32_t ethernet_buffer_receive(FS_BUFFER_LIST *);
 
 #endif /* CONFIG_ETHERNET */
 

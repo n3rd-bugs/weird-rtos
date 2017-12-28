@@ -93,7 +93,7 @@ void ppp_lcp_state_initialize(PPP *ppp)
  * This function will add our LCP configuration options so that a configuration
  * request can be sent.
  */
-int32_t ppp_lcp_configuration_add(FS_BUFFER *buffer)
+int32_t ppp_lcp_configuration_add(FS_BUFFER_LIST *buffer)
 {
     PPP_CONF_OPT option;
     int32_t random, status = SUCCESS;
@@ -322,7 +322,7 @@ uint8_t ppp_lcp_option_length_valid(PPP *ppp, PPP_CONF_OPT *option)
 int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT *tx_packet)
 {
     int32_t status = SUCCESS;
-    FS_BUFFER *tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
+    FS_BUFFER_LIST *tx_buffer = fs_buffer_get(fd, FS_LIST_FREE, 0);
 
     /* Should never happen. */
     ASSERT(tx_buffer == NULL);
@@ -397,7 +397,7 @@ int32_t ppp_lcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PKT
     if (tx_buffer != NULL)
     {
         /* Free the TX buffer. */
-        fs_buffer_add(tx_buffer->fd, tx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add(tx_buffer->fd, tx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
     }
 
     /* Return status to the caller. */

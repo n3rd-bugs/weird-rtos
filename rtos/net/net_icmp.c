@@ -40,7 +40,7 @@
  *  NET_INVALID_CSUM will be returned if an inlaid checksum was parsed.
  * This function will process an incoming ICMP packet.
  */
-int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, uint32_t src_addr, uint32_t dst_addr)
+int32_t net_process_icmp(FS_BUFFER_LIST *buffer, uint32_t ihl, uint32_t iface_addr, uint32_t src_addr, uint32_t dst_addr)
 {
     int32_t status = SUCCESS;
     uint32_t id_seq;
@@ -110,7 +110,7 @@ int32_t net_process_icmp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, u
  *  added.
  * This function will add an ICMP header on the given buffer.
  */
-int32_t icmp_header_add(FS_BUFFER *buffer, uint8_t type, uint8_t code, uint32_t unused)
+int32_t icmp_header_add(FS_BUFFER_LIST *buffer, uint8_t type, uint8_t code, uint32_t unused)
 {
     int32_t status = SUCCESS;
     HDR_GEN_MACHINE hdr_machine;

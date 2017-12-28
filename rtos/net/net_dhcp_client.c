@@ -32,7 +32,7 @@ DHCP_CLIENT_DATA dhcp_client;
 
 /* Internal function prototypes. */
 static void dhcp_change_state(DHCP_CLIENT_DEVICE *, uint8_t);
-static int32_t net_dhcp_client_build(FD *, FS_BUFFER *, DHCP_CLIENT_DEVICE *, uint8_t);
+static int32_t net_dhcp_client_build(FD *, FS_BUFFER_LIST *, DHCP_CLIENT_DEVICE *, uint8_t);
 static void net_dhcp_client_process(void *, int32_t);
 static void dhcp_event(void *, int32_t);
 
@@ -138,7 +138,7 @@ static void dhcp_change_state(DHCP_CLIENT_DEVICE *client_data, uint8_t state)
  *  successfully built.
  * This function will build a DHCP client message in the given buffer.
  */
-static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER *buffer, DHCP_CLIENT_DEVICE *client_data, uint8_t dhcp_type)
+static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER_LIST *buffer, DHCP_CLIENT_DEVICE *client_data, uint8_t dhcp_type)
 {
     int32_t status;
 
@@ -206,7 +206,7 @@ static void dhcp_event(void *data, int32_t status)
     uint32_t system_tick = current_system_tick();
     NET_DEV *net_device = net_device_get_fd(fd);
     DHCP_CLIENT_DEVICE *client_data = net_device->ipv4.dhcp_client;
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(status);
@@ -217,7 +217,7 @@ static void dhcp_event(void *data, int32_t status)
     ASSERT(fd_get_lock(fd) != SUCCESS);
 
     /* Get a free buffer from the file descriptor. */
-    buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
+    buffer = fs_buffer_get(fd, FS_LIST_FREE, 0);
 
     /* If we do have a buffer to send a request. */
     if (buffer != NULL)
@@ -328,7 +328,7 @@ static void dhcp_event(void *data, int32_t status)
             }
 
             /* Send a DHCP frame. */
-            fs_write(udp_fd, (uint8_t *)buffer, sizeof(FS_BUFFER));
+            fs_write(udp_fd, (uint8_t *)buffer, sizeof(FS_BUFFER_LIST));
 
             /* Acquire lock for this file descriptor. */
             ASSERT(fd_get_lock(fd) != SUCCESS);
@@ -338,7 +338,7 @@ static void dhcp_event(void *data, int32_t status)
         else
         {
             /* Add the allocated buffer back to the descriptor. */
-            fs_buffer_add(fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add(fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
     }
 
@@ -358,7 +358,7 @@ static void dhcp_event(void *data, int32_t status)
 static void net_dhcp_client_process(void *data, int32_t resume_status)
 {
     uint32_t xid, cli_addr, your_addr, serv_addr, dhcp_serv_addr, lease_time, network = 0;
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
     FD udp_fd = (FD)data, buffer_fd;
     NET_DEV *net_device;
     DHCP_CLIENT_DEVICE *client_data;
@@ -371,7 +371,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
     SYS_LOG_FUNCTION_ENTRY(DHCPC);
 
     /* While we have some data to read from the client socket. */
-    while (fs_read(udp_fd, (uint8_t *)&buffer, sizeof(FS_BUFFER)) > 0)
+    while (fs_read(udp_fd, (uint8_t *)&buffer, sizeof(FS_BUFFER_LIST)) > 0)
     {
         /* The networking device file descriptor is same as the one from which
          * this buffer was received. */
@@ -609,7 +609,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
         }
 
         /* Free the received buffer. */
-        fs_buffer_add(buffer_fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add(buffer_fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
         /* Release lock for networking file descriptor. */
         fd_release_lock(buffer_fd);
@@ -652,7 +652,7 @@ void net_dhcp_client_initialize(void)
     dhcp_client.udp.destination_address.local_port = DHCP_CLI_PORT;
 
     /* Don't block on read for this UDP port. */
-    dhcp_client.udp.console.fs.flags &= (uint32_t)~(FS_BLOCK);
+    dhcp_client.udp.console.fs.flags &= (uint16_t)~(FS_BLOCK);
 
     /* For networking buffers we will wait for data on networking buffer file descriptor. */
     fs_condition_get(fd, &condition, &dhcp_client.suspend, &dhcp_client.fs_param, FS_BLOCK_READ);

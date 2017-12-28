@@ -393,7 +393,7 @@ void util_print_sys_info_assert(void)
  * This function prints generalized information about the operating system in
  * the given file system buffer.
  */
-int32_t util_print_sys_info_buffer(FS_BUFFER *buffer)
+int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *buffer)
 {
     /* Get the first task. */
     TASK *tcb = sch_task_list.head;

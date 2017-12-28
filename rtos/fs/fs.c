@@ -796,7 +796,7 @@ int32_t fs_vprintf(FD fd, const char *format, va_list vl)
  */
 int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
 {
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
     FS *fs = (FS *)fd;
     int32_t status = SUCCESS;
     uint8_t flags = FS_BUFFER_SUSPEND;
@@ -815,7 +815,7 @@ int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
         }
 #endif
         /* Pick a buffer. */
-        buffer = fs_buffer_get(fs, FS_BUFFER_LIST, flags);
+        buffer = fs_buffer_get(fs, FS_LIST_FREE, flags);
 
         /* If a buffer is available. */
         if (buffer != NULL)
@@ -832,7 +832,7 @@ int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
                 status = FS_BUFFER_NO_SPACE;
 
                 /* Free this buffer. */
-                fs_buffer_add(fs, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add(fs, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             }
         }
         else
@@ -854,7 +854,7 @@ int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
         if ((n < 0) && (fs->flags & FS_BUFFERED))
         {
             /* Free this buffer. */
-            fs_buffer_add(fs, (FS_BUFFER *)buf, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add(fs, (FS_BUFFER_LIST *)buf, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
     }
     else
@@ -901,7 +901,7 @@ void fd_data_flushed(void *fd)
     FS *fs = (FS *)fd;
 
     /* Clear the data available flag. */
-    fs->flags &= (uint32_t)~(FS_DATA_AVAILABLE);
+    fs->flags &= (uint16_t)~(FS_DATA_AVAILABLE);
 
 } /* fd_data_flushed */
 
@@ -938,7 +938,7 @@ void fd_space_consumed(void *fd)
     FS *fs = (FS *)fd;
 
     /* Set the flag that there is no more space in this FD. */
-    fs->flags &= (uint32_t)(~FS_SPACE_AVAILABLE);
+    fs->flags &= (uint16_t)(~FS_SPACE_AVAILABLE);
 
 } /* fd_space_consumed */
 

@@ -59,8 +59,8 @@ typedef struct _arp_entry
     /* Buffer list for the buffers waiting on this ARP entry. */
     struct _arp_buffer_list
     {
-        FS_BUFFER       *head;
-        FS_BUFFER       *tail;
+        FS_BUFFER_LIST  *head;
+        FS_BUFFER_LIST  *tail;
     } buffer_list;
 
     /* Tick at which we will be routing this entry again. */
@@ -99,10 +99,10 @@ typedef struct _arp_data
 } ARP_DATA;
 
 /* Function prototypes. */
-int32_t arp_resolve(FS_BUFFER *, uint32_t, uint8_t *);
+int32_t arp_resolve(FS_BUFFER_LIST *, uint32_t, uint8_t *);
 void arp_set_data(FD, ARP_ENTRY *, uint32_t);
 ARP_DATA *arp_get_data(FD);
-int32_t net_process_arp(FS_BUFFER *);
+int32_t net_process_arp(FS_BUFFER_LIST *);
 
 #endif /* NET_ARP */
 #endif /* CONFIG_NET */

@@ -133,7 +133,7 @@ void udp_unregister(UDP_PORT *port)
     ASSERT(sll_remove(&udp_data.port_list, port, OFFSETOF(UDP_PORT, next)) != port);
 
     /* Free all the buffers in the UDP buffer list. */
-    fs_buffer_add_buffer_list(port->buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    fs_buffer_add_buffer_list(port->buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
     /* Clear the UDP port structure. */
     memset(port, 0, sizeof(UDP_PORT));
@@ -210,7 +210,7 @@ static uint8_t udp_port_search(void *node, void *param)
  *  stack as that will cause buffer starvation.
  * This function will process an incoming UDP packet.
  */
-int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, uint32_t src_ip, uint32_t dst_ip)
+int32_t net_process_udp(FS_BUFFER_LIST *buffer, uint32_t ihl, uint32_t iface_addr, uint32_t src_ip, uint32_t dst_ip)
 {
     int32_t status = SUCCESS;
     uint16_t length;
@@ -329,7 +329,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                 if (status == SUCCESS)
                 {
                     /* Add this buffer in the buffer list for UDP port. */
-                    sll_append(&port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+                    sll_append(&port->buffer_list, buffer, OFFSETOF(FS_BUFFER_LIST, next));
 
                     /* Set an event to tell that new data is now available. */
                     fd_data_available((FD)port);
@@ -374,7 +374,7 @@ int32_t net_process_udp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
  *  added.
  * This function will add UDP header on the given file system buffer.
  */
-int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint8_t flags)
+int32_t udp_header_add(FS_BUFFER_LIST *buffer, SOCKET_ADDRESS *socket_address, uint8_t flags)
 {
     int32_t status;
     HDR_GEN_MACHINE hdr_machine;
@@ -416,7 +416,7 @@ int32_t udp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint8_
 static int32_t udp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
 {
     UDP_PORT *port = (UDP_PORT *)fd;
-    FS_BUFFER *fs_buffer;
+    FS_BUFFER_LIST *fs_buffer;
     int32_t ret_size = 0;
     uint8_t ihl;
 
@@ -426,7 +426,7 @@ static int32_t udp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
     SYS_LOG_FUNCTION_ENTRY(UDP);
 
     /* Get a buffer from the UDP port. */
-    fs_buffer = sll_pop(&port->buffer_list, OFFSETOF(FS_BUFFER, next));
+    fs_buffer = sll_pop(&port->buffer_list, OFFSETOF(FS_BUFFER_LIST, next));
 
     /* If we do have a buffer. */
     if (fs_buffer != NULL)
@@ -464,7 +464,7 @@ static int32_t udp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
     }
 
     /* Return the read buffer to the caller. */
-    *(FS_BUFFER **)buffer = fs_buffer;
+    *(FS_BUFFER_LIST **)buffer = fs_buffer;
 
     SYS_LOG_FUNCTION_EXIT(UDP);
 
@@ -483,7 +483,7 @@ static int32_t udp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
  */
 static int32_t udp_read_data(void *fd, uint8_t *buffer, int32_t size)
 {
-    FS_BUFFER *fs_buffer;
+    FS_BUFFER_LIST *fs_buffer;
     int32_t ret_size = 0;
 
     SYS_LOG_FUNCTION_ENTRY(UDP);
@@ -510,7 +510,7 @@ static int32_t udp_read_data(void *fd, uint8_t *buffer, int32_t size)
         ASSERT(fs_buffer_pull(fs_buffer, buffer, (uint32_t)ret_size, 0) != SUCCESS);
 
         /* Return this buffer to it's owner. */
-        fs_buffer_add(fs_buffer->fd, fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add(fs_buffer->fd, fs_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
         /* Release lock for the buffer file descriptor. */
         fd_release_lock(fs_buffer->fd);
@@ -540,7 +540,7 @@ static int32_t udp_write_buffer(void *fd, const uint8_t *buffer, int32_t size)
     UDP_PORT *port = (UDP_PORT *)fd;
     NET_DEV *net_device;
     int32_t ret_size = size, status;
-    FS_BUFFER *fs_buffer = (FS_BUFFER *)buffer;
+    FS_BUFFER_LIST *fs_buffer = (FS_BUFFER_LIST *)buffer;
     SOCKET_ADDRESS socket_address;
     uint8_t flags = port->flags;
 #ifdef UDP_CSUM
@@ -614,7 +614,7 @@ static int32_t udp_write_buffer(void *fd, const uint8_t *buffer, int32_t size)
         else
         {
             /* Add the allocated buffer back to the descriptor. */
-            fs_buffer_add_buffer_list(fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add_buffer_list(fs_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
             /* If an error has occurred. */
             if (status != SUCCESS)
@@ -660,7 +660,7 @@ static int32_t udp_write_data(void *fd, const uint8_t *buffer, int32_t size)
     UDP_PORT *port = (UDP_PORT *)fd;
     NET_DEV *net_device;
     int32_t ret_size, status;
-    FS_BUFFER *fs_buffer = NULL;
+    FS_BUFFER_LIST *fs_buffer = NULL;
     FD buffer_fd;
 
     SYS_LOG_FUNCTION_ENTRY(UDP);
@@ -682,7 +682,7 @@ static int32_t udp_write_data(void *fd, const uint8_t *buffer, int32_t size)
         ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Allocate a buffer from the required descriptor. */
-        fs_buffer = fs_buffer_get(buffer_fd, FS_BUFFER_LIST, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
+        fs_buffer = fs_buffer_get(buffer_fd, FS_LIST_FREE, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
 
         /* If we do have a buffer. */
         if (fs_buffer != NULL)
@@ -713,7 +713,7 @@ static int32_t udp_write_data(void *fd, const uint8_t *buffer, int32_t size)
     if ((status == SUCCESS) && (fs_buffer != NULL))
     {
         /* Write data on this file descriptor. */
-        status = udp_write_buffer(fd, (uint8_t *)fs_buffer, sizeof(FS_BUFFER));
+        status = udp_write_buffer(fd, (uint8_t *)fs_buffer, sizeof(FS_BUFFER_LIST));
 
         /* Reset the status if this is a success status. */
         if (status > 0)

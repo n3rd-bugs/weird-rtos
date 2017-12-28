@@ -181,7 +181,7 @@ uint32_t net_device_get_mtu(FD fd)
  * to the networking stack, the device should already have registered itself
  * with the networking stack.
  */
-int32_t net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol, uint32_t flags)
+int32_t net_device_buffer_receive(FS_BUFFER_LIST *buffer, uint8_t protocol, uint32_t flags)
 {
     int32_t status;
 
@@ -202,7 +202,7 @@ int32_t net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol, uint32_t 
         fd_release_lock(buffer->fd);
 
         /* Write this buffer to the networking buffer file descriptor. */
-        ASSERT(fs_write(net_buff_fd, (uint8_t *)buffer, sizeof(FS_BUFFER *)) != sizeof(FS_BUFFER *));
+        ASSERT(fs_write(net_buff_fd, (uint8_t *)buffer, sizeof(FS_BUFFER_LIST *)) != sizeof(FS_BUFFER_LIST *));
 
         /* Again obtain lock for buffer file descriptor. */
         ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
@@ -229,11 +229,11 @@ int32_t net_device_buffer_receive(FS_BUFFER *buffer, uint8_t protocol, uint32_t 
  * This function will be called by networking protocols when a packet is needed
  * to be transmitted.
  */
-int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t flags)
+int32_t net_device_buffer_transmit(FS_BUFFER_LIST *buffer, uint8_t protocol, uint8_t flags)
 {
     int32_t status = SUCCESS;
     NET_DEV *net_device;
-    FS_BUFFER *tmp_buffer;
+    FS_BUFFER_LIST *tmp_buffer;
 
     SYS_LOG_FUNCTION_ENTRY(NET_DEVICE);
 
@@ -272,7 +272,7 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
                 else
                 {
                     /* Free this buffer. */
-                    fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                    fs_buffer_add(buffer->fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
                 }
 
                 /* Pick the next buffer. */
@@ -284,7 +284,7 @@ int32_t net_device_buffer_transmit(FS_BUFFER *buffer, uint8_t protocol, uint8_t 
             if ((status != SUCCESS) && (buffer != NULL))
             {
                 /* Free any buffers remaining on the buffer list. */
-                fs_buffer_add_buffer_list(buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add_buffer_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             }
 
             /* Set the status that buffer was consumed. */

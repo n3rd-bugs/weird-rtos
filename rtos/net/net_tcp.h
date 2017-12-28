@@ -122,7 +122,7 @@ struct _tcp_rtx_data
     TCP_PORT        *port;
 
     /* Buffer need to be retransmitted. */
-    FS_BUFFER       *buffer;
+    FS_BUFFER_LIST  *buffer;
 
     /* List member. */
     TCP_RTX_DATA    *next;
@@ -150,8 +150,8 @@ struct _tcp_port
     /* TCP buffer lists. */
     struct _tcp_port_buffer_list
     {
-        FS_BUFFER       *head;
-        FS_BUFFER       *tail;
+        FS_BUFFER_LIST      *head;
+        FS_BUFFER_LIST      *tail;
     } buffer_list;
 
     /* Structure to maintain TCP RX buffer data. */
@@ -160,12 +160,12 @@ struct _tcp_port
         /* TCP out of order buffer lists. */
         struct _tcp_port_oorx_list
         {
-            FS_BUFFER   *head;
-            FS_BUFFER   *tail;
+            FS_BUFFER_LIST      *head;
+            FS_BUFFER_LIST      *tail;
         } oorx_list;
 
         /* TCP accumulated received buffer. */
-        FS_BUFFER       *buffer;
+        FS_BUFFER_LIST      *buffer;
     } rx_buffer;
 
     /* TCP socket address. */
@@ -255,8 +255,8 @@ typedef struct _tcp_port_param
 void tcp_initialize(void);
 void tcp_register(TCP_PORT *, char *, SOCKET_ADDRESS *);
 void tcp_unregister(TCP_PORT *);
-int32_t net_process_tcp(FS_BUFFER *, uint32_t, uint32_t, uint32_t, uint32_t);
-int32_t tcp_header_add(FS_BUFFER *, SOCKET_ADDRESS *, uint32_t, uint32_t, uint16_t, uint16_t, uint32_t, uint8_t);
+int32_t net_process_tcp(FS_BUFFER_LIST *, uint32_t, uint32_t, uint32_t, uint32_t);
+int32_t tcp_header_add(FS_BUFFER_LIST *, SOCKET_ADDRESS *, uint32_t, uint32_t, uint16_t, uint16_t, uint32_t, uint8_t);
 int32_t tcp_listen(TCP_PORT *);
 int32_t tcp_connect(TCP_PORT *);
 int32_t tcp_accept(TCP_PORT *, TCP_PORT *);

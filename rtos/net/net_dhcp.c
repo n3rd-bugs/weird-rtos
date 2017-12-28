@@ -35,7 +35,7 @@
  *  added to the given buffer.
  * This function will add the given DHCP header on the provided buffer.
  */
-int32_t dhcp_add_header(FS_BUFFER *buffer, uint8_t operation, uint32_t xid, uint16_t seconds, uint8_t bcast, uint32_t client_address, uint32_t your_address, uint32_t server_address, uint8_t *hw_address)
+int32_t dhcp_add_header(FS_BUFFER_LIST *buffer, uint8_t operation, uint32_t xid, uint16_t seconds, uint8_t bcast, uint32_t client_address, uint32_t your_address, uint32_t server_address, uint8_t *hw_address)
 {
     int32_t status;
     uint32_t magic_cookie = DHCP_MAGIC_COKIE, op_word = (((uint32_t)operation << DHCP_HDR_OP_SHIFT) | DHCP_OP_HEADER), padding[4] = {0, 0, 0, 0}; /* 16 byte padding size. */
@@ -98,7 +98,7 @@ int32_t dhcp_add_header(FS_BUFFER *buffer, uint8_t operation, uint32_t xid, uint
  *  parsed from the given buffer.
  * This function will parse the DHCP header from the given buffer.
  */
-int32_t dhcp_get_header(FS_BUFFER *buffer, uint8_t *operation, uint32_t *xid, uint32_t *client_address, uint32_t *your_address, uint32_t *server_address, uint8_t *hw_address)
+int32_t dhcp_get_header(FS_BUFFER_LIST *buffer, uint8_t *operation, uint32_t *xid, uint32_t *client_address, uint32_t *your_address, uint32_t *server_address, uint8_t *hw_address)
 {
     int32_t status;
     uint32_t op_word;
@@ -149,7 +149,7 @@ int32_t dhcp_get_header(FS_BUFFER *buffer, uint8_t *operation, uint32_t *xid, ui
  * added to the given buffer.
  * This function will add the given DHCP header on the provided buffer.
  */
-int32_t dhcp_add_option(FS_BUFFER *buffer, uint8_t type, uint8_t length, void *value, uint8_t flags)
+int32_t dhcp_add_option(FS_BUFFER_LIST *buffer, uint8_t type, uint8_t length, void *value, uint8_t flags)
 {
     int32_t status = SUCCESS;
 
@@ -189,7 +189,7 @@ int32_t dhcp_add_option(FS_BUFFER *buffer, uint8_t type, uint8_t length, void *v
  * value will remain on the start of buffer and caller is responsible for
  * pulling it from the buffer.
  */
-int32_t dhcp_get_option(FS_BUFFER *buffer, uint8_t *type, uint8_t *length)
+int32_t dhcp_get_option(FS_BUFFER_LIST *buffer, uint8_t *type, uint8_t *length)
 {
     int32_t status = SUCCESS;
 

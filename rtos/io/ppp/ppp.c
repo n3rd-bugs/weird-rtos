@@ -139,7 +139,7 @@ void ppp_process_modem_chat(void *fd, PPP *ppp)
     if (((ppp->flags & PPP_DEDICATED_FD) && (status != MODEM_CHAT_INCOMPLETE)) || (status == SUCCESS))
     {
         /* Free the RX buffer. */
-        fs_buffer_add(fd, ppp->rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add(fd, ppp->rx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         ppp->rx_buffer = NULL;
     }
 
@@ -160,11 +160,11 @@ void ppp_process_modem_chat(void *fd, PPP *ppp)
  * @proto: PPP protocol data.
  * This function will be called to process PPP configuration packets.
  */
-void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
+void ppp_configuration_process(PPP *ppp, FS_BUFFER_LIST *buffer, PPP_PROTO *proto)
 {
     PPP_CONF_PKT rx_packet, tx_packet;
     PPP_CONF_OPT option;
-    FS_BUFFER *tx_buffer = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+    FS_BUFFER_LIST *tx_buffer = fs_buffer_get(buffer->fd, FS_LIST_FREE, 0);
     int32_t status;
 
     /* Should never happen. */
@@ -354,7 +354,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
     if (tx_buffer != NULL)
     {
         /* Free the TX buffer. */
-        fs_buffer_add(tx_buffer->fd, tx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add(tx_buffer->fd, tx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
     }
 
 } /* ppp_configuration_process */
@@ -369,8 +369,8 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER *buffer, PPP_PROTO *proto)
  */
 void ppp_process_frame(void *fd, PPP *ppp)
 {
-    FS_BUFFER *new_buffer;
-    FS_BUFFER_ONE *buffer_one, *tmp_buffer_one, *new_buffer_one = NULL;
+    FS_BUFFER_LIST *new_buffer;
+    FS_BUFFER *buffer_one, *tmp_buffer_one, *new_buffer_one = NULL;
     PPP_PROTO *proto;
     int32_t status = PPP_PARTIAL_READ;
     uint32_t this_length;
@@ -384,7 +384,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
     if ((ppp->rx_buffer->list.head) && (ppp->rx_buffer->list.head->buffer[0] != PPP_FLAG))
     {
         /* Free the RX buffer. */
-        fs_buffer_add(ppp->fd, ppp->rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add(ppp->fd, ppp->rx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         ppp->rx_buffer = NULL;
     }
     else
@@ -414,7 +414,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                     if ((buffer_one->length > this_length) || (buffer_one->next != NULL))
                     {
                         /* Get a buffer list. */
-                        new_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
+                        new_buffer = fs_buffer_get(fd, FS_LIST_FREE, 0);
 
                         /* If we have some data left in the current buffer. */
                         if ((buffer_one->length > this_length))
@@ -431,7 +431,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                                 else
                                 {
                                     /* Free the allocated buffer. */
-                                    fs_buffer_add(fd, new_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                                    fs_buffer_add(fd, new_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
                                     new_buffer = NULL;
 
                                     /* Pull and discard extra data from this one buffer. */
@@ -472,7 +472,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                             else
                             {
                                 /* Free this one buffer. */
-                                fs_buffer_add(fd, buffer_one, FS_BUFFER_ONE_FREE, FS_BUFFER_ACTIVE);
+                                fs_buffer_add(fd, buffer_one, FS_BUFFER_FREE, FS_BUFFER_ACTIVE);
                             }
 
                             /* Pick the next buffer. */
@@ -587,7 +587,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
         if (status != PPP_BUFFER_FORWARDED)
         {
             /* Free the received buffer. */
-            fs_buffer_add(ppp->rx_buffer->fd, ppp->rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add(ppp->rx_buffer->fd, ppp->rx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             ppp->rx_buffer = NULL;
         }
     }
@@ -604,13 +604,13 @@ void ppp_process_frame(void *fd, PPP *ppp)
  *  will be returned if a valid protocol was not resolved.
  * This function will transmit a PPP networking buffer.
  */
-int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
+int32_t net_ppp_transmit(FS_BUFFER_LIST *buffer, uint8_t flags)
 {
     int32_t status = SUCCESS;
     PPP *ppp;
     uint16_t protocol = 0;
     uint8_t net_proto;
-    FS_BUFFER *buffer_copy;
+    FS_BUFFER_LIST *buffer_copy;
 
     /* Resolve required PPP buffer instance. */
     ppp = ppp_get_instance_fd(buffer->fd);
@@ -644,7 +644,7 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
         if ((status == SUCCESS) && (buffer->free != NULL))
         {
             /* Allocate a buffer to make a copy of this buffer. */
-            buffer_copy = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+            buffer_copy = fs_buffer_get(buffer->fd, FS_LIST_FREE, 0);
 
             /* If we have a buffer to make a copy of this frame. */
             if (buffer_copy)
@@ -655,7 +655,7 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
                 if (status == SUCCESS)
                 {
                     /* Free the buffer. */
-                    fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                    fs_buffer_add(buffer->fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
                     /* Use the buffer copy from now on. */
                     buffer = buffer_copy;
@@ -663,7 +663,7 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
                 else
                 {
                     /* Free the buffer copy. */
-                    fs_buffer_add(buffer_copy->fd, buffer_copy, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                    fs_buffer_add(buffer_copy->fd, buffer_copy, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
                     /* We will free the original buffer later. */
                 }
@@ -690,7 +690,7 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
     if (status != SUCCESS)
     {
         /* Free the buffer. */
-        fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add(buffer->fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
     }
 
     /* Buffer will always be consumed. */
@@ -710,7 +710,7 @@ int32_t net_ppp_transmit(FS_BUFFER *buffer, uint8_t flags)
 void net_ppp_receive(void *data, int32_t status)
 {
     PPP *ppp = ppp_get_instance_fd((FD)data);
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(status);
@@ -737,7 +737,7 @@ void net_ppp_receive(void *data, int32_t status)
             if (fs_buffer_move_data(ppp->rx_buffer, buffer, FS_BUFFER_COPY) != SUCCESS)
             {
                 /* Free the receive buffer. */
-                fs_buffer_add(ppp->fd, ppp->rx_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add(ppp->fd, ppp->rx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
                 ppp->rx_buffer = NULL;
             }
         }
@@ -783,7 +783,7 @@ void net_ppp_receive(void *data, int32_t status)
     if (buffer)
     {
         /* Free the original buffer. */
-        fs_buffer_add(ppp->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add(ppp->fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
     }
 
     /* Release lock for PPP. */
@@ -802,7 +802,7 @@ void net_ppp_receive(void *data, int32_t status)
  * file descriptor attached to the given buffer. Caller is responsible for
  * freeing the given buffer if this function returns an error.
  */
-int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER *buffer, uint16_t proto, uint8_t flags)
+int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER_LIST *buffer, uint16_t proto, uint8_t flags)
 {
     int32_t status;
     FD fd = buffer->fd;

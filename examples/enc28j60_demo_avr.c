@@ -34,12 +34,12 @@ SOCKET_ADDRESS socket_address;
 void udp_echo_process(void *data, int32_t status)
 {
     int32_t     received;
-    FS_BUFFER   *rx_buffer;
+    FS_BUFFER_LIST   *rx_buffer;
 
     UNUSED_PARAM(status);
 
     /* Receive some data from the UDP port. */
-    received = fs_read(&udp_port, (uint8_t *)&rx_buffer, sizeof(FS_BUFFER));
+    received = fs_read(&udp_port, (uint8_t *)&rx_buffer, sizeof(FS_BUFFER_LIST));
 
     /* If some data was received. */
     if (received > 0)
@@ -48,7 +48,7 @@ void udp_echo_process(void *data, int32_t status)
         udp_port.socket_address = udp_port.last_datagram_address;
 
         /* Send received data back on the UDP port. */
-        received = fs_write(&udp_port, (uint8_t *)rx_buffer, sizeof(FS_BUFFER));
+        received = fs_write(&udp_port, (uint8_t *)rx_buffer, sizeof(FS_BUFFER_LIST));
     }
 }
 

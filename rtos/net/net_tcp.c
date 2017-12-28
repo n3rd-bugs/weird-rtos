@@ -31,9 +31,9 @@ static void tcp_port_initialize(TCP_PORT *);
 static uint8_t tcp_port_search(void *, void *);
 static void tcp_resume_socket(TCP_PORT *, uint8_t);
 static int32_t tcp_port_wait(TCP_PORT *, uint8_t);
-static int32_t tcp_process_options(FS_BUFFER *, TCP_PORT *, uint32_t, uint16_t);
-static int32_t tcp_add_option(FS_BUFFER *, uint8_t, uint8_t, void *, uint8_t);
-static int32_t tcp_add_options(FS_BUFFER *, TCP_PORT *, uint8_t, uint8_t *, uint8_t);
+static int32_t tcp_process_options(FS_BUFFER_LIST *, TCP_PORT *, uint32_t, uint16_t);
+static int32_t tcp_add_option(FS_BUFFER_LIST *, uint8_t, uint8_t, void *, uint8_t);
+static int32_t tcp_add_options(FS_BUFFER_LIST *, TCP_PORT *, uint8_t, uint8_t *, uint8_t);
 static void tcp_timer_register(TCP_PORT *);
 static void tcp_timer_unregister(TCP_PORT *);
 static void tcp_timeout_update(TCP_PORT *);
@@ -43,14 +43,14 @@ static int32_t tcp_send_segment(TCP_PORT *, SOCKET_ADDRESS *, uint32_t, uint32_t
 static uint8_t tcp_check_sequence(uint32_t, uint32_t, uint32_t, uint32_t);
 static void tcp_process_finbit(TCP_PORT *, uint32_t);
 static uint8_t tcp_oo_buffer_process(void *, void *);
-static int32_t tcp_rx_buffer_merge(TCP_PORT *, FS_BUFFER *, uint16_t, uint32_t);
-static void tcp_buffer_get_ihl_flags(FS_BUFFER *, uint8_t *, uint16_t *);
+static int32_t tcp_rx_buffer_merge(TCP_PORT *, FS_BUFFER_LIST *, uint16_t, uint32_t);
+static void tcp_buffer_get_ihl_flags(FS_BUFFER_LIST *, uint8_t *, uint16_t *);
 static int32_t tcp_read_buffer(void *, uint8_t *, int32_t);
 static int32_t tcp_read_data(void *, uint8_t *, int32_t);
 static int32_t tcp_write_buffer(void *, const uint8_t *, int32_t);
 static int32_t tcp_write_data(void *, const uint8_t *, int32_t);
 static TCP_RTX_DATA *tcp_get_rtx_free(TCP_PORT *);
-static uint8_t tcp_rtx_return_buffer(void *, FS_BUFFER *);
+static uint8_t tcp_rtx_return_buffer(void *, FS_BUFFER_LIST *);
 static uint8_t tcp_rtx_process_ack(TCP_PORT *, uint32_t);
 static void tcp_rtx_free_all(TCP_PORT *);
 
@@ -166,7 +166,7 @@ void tcp_unregister(TCP_PORT *port)
     fd_get_lock(port);
 
     /* Free all the buffers in the TCP buffer list. */
-    fs_buffer_add_buffer_list(port->buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+    fs_buffer_add_buffer_list(port->buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
     /* Unregister networking condition for this TCP port. */
     tcp_timer_unregister(port);
@@ -315,7 +315,7 @@ static int32_t tcp_port_wait(TCP_PORT *port, uint8_t flags)
  *  parsed.
  * This function will parse and process TCP options received in a TCP packet.
  */
-static int32_t tcp_process_options(FS_BUFFER *buffer, TCP_PORT *port, uint32_t offset, uint16_t total_opt_size)
+static int32_t tcp_process_options(FS_BUFFER_LIST *buffer, TCP_PORT *port, uint32_t offset, uint16_t total_opt_size)
 {
     int32_t status = SUCCESS;
     uint16_t opt_index = 0, opt_value_16;
@@ -471,7 +471,7 @@ static int32_t tcp_process_options(FS_BUFFER *buffer, TCP_PORT *port, uint32_t o
  *  added to the given buffer.
  * This function will add an option on the provided buffer.
  */
-static int32_t tcp_add_option(FS_BUFFER *buffer, uint8_t type, uint8_t length, void *value, uint8_t flags)
+static int32_t tcp_add_option(FS_BUFFER_LIST *buffer, uint8_t type, uint8_t length, void *value, uint8_t flags)
 {
     int32_t status = SUCCESS;
 
@@ -515,7 +515,7 @@ static int32_t tcp_add_option(FS_BUFFER *buffer, uint8_t type, uint8_t length, v
  * This function will add TCP configuration options for the given TCP port, as
  * defined by the option flags.
  */
-static int32_t tcp_add_options(FS_BUFFER *buffer, TCP_PORT *port, uint8_t opt_flags, uint8_t *opt_size, uint8_t flags)
+static int32_t tcp_add_options(FS_BUFFER_LIST *buffer, TCP_PORT *port, uint8_t opt_flags, uint8_t *opt_size, uint8_t flags)
 {
     int32_t status = SUCCESS;
     uint8_t ret_size = 0, opt_value_8;
@@ -667,7 +667,7 @@ static void tcp_timeout_update(TCP_PORT *port)
 static void tcp_fast_rtx(TCP_PORT *port, uint32_t seq_num)
 {
     uint32_t i;
-    FS_BUFFER *rtx_buffer;
+    FS_BUFFER_LIST *rtx_buffer;
 
     SYS_LOG_FUNCTION_ENTRY(TCP);
 
@@ -723,7 +723,7 @@ static void tcp_timeout_callback(void *data, int32_t status)
     TCP_PORT *port = (TCP_PORT *)data;
     int32_t i, least_rtx = -1;
     uint8_t rtx_picked = FALSE;
-    FS_BUFFER *rtx_buffer;
+    FS_BUFFER_LIST *rtx_buffer;
 
     /* Remove some compiler warnings. */
     UNUSED_PARAM(status);
@@ -906,7 +906,7 @@ static void tcp_timeout_callback(void *data, int32_t status)
 static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, uint32_t seq_num, uint32_t ack_num, uint16_t flags, uint16_t wnd_size, uint8_t *data, int32_t data_len, uint8_t rtx_on, uint8_t buffer_flags)
 {
     NET_DEV *net_device;
-    FS_BUFFER *buffer = NULL;
+    FS_BUFFER_LIST *buffer = NULL;
     int32_t status = SUCCESS;
     FD buffer_fd;
     uint8_t opt_size = 0, opt_flags;
@@ -942,7 +942,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
         ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
         /* Get a buffer keeping threshold buffers on the descriptor. */
-        buffer = fs_buffer_get(buffer_fd, FS_BUFFER_LIST, buffer_flags);
+        buffer = fs_buffer_get(buffer_fd, FS_LIST_FREE, buffer_flags);
 
         /* If buffer was not allocated. */
         if (buffer != NULL)
@@ -1117,7 +1117,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                 buffer->free_data = 0;
 
                 /* Add the allocated buffer back to the descriptor. */
-                fs_buffer_add_buffer_list(buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add_buffer_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             }
 
             /* If segment was not sent and we allocated a retransmission structure. */
@@ -1261,7 +1261,7 @@ static void tcp_process_finbit(TCP_PORT *port, uint32_t fin_seq)
  */
 static uint8_t tcp_oo_buffer_process(void *node, void *param)
 {
-    FS_BUFFER *buffer = (FS_BUFFER *)node;
+    FS_BUFFER_LIST *buffer = (FS_BUFFER_LIST *)node;
     TCP_OO_PARAM *oo_param = (TCP_OO_PARAM *)param;
     uint32_t seg_seq;
     uint8_t stop = FALSE;
@@ -1302,11 +1302,11 @@ static uint8_t tcp_oo_buffer_process(void *node, void *param)
  *  successfully merged.
  * This function will merge received buffers on this port.
  */
-static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t seg_len, uint32_t seg_seq)
+static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER_LIST *buffer, uint16_t seg_len, uint32_t seg_seq)
 {
     int32_t status = SUCCESS;
     FD buffer_fd = buffer->fd;
-    FS_BUFFER *prev_buffer = NULL;
+    FS_BUFFER_LIST *prev_buffer = NULL;
     TCP_OO_PARAM oo_param;
     uint8_t new_data = FALSE;
 
@@ -1373,7 +1373,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
         if (port->rx_buffer.oorx_list.head != NULL)
         {
             /* Clear any remaining buffers in the out-of-order buffer list. */
-            fs_buffer_add_buffer_list(port->rx_buffer.oorx_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add_buffer_list(port->rx_buffer.oorx_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             port->rx_buffer.oorx_list.head = port->rx_buffer.oorx_list.tail = NULL;
         }
 
@@ -1394,7 +1394,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
         oo_param.flags = 0;
 
         /* Put this buffer on the out-of-order buffer list. */
-        sll_search(&port->rx_buffer.oorx_list, (void **)&prev_buffer, &tcp_oo_buffer_process, &oo_param, OFFSETOF(FS_BUFFER, next));
+        sll_search(&port->rx_buffer.oorx_list, (void **)&prev_buffer, &tcp_oo_buffer_process, &oo_param, OFFSETOF(FS_BUFFER_LIST, next));
 
         /* If given segment did not conflict with any of the existing segments. */
         if ((oo_param.flags & TCP_FLAG_SEG_CONFLICT) == 0)
@@ -1405,7 +1405,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
             if (status == SUCCESS)
             {
                 /* Put this buffer on the out-of-order buffer list. */
-                sll_add_node(&port->rx_buffer.oorx_list, buffer, prev_buffer, OFFSETOF(FS_BUFFER, next));
+                sll_add_node(&port->rx_buffer.oorx_list, buffer, prev_buffer, OFFSETOF(FS_BUFFER_LIST, next));
 
                 /* This buffer is now consumed. */
                 status = NET_BUFFER_CONSUMED;
@@ -1447,7 +1447,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER *buffer, uint16_t s
  * This function will read and return the IHL and TCP header flags for the
  * given TCP buffer.
  */
-static void tcp_buffer_get_ihl_flags(FS_BUFFER *buffer, uint8_t *ihl, uint16_t *flags)
+static void tcp_buffer_get_ihl_flags(FS_BUFFER_LIST *buffer, uint8_t *ihl, uint16_t *flags)
 {
     SYS_LOG_FUNCTION_ENTRY(TCP);
 
@@ -1487,7 +1487,7 @@ static int32_t tcp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
         nbytes = (int32_t)port->rx_buffer.buffer->total_length;
 
         /* Return the read buffer to the caller. */
-        *(FS_BUFFER **)buffer = port->rx_buffer.buffer;
+        *(FS_BUFFER_LIST **)buffer = port->rx_buffer.buffer;
         port->rx_buffer.buffer = NULL;
     }
 
@@ -1524,7 +1524,7 @@ static int32_t tcp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
 static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
 {
     TCP_PORT *port = (TCP_PORT *)fd;
-    FS_BUFFER *fs_buffer;
+    FS_BUFFER_LIST *fs_buffer;
     int32_t ret_size = 0;
 
     SYS_LOG_FUNCTION_ENTRY(TCP);
@@ -1566,7 +1566,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
                 fs_buffer_move_data(port->rx_buffer.buffer, fs_buffer, FS_BUFFER_HEAD);
 
                 /* Return this buffer to it's owner. */
-                fs_buffer_add(fs_buffer->fd, fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add(fs_buffer->fd, fs_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             }
             else
             {
@@ -1581,7 +1581,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
         else
         {
             /* Return this buffer to it's owner. */
-            fs_buffer_add(fs_buffer->fd, fs_buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add(fs_buffer->fd, fs_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* Release lock for the buffer file descriptor. */
@@ -1787,7 +1787,7 @@ static TCP_RTX_DATA *tcp_get_rtx_free(TCP_PORT *port)
  *  otherwise false will be returned.
  * This function will return a buffer to a TCP socket for retransmission.
  */
-static uint8_t tcp_rtx_return_buffer(void *data, FS_BUFFER *buffer)
+static uint8_t tcp_rtx_return_buffer(void *data, FS_BUFFER_LIST *buffer)
 {
     TCP_RTX_DATA *rtx = (TCP_RTX_DATA *)data;
     uint8_t returned = TRUE;
@@ -1855,7 +1855,7 @@ static uint8_t tcp_rtx_process_ack(TCP_PORT *port, uint32_t ack_num)
                 if (port->rtx[i].flags & TCP_RTX_BUFFER_RETURNED)
                 {
                     /* Free this buffer. */
-                    fs_buffer_add(port->rtx[i].buffer->fd, port->rtx[i].buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                    fs_buffer_add(port->rtx[i].buffer->fd, port->rtx[i].buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
                 }
 
                 /* Free this retransmission structure as free. */
@@ -1929,7 +1929,7 @@ static void tcp_rtx_free_all(TCP_PORT *port)
             if (port->rtx[i].flags & TCP_RTX_BUFFER_RETURNED)
             {
                 /* Free this buffer. */
-                fs_buffer_add(port->rtx[i].buffer->fd, port->rtx[i].buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add(port->rtx[i].buffer->fd, port->rtx[i].buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             }
 
             /* Release buffer lock. */
@@ -1968,7 +1968,7 @@ static void tcp_rtx_free_all(TCP_PORT *port)
  *  stack as that will cause buffer starvation.
  * This function will process an incoming TCP packet.
  */
-int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, uint32_t src_ip, uint32_t dst_ip)
+int32_t net_process_tcp(FS_BUFFER_LIST *buffer, uint32_t ihl, uint32_t iface_addr, uint32_t src_ip, uint32_t dst_ip)
 {
     int32_t status = SUCCESS;
     uint16_t csum, flags;
@@ -2097,7 +2097,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
                         if (fs_buffer_threshold_locked(buffer->fd) == FALSE)
                         {
                             /* Add this buffer in the buffer list for TCP port. */
-                            sll_append(&port->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+                            sll_append(&port->buffer_list, buffer, OFFSETOF(FS_BUFFER_LIST, next));
 
                             /* Buffer was passed to the port, return status to
                              * the caller. */
@@ -2671,7 +2671,7 @@ int32_t net_process_tcp(FS_BUFFER *buffer, uint32_t ihl, uint32_t iface_addr, ui
  *  added.
  * This function will add a TCP header on the given buffer.
  */
-int32_t tcp_header_add(FS_BUFFER *buffer, SOCKET_ADDRESS *socket_address, uint32_t seq_num, uint32_t ack_num, uint16_t tcp_flags, uint16_t wnd_size, uint32_t opt_len, uint8_t flags)
+int32_t tcp_header_add(FS_BUFFER_LIST *buffer, SOCKET_ADDRESS *socket_address, uint32_t seq_num, uint32_t ack_num, uint16_t tcp_flags, uint16_t wnd_size, uint32_t opt_len, uint8_t flags)
 {
     int32_t status = SUCCESS;
     HDR_GEN_MACHINE hdr_machine;
@@ -2839,7 +2839,7 @@ int32_t tcp_connect(TCP_PORT *port)
 int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
 {
     int32_t status = SUCCESS;
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
     uint32_t irs, iss;
     uint16_t flags;
     uint8_t ihl;
@@ -2859,7 +2859,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
         if (status == SUCCESS)
         {
             /* Get the request buffer from the port buffer list. */
-            buffer = sll_pop(&server_port->buffer_list, OFFSETOF(FS_BUFFER, next));
+            buffer = sll_pop(&server_port->buffer_list, OFFSETOF(FS_BUFFER_LIST, next));
 
             /* If we don't have any more buffers to read from this port. */
             if (server_port->buffer_list.head == NULL)
@@ -2963,7 +2963,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
                 }
 
                 /* Add the received buffer back to the descriptor. */
-                fs_buffer_add_buffer_list(buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                fs_buffer_add_buffer_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
                 /* Release lock for buffer file descriptor. */
                 fd_release_lock(buffer->fd);

@@ -83,8 +83,8 @@ typedef struct _ipv4_fragment
     /* Networking buffer list for the buffers belong in this fragment. */
     struct _ipv4_fragment_buffer_list
     {
-        FS_BUFFER       *head;
-        FS_BUFFER       *tail;
+        FS_BUFFER_LIST  *head;
+        FS_BUFFER_LIST  *tail;
     } buffer_list;
 
     /* The system tick at which this fragment will timeout. */
@@ -141,8 +141,8 @@ uint8_t ipv4_compare_address(uint32_t, uint32_t, uint8_t);
 int32_t ipv4_get_device_address(FD, uint32_t *, uint32_t *);
 int32_t ipv4_set_device_address(FD, uint32_t, uint32_t);
 NET_DEV *ipv4_get_source_device(uint32_t);
-int32_t net_process_ipv4(FS_BUFFER *, uint32_t);
-int32_t ipv4_header_add(FS_BUFFER *, uint8_t, uint32_t, uint32_t, uint8_t);
+int32_t net_process_ipv4(FS_BUFFER_LIST *, uint32_t);
+int32_t ipv4_header_add(FS_BUFFER_LIST *, uint8_t, uint32_t, uint32_t, uint8_t);
 #ifdef IPV4_ENABLE_FRAG
 void ipv4_fragment_set_data(FD, IPV4_FRAGMENT *, uint32_t);
 #endif

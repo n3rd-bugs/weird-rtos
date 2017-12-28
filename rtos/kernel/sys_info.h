@@ -31,7 +31,7 @@ uint32_t util_system_calc_free_stack(void);
 void util_print_sys_info_assert(void);
 #endif
 #ifdef CONFIG_FS
-int32_t util_print_sys_info_buffer(FS_BUFFER *);
+int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *);
 #endif
 
 #endif /* TASK_STATS */

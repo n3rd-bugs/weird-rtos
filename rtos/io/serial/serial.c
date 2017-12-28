@@ -149,7 +149,7 @@ void serial_register(SERIAL *serial, const char *name, void *buffer, uint32_t fl
 static int32_t serial_write(void *fs, const uint8_t *buf, int32_t nbytes)
 {
     SERIAL *serial = (SERIAL *)fs;
-    FS_BUFFER *buffer = (FS_BUFFER *)buf;
+    FS_BUFFER_LIST *buffer = (FS_BUFFER_LIST *)buf;
     int32_t n;
 
     /* If this is a buffered serial port. */
@@ -186,7 +186,7 @@ static int32_t serial_write(void *fs, const uint8_t *buf, int32_t nbytes)
 static int32_t serial_read(void *fs, uint8_t *buf, int32_t nbytes)
 {
     SERIAL *serial = (SERIAL *)fs;
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
     int32_t n = nbytes;
 
     /* If this is a buffered serial port. */
@@ -199,7 +199,7 @@ static int32_t serial_read(void *fs, uint8_t *buf, int32_t nbytes)
         if (buffer != NULL)
         {
             /* Return a buffer from the RX list. */
-            (*((FS_BUFFER **)buf)) = buffer;
+            (*((FS_BUFFER_LIST **)buf)) = buffer;
         }
     }
     else

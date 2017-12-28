@@ -22,7 +22,7 @@
 #define MODEM_CHAT_INVALID      -931
 
 /* Function prototypes. */
-int32_t modem_chat_process(FD, FS_BUFFER *);
+int32_t modem_chat_process(FD, FS_BUFFER_LIST *);
 
 #endif /* PPP_MODEM_CHAT */
 

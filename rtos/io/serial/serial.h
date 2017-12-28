@@ -62,8 +62,8 @@ typedef struct _serial
 
 #ifdef CONFIG_FS
     /* Transmission buffers. */
-    FS_BUFFER       tx_buffer;
-    FS_BUFFER       rx_buffer;
+    FS_BUFFER_LIST  tx_buffer;
+    FS_BUFFER_LIST  rx_buffer;
 #endif
 
     /* Serial flags. */

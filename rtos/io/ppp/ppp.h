@@ -87,45 +87,45 @@ typedef struct _ppp PPP;
 struct _ppp
 {
     /* PPP instance list member. */
-    PPP         *next;
+    PPP             *next;
 
     /* File descriptor registered with PPP device. */
-    FD          fd;
+    FD              fd;
 
     /* Networking device structure. */
-    NET_DEV     net_device;
+    NET_DEV         net_device;
 
     /* PPP instance state. */
-    uint32_t    state;
+    uint32_t        state;
 
     /* PPP configuration flags. */
-    uint32_t    flags;
+    uint32_t        flags;
 
     /* ACCM definitions. */
-    uint32_t    tx_accm[8];
-    uint32_t    rx_accm;
+    uint32_t        tx_accm[8];
+    uint32_t        rx_accm;
 
     /* MRU value. */
-    uint32_t    mru;
+    uint32_t        mru;
 
     /* Configured IP addresses. */
-    uint32_t    remote_ip_address;
-    uint32_t    local_ip_address;
+    uint32_t        remote_ip_address;
+    uint32_t        local_ip_address;
 
     /* Receive buffer chain. */
-    FS_BUFFER   *rx_buffer;
+    FS_BUFFER_LIST  *rx_buffer;
 
     union _ppp_state_data
     {
         /* ID used in last LCP request. */
-        uint8_t     lcp_id;
+        uint8_t         lcp_id;
 
         /* ID used in last IPCP request. */
-        uint8_t     ipcp_id;
+        uint8_t         ipcp_id;
     } state_data;
 
     /* Structure padding. */
-    uint8_t     pad[3];
+    uint8_t         pad[3];
 };
 
 /* PPP global data structure. */
@@ -165,11 +165,11 @@ void ppp_rx_watcher(void *, void *);
 
 /* PPP internal APIs. */
 void ppp_process_modem_chat(void *, PPP *);
-void ppp_configuration_process(PPP *, FS_BUFFER *, PPP_PROTO *);
+void ppp_configuration_process(PPP *, FS_BUFFER_LIST *, PPP_PROTO *);
 void ppp_process_frame(void *, PPP *);
-int32_t net_ppp_transmit(FS_BUFFER *, uint8_t);
+int32_t net_ppp_transmit(FS_BUFFER_LIST *, uint8_t);
 void net_ppp_receive(void *, int32_t);
-int32_t ppp_transmit_buffer_instance(PPP *, FS_BUFFER *, uint16_t, uint8_t);
+int32_t ppp_transmit_buffer_instance(PPP *, FS_BUFFER_LIST *, uint16_t, uint8_t);
 
 /* Include PPP supported configuration protocol definitions. */
 #include <ppp_lcp.h>

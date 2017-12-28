@@ -22,10 +22,10 @@
 #include <sll.h>
 
 /* Internal function prototypes. */
-static int32_t arp_process_prologue_ipv4(FS_BUFFER *);
-static int32_t arp_process_request(FS_BUFFER *);
-static int32_t arp_process_response(FS_BUFFER *);
-static int32_t arp_send_packet(FS_BUFFER *, uint16_t, uint8_t *, uint32_t, uint8_t *, uint32_t);
+static int32_t arp_process_prologue_ipv4(FS_BUFFER_LIST *);
+static int32_t arp_process_request(FS_BUFFER_LIST *);
+static int32_t arp_process_response(FS_BUFFER_LIST *);
+static int32_t arp_send_packet(FS_BUFFER_LIST *, uint16_t, uint8_t *, uint32_t, uint8_t *, uint32_t);
 static void arp_free_entry(ARP_ENTRY *);
 static ARP_ENTRY *arp_find_entry(FD, uint32_t);
 static void arp_update_timers(FD);
@@ -41,7 +41,7 @@ static void arp_event(void *, int32_t);
  * This function processes prologue for a given ARP packet and verify that this
  * is for IPv4 running over ethernet.
  */
-static int32_t arp_process_prologue_ipv4(FS_BUFFER *buffer)
+static int32_t arp_process_prologue_ipv4(FS_BUFFER_LIST *buffer)
 {
     int32_t status;
     HDR_PARSE_MACHINE machine;
@@ -90,7 +90,7 @@ static int32_t arp_process_prologue_ipv4(FS_BUFFER *buffer)
  *  need to free it.
  * This function process an ARP request and sends a reply if needed.
  */
-static int32_t arp_process_request(FS_BUFFER *buffer)
+static int32_t arp_process_request(FS_BUFFER_LIST *buffer)
 {
     int32_t status = SUCCESS;
     uint32_t own_ip, target_ip;
@@ -137,7 +137,7 @@ static int32_t arp_process_request(FS_BUFFER *buffer)
  *  need to free it.
  * This function process an ARP response packet.
  */
-static int32_t arp_process_response(FS_BUFFER *buffer)
+static int32_t arp_process_response(FS_BUFFER_LIST *buffer)
 {
     int32_t status = SUCCESS;
     uint32_t src_ip, i;
@@ -204,7 +204,7 @@ static int32_t arp_process_response(FS_BUFFER *buffer)
  *  need to free it.
  * This function process an ARP request and sends a reply if needed.
  */
-static int32_t arp_send_packet(FS_BUFFER *buffer, uint16_t operation, uint8_t *src_mac, uint32_t src_ip, uint8_t *dst_mac, uint32_t dst_ip)
+static int32_t arp_send_packet(FS_BUFFER_LIST *buffer, uint16_t operation, uint8_t *src_mac, uint32_t src_ip, uint8_t *dst_mac, uint32_t dst_ip)
 {
     int32_t status;
     HDR_GEN_MACHINE machine;
@@ -255,7 +255,7 @@ static void arp_free_entry(ARP_ENTRY *entry)
     if (entry->buffer_list.head != NULL)
     {
         /* Free all the buffers still on this ARP entry. */
-        fs_buffer_add_buffer_list(entry->buffer_list.head, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+        fs_buffer_add_buffer_list(entry->buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
         /* Clear the buffer list. */
         entry->buffer_list.head = entry->buffer_list.tail = NULL;
@@ -380,7 +380,7 @@ static void arp_update_timers(FD fd)
 static int32_t arp_route(FD fd, ARP_ENTRY *entry)
 {
     int32_t status = SUCCESS;
-    FS_BUFFER *buffer;
+    FS_BUFFER_LIST *buffer;
     uint32_t src_ip;
 
     SYS_LOG_FUNCTION_ENTRY(ARP);
@@ -390,7 +390,7 @@ static int32_t arp_route(FD fd, ARP_ENTRY *entry)
     ASSERT(ipv4_get_device_address(fd, &src_ip, NULL) != SUCCESS);
 
     /* Get a free buffer that can be used to send an ARP request. */
-    buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
+    buffer = fs_buffer_get(fd, FS_LIST_FREE, 0);
 
     if (buffer != NULL)
     {
@@ -406,7 +406,7 @@ static int32_t arp_route(FD fd, ARP_ENTRY *entry)
         else
         {
             /* Free this buffer. */
-            fs_buffer_add_buffer_list(buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+            fs_buffer_add_buffer_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
     }
     else
@@ -526,7 +526,7 @@ static void arp_event(void *data, int32_t resume_status)
  * This function will try to resolve the destination ethernet address for an
  * IPv4 destination for the given buffer.
  */
-int32_t arp_resolve(FS_BUFFER *buffer, uint32_t dst_ip, uint8_t *dst_addr)
+int32_t arp_resolve(FS_BUFFER_LIST *buffer, uint32_t dst_ip, uint8_t *dst_addr)
 {
     int32_t status = SUCCESS;
     ARP_ENTRY *entry;
@@ -584,7 +584,7 @@ int32_t arp_resolve(FS_BUFFER *buffer, uint32_t dst_ip, uint8_t *dst_addr)
             }
 
             /* Put this buffer in the ARP buffer list. */
-            sll_append(&entry->buffer_list, buffer, OFFSETOF(FS_BUFFER, next));
+            sll_append(&entry->buffer_list, buffer, OFFSETOF(FS_BUFFER_LIST, next));
 
             /* This packet will be sent when we have resolved the destination
              * MAC address. */
@@ -661,7 +661,7 @@ ARP_DATA *arp_get_data(FD fd)
  *  invalid header was parsed.
  * This function will receive and process a given ARP packet.
  */
-int32_t net_process_arp(FS_BUFFER *buffer)
+int32_t net_process_arp(FS_BUFFER_LIST *buffer)
 {
     int32_t status = SUCCESS;
     uint16_t operation;

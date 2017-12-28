@@ -27,7 +27,7 @@ static int32_t enc28j60_rx_fifo_init(ENC28J60 *);
 static void enc28j60_set_mac_address(ENC28J60 *, uint8_t *);
 static void enc28j60_link_changed(ENC28J60 *);
 static void enc28j60_receive_packet(ENC28J60 *);
-static int32_t enc28j60_transmit_packet(void *, FS_BUFFER *);
+static int32_t enc28j60_transmit_packet(void *, FS_BUFFER_LIST *);
 #if (ENC28J60_INT_POLL == TRUE)
 static void enc28j60_int_poll(void *);
 #endif
@@ -53,7 +53,7 @@ void enc28j60_init(ENC28J60 *device)
     /* Set the buffer data structure for this file descriptor. */
     device->fs_buffer_data.buffer_space = device->buffer;
     device->fs_buffer_data.buffer_size = ENC28J60_MAX_BUFFER_SIZE;
-    device->fs_buffer_data.buffer_lists = device->fs_buffer_list;
+    device->fs_buffer_data.buffer_lists = device->fs_list_free;
     device->fs_buffer_data.num_buffer_lists = ENC28J60_NUM_BUFFER_LISTS;
     device->fs_buffer_data.buffer_ones = device->fs_buffer;
     device->fs_buffer_data.num_buffer_ones = ENC28J60_NUM_BUFFERS;
@@ -677,8 +677,8 @@ static void enc28j60_link_changed(ENC28J60 *device)
  */
 static void enc28j60_receive_packet(ENC28J60 *device)
 {
-    FS_BUFFER *buffer;
-    FS_BUFFER_ONE *one_buffer;
+    FS_BUFFER_LIST *buffer;
+    FS_BUFFER *one_buffer;
     FD fd = (FD)&device->ethernet_device;
     int32_t status;
     uint16_t next_ptr, packet_status, packet_length;
@@ -720,7 +720,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
             if ((packet_status & ENC28J60_RX_RXOK) && (packet_length > ENC28J60_CRC_LEN) && (packet_length <= (net_device_get_mtu(fd) + ETH_HRD_SIZE + ENC28J60_CRC_LEN)))
             {
                 /* Pull a buffer list from the file descriptor. */
-                buffer = fs_buffer_get(fd, FS_BUFFER_LIST, 0);
+                buffer = fs_buffer_get(fd, FS_LIST_FREE, 0);
 
                 /* If we do have a receive buffer. */
                 if (buffer != NULL)
@@ -783,7 +783,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
                     if ((packet_length != 0) || (buffer->total_length < (ETH_HRD_SIZE + ENC28J60_CRC_LEN)) || (ethernet_buffer_receive(buffer) != NET_BUFFER_CONSUMED))
                     {
                         /* Free the buffers that we allocated. */
-                        fs_buffer_add(buffer->fd, buffer, FS_BUFFER_LIST, FS_BUFFER_ACTIVE);
+                        fs_buffer_add(buffer->fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
                     }
                 }
             }
@@ -828,9 +828,9 @@ static void enc28j60_receive_packet(ENC28J60 *device)
  * This function will send an ethernet frame on wire for a given enc28j60
  * device.
  */
-static int32_t enc28j60_transmit_packet(void *data, FS_BUFFER *buffer)
+static int32_t enc28j60_transmit_packet(void *data, FS_BUFFER_LIST *buffer)
 {
-    FS_BUFFER_ONE *one = buffer->list.head;
+    FS_BUFFER *one = buffer->list.head;
     ENC28J60 *device = (ENC28J60 *)data;
     int32_t status = SUCCESS;
     uint16_t tx_ptr = ENC28J60_TX_START;

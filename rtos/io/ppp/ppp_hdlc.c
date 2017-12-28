@@ -28,7 +28,7 @@
  * here other then verifying and stripping the FCS at the end of the packet and
  * verifying other constant data like flags, address and control fields.
  */
-int32_t ppp_hdlc_header_parse(FS_BUFFER *buffer, uint8_t acfc)
+int32_t ppp_hdlc_header_parse(FS_BUFFER_LIST *buffer, uint8_t acfc)
 {
     int32_t status = SUCCESS;
     uint8_t flag = 0;
@@ -149,9 +149,9 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER *buffer, uint8_t acfc)
  *  escaped. HDLC_STREAM_ERROR will be returned in a stream error was detected.
  * This function will un-escaping a HDLC packet.
  */
-int32_t ppp_hdlc_unescape(FS_BUFFER *buffer)
+int32_t ppp_hdlc_unescape(FS_BUFFER_LIST *buffer)
 {
-    FS_BUFFER_ONE *this_buffer = buffer->list.head;
+    FS_BUFFER *this_buffer = buffer->list.head;
     int32_t status = SUCCESS;
     uint8_t last_escaped = FALSE;
 
@@ -190,7 +190,7 @@ int32_t ppp_hdlc_unescape(FS_BUFFER *buffer)
  *  will be set to true so that we can escape the first byte on next buffer.
  * This function will un-escaping a HDLC buffer.
  */
-void ppp_hdlc_unescape_one(FS_BUFFER_ONE *buffer, uint8_t *last_escaped)
+void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
 {
     uint8_t *data = buffer->buffer;
     uint32_t converted = 0;
@@ -271,9 +271,9 @@ void ppp_hdlc_unescape_one(FS_BUFFER_ONE *buffer, uint8_t *last_escaped)
  * This function will add an HDLC header on the given buffer, also this function
  * is responsible for escaping the data after computing and appending the FCS.
  */
-int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp, uint8_t flags)
+int32_t ppp_hdlc_header_add(FS_BUFFER_LIST *buffer, uint32_t *accm, uint8_t acfc, uint8_t lcp, uint8_t flags)
 {
-    FS_BUFFER *destination = fs_buffer_get(buffer->fd, FS_BUFFER_LIST, 0);
+    FS_BUFFER_LIST *destination = fs_buffer_get(buffer->fd, FS_LIST_FREE, 0);
     int32_t status = SUCCESS;
     uint16_t fcs;
 
@@ -358,7 +358,7 @@ int32_t ppp_hdlc_header_add(FS_BUFFER *buffer, uint32_t *accm, uint8_t acfc, uin
  * This function will escape a HDLC buffer. The result will be larger than the
  * provided buffer so we cannot push the data in the same buffer.
  */
-int32_t ppp_hdlc_escape(FS_BUFFER *src, FS_BUFFER *dst, uint32_t *accm, uint8_t lcp, uint8_t flags)
+int32_t ppp_hdlc_escape(FS_BUFFER_LIST *src, FS_BUFFER_LIST *dst, uint32_t *accm, uint8_t lcp, uint8_t flags)
 {
     int32_t status = SUCCESS;
     uint8_t buf[2];

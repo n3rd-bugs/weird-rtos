@@ -34,7 +34,7 @@ typedef struct _net_dev NET_DEV;
 #define ETH_FRAME_BCAST     (0x01)
 
 /* Networking device transmit/receive functions. */
-typedef int32_t NET_TX (FS_BUFFER *, uint8_t);
+typedef int32_t NET_TX (FS_BUFFER_LIST *, uint8_t);
 typedef NET_CONDITION_PROCESS NET_RX;
 
 /* Network device file descriptor. */
@@ -87,8 +87,8 @@ void net_register_fd(NET_DEV *, FD, NET_TX *, NET_RX *);
 NET_DEV *net_device_get_fd(FD);
 void net_device_set_mtu(FD, uint32_t);
 uint32_t net_device_get_mtu(FD);
-int32_t net_device_buffer_receive(FS_BUFFER *, uint8_t, uint32_t);
-int32_t net_device_buffer_transmit(FS_BUFFER *, uint8_t, uint8_t);
+int32_t net_device_buffer_receive(FS_BUFFER_LIST *, uint8_t, uint32_t);
+int32_t net_device_buffer_transmit(FS_BUFFER_LIST *, uint8_t, uint8_t);
 void net_device_link_up(FD);
 void net_device_link_down(FD);
 

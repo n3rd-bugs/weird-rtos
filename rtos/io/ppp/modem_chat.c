@@ -31,9 +31,9 @@
  *      should be dropped.
  * This function will process modem initialization.
  */
-int32_t modem_chat_process(FD fd, FS_BUFFER *rx_buffer)
+int32_t modem_chat_process(FD fd, FS_BUFFER_LIST *rx_buffer)
 {
-    FS_BUFFER *tx_buffer;
+    FS_BUFFER_LIST *tx_buffer;
     int32_t status = SUCCESS;
 
     /* For now we will just wait for the "CLIENT" string from the other end. */
@@ -41,7 +41,7 @@ int32_t modem_chat_process(FD fd, FS_BUFFER *rx_buffer)
         (memcmp((rx_buffer)->list.head->buffer, "CLIENT", sizeof("CLIENT") - 1) == 0))
     {
         /* Get a free buffer so that it can be populate with response. */
-        tx_buffer = fs_buffer_get(fd, FS_BUFFER_LIST, (FS_BUFFER_ACTIVE));
+        tx_buffer = fs_buffer_get(fd, FS_LIST_FREE, (FS_BUFFER_ACTIVE));
 
         if (tx_buffer)
         {

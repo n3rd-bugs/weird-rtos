@@ -34,9 +34,9 @@
 #define DEVICE_NAME         "Smart Change Over"
 
 /* Function prototypes. */
-int32_t weird_view_demo_task_stats(uint16_t, FS_BUFFER *);
+int32_t weird_view_demo_task_stats(uint16_t, FS_BUFFER_LIST *);
 int32_t weird_view_demo_analog_data(uint16_t, uint32_t *, uint32_t *, uint32_t *);
-static int32_t weird_view_demo_adc_sample(uint16_t, FS_BUFFER *);
+static int32_t weird_view_demo_adc_sample(uint16_t, FS_BUFFER_LIST *);
 
 /* Weird view server definitions. */
 const char plgn_name_1[] P_STR_MEM = "Main Line Voltage";
@@ -710,7 +710,7 @@ void control_entry(void *argv)
  * @buffer: File system buffer in which reply will be populated.
  * This is callback function to populate the given buffer with task statistics.
  */
-int32_t weird_view_demo_task_stats(uint16_t id, FS_BUFFER *buffer)
+int32_t weird_view_demo_task_stats(uint16_t id, FS_BUFFER_LIST *buffer)
 {
     int32_t status;
 
@@ -775,7 +775,7 @@ int32_t weird_view_demo_analog_data(uint16_t id, uint32_t *value, uint32_t *valu
  * @buffer: File system buffer in which reply will be populated.
  * This is callback function to populate the given buffer with task statistics.
  */
-static int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER *buffer)
+static int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER_LIST *buffer)
 {
     int32_t status = -1;
 

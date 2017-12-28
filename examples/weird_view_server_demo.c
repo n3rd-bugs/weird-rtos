@@ -31,8 +31,8 @@
 #define DEMO_SAMPLES        200
 
 /* Function prototypes. */
-int32_t weird_view_demo_adc_sample(uint16_t, FS_BUFFER *);
-int32_t weird_view_demo_task_stats(uint16_t, FS_BUFFER *);
+int32_t weird_view_demo_adc_sample(uint16_t, FS_BUFFER_LIST *);
+int32_t weird_view_demo_task_stats(uint16_t, FS_BUFFER_LIST *);
 int32_t weird_view_demo_switch_data(uint16_t, uint8_t *);
 void weird_view_demo_switch_req(uint16_t, uint8_t);
 int32_t weird_view_demo_analog_data(uint16_t, uint32_t *, uint32_t *, uint32_t *);
@@ -157,7 +157,7 @@ void heartbeat_entry(void *argv)
  * @buffer: File system buffer in which reply will be populated.
  * This is callback function to populate the given buffer with task statistics.
  */
-int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER *buffer)
+int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER_LIST *buffer)
 {
     int32_t status;
 
@@ -184,7 +184,7 @@ int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER *buffer)
  * @buffer: File system buffer in which reply will be populated.
  * This is callback function to populate the given buffer with task statistics.
  */
-int32_t weird_view_demo_task_stats(uint16_t id, FS_BUFFER *buffer)
+int32_t weird_view_demo_task_stats(uint16_t id, FS_BUFFER_LIST *buffer)
 {
     int32_t status;
 
