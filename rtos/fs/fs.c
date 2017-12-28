@@ -121,9 +121,6 @@ void fs_unregister(FS *file_system)
     ASSERT(semaphore_obtain(&file_data.lock, MAX_WAIT) != SUCCESS);
 #endif
 
-    /* This could be a file descriptor chain, so destroy it. */
-    fs_destroy_chain((FD)file_system);
-
     /* Just remove this file system from the list. */
     ASSERT(sll_remove(&file_data.list, file_system, OFFSETOF(FS, next)) != file_system);
 
@@ -136,121 +133,6 @@ void fs_unregister(FS *file_system)
 #endif
 
 } /* fs_unregister */
-
-/*
- * fs_connect
- * @fd: File descriptor needed to be connected.
- * @fd_head: Descriptor that will be defined as a head file descriptor.
- * This function will connect a file descriptor to another file descriptor that
- * will act as chain's head.
- */
-void fs_connect(FD fd, FD fd_head)
-{
-    FS *fs = (FS *)fd;
-
-    /* Get lock for this file descriptor. */
-    ASSERT(fd_get_lock(fd) != SUCCESS);
-
-    /* Given file descriptor should not be a chain head. */
-    ASSERT(fs->flags & FS_CHAIN_HEAD);
-
-    /* Given file descriptor should not be a part of a chain. */
-    ASSERT(fs->fd_chain.fd_node.head != 0);
-
-    /* Save the list head. */
-    fs->fd_chain.fd_node.head = fd_head;
-
-    /* Release lock for this file descriptor. */
-    fd_release_lock(fd);
-
-    /* Get lock for head file descriptor. */
-    ASSERT(fd_get_lock(fd_head) != SUCCESS);
-
-    /* If head file descriptor is not a chain head. */
-    if (!(((FS *)fd_head)->flags & FS_CHAIN_HEAD))
-    {
-        /* Initialize chain head. */
-        ((FS *)fd_head)->flags |= FS_CHAIN_HEAD;
-    }
-
-    /* Push this node on the list head. */
-    sll_push(&((FS *)fd_head)->fd_chain.fd_list, fd, OFFSETOF(FS, fd_chain.fd_node.next));
-
-    /* Release lock for head file descriptor. */
-    fd_release_lock(fd_head);
-
-} /* fs_connect */
-
-/*
- * fs_destroy_chain
- * @fd_head: File descriptor chain needed to be destroyed.
- * This function will destroy a descriptor chain. All file descriptors are
- * capable of becoming a chain head so this function should be called when a
- * file descriptor is being destroyed.
- */
-void fs_destroy_chain(FD fd_head)
-{
-    FS *fs, *fs_head = (FS *)fd_head;
-
-    /* Get lock for this file descriptor. */
-    ASSERT(fd_get_lock(fd_head) != SUCCESS);
-
-    /* Get a file descriptor from list. */
-    fs = (FS *)sll_pop(&fs_head->fd_chain.fd_list, OFFSETOF(FS, fd_chain.fd_node.next));
-
-    /* While we have file descriptor in the chain. */
-    while (fs != NULL)
-    {
-        /* Get lock for head file system. */
-        ASSERT(fd_get_lock(fs) != SUCCESS);
-
-        /* Remove this file descriptor from the list. */
-        fs->fd_chain.fd_node.head = NULL;
-
-        /* Release lock for head file descriptor. */
-        fd_release_lock(fs);
-
-        /* Get next file descriptor. */
-        fs = (FS *)sll_pop(&fs_head->fd_chain.fd_list, OFFSETOF(FS, fd_chain.fd_node.next));
-    }
-
-    /* Release lock for this file descriptor. */
-    fd_release_lock(fd_head);
-
-} /* fs_destroy_chain */
-
-/*
- * fs_disconnect
- * @fd: File descriptor needed to be disconnected.
- * This function will disconnect a file descriptor from it's head.
- */
-void fs_disconnect(FD fd)
-{
-    FS *fs = (FS *)fd;
-
-    /* Get lock for this file descriptor. */
-    ASSERT(fd_get_lock(fd) != SUCCESS);
-
-    /* Given file descriptor should not be a chain head. */
-    ASSERT(fs->flags & FS_CHAIN_HEAD);
-
-    /* If we are part of a file descriptor chain. */
-    if (fs->fd_chain.fd_node.head != NULL)
-    {
-        /* Get lock for head file descriptor. */
-        ASSERT(fd_get_lock(fs->fd_chain.fd_node.head) != SUCCESS);
-
-        /* We must have removed this file descriptor from it's list. */
-        ASSERT(sll_remove(&((FS *)fs->fd_chain.fd_node.head)->fd_chain.fd_list, fd, OFFSETOF(FS, fd_chain.fd_node.next)) != fd);
-
-        /* Release lock for head file descriptor. */
-        fd_release_lock(fs->fd_chain.fd_node.head);
-    }
-
-    /* Release lock for this file descriptor. */
-    fd_release_lock(fd);
-
-} /* fs_disconnect */
 
 /*
  * fs_sreach_directory
@@ -706,13 +588,11 @@ int32_t fs_read(FD fd, uint8_t *buffer, int32_t nbytes)
  */
 int32_t fs_write(FD fd, const uint8_t *buffer, int32_t nbytes)
 {
-    FS *fs = (FS *)fd, *next_fs = NULL;
+    FS *fs = (FS *)fd;
     FS_PARAM param;
     SUSPEND suspend, *suspend_ptr = (&suspend);
-    int32_t status = SUCCESS, written = 0, n_fd = 0, nbytes_fd;
+    int32_t status = SUCCESS, written = 0;
     CONDITION *condition;
-    const uint8_t *buffer_start;
-    uint8_t is_list = FALSE;
 
     /* If this is a null terminated string. */
     if (nbytes == -1)
@@ -721,142 +601,87 @@ int32_t fs_write(FD fd, const uint8_t *buffer, int32_t nbytes)
         nbytes = (int32_t)strlen((char *)buffer);
     }
 
-    /* Save buffer data. */
-    buffer_start = buffer;
-    nbytes_fd = nbytes;
+    /* Get lock for this file descriptor. */
+    status = fd_get_lock(fs);
 
-    do
+    /* If lock was successfully obtained. */
+    if (status == SUCCESS)
     {
-        /* Initialize loop variables. */
-        nbytes = nbytes_fd;
-        buffer = buffer_start;
-
-        /* Get lock for this file descriptor. */
-        status = fd_get_lock(fs);
-
-        /* If lock was successfully obtained. */
-        if (status == SUCCESS)
+        /* Check if a write function was registered with this descriptor. */
+        if (fs->write != NULL)
         {
-            /* Check if a write function was registered with this descriptor. */
-            if (fs->write != NULL)
+            /* Get condition for this file descriptor. */
+            fs_condition_get(fs, &condition, suspend_ptr, &param, FS_BLOCK_WRITE);
+
+            /* If configured try to write on the descriptor until all the
+             * data is sent. */
+            do
             {
-                /* Get condition for this file descriptor. */
-                fs_condition_get(fs, &condition, suspend_ptr, &param, FS_BLOCK_WRITE);
+                /* If we are in a task. */
+                if ((get_current_task() != NULL) &&
 
-                /* If configured try to write on the descriptor until all the
-                 * data is sent. */
-                do
+                    /* Check if we can block on write for this FD and there
+                     * is no space and we do have to wait. */
+                    ((fs->flags & FS_BLOCK) &&
+                     (!(fs->flags & FS_SPACE_AVAILABLE)) &&
+
+                     /* If this is a buffered file, and we are not supposed
+                      * to wait for any other event that would tell us that
+                      * space is available. */
+                     (!((fs->flags & FS_BUFFERED) &&
+                        (fs->flags & FS_WRITE_NO_BLOCK)))))
                 {
-                    /* If we are in a task. */
-                    if ((get_current_task() != NULL) &&
+                    /* Suspend on space to become available. */
+                    status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
+                }
 
-                        /* Check if we can block on write for this FD and there
-                         * is no space and we do have to wait. */
-                        ((fs->flags & FS_BLOCK) &&
-                         (!(fs->flags & FS_SPACE_AVAILABLE)) &&
+                /* Check if some space is available. */
+                if ((status == SUCCESS) && ((fs->flags & FS_SPACE_AVAILABLE) || (((fs->flags & FS_BUFFERED) && (fs->flags & FS_WRITE_NO_BLOCK)))))
+                {
+                    /* Transfer call to underlying API. */
+                    status = fs->write((void *)fs, buffer, nbytes);
 
-                         /* If this is a buffered file, and we are not supposed
-                          * to wait for any other event that would tell us that
-                          * space is available. */
-                         (!((fs->flags & FS_BUFFERED) &&
-                            (fs->flags & FS_WRITE_NO_BLOCK)))))
+                    if (status < 0)
                     {
-                        /* Suspend on space to become available. */
-                        status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
-                    }
-
-                    /* Check if some space is available. */
-                    if ((status == SUCCESS) && ((fs->flags & FS_SPACE_AVAILABLE) || (((fs->flags & FS_BUFFERED) && (fs->flags & FS_WRITE_NO_BLOCK)))))
-                    {
-                        /* Transfer call to underlying API. */
-                        status = fs->write((void *)fs, buffer, nbytes);
-
-                        if (status < 0)
-                        {
-                            break;
-                        }
-
-                        /* Decrement number of bytes remaining. */
-                        nbytes -= status;
-                        buffer += status;
-                        written += status;
-                    }
-
-                    /* If an error has occurred. */
-                    else if (status != SUCCESS)
-                    {
-                        /* Break out of this loop. */
                         break;
                     }
 
-                } while ((fs->flags & FS_FLUSH_WRITE) && (nbytes > 0));
-
-                /* Some data is available. */
-                if (fs->flags & FS_DATA_AVAILABLE)
-                {
-                    /* Resume any task waiting on this file descriptor. */
-                    fd_data_available(fs);
+                    /* Decrement number of bytes remaining. */
+                    nbytes -= status;
+                    buffer += status;
+                    written += status;
                 }
 
-                /* Some space is still available. */
-                if (fs->flags & FS_SPACE_AVAILABLE)
+                /* If an error has occurred. */
+                else if (status != SUCCESS)
                 {
-                    /* Resume any tasks waiting for space on this file descriptor. */
-                    fd_space_available(fs);
+                    /* Break out of this loop. */
+                    break;
                 }
-            }
 
-            /* If call was made on list head. */
-            if (fs->flags & FS_CHAIN_HEAD)
+            } while ((fs->flags & FS_FLUSH_WRITE) && (nbytes > 0));
+
+            /* Some data is available. */
+            if (fs->flags & FS_DATA_AVAILABLE)
             {
-                /* We should not be in a list. */
-                ASSERT(is_list == TRUE);
-
-                /* We are in a list. */
-                is_list = TRUE;
-
-                /* Pick-up the list head. */
-                next_fs = (FS *)fs->fd_chain.fd_list.head;
+                /* Resume any task waiting on this file descriptor. */
+                fd_data_available(fs);
             }
 
-            else if (is_list == TRUE)
+            /* Some space is still available. */
+            if (fs->flags & FS_SPACE_AVAILABLE)
             {
-                /* Pick-up the next file descriptor. */
-                next_fs = (FS *)fs->fd_chain.fd_node.next;
+                /* Resume any tasks waiting for space on this file descriptor. */
+                fd_space_available(fs);
             }
-
-            /* Release lock for this file descriptor. */
-            fd_release_lock(fs);
-        }
-        else
-        {
-            /* Unable to obtain semaphore. */
-            break;
         }
 
-        /* Check if we need to process a file descriptor in the chain. */
-        if (next_fs != NULL)
-        {
-            /* Pick the next file descriptor. */
-            fs = next_fs;
-
-            /* Increment number of file descriptor processed. */
-            n_fd++;
-        }
-
-    } while (next_fs != NULL);
-
-    /* If we did not encounter any error. */
-    if (status == SUCCESS)
-    {
-        /* If we have written on more than one file descriptor. */
-        if (n_fd > 1)
-        {
-            /* Calculate average number of bytes written. */
-            written /= n_fd;
-        }
+        /* Release lock for this file descriptor. */
+        fd_release_lock(fs);
     }
-    else
+
+    /* If we encountered any error. */
+    if (status != SUCCESS)
     {
         /* Return error to the caller. */
         written = status;

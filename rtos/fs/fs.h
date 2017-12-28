@@ -85,25 +85,6 @@ struct _fs
     /* Condition data for a file system. */
     CONDITION   condition;
 
-    union _fs_fd_chain
-    {
-        struct _fs_fd_list
-        {
-            /* Link-list for connected file systems. */
-            FD          *head;
-            FD          *tail;
-        } fd_list;
-
-        struct _fs_fd_node
-        {
-            /* Next file descriptor. */
-            FD          *next;
-
-            /* File descriptor that will act as list head. */
-            FD          *head;
-        } fd_node;
-    } fd_chain;
-
     /* File system buffer data. */
     FS_BUFFER_DATA  *buffer;
 
@@ -180,12 +161,6 @@ int32_t fs_ioctl(FD, uint32_t, void *);
 int32_t fs_printf(FD, char *, ...);
 int32_t fs_vprintf(FD, const char *, va_list);
 int32_t fs_puts(FD, const uint8_t *, int32_t);
-
-void fs_connected(FD);
-void fs_disconnected(FD);
-void fs_connect(FD, FD);
-void fs_destroy_chain(FD);
-void fs_disconnect(FD);
 
 void fs_condition_init(FD);
 void fs_condition_get(FD, CONDITION **, SUSPEND *, FS_PARAM *, uint32_t);
