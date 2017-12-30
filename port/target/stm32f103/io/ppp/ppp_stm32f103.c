@@ -39,8 +39,8 @@ void ppp_stm32f103_init(void)
     /* Register this serial device. */
     usart2_buffer_data.buffer_space = usart2_buffer_space;
     usart2_buffer_data.buffer_size = PPP_MAX_BUFFER_SIZE;
-    usart2_buffer_data.buffer_ones = usart2_buffer_ones;
-    usart2_buffer_data.num_buffer_ones = PPP_NUM_BUFFERS;
+    usart2_buffer_data.buffers = usart2_buffer_ones;
+    usart2_buffer_data.num_buffers = PPP_NUM_BUFFERS;
     usart2_buffer_data.buffer_lists = usart2_buffer_lists;
     usart2_buffer_data.num_buffer_lists = PPP_NUM_BUFFER_LIST;
     usart2_buffer_data.threshold_buffers = PPP_THRESHOLD_BUFFER;
