@@ -55,10 +55,10 @@ void parser_demo_task(void *argv)
     UNUSED_PARAM(argv);
 
     /* Initialize a file system buffer. */
-    fs_buffer_init(&buffer, NULL);
-    fs_buffer_one_init(&one, (uint8_t *)dummy_data, sizeof(dummy_data));
+    fs_buffer_list_init(&buffer, NULL);
+    fs_buffer_init(&one, (uint8_t *)dummy_data, sizeof(dummy_data));
     one.length = sizeof(dummy_data);
-    fs_buffer_add_one(&buffer, &one, 0);
+    fs_buffer_list_append(&buffer, &one, 0);
 
     /* Initialize header machine. */
     header_machine_init(&machine, &fs_buffer_hdr_pull);

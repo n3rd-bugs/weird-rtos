@@ -718,7 +718,7 @@ int32_t weird_view_demo_task_stats(uint16_t id, FS_BUFFER_LIST *buffer)
     UNUSED_PARAM(id);
 
     /* Need to update the existing data. */
-    status = fs_buffer_push(buffer, (uint8_t []){ WV_PLUGIN_LOG_UPDATE }, sizeof(uint8_t), 0);
+    status = fs_buffer_list_push(buffer, (uint8_t []){ WV_PLUGIN_LOG_UPDATE }, sizeof(uint8_t), 0);
 
     if (status == SUCCESS)
     {
@@ -804,13 +804,13 @@ static int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER_LIST *buffer)
     if (status == SUCCESS)
     {
         /* Add sample size. */
-        status = fs_buffer_push(buffer, (uint8_t []){ sizeof(uint16_t) }, sizeof(uint8_t), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t []){ sizeof(uint16_t) }, sizeof(uint8_t), 0);
     }
 
     if (status == SUCCESS)
     {
         /* Push ADC sample on the buffer. */
-        status = fs_buffer_push(buffer, (uint8_t *)adc_wave_copy, (ADC_NUM_APPROX_SAMPLES * sizeof(uint16_t)), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)adc_wave_copy, (ADC_NUM_APPROX_SAMPLES * sizeof(uint16_t)), 0);
     }
 #else
 

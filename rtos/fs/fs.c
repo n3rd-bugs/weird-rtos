@@ -821,7 +821,7 @@ int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
         if (buffer != NULL)
         {
             /* Push data on the buffer. */
-            if (fs_buffer_push(buffer, (uint8_t *)buf, (uint32_t)n, flags) == SUCCESS)
+            if (fs_buffer_list_push(buffer, (uint8_t *)buf, (uint32_t)n, flags) == SUCCESS)
             {
                 /* Pass this buffer to the serial driver. */
                 buf = (uint8_t *)buffer;

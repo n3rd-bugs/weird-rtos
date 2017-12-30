@@ -53,7 +53,7 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER_LIST *buffer, uint8_t acfc)
         if (buffer->total_length >= 4)
         {
             /* Peek the start buffer. */
-            ASSERT(fs_buffer_pull(buffer, &flag, 1, FS_BUFFER_INPLACE) != SUCCESS);
+            ASSERT(fs_buffer_list_pull(buffer, &flag, 1, FS_BUFFER_INPLACE) != SUCCESS);
 
             /* Validate the start buffer. */
             if (flag != PPP_FLAG)
@@ -76,7 +76,7 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER_LIST *buffer, uint8_t acfc)
         flag = 0;
 
         /* Peek the last byte. */
-        ASSERT(fs_buffer_pull(buffer, &flag, 1, (FS_BUFFER_INPLACE | FS_BUFFER_TAIL)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, &flag, 1, (FS_BUFFER_INPLACE | FS_BUFFER_TAIL)) != SUCCESS);
 
         /* Validate the end buffer. */
         if (flag != PPP_FLAG)
@@ -90,8 +90,8 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER_LIST *buffer, uint8_t acfc)
     if (status == SUCCESS)
     {
         /* Skim the start and end flags. */
-        ASSERT(fs_buffer_pull(buffer, NULL, 1, 0) != SUCCESS);
-        ASSERT(fs_buffer_pull(buffer, NULL, 1, FS_BUFFER_TAIL) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, NULL, 1, 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, NULL, 1, FS_BUFFER_TAIL) != SUCCESS);
 
         /* Compute and verify the FCS. */
         if (PPP_FCS16_IS_VALID(buffer))
@@ -103,19 +103,19 @@ int32_t ppp_hdlc_header_parse(FS_BUFFER_LIST *buffer, uint8_t acfc)
              * bits (synchronous) or octets (asynchronous or synchronous)
              * inserted for transparency.  This also does not include the Flag
              * Sequences nor the FCS field itself.*/
-            ASSERT(fs_buffer_pull(buffer, NULL, 2, FS_BUFFER_TAIL) != SUCCESS);
+            ASSERT(fs_buffer_list_pull(buffer, NULL, 2, FS_BUFFER_TAIL) != SUCCESS);
 
             if (buffer->total_length >= 2)
             {
                 /* Peek the address and control fields. */
-                ASSERT(fs_buffer_pull(buffer, acf, 2, FS_BUFFER_INPLACE) != SUCCESS);
+                ASSERT(fs_buffer_list_pull(buffer, acf, 2, FS_BUFFER_INPLACE) != SUCCESS);
 
                 /* Verify that we have address and control fields as specified
                  * by the RFC-1662. */
                 if ((acf[0] == PPP_ADDRESS) && (acf[1] == PPP_CONTROL))
                 {
                     /* Skim the address and control fields. */
-                    ASSERT(fs_buffer_pull(buffer, NULL, 2, 0) != SUCCESS);
+                    ASSERT(fs_buffer_list_pull(buffer, NULL, 2, 0) != SUCCESS);
                 }
 
                 /* When ACFC is negotiated these two fields can be left out, if
@@ -206,7 +206,7 @@ void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
         *last_escaped = FALSE;
 
         /* Consume this byte. */
-        ASSERT(fs_buffer_one_pull(buffer, NULL, 1, 0) != SUCCESS);
+        ASSERT(fs_buffer_pull(buffer, NULL, 1, 0) != SUCCESS);
     }
 
     /* While we have data in the source buffer. */
@@ -224,12 +224,12 @@ void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
                 converted ++;
 
                 /* Consume 2 bytes from the given buffer. */
-                ASSERT(fs_buffer_one_pull(buffer, NULL, 2, 0) != SUCCESS);
+                ASSERT(fs_buffer_pull(buffer, NULL, 2, 0) != SUCCESS);
             }
             else
             {
                 /* Consume this byte from the given buffer. */
-                ASSERT(fs_buffer_one_pull(buffer, NULL, 1, 0) != SUCCESS);
+                ASSERT(fs_buffer_pull(buffer, NULL, 1, 0) != SUCCESS);
 
                 /* First byte in the next buffer is needed to be escaped. */
                 *last_escaped = TRUE;
@@ -243,7 +243,7 @@ void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
             converted ++;
 
             /* Consume this byte from the given buffer. */
-            ASSERT(fs_buffer_one_pull(buffer, NULL, 1, 0) != SUCCESS);
+            ASSERT(fs_buffer_pull(buffer, NULL, 1, 0) != SUCCESS);
         }
     }
 
@@ -251,7 +251,7 @@ void ppp_hdlc_unescape_one(FS_BUFFER *buffer, uint8_t *last_escaped)
     if (buffer->length == 0)
     {
         /* Reinitialize buffer data. */
-        fs_buffer_one_update(buffer, data, converted);
+        fs_buffer_update(buffer, data, converted);
     }
 
 } /* ppp_hdlc_unescape_one */
@@ -286,12 +286,12 @@ int32_t ppp_hdlc_header_add(FS_BUFFER_LIST *buffer, uint32_t *accm, uint8_t acfc
         if ((lcp == TRUE) || (acfc == FALSE))
         {
             /* Add control field. */
-            status = fs_buffer_push(buffer, (uint8_t []){ (uint8_t)PPP_CONTROL }, 1, (FS_BUFFER_HEAD | flags));
+            status = fs_buffer_list_push(buffer, (uint8_t []){ (uint8_t)PPP_CONTROL }, 1, (FS_BUFFER_HEAD | flags));
 
             if (status == SUCCESS)
             {
                 /* Add address field. */
-                status = fs_buffer_push(buffer, (uint8_t []){ (uint8_t)PPP_ADDRESS }, 1, (FS_BUFFER_HEAD | flags));
+                status = fs_buffer_list_push(buffer, (uint8_t []){ (uint8_t)PPP_ADDRESS }, 1, (FS_BUFFER_HEAD | flags));
             }
         }
 
@@ -303,7 +303,7 @@ int32_t ppp_hdlc_header_add(FS_BUFFER_LIST *buffer, uint32_t *accm, uint8_t acfc
             fcs ^= 0xffff;
 
             /* Push the FCS at the end of buffer. */
-            status = fs_buffer_push(buffer, &fcs, 2, flags);
+            status = fs_buffer_list_push(buffer, &fcs, 2, flags);
         }
 
         /* If FCS was successfully appended. */
@@ -320,16 +320,16 @@ int32_t ppp_hdlc_header_add(FS_BUFFER_LIST *buffer, uint32_t *accm, uint8_t acfc
             destination->next = buffer->next;
 
             /* Move the generated buffer back to the original buffer. */
-            fs_buffer_move(buffer, destination);
+            fs_buffer_list_move(buffer, destination);
 
             /* Add start flag. */
-            status = fs_buffer_push(buffer, (uint8_t []){ PPP_FLAG }, 1, (FS_BUFFER_HEAD | flags));
+            status = fs_buffer_list_push(buffer, (uint8_t []){ PPP_FLAG }, 1, (FS_BUFFER_HEAD | flags));
 
             /* If start flag was successfully added. */
             if (status == SUCCESS)
             {
                 /* Add end flag. */
-                status = fs_buffer_push(buffer, (uint8_t []){ PPP_FLAG }, 1, flags);
+                status = fs_buffer_list_push(buffer, (uint8_t []){ PPP_FLAG }, 1, flags);
             }
         }
 
@@ -367,7 +367,7 @@ int32_t ppp_hdlc_escape(FS_BUFFER_LIST *src, FS_BUFFER_LIST *dst, uint32_t *accm
     while ((status == SUCCESS) && (src->total_length > 0))
     {
         /* Pull a byte from the source buffer chain. */
-        ASSERT(fs_buffer_pull(src, buf, 1, 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(src, buf, 1, 0) != SUCCESS);
 
         /* Check if we need to escape this byte. */
         if ( ((lcp == TRUE) && (*buf < 0x20)) ||
@@ -378,12 +378,12 @@ int32_t ppp_hdlc_escape(FS_BUFFER_LIST *src, FS_BUFFER_LIST *dst, uint32_t *accm
             buf[0] = PPP_ESCAPE;
 
             /* Push converted byte on the destination. */
-            status = fs_buffer_push(dst, buf, 2, flags);
+            status = fs_buffer_list_push(dst, buf, 2, flags);
         }
         else
         {
             /* Push the byte as it is. */
-            status = fs_buffer_push(dst, buf, 1, flags);
+            status = fs_buffer_list_push(dst, buf, 1, flags);
         }
     }
 

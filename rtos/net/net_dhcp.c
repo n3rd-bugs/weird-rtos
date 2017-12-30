@@ -156,18 +156,18 @@ int32_t dhcp_add_option(FS_BUFFER_LIST *buffer, uint8_t type, uint8_t length, vo
     SYS_LOG_FUNCTION_ENTRY(DHCP);
 
     /* Append option type. */
-    status = fs_buffer_push(buffer, (uint8_t *)&type, 1, 0);
+    status = fs_buffer_list_push(buffer, (uint8_t *)&type, 1, 0);
 
     /* If we do need to add option value. */
     if ((status == SUCCESS) && (type != DHCP_OPT_END))
     {
         /* Append option length. */
-        status = fs_buffer_push(buffer, (uint8_t *)&length, 1, 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)&length, 1, 0);
 
         if (status == SUCCESS)
         {
             /* Append option value. */
-            status =  fs_buffer_push(buffer, (uint8_t *)value, length, flags);
+            status =  fs_buffer_list_push(buffer, (uint8_t *)value, length, flags);
         }
     }
 
@@ -196,13 +196,13 @@ int32_t dhcp_get_option(FS_BUFFER_LIST *buffer, uint8_t *type, uint8_t *length)
     SYS_LOG_FUNCTION_ENTRY(DHCP);
 
     /* Pull option type. */
-    status = fs_buffer_pull(buffer, type, 1, 0);
+    status = fs_buffer_list_pull(buffer, type, 1, 0);
 
     /* If we do have some option value next. */
     if ((status == SUCCESS) && (*type != DHCP_OPT_END))
     {
         /* Pull option length. */
-        status = fs_buffer_pull(buffer, length, 1, 0);
+        status = fs_buffer_list_pull(buffer, length, 1, 0);
     }
 
     SYS_LOG_FUNCTION_EXIT_STATUS(DHCP, status);

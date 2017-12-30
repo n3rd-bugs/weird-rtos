@@ -55,8 +55,8 @@ void enc28j60_init(ENC28J60 *device)
     device->fs_buffer_data.buffer_size = ENC28J60_MAX_BUFFER_SIZE;
     device->fs_buffer_data.buffer_lists = device->fs_list_free;
     device->fs_buffer_data.num_buffer_lists = ENC28J60_NUM_BUFFER_LISTS;
-    device->fs_buffer_data.buffer_ones = device->fs_buffer;
-    device->fs_buffer_data.num_buffer_ones = ENC28J60_NUM_BUFFERS;
+    device->fs_buffer_data.buffers = device->fs_buffer;
+    device->fs_buffer_data.num_buffers = ENC28J60_NUM_BUFFERS;
     device->fs_buffer_data.threshold_buffers = ENC28J60_NUM_THR_BUFFER;
     device->fs_buffer_data.threshold_lists = ENC28J60_NUM_THR_LIST;
     fs_buffer_dataset(&device->ethernet_device, &device->fs_buffer_data);
@@ -677,8 +677,8 @@ static void enc28j60_link_changed(ENC28J60 *device)
  */
 static void enc28j60_receive_packet(ENC28J60 *device)
 {
-    FS_BUFFER_LIST *buffer;
-    FS_BUFFER *one_buffer;
+    FS_BUFFER_LIST *list;
+    FS_BUFFER *buffer;
     FD fd = (FD)&device->ethernet_device;
     int32_t status;
     uint16_t next_ptr, packet_status, packet_length;
@@ -720,10 +720,10 @@ static void enc28j60_receive_packet(ENC28J60 *device)
             if ((packet_status & ENC28J60_RX_RXOK) && (packet_length > ENC28J60_CRC_LEN) && (packet_length <= (net_device_get_mtu(fd) + ETH_HRD_SIZE + ENC28J60_CRC_LEN)))
             {
                 /* Pull a buffer list from the file descriptor. */
-                buffer = fs_buffer_get(fd, FS_LIST_FREE, 0);
+                list = fs_buffer_get(fd, FS_LIST_FREE, 0);
 
                 /* If we do have a receive buffer. */
-                if (buffer != NULL)
+                if (list != NULL)
                 {
                     /* Don't copy the trailing CRC. */
                     packet_length = (uint16_t)(packet_length - ENC28J60_CRC_LEN);
@@ -731,37 +731,37 @@ static void enc28j60_receive_packet(ENC28J60 *device)
                     /* While we have some data to copy. */
                     while (packet_length > 0)
                     {
-                        /* Pull a one buffer in which we will copy the data. */
-                        one_buffer = fs_buffer_one_get(fd, 0);
+                        /* Pull a buffer in which we will copy the data. */
+                        buffer = fs_buffer_get(fd, FS_BUFFER_FREE, 0);
 
                         /* If we do have a buffer to copy data. */
-                        if (one_buffer != NULL)
+                        if (buffer != NULL)
                         {
                             /* If we need to copy more data then we can actually
                              * receive in a buffer. */
-                            if (packet_length > one_buffer->max_length)
+                            if (packet_length > buffer->max_length)
                             {
                                 /* Copy maximum number of bytes we can copy in the
                                  * buffer. */
-                                one_buffer->length = one_buffer->max_length;
+                                buffer->length = buffer->max_length;
                             }
                             else
                             {
                                 /* Only copy remaining packet length. */
-                                one_buffer->length = packet_length;
+                                buffer->length = packet_length;
                             }
 
                             /* Read the received buffer. */
-                            status = enc28j60_read_buffer(device, (uint16_t)(ENC28J60_RX_START_PTR(device->rx_ptr)), one_buffer->buffer, (int32_t)one_buffer->length);
+                            status = enc28j60_read_buffer(device, (uint16_t)(ENC28J60_RX_START_PTR(device->rx_ptr)), buffer->buffer, (int32_t)buffer->length);
 
                             if (status == SUCCESS)
                             {
                                 /* Update the remaining number of bytes in the packet. */
-                                packet_length = (uint16_t)(packet_length - one_buffer->length);
-                                device->rx_ptr = (uint16_t)(device->rx_ptr + one_buffer->length);
+                                packet_length = (uint16_t)(packet_length - buffer->length);
+                                device->rx_ptr = (uint16_t)(device->rx_ptr + buffer->length);
 
                                 /* Append this new buffer to the buffer chain. */
-                                fs_buffer_add_one(buffer, one_buffer, 0);
+                                fs_buffer_list_append(list, buffer, 0);
                             }
 
                             else
@@ -780,10 +780,10 @@ static void enc28j60_receive_packet(ENC28J60 *device)
                     /* If we were not able to receive a complete packet due to
                      * unavailability of buffer, or ethernet stack did not consume
                      * this buffer. */
-                    if ((packet_length != 0) || (buffer->total_length < (ETH_HRD_SIZE + ENC28J60_CRC_LEN)) || (ethernet_buffer_receive(buffer) != NET_BUFFER_CONSUMED))
+                    if ((packet_length != 0) || (list->total_length < (ETH_HRD_SIZE + ENC28J60_CRC_LEN)) || (ethernet_buffer_receive(list) != NET_BUFFER_CONSUMED))
                     {
                         /* Free the buffers that we allocated. */
-                        fs_buffer_add(buffer->fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+                        fs_buffer_add(list->fd, list, FS_LIST_FREE, FS_BUFFER_ACTIVE);
                     }
                 }
             }

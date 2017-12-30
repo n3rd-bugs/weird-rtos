@@ -267,7 +267,7 @@ int32_t net_process_ipv4(FS_BUFFER_LIST *buffer, uint32_t flags)
     if (buffer->total_length >= 1)
     {
         /* Peek the version and IHL. */
-        ASSERT(fs_buffer_pull_offset(buffer, &ver_ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &ver_ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
 
         /* Check if we have a valid IPv4 version. */
         if ((ver_ihl & IPV4_HDR_VER_MASK) == IPV4_HDR_VER)
@@ -310,23 +310,23 @@ int32_t net_process_ipv4(FS_BUFFER_LIST *buffer, uint32_t flags)
     if (status == SUCCESS)
     {
         /* Pull the flag and offset data from the buffer. */
-        ASSERT(fs_buffer_pull_offset(buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Pick the IPv4 address to which this packet was addressed to. */
-        ASSERT(fs_buffer_pull_offset(buffer, &ip_dst, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &ip_dst, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Get IPv4 address assigned to this device. */
         ip_iface = ip_dst;
         ASSERT(ipv4_get_device_address(buffer->fd, &ip_iface, &subnet) != SUCCESS);
 
         /* Pull the IPv4 length for this packet. */
-        ASSERT(fs_buffer_pull_offset(buffer, &ip_length, 2, IPV4_HDR_LENGTH_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+        ASSERT(fs_buffer_list_pull_offset(buffer, &ip_length, 2, IPV4_HDR_LENGTH_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
 
         /* Check if we need to remove buffer padding. */
         if (ip_length < buffer->total_length)
         {
             /* Pull padding from the buffer. */
-            ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - ip_length), FS_BUFFER_TAIL) != SUCCESS);
+            ASSERT(fs_buffer_list_pull(buffer, NULL, (buffer->total_length - ip_length), FS_BUFFER_TAIL) != SUCCESS);
         }
 
         /* If buffer don't have anticipated IP data. */
@@ -365,10 +365,10 @@ int32_t net_process_ipv4(FS_BUFFER_LIST *buffer, uint32_t flags)
     if (status == SUCCESS)
     {
         /* Peek the IPv4 protocol. */
-        ASSERT(fs_buffer_pull_offset(buffer, &proto, 1, IPV4_HDR_PROTO_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &proto, 1, IPV4_HDR_PROTO_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
 
         /* Pick the IPv4 address from which this packet came. */
-        ASSERT(fs_buffer_pull_offset(buffer, &ip_src, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &ip_src, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Try to resolve the protocol to which this packet is needed to be
          * forwarded. */
@@ -472,7 +472,7 @@ int32_t net_process_ipv4(FS_BUFFER_LIST *buffer, uint32_t flags)
                 if (keep < buffer->total_length)
                 {
                     /* Pull the data that is not needed to be sent. */
-                    ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - keep), FS_BUFFER_TAIL) != SUCCESS);
+                    ASSERT(fs_buffer_list_pull(buffer, NULL, (buffer->total_length - keep), FS_BUFFER_TAIL) != SUCCESS);
                 }
 
                 /* Generate an ICMP protocol unreachable message. */
@@ -578,7 +578,7 @@ int32_t ipv4_header_add(FS_BUFFER_LIST *buffer, uint8_t proto, uint32_t src_addr
         if (total_length > max_payload_len)
         {
             /* Divide the given buffer into two buffers. */
-            ASSERT(fs_buffer_divide(buffer, 0, max_payload_len) != SUCCESS);
+            ASSERT(fs_buffer_list_divide(buffer, 0, max_payload_len) != SUCCESS);
 
             /* We will be sending more fragments after this. */
             flag_offset |= IPV4_HDR_FLAG_MF;
@@ -613,7 +613,7 @@ int32_t ipv4_header_add(FS_BUFFER_LIST *buffer, uint8_t proto, uint32_t src_addr
         {
             /* Compute and update the value of checksum field. */
             csum = net_csum_calculate(buffer, (ihl << 2), 0);
-            status = fs_buffer_push_offset(buffer, &csum, 2, IPV4_HDR_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+            status = fs_buffer_list_push_offset(buffer, &csum, 2, IPV4_HDR_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
         }
 
         if (status == SUCCESS)
@@ -745,7 +745,7 @@ static void ipv4_fragment_expired(void *data, int32_t status)
                 ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
                 /* Free this buffer list. */
-                fs_buffer_add_buffer_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+                fs_buffer_add_list_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
                 /* Release semaphore for the buffer. */
                 fd_release_lock(buffer_fd);
@@ -781,8 +781,8 @@ static uint8_t ipv4_frag_sort(void *node, void *new_node)
     SYS_LOG_FUNCTION_ENTRY(IPV4);
 
     /* Pull the flag and offset field for these buffers. */
-    ASSERT(fs_buffer_pull_offset(this_buffer, &this_flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-    ASSERT(fs_buffer_pull_offset(buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+    ASSERT(fs_buffer_list_pull_offset(this_buffer, &this_flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+    ASSERT(fs_buffer_list_pull_offset(buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
     /* If existing node's offset is greater then the one we have received. */
     if ((this_flag_offset & IPV4_HDR_FRAG_MASK) >= (flag_offset & IPV4_HDR_FRAG_MASK))
@@ -824,10 +824,10 @@ static int32_t ipv4_frag_add(FS_BUFFER_LIST *buffer, uint16_t flag_offset)
     ASSERT(net_device == NULL);
 
     /* Pull the ID of this fragment. */
-    ASSERT(fs_buffer_pull_offset(buffer, &id, 2, IPV4_HDR_ID_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+    ASSERT(fs_buffer_list_pull_offset(buffer, &id, 2, IPV4_HDR_ID_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
     /* Pull the source address to which we will be sending the reply. */
-    ASSERT(fs_buffer_pull_offset(buffer, &sa, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+    ASSERT(fs_buffer_list_pull_offset(buffer, &sa, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
     /* Search all the fragments for a free one. */
     for (n = 0; n < net_device->ipv4.fargment.num; n++)
@@ -868,7 +868,7 @@ static int32_t ipv4_frag_add(FS_BUFFER_LIST *buffer, uint16_t flag_offset)
                 if (net_device->ipv4.fargment.list[n].flags & IPV4_FRAG_IN_USE)
                 {
                     /* Free any fragments we have already on this fragment list. */
-                    fs_buffer_add_buffer_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+                    fs_buffer_add_list_list(net_device->ipv4.fargment.list[n].buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
                     /* Clear the buffer list for this fragment. */
                     net_device->ipv4.fargment.list[n].buffer_list.head = net_device->ipv4.fargment.list[n].buffer_list.tail = NULL;
@@ -910,7 +910,7 @@ static int32_t ipv4_frag_add(FS_BUFFER_LIST *buffer, uint16_t flag_offset)
                 }
 
                 /* Move data from the original buffer to the temporary buffer. */
-                fs_buffer_move(tmp_buffer, buffer);
+                fs_buffer_list_move(tmp_buffer, buffer);
 
                 /* Push this fragment on the fragment list. */
                 sll_insert(&fragment->buffer_list, tmp_buffer, &ipv4_frag_sort, OFFSETOF(FS_BUFFER_LIST, next));
@@ -968,10 +968,10 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER_LIST *buffer)
     next_buffer = last_buffer->next;
 
     /* Pull the version and IHL fields for the first buffer. */
-    ASSERT(fs_buffer_pull_offset(last_buffer, &ver_ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+    ASSERT(fs_buffer_list_pull_offset(last_buffer, &ver_ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
 
     /* Pull the flag and offset field for this buffer. */
-    ASSERT(fs_buffer_pull_offset(last_buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+    ASSERT(fs_buffer_list_pull_offset(last_buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
     /* Calculate the anticipated offset for next fragment. */
     next_offset = (uint16_t)((((int32_t)last_buffer->total_length - ((ver_ihl & IPV4_HDR_IHL_MASK) << 2)) + ((flag_offset & IPV4_HDR_FRAG_MASK) << 3)) >> 3);
@@ -980,19 +980,19 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER_LIST *buffer)
     while (next_buffer)
     {
         /* Pull the version and IHL fields for this buffer. */
-        ASSERT(fs_buffer_pull_offset(next_buffer, &ver_ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(next_buffer, &ver_ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
 
         /* Pull the flag and offset field for this buffer. */
-        ASSERT(fs_buffer_pull_offset(next_buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(next_buffer, &flag_offset, 2, IPV4_HDR_FLAG_FRAG_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* If there is no hole between last fragment and this fragment. */
         if ((flag_offset & IPV4_HDR_FRAG_MASK) == next_offset)
         {
             /* Pull the IPv4 header from this buffer. */
-            ASSERT(fs_buffer_pull(next_buffer, NULL, (uint32_t)((ver_ihl & IPV4_HDR_IHL_MASK) << 2), 0) != SUCCESS);
+            ASSERT(fs_buffer_list_pull(next_buffer, NULL, (uint32_t)((ver_ihl & IPV4_HDR_IHL_MASK) << 2), 0) != SUCCESS);
 
             /* Move data from this buffer in the return buffer. */
-            fs_buffer_move_data(last_buffer, next_buffer, 0);
+            fs_buffer_list_move_data(last_buffer, next_buffer, 0);
 
             /* Save pointer for this buffer. */
             tmp_buffer = next_buffer;
@@ -1030,7 +1030,7 @@ static int32_t ipv4_frag_merge(IPV4_FRAGMENT *fragment, FS_BUFFER_LIST *buffer)
         if ((fragment->flags & IPV4_FRAG_HAVE_FIRST) && (fragment->flags & IPV4_FRAG_LAST_RCVD))
         {
             /* Move data from the fragment head to the provided buffer. */
-            fs_buffer_move(buffer, last_buffer);
+            fs_buffer_list_move(buffer, last_buffer);
 
             /* Free the fragment head. */
             fs_buffer_add(last_buffer->fd, last_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);

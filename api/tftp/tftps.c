@@ -107,7 +107,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
         ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
 
         /* Pull the opcode from the buffer. */
-        status = fs_buffer_pull(rx_buffer, &opcode, sizeof(uint16_t), (FS_BUFFER_PACKED));
+        status = fs_buffer_list_pull(rx_buffer, &opcode, sizeof(uint16_t), (FS_BUFFER_PACKED));
 
         if (status == SUCCESS)
         {
@@ -129,7 +129,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                     for (data_len = 0; ((status == SUCCESS) && (data_len < TFTP_BUFFER_SIZE)); data_len++)
                     {
                         /* Pull the filename from the buffer. */
-                        status = fs_buffer_pull(rx_buffer, &data_buffer[data_len], sizeof(uint8_t), 0);
+                        status = fs_buffer_list_pull(rx_buffer, &data_buffer[data_len], sizeof(uint8_t), 0);
 
                         /* If filename was terminated. */
                         if (data_buffer[data_len] == '\0')
@@ -206,7 +206,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                 if ((tftp_server->fd != NULL) && (memcmp(&tftp_server->client_address, &tftp_server->port.last_datagram_address, sizeof(SOCKET_ADDRESS)) == 0))
                 {
                     /* Pull the block number from the buffer. */
-                    status = fs_buffer_pull(rx_buffer, &block, sizeof(uint16_t), (FS_BUFFER_PACKED));
+                    status = fs_buffer_list_pull(rx_buffer, &block, sizeof(uint16_t), (FS_BUFFER_PACKED));
 
                     if (status == SUCCESS)
                     {
@@ -232,7 +232,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                             {
                                 /* Pull some data from the buffer. */
                                 data_len = ((rx_buffer->total_length > TFTP_BUFFER_SIZE) ? TFTP_BUFFER_SIZE : rx_buffer->total_length);
-                                status = fs_buffer_pull(rx_buffer, data_buffer, data_len, 0);
+                                status = fs_buffer_list_pull(rx_buffer, data_buffer, data_len, 0);
 
                                 if (status == SUCCESS)
                                 {
@@ -289,7 +289,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                 if ((tftp_server->fd != NULL) && (memcmp(&tftp_server->client_address, &tftp_server->port.last_datagram_address, sizeof(SOCKET_ADDRESS)) == 0))
                 {
                     /* Pull the block number from the buffer. */
-                    status = fs_buffer_pull(rx_buffer, &block, sizeof(uint16_t), (FS_BUFFER_PACKED));
+                    status = fs_buffer_list_pull(rx_buffer, &block, sizeof(uint16_t), (FS_BUFFER_PACKED));
 
                     if (status == SUCCESS)
                     {
@@ -367,7 +367,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
             }
 
             /* Discard any data in the buffer. */
-            fs_buffer_pull(rx_buffer, NULL, rx_buffer->total_length, 0);
+            fs_buffer_list_pull(rx_buffer, NULL, rx_buffer->total_length, 0);
 
             /* If we have a session open for this client and we just received some data from it. */
             if ((tftp_server->fd != NULL) && (memcmp(&tftp_server->client_address, &tftp_server->port.last_datagram_address, sizeof(SOCKET_ADDRESS)) == 0))
@@ -406,12 +406,12 @@ static void tftp_server_process(void *data, int32_t resume_status)
                 }
 
                 /* Push required opcode on the buffer. */
-                status = fs_buffer_push_offset(rx_buffer, &opcode, 2, 0, (FS_BUFFER_PACKED | FS_BUFFER_TAIL));
+                status = fs_buffer_list_push_offset(rx_buffer, &opcode, 2, 0, (FS_BUFFER_PACKED | FS_BUFFER_TAIL));
 
                 if (status == SUCCESS)
                 {
                     /* Push block we are transmitting or acknowledging. */
-                    status = fs_buffer_push_offset(rx_buffer, &tftp_server->block_num, 2, 0, (FS_BUFFER_PACKED | FS_BUFFER_TAIL));
+                    status = fs_buffer_list_push_offset(rx_buffer, &tftp_server->block_num, 2, 0, (FS_BUFFER_PACKED | FS_BUFFER_TAIL));
                 }
 
                 /* If we need to add data. */
@@ -433,7 +433,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                             data_len += (uint32_t)status;
 
                             /* Push the read buffer on the buffer. */
-                            status = fs_buffer_push(rx_buffer, data_buffer, (uint32_t)status, (FS_BUFFER_TAIL));
+                            status = fs_buffer_list_push(rx_buffer, data_buffer, (uint32_t)status, (FS_BUFFER_TAIL));
                         }
                         else
                         {
@@ -474,7 +474,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                 opcode = TFTP_OP_ERR;
 
                 /* Push error response on the buffer. */
-                if (fs_buffer_push_offset(rx_buffer, &opcode, 2, 0, (FS_BUFFER_PACKED | FS_BUFFER_TAIL)) == SUCCESS)
+                if (fs_buffer_list_push_offset(rx_buffer, &opcode, 2, 0, (FS_BUFFER_PACKED | FS_BUFFER_TAIL)) == SUCCESS)
                 {
                     switch (status)
                     {
@@ -496,7 +496,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                     }
 
                     /* Push error code on the buffer. */
-                    if (fs_buffer_push(rx_buffer, &block, 2, (FS_BUFFER_PACKED | FS_BUFFER_TAIL)) == SUCCESS)
+                    if (fs_buffer_list_push(rx_buffer, &block, 2, (FS_BUFFER_PACKED | FS_BUFFER_TAIL)) == SUCCESS)
                     {
                         /* Push the required error message. */
                         switch (status)
@@ -505,7 +505,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                         case TFTP_NOT_SUPPORTED:
 
                             /* Set error that opcode is not supported. */
-                            status = fs_buffer_push(rx_buffer, TFTP_ERRMSG_NOT_SUPPORTED, sizeof(TFTP_ERRMSG_NOT_SUPPORTED), (FS_BUFFER_TAIL));
+                            status = fs_buffer_list_push(rx_buffer, TFTP_ERRMSG_NOT_SUPPORTED, sizeof(TFTP_ERRMSG_NOT_SUPPORTED), (FS_BUFFER_TAIL));
 
                             break;
 
@@ -513,7 +513,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                         case TFTP_LONG_FILENAME:
 
                             /* Send error that file name is too long. */
-                            status = fs_buffer_push(rx_buffer, TFTP_ERRMSG_FILENAME, sizeof(TFTP_ERRMSG_FILENAME), (FS_BUFFER_TAIL));
+                            status = fs_buffer_list_push(rx_buffer, TFTP_ERRMSG_FILENAME, sizeof(TFTP_ERRMSG_FILENAME), (FS_BUFFER_TAIL));
 
                             break;
 
@@ -521,7 +521,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                         case TFTP_ERROR_FS:
 
                             /* Send error that file system did not open the file. */
-                            status = fs_buffer_push(rx_buffer, TFTP_ERRMSG_FS, sizeof(TFTP_ERRMSG_FS), (FS_BUFFER_TAIL));
+                            status = fs_buffer_list_push(rx_buffer, TFTP_ERRMSG_FS, sizeof(TFTP_ERRMSG_FS), (FS_BUFFER_TAIL));
 
                             break;
 
@@ -529,7 +529,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                         case TFTP_ERROR_EXHAUSTED:
 
                             /* Send error that connections are exhausted. */
-                            status = fs_buffer_push(rx_buffer, TFTP_ERRMSG_EXHAUSTED, sizeof(TFTP_ERRMSG_EXHAUSTED), (FS_BUFFER_TAIL));
+                            status = fs_buffer_list_push(rx_buffer, TFTP_ERRMSG_EXHAUSTED, sizeof(TFTP_ERRMSG_EXHAUSTED), (FS_BUFFER_TAIL));
 
                             break;
 
@@ -537,7 +537,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                         case TFTP_UNKNOWN_TID:
 
                             /* Send error that client's transaction ID was not resolved. */
-                            status = fs_buffer_push(rx_buffer, TFTP_ERRMSG_TID, sizeof(TFTP_ERRMSG_TID), (FS_BUFFER_TAIL));
+                            status = fs_buffer_list_push(rx_buffer, TFTP_ERRMSG_TID, sizeof(TFTP_ERRMSG_TID), (FS_BUFFER_TAIL));
 
                             break;
 
@@ -545,7 +545,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                         case TFTP_OUTOFBOUND_BLOCK:
 
                             /* Send error that an out of bound block was received. */
-                            status = fs_buffer_push(rx_buffer, TFTP_ERRMSG_BLOCK, sizeof(TFTP_ERRMSG_BLOCK), (FS_BUFFER_TAIL));
+                            status = fs_buffer_list_push(rx_buffer, TFTP_ERRMSG_BLOCK, sizeof(TFTP_ERRMSG_BLOCK), (FS_BUFFER_TAIL));
 
                             break;
 
@@ -553,7 +553,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
                         default:
 
                             /* Error message not known. */
-                            status = fs_buffer_push(rx_buffer, "", 1, (FS_BUFFER_TAIL));
+                            status = fs_buffer_list_push(rx_buffer, "", 1, (FS_BUFFER_TAIL));
 
                             break;
                         }
@@ -566,7 +566,7 @@ static void tftp_server_process(void *data, int32_t resume_status)
         if (status != SUCCESS)
         {
             /* Free the buffer. */
-            fs_buffer_add_buffer_list(rx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add_list_list(rx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* Release lock for buffer file descriptor. */

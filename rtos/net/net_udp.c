@@ -133,7 +133,7 @@ void udp_unregister(UDP_PORT *port)
     ASSERT(sll_remove(&udp_data.port_list, port, OFFSETOF(UDP_PORT, next)) != port);
 
     /* Free all the buffers in the UDP buffer list. */
-    fs_buffer_add_buffer_list(port->buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+    fs_buffer_add_list_list(port->buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
     /* Clear the UDP port structure. */
     memset(port, 0, sizeof(UDP_PORT));
@@ -232,7 +232,7 @@ int32_t net_process_udp(FS_BUFFER_LIST *buffer, uint32_t ihl, uint32_t iface_add
     if (status == SUCCESS)
     {
         /* Pull the length of UDP datagram. */
-        ASSERT(fs_buffer_pull_offset(buffer, &length, 2, (ihl + UDP_HRD_LEN_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &length, 2, (ihl + UDP_HRD_LEN_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* If UDP header length value is not correct. */
         if (buffer->total_length < (ihl + length))
@@ -243,7 +243,7 @@ int32_t net_process_udp(FS_BUFFER_LIST *buffer, uint32_t ihl, uint32_t iface_add
         else if (buffer->total_length > (ihl + length))
         {
             /* Pull padding from the buffer. */
-            ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - (ihl + length)), FS_BUFFER_TAIL) != SUCCESS);
+            ASSERT(fs_buffer_list_pull(buffer, NULL, (buffer->total_length - (ihl + length)), FS_BUFFER_TAIL) != SUCCESS);
         }
     }
 
@@ -251,7 +251,7 @@ int32_t net_process_udp(FS_BUFFER_LIST *buffer, uint32_t ihl, uint32_t iface_add
     if (status == SUCCESS)
     {
         /* Pull the checksum for UDP datagram. */
-        ASSERT(fs_buffer_pull_offset(buffer, &csum_hdr, 2, (ihl + UDP_HRD_CSUM_OFFSET), (FS_BUFFER_INPLACE)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &csum_hdr, 2, (ihl + UDP_HRD_CSUM_OFFSET), (FS_BUFFER_INPLACE)) != SUCCESS);
 
         /* If we can verify the checksum for UDP header. */
         if (csum_hdr != 0)
@@ -273,8 +273,8 @@ int32_t net_process_udp(FS_BUFFER_LIST *buffer, uint32_t ihl, uint32_t iface_add
     if (status == SUCCESS)
     {
         /* Peek the UDP ports fields.. */
-        ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.foreign_port, 2, (ihl + UDP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-        ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.local_port, 2, (ihl + UDP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &port_param.socket_address.foreign_port, 2, (ihl + UDP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &port_param.socket_address.local_port, 2, (ihl + UDP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Release semaphore for the buffer file descriptor. */
         fd_release_lock(buffer->fd);
@@ -435,19 +435,19 @@ static int32_t udp_read_buffer(void *fd, uint8_t *buffer, int32_t size)
         ASSERT(fd_get_lock(fs_buffer->fd));
 
         /* Peek the version and IHL. */
-        ASSERT(fs_buffer_pull_offset(fs_buffer, &ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(fs_buffer, &ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
         ihl = (uint8_t)((ihl & IPV4_HDR_IHL_MASK) << 2);
 
         /* Save the IP addresses for this UDP datagram. */
-        ASSERT(fs_buffer_pull_offset(fs_buffer, &port->last_datagram_address.foreign_ip, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-        ASSERT(fs_buffer_pull_offset(fs_buffer, &port->last_datagram_address.local_ip, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(fs_buffer, &port->last_datagram_address.foreign_ip, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(fs_buffer, &port->last_datagram_address.local_ip, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Save the port addresses for this UDP datagram. */
-        ASSERT(fs_buffer_pull_offset(fs_buffer, &port->last_datagram_address.foreign_port, 2, (uint32_t)(ihl + UDP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-        ASSERT(fs_buffer_pull_offset(fs_buffer, &port->last_datagram_address.local_port, 2, (uint32_t)(ihl + UDP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(fs_buffer, &port->last_datagram_address.foreign_port, 2, (uint32_t)(ihl + UDP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(fs_buffer, &port->last_datagram_address.local_port, 2, (uint32_t)(ihl + UDP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Pull the IP and UDP headers from the packet. */
-        ASSERT(fs_buffer_pull_offset(fs_buffer, NULL, (uint32_t)(ihl + UDP_HRD_LENGTH), 0, 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(fs_buffer, NULL, (uint32_t)(ihl + UDP_HRD_LENGTH), 0, 0) != SUCCESS);
 
         /* Return the number of bytes read. */
         ret_size = (int32_t)fs_buffer->total_length;
@@ -507,7 +507,7 @@ static int32_t udp_read_data(void *fd, uint8_t *buffer, int32_t size)
         }
 
         /* Pull data from the buffer into the provided buffer. */
-        ASSERT(fs_buffer_pull(fs_buffer, buffer, (uint32_t)ret_size, 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(fs_buffer, buffer, (uint32_t)ret_size, 0) != SUCCESS);
 
         /* Return this buffer to it's owner. */
         fs_buffer_add(fs_buffer->fd, fs_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
@@ -586,7 +586,7 @@ static int32_t udp_write_buffer(void *fd, const uint8_t *buffer, int32_t size)
                 }
 
                 /* Push the UDP checksum on the buffer. */
-                status = fs_buffer_push_offset(fs_buffer, &csum, 2, UDP_HRD_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+                status = fs_buffer_list_push_offset(fs_buffer, &csum, 2, UDP_HRD_CSUM_OFFSET, (FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
             }
         }
 #endif
@@ -614,7 +614,7 @@ static int32_t udp_write_buffer(void *fd, const uint8_t *buffer, int32_t size)
         else
         {
             /* Add the allocated buffer back to the descriptor. */
-            fs_buffer_add_buffer_list(fs_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add_list_list(fs_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
             /* If an error has occurred. */
             if (status != SUCCESS)
@@ -688,7 +688,7 @@ static int32_t udp_write_data(void *fd, const uint8_t *buffer, int32_t size)
         if (fs_buffer != NULL)
         {
             /* Push UDP payload on the buffer. */
-            status = fs_buffer_push(fs_buffer, (uint8_t *)buffer, (uint32_t)size, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
+            status = fs_buffer_list_push(fs_buffer, (uint8_t *)buffer, (uint32_t)size, ((port->flags & UDP_FLAG_THR_BUFFERS) ? 0 : (FS_BUFFER_TH | FS_BUFFER_SUSPEND)));
         }
         else
         {

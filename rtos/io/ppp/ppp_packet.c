@@ -37,7 +37,7 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER_LIST *buffer, uint16_t *protocol, ui
     if (buffer->total_length >= 1)
     {
         /* Peek the first byte of the buffer. */
-        ASSERT(fs_buffer_pull(buffer, proto, 1, FS_BUFFER_INPLACE) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, proto, 1, FS_BUFFER_INPLACE) != SUCCESS);
 
         /* Put the first byte of protocol as it is. */
         ret_protocol = proto[0];
@@ -51,7 +51,7 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER_LIST *buffer, uint16_t *protocol, ui
                 /* First byte of sent protocol is zero and elided. */
 
                 /* Pull and consume the protocol byte. */
-                ASSERT(fs_buffer_pull(buffer, NULL, 1, 0) != SUCCESS);
+                ASSERT(fs_buffer_list_pull(buffer, NULL, 1, 0) != SUCCESS);
             }
 
             else
@@ -66,13 +66,13 @@ int32_t ppp_packet_protocol_parse(FS_BUFFER_LIST *buffer, uint16_t *protocol, ui
         else if (buffer->total_length >= 2)
         {
             /* Peek the first two byte of the buffer. */
-            ASSERT(fs_buffer_pull(buffer, &proto, 2, FS_BUFFER_INPLACE) != SUCCESS);
+            ASSERT(fs_buffer_list_pull(buffer, &proto, 2, FS_BUFFER_INPLACE) != SUCCESS);
 
             /* First byte of protocol must be even and second must be odd. */
             if ((!(proto[0] & 0x1)) && (proto[1] & 0x1))
             {
                 /* Pull the protocol field. */
-                ASSERT(fs_buffer_pull(buffer, &ret_protocol, sizeof(uint16_t), FS_BUFFER_PACKED) != SUCCESS);
+                ASSERT(fs_buffer_list_pull(buffer, &ret_protocol, sizeof(uint16_t), FS_BUFFER_PACKED) != SUCCESS);
             }
 
             else
@@ -131,7 +131,7 @@ int32_t ppp_packet_protocol_add(FS_BUFFER_LIST *buffer, uint16_t protocol, uint8
     }
 
     /* Push protocol for this packet. */
-    status = fs_buffer_push(buffer, &(protocol), proto_len, (FS_BUFFER_PACKED | FS_BUFFER_HEAD | flags));
+    status = fs_buffer_list_push(buffer, &(protocol), proto_len, (FS_BUFFER_PACKED | FS_BUFFER_HEAD | flags));
 
     /* Return status to the caller. */
     return (status);
@@ -155,9 +155,9 @@ int32_t ppp_packet_configuration_header_parse(FS_BUFFER_LIST *buffer, PPP_CONF_P
     if (buffer->total_length >= 4)
     {
         /* Pull the code, id and length. */
-        ASSERT(fs_buffer_pull(buffer, &packet->code, 1, 0) != SUCCESS);
-        ASSERT(fs_buffer_pull(buffer, &packet->id, 1, 0) != SUCCESS);
-        ASSERT(fs_buffer_pull(buffer, &packet->length, 2, FS_BUFFER_PACKED) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, &packet->code, 1, 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, &packet->id, 1, 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, &packet->length, 2, FS_BUFFER_PACKED) != SUCCESS);
 
         /* If header has invalid length of data left. */
         if (buffer->total_length != (uint32_t)(packet->length - 4))
@@ -195,8 +195,8 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_LIST *buffer, PPP_CONF_O
     if (buffer->total_length >= 2)
     {
         /* Pull the option type and length. */
-        ASSERT(fs_buffer_pull(buffer, &option->type, 1, 0) != SUCCESS);
-        ASSERT(fs_buffer_pull(buffer, &option->length, 1, 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, &option->type, 1, 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, &option->length, 1, 0) != SUCCESS);
 
         /* If this option has some data. */
         if (option->length > 2)
@@ -207,7 +207,7 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_LIST *buffer, PPP_CONF_O
                 ((uint32_t)(option->length - 2) <= PPP_MAX_OPTION_SIZE))
             {
                 /* Just pull the data and copy it in the option data buffer. */
-                ASSERT(fs_buffer_pull(buffer, option->data, (uint32_t)(option->length - 2), 0) != SUCCESS);
+                ASSERT(fs_buffer_list_pull(buffer, option->data, (uint32_t)(option->length - 2), 0) != SUCCESS);
             }
             else
             {
@@ -253,20 +253,20 @@ int32_t ppp_packet_configuration_header_add(FS_BUFFER_LIST *buffer, PPP_CONF_PKT
     packet->length = (uint16_t)(buffer->total_length + 4);
 
     /* Push length for this packet. */
-    status = fs_buffer_push(buffer, &packet->length, 2, (FS_BUFFER_PACKED | FS_BUFFER_HEAD));
+    status = fs_buffer_list_push(buffer, &packet->length, 2, (FS_BUFFER_PACKED | FS_BUFFER_HEAD));
 
     /* If length was successfully added. */
     if (status == SUCCESS)
     {
         /* Push configuration packet ID. */
-        status = fs_buffer_push(buffer, &packet->id, 1, (FS_BUFFER_HEAD));
+        status = fs_buffer_list_push(buffer, &packet->id, 1, (FS_BUFFER_HEAD));
     }
 
     /* If packet ID was successfully added. */
     if (status == SUCCESS)
     {
         /* Push configuration packet code. */
-        status = fs_buffer_push(buffer, &packet->code, 1, (FS_BUFFER_HEAD));
+        status = fs_buffer_list_push(buffer, &packet->code, 1, (FS_BUFFER_HEAD));
     }
 
     /* Return status to the caller. */
@@ -288,20 +288,20 @@ int32_t ppp_packet_configuration_option_add(FS_BUFFER_LIST *buffer, PPP_CONF_OPT
     int32_t status = SUCCESS;
 
     /* Add type of this option. */
-    status = fs_buffer_push(buffer, &option->type, 1, 0);
+    status = fs_buffer_list_push(buffer, &option->type, 1, 0);
 
     /* If type was successfully added. */
     if (status == SUCCESS)
     {
         /* Add length for this option. */
-        status = fs_buffer_push(buffer, &option->length, 1, 0);
+        status = fs_buffer_list_push(buffer, &option->length, 1, 0);
     }
 
     /* Check if we need to add value data in the option. */
     if (option->length > 2)
     {
         /* Add the option value. */
-        status = fs_buffer_push(buffer, option->data, (uint32_t)(option->length - 2), 0);
+        status = fs_buffer_list_push(buffer, option->data, (uint32_t)(option->length - 2), 0);
     }
 
     /* Return status to the caller. */

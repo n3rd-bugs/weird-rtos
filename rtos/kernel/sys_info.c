@@ -407,56 +407,56 @@ int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *buffer)
 
     /* Print current system tick. */
     P_STR_NCPY(str, P_STR("System tick: "), sizeof(str));
-    status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+    status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
 
     if (status == SUCCESS)
     {
         P_STR_NCPY(str_fmt, P_STR("%lu"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, (uint32_t)current_system_tick());
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
     if (status == SUCCESS)
     {
         P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
     if (status == SUCCESS)
     {
         /* Print table header. */
         P_STR_NCPY(str, P_STR("Name\tTotal\t"), sizeof(str));
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
 
         if (status == SUCCESS)
         {
             P_STR_NCPY(str, P_STR("Free\tMin.\t"), sizeof(str));
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
             P_STR_NCPY(str, P_STR("Status\tn(T)\t"), sizeof(str));
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
             P_STR_NCPY(str, P_STR("s(T)"), sizeof(str));
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
 #ifdef TASK_USAGE
         if (status == SUCCESS)
         {
             P_STR_NCPY(str, P_STR("\tCPU(%)"), sizeof(str));
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 #endif
         if (status == SUCCESS)
         {
             P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
     }
 
@@ -468,47 +468,47 @@ int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *buffer)
 
         P_STR_NCPY(str, tcb->name, (P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name));
         str[(P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name)] = '\0';
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
 
         if (status == SUCCESS)
         {
             P_STR_NCPY(str_fmt, P_STR("\t%lu\t"), sizeof(str_fmt));
             snprintf(str, sizeof(str), str_fmt, tcb->stack_size);
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
             P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
             snprintf(str, sizeof(str), str_fmt, stack_free);
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
             snprintf(str, sizeof(str), str_fmt, tcb->stack_size - stack_free);
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
             P_STR_NCPY(str_fmt, P_STR("%li\t"), sizeof(str_fmt));
             snprintf(str, sizeof(str), str_fmt, tcb->status);
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
             P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
             snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->scheduled);
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         if (status == SUCCESS)
         {
             P_STR_NCPY(str_fmt, P_STR("%lu"), sizeof(str_fmt));
             snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->tick_sleep);
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
 #ifdef TASK_USAGE
@@ -519,7 +519,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *buffer)
 
             P_STR_NCPY(str_fmt, P_STR("\t%lu"), sizeof(str_fmt));
             snprintf(str, sizeof(str), str_fmt, usage);
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 #endif
 
@@ -527,7 +527,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *buffer)
         {
             P_STR_NCPY(str_fmt, P_STR("\r\n"), sizeof(str_fmt));
             snprintf(str, sizeof(str), str_fmt);
-            status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+            status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 
         /* Get the next task. */
@@ -539,34 +539,34 @@ int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *buffer)
     stack_free = util_system_calc_free_stack();
 
     P_STR_NCPY(str, P_STR("SYSTEM"), sizeof(str));
-    status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+    status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
 
     if (status == SUCCESS)
     {
         P_STR_NCPY(str_fmt, P_STR("\t%lu\t"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, (uint32_t)SYS_STACK_SIZE);
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
     if (status == SUCCESS)
     {
         P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, stack_free);
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
     if (status == SUCCESS)
     {
         P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, SYS_STACK_SIZE - stack_free);
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
     if (status == SUCCESS)
     {
         P_STR_NCPY(str_fmt, P_STR("-\t-\t-"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt);
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 
 #ifdef TASK_USAGE
@@ -577,7 +577,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *buffer)
 
         P_STR_NCPY(str_fmt, P_STR("\t%lu"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, usage);
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 #endif
 
@@ -585,7 +585,7 @@ int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *buffer)
     {
         P_STR_NCPY(str_fmt, P_STR("\r\n"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt);
-        status = fs_buffer_push(buffer, (uint8_t *)str, strlen(str), 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
     }
 #endif
 

@@ -419,7 +419,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
                         if (opt_length == 1)
                         {
                             /* Pull and save the DHCP type. */
-                            status = fs_buffer_pull(buffer, &dhcp_type, opt_length, 0);
+                            status = fs_buffer_list_pull(buffer, &dhcp_type, opt_length, 0);
                         }
                         else
                         {
@@ -436,7 +436,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
                         if (opt_length == IPV4_ADDR_LEN)
                         {
                             /* Pull and save the network address. */
-                            status = fs_buffer_pull(buffer, &network, opt_length, FS_BUFFER_PACKED);
+                            status = fs_buffer_list_pull(buffer, &network, opt_length, FS_BUFFER_PACKED);
                         }
                         else
                         {
@@ -453,7 +453,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
                         if (opt_length == IPV4_ADDR_LEN)
                         {
                             /* Pull and save the gateway address. */
-                            status = fs_buffer_pull(buffer, &client_data->gateway_ip, opt_length, FS_BUFFER_PACKED);
+                            status = fs_buffer_list_pull(buffer, &client_data->gateway_ip, opt_length, FS_BUFFER_PACKED);
                         }
                         else
                         {
@@ -470,7 +470,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
                         if (opt_length == 4)
                         {
                             /* Pull and save the lease time. */
-                            status = fs_buffer_pull(buffer, &lease_time, opt_length, FS_BUFFER_PACKED);
+                            status = fs_buffer_list_pull(buffer, &lease_time, opt_length, FS_BUFFER_PACKED);
                         }
                         else
                         {
@@ -487,7 +487,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
                         if (opt_length == IPV4_ADDR_LEN)
                         {
                             /* Pull and save the server ID (IP address). */
-                            status = fs_buffer_pull(buffer, &dhcp_serv_addr, opt_length, FS_BUFFER_PACKED);
+                            status = fs_buffer_list_pull(buffer, &dhcp_serv_addr, opt_length, FS_BUFFER_PACKED);
                         }
                         else
                         {
@@ -509,7 +509,7 @@ static void net_dhcp_client_process(void *data, int32_t resume_status)
                     default:
 
                         /* Pull and discard the option data. */
-                        status = fs_buffer_pull(buffer, NULL, opt_length, 0);
+                        status = fs_buffer_list_pull(buffer, NULL, opt_length, 0);
 
                         break;
                     }

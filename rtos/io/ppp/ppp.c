@@ -230,7 +230,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER_LIST *buffer, PPP_PROTO *prot
                             tx_packet.code = PPP_CONFIG_REJECT;
 
                             /* Remove any data already on the buffer. */
-                            fs_buffer_pull(tx_buffer, NULL, tx_buffer->total_length, 0);
+                            fs_buffer_list_pull(tx_buffer, NULL, tx_buffer->total_length, 0);
                         }
 
                         /* Add this option in the transmit buffer. */
@@ -254,7 +254,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER_LIST *buffer, PPP_PROTO *prot
                                 tx_packet.code = PPP_CONFIG_NAK;
 
                                 /* Remove any data already on the buffer. */
-                                fs_buffer_pull(tx_buffer, NULL, tx_buffer->total_length, 0);
+                                fs_buffer_list_pull(tx_buffer, NULL, tx_buffer->total_length, 0);
                             }
 
                             /* If we have not accepted this option and we are not in the REJECT state. */
@@ -265,7 +265,7 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER_LIST *buffer, PPP_PROTO *prot
                                 tx_packet.code = PPP_CONFIG_REJECT;
 
                                 /* Remove any data already on the buffer. */
-                                fs_buffer_pull(tx_buffer, NULL, tx_buffer->total_length, 0);
+                                fs_buffer_list_pull(tx_buffer, NULL, tx_buffer->total_length, 0);
                             }
 
                             /* If a value is not valid and we are rejecting this
@@ -423,10 +423,10 @@ void ppp_process_frame(void *fd, PPP *ppp)
                             if (new_buffer)
                             {
                                 /* Divide this buffer into two buffers. */
-                                if (fs_buffer_one_divide(fd, buffer_one, &new_buffer_one, 0, this_length) == SUCCESS)
+                                if (fs_buffer_divide(fd, buffer_one, &new_buffer_one, 0, this_length) == SUCCESS)
                                 {
                                     /* Add this one buffer on the new buffer. */
-                                    fs_buffer_add_one(new_buffer, new_buffer_one, FS_BUFFER_HEAD);
+                                    fs_buffer_list_append(new_buffer, new_buffer_one, FS_BUFFER_HEAD);
                                 }
                                 else
                                 {
@@ -435,7 +435,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                                     new_buffer = NULL;
 
                                     /* Pull and discard extra data from this one buffer. */
-                                    fs_buffer_one_pull(buffer_one, NULL, buffer_one->length - this_length, FS_BUFFER_TAIL);
+                                    fs_buffer_pull(buffer_one, NULL, buffer_one->length - this_length, FS_BUFFER_TAIL);
 
                                     /* Reset the status as we will handle this condition. */
                                     status = SUCCESS;
@@ -444,7 +444,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                             else
                             {
                                 /* Pull and discard extra data from this one buffer. */
-                                fs_buffer_one_pull(buffer_one, NULL, buffer_one->length - this_length, FS_BUFFER_TAIL);
+                                fs_buffer_pull(buffer_one, NULL, buffer_one->length - this_length, FS_BUFFER_TAIL);
                             }
                         }
 
@@ -467,7 +467,7 @@ void ppp_process_frame(void *fd, PPP *ppp)
                             if (new_buffer)
                             {
                                 /* Add this buffer on the new buffer. */
-                                fs_buffer_add_one(new_buffer, buffer_one, 0);
+                                fs_buffer_list_append(new_buffer, buffer_one, 0);
                             }
                             else
                             {
@@ -619,7 +619,7 @@ int32_t net_ppp_transmit(FS_BUFFER_LIST *buffer, uint8_t flags)
     if (ppp != NULL)
     {
         /* Skim the protocol from the buffer. */
-        ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
 
         /* Process this frame according to the protocol. */
         switch (net_proto)
@@ -650,7 +650,7 @@ int32_t net_ppp_transmit(FS_BUFFER_LIST *buffer, uint8_t flags)
             if (buffer_copy)
             {
                 /* Make a copy of this buffer. */
-                status = fs_buffer_move_data(buffer_copy, buffer, FS_BUFFER_COPY);
+                status = fs_buffer_list_move_data(buffer_copy, buffer, FS_BUFFER_COPY);
 
                 if (status == SUCCESS)
                 {
@@ -734,7 +734,7 @@ void net_ppp_receive(void *data, int32_t status)
         else
         {
             /* Add the received data to the current RX buffer. */
-            if (fs_buffer_move_data(ppp->rx_buffer, buffer, FS_BUFFER_COPY) != SUCCESS)
+            if (fs_buffer_list_move_data(ppp->rx_buffer, buffer, FS_BUFFER_COPY) != SUCCESS)
             {
                 /* Free the receive buffer. */
                 fs_buffer_add(ppp->fd, ppp->rx_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);

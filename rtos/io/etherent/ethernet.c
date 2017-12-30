@@ -307,7 +307,7 @@ static void ethernet_process(void *data, int32_t resume_status)
                 if (status == SUCCESS)
                 {
                     /* Pull ethernet header from the buffer. */
-                    ASSERT(fs_buffer_pull(buffer, NULL, ETH_HRD_SIZE, 0) != SUCCESS);
+                    ASSERT(fs_buffer_list_pull(buffer, NULL, ETH_HRD_SIZE, 0) != SUCCESS);
 
                     /* Free this buffer. */
                     fs_buffer_add(fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
@@ -378,8 +378,8 @@ int32_t ethernet_buffer_receive(FS_BUFFER_LIST *buffer)
     uint8_t dst_mac[ETH_ADDR_LEN];
 
     /* Pull the destination and source addresses. */
-    ASSERT(fs_buffer_pull(buffer, dst_mac, (ETH_ADDR_LEN), 0) != SUCCESS);
-    ASSERT(fs_buffer_pull(buffer, NULL, (ETH_ADDR_LEN), 0) != SUCCESS);
+    ASSERT(fs_buffer_list_pull(buffer, dst_mac, (ETH_ADDR_LEN), 0) != SUCCESS);
+    ASSERT(fs_buffer_list_pull(buffer, NULL, (ETH_ADDR_LEN), 0) != SUCCESS);
 
     /* If this was a broadcast frame. */
     if (memcmp(dst_mac, ETH_BCAST_ADDR, ETH_ADDR_LEN) == 0)
@@ -389,7 +389,7 @@ int32_t ethernet_buffer_receive(FS_BUFFER_LIST *buffer)
     }
 
     /* Pull the protocol. */
-    ASSERT(fs_buffer_pull(buffer, &proto, ETH_PROTO_LEN, FS_BUFFER_PACKED) != SUCCESS);
+    ASSERT(fs_buffer_list_pull(buffer, &proto, ETH_PROTO_LEN, FS_BUFFER_PACKED) != SUCCESS);
 
     /* Process the protocol. */
     switch(proto)
@@ -469,7 +469,7 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER_LIST *buffer, uint8_t flags)
     };
 
     /* Skim the protocol from the buffer. */
-    ASSERT(fs_buffer_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
+    ASSERT(fs_buffer_list_pull(buffer, &net_proto, sizeof(uint8_t), 0) != SUCCESS);
 
     switch (net_proto)
     {
@@ -478,8 +478,8 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER_LIST *buffer, uint8_t flags)
     case NET_PROTO_IPV4:
 
         /* Pull the intended source and destination IP address. */
-        ASSERT(fs_buffer_pull_offset(buffer, &iface_addr, IPV4_ADDR_LEN, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
-        ASSERT(fs_buffer_pull_offset(buffer, &dst_ip, IPV4_ADDR_LEN, IPV4_HDR_DST_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &iface_addr, IPV4_ADDR_LEN, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &dst_ip, IPV4_ADDR_LEN, IPV4_HDR_DST_OFFSET, (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)) != SUCCESS);
 
         /* Get the subnet mask for the address. */
         ipv4_get_device_address(buffer->fd, &iface_addr, &subnet);
@@ -513,7 +513,7 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER_LIST *buffer, uint8_t flags)
     case NET_PROTO_ARP:
 
         /* Pull the destination HW address from the ARP packet. */
-        ASSERT(fs_buffer_pull_offset(buffer, dst_mac, ETH_ADDR_LEN, (ARP_HDR_PRE_LEN + ARP_HDR_TGT_HW_OFFSET), (FS_BUFFER_INPLACE)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, dst_mac, ETH_ADDR_LEN, (ARP_HDR_PRE_LEN + ARP_HDR_TGT_HW_OFFSET), (FS_BUFFER_INPLACE)) != SUCCESS);
 
         /* If target address is not known. */
         if (memcmp(dst_mac, ETH_UNSPEC_ADDR, ETH_ADDR_LEN) == 0)
@@ -566,7 +566,7 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER_LIST *buffer, uint8_t flags)
     else if (buffer->total_length > orig_len)
     {
         /* Pull any excess data from the buffer. */
-        ASSERT(fs_buffer_pull(buffer, NULL, (buffer->total_length - orig_len), 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(buffer, NULL, (buffer->total_length - orig_len), 0) != SUCCESS);
     }
 
     /* Return status to the caller. */

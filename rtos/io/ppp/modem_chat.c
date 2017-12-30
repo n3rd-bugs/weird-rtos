@@ -46,7 +46,7 @@ int32_t modem_chat_process(FD fd, FS_BUFFER_LIST *rx_buffer)
         if (tx_buffer)
         {
             /* Initialize response. */
-            ASSERT(fs_buffer_push(tx_buffer, "CLIENTSERVER", (sizeof("CLIENTSERVER") - 1), 0) != SUCCESS);
+            ASSERT(fs_buffer_list_push(tx_buffer, "CLIENTSERVER", (sizeof("CLIENTSERVER") - 1), 0) != SUCCESS);
 
             /* Release lock for file descriptor. */
             fd_release_lock(fd);

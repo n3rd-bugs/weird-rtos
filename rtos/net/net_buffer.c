@@ -130,7 +130,7 @@ static void net_buffer_condition_callback(void *data, int32_t status)
         if (net_buffer_process(buffer) != NET_BUFFER_CONSUMED)
         {
             /* Free this buffer. */
-            fs_buffer_add_buffer_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add_list_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
         }
 
         /* Release semaphore for the buffer. */

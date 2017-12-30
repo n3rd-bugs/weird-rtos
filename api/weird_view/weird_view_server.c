@@ -122,7 +122,7 @@ static void weird_view_server_process(void *data, int32_t status)
         ASSERT(fd_get_lock(rx_buffer->fd) != SUCCESS);
 
         /* Pull the command from the buffer. */
-        fs_buffer_pull(rx_buffer, &command, sizeof(uint32_t), (FS_BUFFER_PACKED));
+        fs_buffer_list_pull(rx_buffer, &command, sizeof(uint32_t), (FS_BUFFER_PACKED));
 
         /* Process the given command. */
         switch (command)
@@ -135,12 +135,12 @@ static void weird_view_server_process(void *data, int32_t status)
             if (rx_buffer->total_length == 0)
             {
                 /* Send discover reply. */
-                received = fs_buffer_push(rx_buffer, (uint32_t []){ WV_DISC_REPLY }, sizeof(uint32_t), (FS_BUFFER_PACKED));
+                received = fs_buffer_list_push(rx_buffer, (uint32_t []){ WV_DISC_REPLY }, sizeof(uint32_t), (FS_BUFFER_PACKED));
 
                 if (received == SUCCESS)
                 {
                     /* Push the device name. */
-                    received = fs_buffer_push(rx_buffer, (uint8_t *)weird_view->device_name, strlen(weird_view->device_name), 0);
+                    received = fs_buffer_list_push(rx_buffer, (uint8_t *)weird_view->device_name, strlen(weird_view->device_name), 0);
                 }
             }
             else
@@ -158,24 +158,24 @@ static void weird_view_server_process(void *data, int32_t status)
             if (rx_buffer->total_length == 0)
             {
                 /* Send list reply. */
-                received = fs_buffer_push(rx_buffer, (uint32_t []){ WV_LIST_REPLY }, sizeof(uint32_t), (FS_BUFFER_PACKED));
+                received = fs_buffer_list_push(rx_buffer, (uint32_t []){ WV_LIST_REPLY }, sizeof(uint32_t), (FS_BUFFER_PACKED));
 
                 /* Push data for all the registered plugins. */
                 for (i = 0; (i < weird_view->num_plugin) && (received == SUCCESS); i ++)
                 {
                     /* Push plugin ID. */
-                    received = fs_buffer_push(rx_buffer, &weird_view->plugin[i].id, sizeof(uint16_t), (FS_BUFFER_PACKED));
+                    received = fs_buffer_list_push(rx_buffer, &weird_view->plugin[i].id, sizeof(uint16_t), (FS_BUFFER_PACKED));
 
                     if (received == SUCCESS)
                     {
                         /* Push plugin type. */
-                        received = fs_buffer_push(rx_buffer, &weird_view->plugin[i].type, sizeof(uint8_t), 0);
+                        received = fs_buffer_list_push(rx_buffer, &weird_view->plugin[i].type, sizeof(uint8_t), 0);
                     }
 
                     /* Push plugin name. */
                     if (received == SUCCESS)
                     {
-                        received = fs_buffer_push(rx_buffer, (uint8_t []){ (uint8_t)P_STR_LEN(weird_view->plugin[i].name) }, sizeof(uint8_t), 0);
+                        received = fs_buffer_list_push(rx_buffer, (uint8_t []){ (uint8_t)P_STR_LEN(weird_view->plugin[i].name) }, sizeof(uint8_t), 0);
                     }
                     if (received == SUCCESS)
                     {
@@ -189,7 +189,7 @@ static void weird_view_server_process(void *data, int32_t status)
 
                             /* Copy the required bytes. */
                             P_MEM_CPY(str, name, this_size);
-                            received = fs_buffer_push(rx_buffer, str, this_size, 0);
+                            received = fs_buffer_list_push(rx_buffer, str, this_size, 0);
 
                             /* Move name ahead. */
                             name += this_size;
@@ -215,7 +215,7 @@ static void weird_view_server_process(void *data, int32_t status)
             if (rx_buffer->total_length >= (int32_t)sizeof(uint16_t))
             {
                 /* Pull the plugin id. */
-                fs_buffer_pull(rx_buffer, &id, sizeof(uint16_t), (FS_BUFFER_PACKED));
+                fs_buffer_list_pull(rx_buffer, &id, sizeof(uint16_t), (FS_BUFFER_PACKED));
 
                 /* Try to get the required plugin. */
                 plugin = weird_view_get_plugin(weird_view, id);
@@ -263,12 +263,12 @@ static void weird_view_server_process(void *data, int32_t status)
                                         if (state == TRUE)
                                         {
                                             /* Switch is on. */
-                                            received = fs_buffer_push(rx_buffer, (uint8_t []){ WV_PLUGIN_SWITCH_ON }, sizeof(uint8_t), 0);
+                                            received = fs_buffer_list_push(rx_buffer, (uint8_t []){ WV_PLUGIN_SWITCH_ON }, sizeof(uint8_t), 0);
                                         }
                                         else if (state == FALSE)
                                         {
                                             /* Switch is off. */
-                                            received = fs_buffer_push(rx_buffer, (uint8_t []){ WV_PLUGIN_SWITCH_OFF }, sizeof(uint8_t), 0);
+                                            received = fs_buffer_list_push(rx_buffer, (uint8_t []){ WV_PLUGIN_SWITCH_OFF }, sizeof(uint8_t), 0);
                                         }
                                         else
                                         {
@@ -291,18 +291,18 @@ static void weird_view_server_process(void *data, int32_t status)
                                         /* Push data for analog plugin. */
 
                                         /* Push analog value. */
-                                        received = fs_buffer_push(rx_buffer, &value, sizeof(uint32_t), FS_BUFFER_PACKED);
+                                        received = fs_buffer_list_push(rx_buffer, &value, sizeof(uint32_t), FS_BUFFER_PACKED);
 
                                         if (received == SUCCESS)
                                         {
                                             /* Push analog divisor. */
-                                            received = fs_buffer_push(rx_buffer, &value_div, sizeof(uint32_t), FS_BUFFER_PACKED);
+                                            received = fs_buffer_list_push(rx_buffer, &value_div, sizeof(uint32_t), FS_BUFFER_PACKED);
                                         }
 
                                         if (received == SUCCESS)
                                         {
                                             /* Push analog maximum value. */
-                                            received = fs_buffer_push(rx_buffer, &disp_max, sizeof(uint32_t), FS_BUFFER_PACKED);
+                                            received = fs_buffer_list_push(rx_buffer, &disp_max, sizeof(uint32_t), FS_BUFFER_PACKED);
                                         }
                                     }
 
@@ -348,7 +348,7 @@ static void weird_view_server_process(void *data, int32_t status)
                                 if (rx_buffer->total_length == (int32_t)sizeof(uint8_t))
                                 {
                                     /* Pull the new state. */
-                                    fs_buffer_pull(rx_buffer, &state, sizeof(uint8_t), 0);
+                                    fs_buffer_list_pull(rx_buffer, &state, sizeof(uint8_t), 0);
 
                                     /* On requested. */
                                     if (state == WV_PLUGIN_SWITCH_ON)
@@ -379,7 +379,7 @@ static void weird_view_server_process(void *data, int32_t status)
                     if (received >= 0)
                     {
                         /* Send reply for this request. */
-                        received = fs_buffer_push(rx_buffer, (uint32_t []){ WV_UPDATE_REPLY }, sizeof(uint32_t), (FS_BUFFER_HEAD | FS_BUFFER_PACKED));
+                        received = fs_buffer_list_push(rx_buffer, (uint32_t []){ WV_UPDATE_REPLY }, sizeof(uint32_t), (FS_BUFFER_HEAD | FS_BUFFER_PACKED));
                     }
                 }
                 else

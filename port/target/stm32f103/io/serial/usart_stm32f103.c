@@ -51,8 +51,8 @@ void serial_stm32f103_init(void)
     /* Register this serial device. */
     usart1_buffer_data.buffer_space = usart1_buffer_space;
     usart1_buffer_data.buffer_size = SERIAL_MAX_BUFFER_SIZE;
-    usart1_buffer_data.buffer_ones = usart1_buffer_ones;
-    usart1_buffer_data.num_buffer_ones = SERIAL_NUM_BUFFERS;
+    usart1_buffer_data.buffers = usart1_buffer_ones;
+    usart1_buffer_data.num_buffers = SERIAL_NUM_BUFFERS;
     usart1_buffer_data.buffer_lists = usart1_buffer_lists;
     usart1_buffer_data.num_buffer_lists = SERIAL_NUM_BUFFER_LIST;
     usart1_buffer_data.threshold_buffers = SERIAL_THRESHOLD_BUFFER;
@@ -352,7 +352,7 @@ static void usart_handle_tx_interrupt(STM32_USART *usart)
     if (buffer != NULL)
     {
         /* Pull a byte from the buffer. */
-        fs_buffer_pull(buffer, &chr, 1, 0);
+        fs_buffer_list_pull(buffer, &chr, 1, 0);
 
         /* If there is nothing more to be sent from this buffer. */
         if (buffer->total_length == 0)
@@ -415,7 +415,7 @@ static void usart_handle_rx_interrupt(STM32_USART *usart)
         if (buffer != NULL)
         {
             /* Append received byte on the buffer. */
-            fs_buffer_push(buffer, &chr, 1, 0);
+            fs_buffer_list_push(buffer, &chr, 1, 0);
         }
     }
 
@@ -544,7 +544,7 @@ static int32_t usart_stm32f103_puts(void *fd, void *priv_data, const uint8_t *bu
             usart->serial.flags |= SERIAL_IN_TX;
 
             /* Pull a byte from the buffer. */
-            fs_buffer_pull(buffer, &chr, 1, 0);
+            fs_buffer_list_pull(buffer, &chr, 1, 0);
 
             if (buffer->total_length == 0)
             {

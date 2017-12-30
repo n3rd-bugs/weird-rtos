@@ -166,7 +166,7 @@ void tcp_unregister(TCP_PORT *port)
     fd_get_lock(port);
 
     /* Free all the buffers in the TCP buffer list. */
-    fs_buffer_add_buffer_list(port->buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+    fs_buffer_add_list_list(port->buffer_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
     /* Unregister networking condition for this TCP port. */
     tcp_timer_unregister(port);
@@ -334,7 +334,7 @@ static int32_t tcp_process_options(FS_BUFFER_LIST *buffer, TCP_PORT *port, uint3
     while ((status == SUCCESS) && (opt_index < total_opt_size))
     {
         /* Pull the option type. */
-        ASSERT(fs_buffer_pull_offset(buffer, &opt_type, 1, (offset + opt_index), FS_BUFFER_INPLACE));
+        ASSERT(fs_buffer_list_pull_offset(buffer, &opt_type, 1, (offset + opt_index), FS_BUFFER_INPLACE));
         opt_index ++;
 
         /* If we are also expecting option length. */
@@ -344,7 +344,7 @@ static int32_t tcp_process_options(FS_BUFFER_LIST *buffer, TCP_PORT *port, uint3
             if (opt_index < total_opt_size)
             {
                 /* Pull option length. */
-                ASSERT(fs_buffer_pull_offset(buffer, &opt_len, 1, (offset + opt_index), FS_BUFFER_INPLACE));
+                ASSERT(fs_buffer_list_pull_offset(buffer, &opt_len, 1, (offset + opt_index), FS_BUFFER_INPLACE));
                 opt_index ++;
 
                 /* Option length must be at least 2 bytes. */
@@ -388,7 +388,7 @@ static int32_t tcp_process_options(FS_BUFFER_LIST *buffer, TCP_PORT *port, uint3
                     if (opt_len == 2)
                     {
                         /* Pull maximum segment size. */
-                        ASSERT(fs_buffer_pull_offset(buffer, &opt_value_16, 2, (offset + opt_index), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+                        ASSERT(fs_buffer_list_pull_offset(buffer, &opt_value_16, 2, (offset + opt_index), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
 
                         /* If remote has smaller maximum segment size. */
                         if (opt_value_16 < port->mss)
@@ -416,7 +416,7 @@ static int32_t tcp_process_options(FS_BUFFER_LIST *buffer, TCP_PORT *port, uint3
                     if (opt_len == 1)
                     {
                         /* Pull send window scale sent by remote. */
-                        ASSERT(fs_buffer_pull_offset(buffer, &port->snd_wnd_scale, 1, (offset + opt_index), FS_BUFFER_INPLACE));
+                        ASSERT(fs_buffer_list_pull_offset(buffer, &port->snd_wnd_scale, 1, (offset + opt_index), FS_BUFFER_INPLACE));
 
                         /* Window scale is being used. */
                         port->flags |= TCP_FLAG_WND_SCALE;
@@ -478,19 +478,19 @@ static int32_t tcp_add_option(FS_BUFFER_LIST *buffer, uint8_t type, uint8_t leng
     SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Append option type. */
-    status = fs_buffer_push(buffer, (uint8_t *)&type, 1, 0);
+    status = fs_buffer_list_push(buffer, (uint8_t *)&type, 1, 0);
 
     /* If we do need to add option value. */
     if ((status == SUCCESS) && (length > 1))
     {
         /* Append option length. */
-        status = fs_buffer_push(buffer, (uint8_t *)&length, 1, 0);
+        status = fs_buffer_list_push(buffer, (uint8_t *)&length, 1, 0);
 
         /* If we do have a option value to add. */
         if ((status == SUCCESS) && (value != NULL))
         {
             /* Append option value. */
-            status = fs_buffer_push(buffer, (uint8_t *)value, (uint32_t)(length - 2), flags);
+            status = fs_buffer_list_push(buffer, (uint8_t *)value, (uint32_t)(length - 2), flags);
         }
     }
 
@@ -1002,7 +1002,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
             if ((status == SUCCESS) && (data != NULL))
             {
                 /* Add given data on the buffer. */
-                status = fs_buffer_push(buffer, data, (uint32_t)data_len, buffer_flags);
+                status = fs_buffer_list_push(buffer, data, (uint32_t)data_len, buffer_flags);
             }
 
             /* If segment data was successfully added on the buffer. */
@@ -1056,7 +1056,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                 if (status == SUCCESS)
                 {
                     /* Push the TCP checksum on the buffer. */
-                    status = fs_buffer_push_offset(buffer, &csum, 2, TCP_HRD_CSUM_OFFSET, (uint8_t)(buffer_flags | FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
+                    status = fs_buffer_list_push_offset(buffer, &csum, 2, TCP_HRD_CSUM_OFFSET, (uint8_t)(buffer_flags | FS_BUFFER_HEAD | FS_BUFFER_UPDATE));
                 }
             }
 
@@ -1117,7 +1117,7 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                 buffer->free_data = 0;
 
                 /* Add the allocated buffer back to the descriptor. */
-                fs_buffer_add_buffer_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+                fs_buffer_add_list_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             }
 
             /* If segment was not sent and we allocated a retransmission structure. */
@@ -1269,7 +1269,7 @@ static uint8_t tcp_oo_buffer_process(void *node, void *param)
     SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Pull the sequence number for these buffers. */
-    ASSERT(fs_buffer_pull(buffer, &seg_seq, 4, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+    ASSERT(fs_buffer_list_pull(buffer, &seg_seq, 4, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
     /* If this segment comes before the segment we need to insert. */
     if (seg_seq > oo_param->seg_seq)
@@ -1316,7 +1316,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER_LIST *buffer, uint1
     ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
 
     /* Remove all the data from the buffer except the actual TCP segment. */
-    fs_buffer_pull(buffer, NULL, (buffer->total_length - seg_len), 0);
+    fs_buffer_list_pull(buffer, NULL, (buffer->total_length - seg_len), 0);
 
     /* SEG.SEQ = RCV.NXT ? */
     if (seg_seq == port->rcv_nxt)
@@ -1331,7 +1331,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER_LIST *buffer, uint1
 
             /* Move all the data from this buffer to the existing receive
              * buffer. */
-            fs_buffer_move_data(port->rx_buffer.buffer, buffer, 0);
+            fs_buffer_list_move_data(port->rx_buffer.buffer, buffer, 0);
         }
         else
         {
@@ -1349,19 +1349,19 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER_LIST *buffer, uint1
         for (buffer = port->rx_buffer.oorx_list.head; (buffer != NULL); buffer = buffer->next)
         {
             /* Pull the sequence number for this buffer. */
-            ASSERT(fs_buffer_pull(buffer, &seg_seq, 4, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+            ASSERT(fs_buffer_list_pull(buffer, &seg_seq, 4, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
             /* If this is the anticipated next segment. */
             if (port->rcv_nxt == seg_seq)
             {
                 /* Pull and remove the sequence number we added. */
-                ASSERT(fs_buffer_pull(buffer, NULL, 4, 0) != SUCCESS);
+                ASSERT(fs_buffer_list_pull(buffer, NULL, 4, 0) != SUCCESS);
 
                 /* RCV.NXT := HSEG.SEQ + HSEG.LEN */
                 port->rcv_nxt = seg_seq + buffer->total_length;
 
                 /* Move all the data from this buffer to the receive buffer. */
-                fs_buffer_move_data(port->rx_buffer.buffer, buffer, 0);
+                fs_buffer_list_move_data(port->rx_buffer.buffer, buffer, 0);
             }
             else
             {
@@ -1373,7 +1373,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER_LIST *buffer, uint1
         if (port->rx_buffer.oorx_list.head != NULL)
         {
             /* Clear any remaining buffers in the out-of-order buffer list. */
-            fs_buffer_add_buffer_list(port->rx_buffer.oorx_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+            fs_buffer_add_list_list(port->rx_buffer.oorx_list.head, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             port->rx_buffer.oorx_list.head = port->rx_buffer.oorx_list.tail = NULL;
         }
 
@@ -1400,7 +1400,7 @@ static int32_t tcp_rx_buffer_merge(TCP_PORT *port, FS_BUFFER_LIST *buffer, uint1
         if ((oo_param.flags & TCP_FLAG_SEG_CONFLICT) == 0)
         {
             /* Push the sequence number for this buffer on the buffer head. */
-            status = fs_buffer_push(buffer, &seg_seq, 4, (FS_BUFFER_PACKED));
+            status = fs_buffer_list_push(buffer, &seg_seq, 4, (FS_BUFFER_PACKED));
 
             if (status == SUCCESS)
             {
@@ -1452,11 +1452,11 @@ static void tcp_buffer_get_ihl_flags(FS_BUFFER_LIST *buffer, uint8_t *ihl, uint1
     SYS_LOG_FUNCTION_ENTRY(TCP);
 
     /* Peek the version and IHL. */
-    ASSERT(fs_buffer_pull_offset(buffer, ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
+    ASSERT(fs_buffer_list_pull_offset(buffer, ihl, 1, IPV4_HDR_VER_IHL_OFFSET, FS_BUFFER_INPLACE) != SUCCESS);
     (*ihl) = (uint8_t)(((*ihl) & IPV4_HDR_IHL_MASK) << 2);
 
     /* Pull the TCP flags. */
-    ASSERT(fs_buffer_pull_offset(buffer, flags, 2, (uint32_t)((*ihl) + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+    ASSERT(fs_buffer_list_pull_offset(buffer, flags, 2, (uint32_t)((*ihl) + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
 
     SYS_LOG_FUNCTION_EXIT(TCP);
 
@@ -1551,7 +1551,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
         }
 
         /* Pull data from the buffer into the provided buffer. */
-        ASSERT(fs_buffer_pull(fs_buffer, buffer, (uint32_t)ret_size, 0) != SUCCESS);
+        ASSERT(fs_buffer_list_pull(fs_buffer, buffer, (uint32_t)ret_size, 0) != SUCCESS);
 
         /* If we still have some data left on this buffer. */
         if (fs_buffer->total_length != 0)
@@ -1563,7 +1563,7 @@ static int32_t tcp_read_data(void *fd, uint8_t *buffer, int32_t size)
                 ASSERT(port->rx_buffer.buffer->fd != fs_buffer->fd);
 
                 /* Move all the data from this buffer to the new receive buffer on head. */
-                fs_buffer_move_data(port->rx_buffer.buffer, fs_buffer, FS_BUFFER_HEAD);
+                fs_buffer_list_move_data(port->rx_buffer.buffer, fs_buffer, FS_BUFFER_HEAD);
 
                 /* Return this buffer to it's owner. */
                 fs_buffer_add(fs_buffer->fd, fs_buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
@@ -2004,18 +2004,18 @@ int32_t net_process_tcp(FS_BUFFER_LIST *buffer, uint32_t ihl, uint32_t iface_add
     if (status == SUCCESS)
     {
         /* Pull the source and destination ports. */
-        ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.foreign_port, 2, (ihl + TCP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
-        ASSERT(fs_buffer_pull_offset(buffer, &port_param.socket_address.local_port, 2, (ihl + TCP_HRD_DST_PORT_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+        ASSERT(fs_buffer_list_pull_offset(buffer, &port_param.socket_address.foreign_port, 2, (ihl + TCP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+        ASSERT(fs_buffer_list_pull_offset(buffer, &port_param.socket_address.local_port, 2, (ihl + TCP_HRD_DST_PORT_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
 
         /* Save the ACK number. */
-        ASSERT(fs_buffer_pull_offset(buffer, &seg_ack, 4, (uint32_t)(ihl + TCP_HRD_ACK_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-        ASSERT(fs_buffer_pull_offset(buffer, &seg_seq, 4, (uint32_t)(ihl + TCP_HRD_SEQ_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &seg_ack, 4, (uint32_t)(ihl + TCP_HRD_ACK_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &seg_seq, 4, (uint32_t)(ihl + TCP_HRD_SEQ_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Pull the TCP flags. */
-        ASSERT(fs_buffer_pull_offset(buffer, &flags, 2, (ihl + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
+        ASSERT(fs_buffer_list_pull_offset(buffer, &flags, 2, (ihl + TCP_HRD_FLAGS_OFFSET), (FS_BUFFER_PACKED | FS_BUFFER_INPLACE)));
 
         /* Pull TCP window size. */
-        ASSERT(fs_buffer_pull_offset(buffer, &seg_wnd, 2, (uint32_t)(ihl + TCP_HRD_WND_SIZE_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+        ASSERT(fs_buffer_list_pull_offset(buffer, &seg_wnd, 2, (uint32_t)(ihl + TCP_HRD_WND_SIZE_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
         /* Calculate segment length. */
         seg_len = (uint16_t)(buffer->total_length - (ihl + (uint32_t)(((flags & TCP_HDR_HDR_LEN_MSK) >> TCP_HDR_HDR_LEN_SHIFT) * 4)));
@@ -2909,16 +2909,16 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
                         /* Save the socket address for this connection request. */
 
                         /* Save the IP addresses for this socket. */
-                        ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.foreign_ip, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-                        ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.local_ip, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        ASSERT(fs_buffer_list_pull_offset(buffer, &client_port->socket_address.foreign_ip, 4, IPV4_HDR_SRC_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        ASSERT(fs_buffer_list_pull_offset(buffer, &client_port->socket_address.local_ip, 4, IPV4_HDR_DST_OFFSET, (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
                         /* Save the port addresses for this socket. */
-                        ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.foreign_port, 2, (uint32_t)(ihl + TCP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
-                        ASSERT(fs_buffer_pull_offset(buffer, &client_port->socket_address.local_port, 2, (uint32_t)(ihl + TCP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        ASSERT(fs_buffer_list_pull_offset(buffer, &client_port->socket_address.foreign_port, 2, (uint32_t)(ihl + TCP_HRD_SRC_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        ASSERT(fs_buffer_list_pull_offset(buffer, &client_port->socket_address.local_port, 2, (uint32_t)(ihl + TCP_HRD_DST_PORT_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
                         /* Save the remote sequence number. */
                         /* Set IRS = SEG.SEQ. */
-                        ASSERT(fs_buffer_pull_offset(buffer, &irs, 4, (uint32_t)(ihl + TCP_HRD_SEQ_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
+                        ASSERT(fs_buffer_list_pull_offset(buffer, &irs, 4, (uint32_t)(ihl + TCP_HRD_SEQ_NUM_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
                         /* Set RCV.NXT = SEG.SEQ + 1. */
                         client_port->rcv_nxt = (uint32_t)(irs + 1);
@@ -2963,7 +2963,7 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
                 }
 
                 /* Add the received buffer back to the descriptor. */
-                fs_buffer_add_buffer_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+                fs_buffer_add_list_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
 
                 /* Release lock for buffer file descriptor. */
                 fd_release_lock(buffer->fd);

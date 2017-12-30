@@ -188,12 +188,12 @@ int32_t net_device_buffer_receive(FS_BUFFER_LIST *buffer, uint8_t protocol, uint
     SYS_LOG_FUNCTION_ENTRY(NET_DEVICE);
 
     /* Push the protocol on the buffer. */
-    status = fs_buffer_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD);
+    status = fs_buffer_list_push(buffer, &protocol, sizeof(uint8_t), FS_BUFFER_HEAD);
 
     if (status == SUCCESS)
     {
         /* Push the flag on the buffer. */
-        status = fs_buffer_push(buffer, &flags, sizeof(uint32_t), FS_BUFFER_HEAD);
+        status = fs_buffer_list_push(buffer, &flags, sizeof(uint32_t), FS_BUFFER_HEAD);
     }
 
     if (status == SUCCESS)
@@ -253,7 +253,7 @@ int32_t net_device_buffer_transmit(FS_BUFFER_LIST *buffer, uint8_t protocol, uin
                 tmp_buffer = buffer->next;
 
                 /* Push the protocol on this buffer. */
-                status = fs_buffer_push(buffer, &protocol, sizeof(uint8_t), (FS_BUFFER_HEAD | flags));
+                status = fs_buffer_list_push(buffer, &protocol, sizeof(uint8_t), (FS_BUFFER_HEAD | flags));
 
                 if (status == SUCCESS)
                 {
@@ -284,7 +284,7 @@ int32_t net_device_buffer_transmit(FS_BUFFER_LIST *buffer, uint8_t protocol, uin
             if ((status != SUCCESS) && (buffer != NULL))
             {
                 /* Free any buffers remaining on the buffer list. */
-                fs_buffer_add_buffer_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+                fs_buffer_add_list_list(buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
             }
 
             /* Set the status that buffer was consumed. */
