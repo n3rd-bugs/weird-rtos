@@ -135,6 +135,13 @@ int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data
         /* Wait for this work to complete. */
         status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
 
+        /* If work did not complete successfully. */
+        if (status != SUCCESS)
+        {
+            /* Return the status to the caller. */
+            status = -(status);
+        }
+
         /* Un-lock the scheduler. */
         scheduler_unlock();
     }
@@ -228,16 +235,12 @@ static void net_work_condition_process(void *data, int32_t resume_status)
             /* Clear the resume structure. */
             memset(&resume, 0, sizeof(RESUME));
 
-            /* If work competed successfully. */
-            if (status == SUCCESS)
+            /* If work did not compete successfully. */
+            if (status != SUCCESS)
             {
-                /* Resume the task normally. */
-                resume.status = TASK_RESUME;
-            }
-            else
-            {
-                /* Return the status of the work to the caller. */
-                resume.status = status;
+                /* Return the status of the work to the caller, but
+                 * always keep it positive. */
+                resume.status = ((status > 0) ? status : -(status));
             }
 
             /* Lock the scheduler. */
