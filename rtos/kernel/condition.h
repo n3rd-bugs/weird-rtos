@@ -35,8 +35,12 @@ typedef struct _resume
     /* Function that will be called to see if we need to resume. */
     CONDITION_DO_RESUME     *do_resume;
 
-    void        *param;     /* User defined criteria. */
-    int32_t     status;     /* Status needed to be returned to the task. */
+    /* User defined criteria. */
+    void        *param;
+
+    /* Status needed to be returned to the task. */
+    int32_t     status;
+
 } RESUME;
 
 /* Suspend data. */
@@ -49,8 +53,14 @@ struct _suspend
     /* System tick at which we will resume this condition. */
     uint32_t    timeout;
 
-    TASK        *task;      /* Task suspended on this. */
-    void        *param;     /* User defined criteria for the tasks. */
+    /* Task suspended on this. */
+    TASK        *task;
+
+    /* User defined criteria data for this suspend. */
+    void        *param;
+
+    /* Status to be returned to a suspended task. */
+    int32_t     status;
 
     /* Flag to specify if the timer is enabled. */
     uint8_t     timeout_enabled;
@@ -92,10 +102,6 @@ typedef struct _condition
     /* Private data that will be passed to the lock, unlock and suspend check
      * APIs.  */
     void                    *data;
-
-    /* Condition status, tasks resuming from this condition will have this
-     * status returned to them. */
-    int32_t                 status;
 
     /* Condition flags. */
     uint8_t                 flags;

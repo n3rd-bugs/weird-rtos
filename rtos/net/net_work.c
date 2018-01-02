@@ -48,6 +48,7 @@ void net_work_init(WORK_QUEUE *work_queue)
     work_queue->suspend.timeout = MAX_WAIT;
     work_queue->suspend.timeout_enabled = FALSE;
     work_queue->suspend.priority = NET_USER_PRIORITY;
+    work_queue->suspend.status = SUCCESS;
 
     /* Register work queue data with networking stack. */
     net_condition_add(&work_queue->condition, &work_queue->suspend, net_work_condition_process, work_queue);
@@ -111,9 +112,6 @@ int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data
         /* Lock the scheduler. */
         scheduler_lock();
 
-        /* Initialize suspend criteria. */
-        memset(suspend_ptr, 0, sizeof(SUSPEND));
-
         /* If we don't need to wait indefinitely. */
         if (wait != MAX_WAIT)
         {
@@ -127,8 +125,9 @@ int32_t net_work_add(WORK_QUEUE *queue, WORK *work, WORK_DO *work_do, void *data
             suspend_ptr->timeout_enabled = FALSE;
         }
 
-        /* Set user priority. */
+        /* Initialize suspend structure. */
         suspend_ptr->priority = NET_USER_PRIORITY;
+        suspend_ptr->status = SUCCESS;
 
         /* Pick the condition on which we need to wait. */
         condition = &work_ptr->condition;

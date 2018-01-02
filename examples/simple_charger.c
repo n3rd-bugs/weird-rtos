@@ -317,6 +317,7 @@ int main(void)
     adc_suspend.timeout = (uint32_t)(current_system_tick() + ADC_CHANNEL_DELAY);
     adc_suspend.timeout_enabled = TRUE;
     adc_suspend.priority = NET_USER_PRIORITY;
+    adc_suspend.status = SUCCESS;
 
     /* Initialize ADC condition data. */
     adc_condition.lock = &adc_int_lock;

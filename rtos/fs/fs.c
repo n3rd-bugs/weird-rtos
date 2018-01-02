@@ -311,6 +311,7 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
     param->flag = flag;
     suspend->param = param;
     suspend->priority = fs->priority;
+    suspend->status = SUCCESS;
 
     /* If timeout is enabled for this descriptor. */
     if (fs->timeout != MAX_WAIT)
@@ -611,9 +612,6 @@ int32_t fs_write(FD fd, const uint8_t *buffer, int32_t nbytes)
         /* Check if a write function was registered with this descriptor. */
         if (fs->write != NULL)
         {
-            /* Get condition for this file descriptor. */
-            fs_condition_get(fs, &condition, suspend_ptr, &param, FS_BLOCK_WRITE);
-
             /* If configured try to write on the descriptor until all the
              * data is sent. */
             do
@@ -632,6 +630,9 @@ int32_t fs_write(FD fd, const uint8_t *buffer, int32_t nbytes)
                      (!((fs->flags & FS_BUFFERED) &&
                         (fs->flags & FS_WRITE_NO_BLOCK)))))
                 {
+                    /* Get condition for this file descriptor. */
+                    fs_condition_get(fs, &condition, suspend_ptr, &param, FS_BLOCK_WRITE);
+
                     /* Suspend on space to become available. */
                     status = suspend_condition(&condition, &suspend_ptr, NULL, TRUE);
                 }
@@ -886,7 +887,7 @@ void fd_data_available(void *fd)
     fs_param.flag = FS_BLOCK_READ;
 
     /* Resume a task if any waiting on read on this file descriptor. */
-    fd_handle_criteria(fd, &fs_param, TASK_RESUME);
+    fd_handle_criteria(fd, &fs_param, SUCCESS);
 
 } /* fd_data_available */
 
@@ -923,7 +924,7 @@ void fd_space_available(void *fd)
     fs_param.flag = FS_BLOCK_WRITE;
 
     /* Resume a task if any waiting on write for this file descriptor. */
-    fd_handle_criteria(fd, &fs_param, TASK_RESUME);
+    fd_handle_criteria(fd, &fs_param, SUCCESS);
 
 } /* fd_space_available */
 

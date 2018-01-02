@@ -119,6 +119,7 @@ void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEN
     /* Initialize suspend criteria. */
     suspend->param = (void *)semaphore;
     suspend->priority = SUSPEND_MIN_PRIORITY;
+    suspend->status = SUCCESS;
 
     /* If we don't want to wait indefinitely. */
     if (timeout != MAX_WAIT)
@@ -200,10 +201,12 @@ static uint8_t semaphore_do_resume(void *param_resume, void *param_suspend)
  * @semaphore: Semaphore control block that is needed to be acquired.
  * @wait: The number of ticks to wait for this semaphore, MAX_WAIT should be
  *  used if user wants to wait for infinite time for this semaphore.
- * @return: SUCCESS if the semaphore was successfully acquired, CONDITION_TIMEOUT
- *  if the semaphore is busy and cannot be acquired, CONDITION_TIMEOUT if system
- *  has exhausted the given timeout to obtain this semaphore. SEMAPHORE_DELETED
- *  is returned if the given semaphore has been deleted.
+ * @return: SUCCESS if the semaphore was successfully acquired,
+ *  SEMAPHORE_BUSY will be returned if the semaphore is busy and cannot
+ *      be acquired,
+ *  CONDITION_TIMEOUT will be returned if system has exhausted the given
+ *      timeout to obtain this semaphore.
+ *  SEMAPHORE_DELETED will be returned if the given semaphore is now deleted.
  * This function is called to acquire a semaphore. User can specify the number
  * of ticks to wait before returning an error.
  */
@@ -314,7 +317,7 @@ void semaphore_release(SEMAPHORE *semaphore)
     /* Initialize resume parameters. */
     resume.do_resume = &semaphore_do_resume;
     resume.param = &param;
-    resume.status = TASK_RESUME;
+    resume.status = SUCCESS;
 
     /* Resume tasks waiting on this semaphore. */
     resume_condition(&semaphore->condition, &resume, TRUE);

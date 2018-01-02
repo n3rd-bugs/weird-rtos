@@ -193,14 +193,6 @@ void scheduler_task_yield(TASK *tcb, uint8_t from)
     /* Adjust the task control block as required. */
     switch (from)
     {
-    case YIELD_INIT:
-    case YIELD_MANUAL:
-
-        /* Task is resuming normally. */
-        tcb->state = TASK_RESUME;
-
-        break;
-
     case YIELD_SLEEP:
 
         /* Task is being resumed from sleep. */
@@ -210,6 +202,10 @@ void scheduler_task_yield(TASK *tcb, uint8_t from)
         break;
 
     default:
+
+        /* Task is resuming normally. */
+        tcb->state = TASK_RESUME;
+
         break;
     }
 

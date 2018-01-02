@@ -98,7 +98,7 @@ typedef struct _semaphore
      * protected lock. */
     uint8_t     interrupt_protected;
 
-    /* Padding variable. */
+    /* Structure padding. */
     uint8_t     pad[1];
 
 } SEMAPHORE;

@@ -707,6 +707,7 @@ void net_dhcp_client_start(NET_DEV *net_device)
         /* Disable timer by default. */
         client_data->suspend.timeout_enabled = FALSE;
         client_data->suspend.priority = NET_SOCKET_PRIORITY;
+        client_data->suspend.status = SUCCESS;
 
         /* Start from discover state. */
         dhcp_change_state(client_data, DHCP_CLI_DISCOVER);

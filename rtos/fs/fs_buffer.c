@@ -394,6 +394,7 @@ void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_
     suspend->param = param;
     suspend->timeout_enabled = FALSE;
     suspend->priority = fs->priority;
+    suspend->status = SUCCESS;
 
     /* Return the condition for this file system buffer. */
     *condition = &(data->condition);
@@ -717,7 +718,7 @@ void fs_buffer_add(FD fd, void *buffer, uint32_t type, uint32_t flags)
             /* Initialize resume criteria. */
             resume.do_resume = &fs_buffer_do_resume;
             resume.param = &param;
-            resume.status = TASK_RESUME;
+            resume.status = SUCCESS;
 
             /* Resume any tasks waiting on this buffer. */
             resume_condition(&data->condition, &resume, TRUE);

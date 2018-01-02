@@ -589,6 +589,7 @@ static void tcp_timer_register(TCP_PORT *port)
     port->timeout_suspend.suspend.timeout = MAX_WAIT;
     port->timeout_suspend.suspend.timeout_enabled = FALSE;
     port->timeout_suspend.suspend.priority = NET_SOCKET_PRIORITY;
+    port->timeout_suspend.suspend.status = SUCCESS;
 
     /* Add networking condition to process retransmission timer events. */
     net_condition_add(&port->timeout_suspend.condition, &port->timeout_suspend.suspend, &tcp_timeout_callback, (FD)port);

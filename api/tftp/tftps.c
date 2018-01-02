@@ -50,6 +50,7 @@ void tftp_server_init(TFTP_SERVER *tftp_server, SOCKET_ADDRESS *socket_address, 
     /* For now disable the timer. */
     tftp_server->port_suspend.timeout_enabled = FALSE;
     tftp_server->port_suspend.priority = NET_SOCKET_PRIORITY;
+    tftp_server->port_suspend.status = SUCCESS;
 
     /* Lets never block on this socket. */
     tftp_server->port.console.fs.flags &= (uint16_t)~(FS_BLOCK);

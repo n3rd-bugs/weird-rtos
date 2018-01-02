@@ -244,6 +244,7 @@ int32_t i2c_stm32f103_message(I2C_DEVICE *device, I2C_MSG *message)
         i2c_stm->suspend.timeout_enabled = TRUE;
         i2c_stm->suspend.timeout = current_system_tick() + MS_TO_TICK(STM_I2C_INT_TIMEOUT);
         i2c_stm->suspend.priority = SUSPEND_MIN_PRIORITY;
+        i2c_stm->suspend.status = SUCCESS;
 
         /* Suspend on the I2C interrupts to process this message. */
         status = suspend_condition(&condition, &suspend, NULL, FALSE);

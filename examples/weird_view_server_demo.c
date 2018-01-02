@@ -562,6 +562,7 @@ int main(void)
     /* Initialize condition data. */
     adc_suspend.timeout = (uint32_t)(current_system_tick() + ADC_CHANNEL_DELAY);
     adc_suspend.priority = NET_USER_PRIORITY;
+    adc_suspend.status = SUCCESS;
 
     /* Add a networking condition for to process ADC sample event. */
     net_condition_add(&adc_condition, &adc_suspend, &adc_sample_process, (void *)NULL);
