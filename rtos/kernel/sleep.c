@@ -69,7 +69,7 @@ void sleep_process_system_tick(void)
             tcb = (TASK *)sll_pop(&sleep_task_list, OFFSETOF(TASK, next_sleep));
 
             /* Task is not resumed. */
-            if (tcb->status == TASK_SUSPENDED)
+            if (tcb->state == TASK_SUSPENDED)
             {
                 /* Yield this task. */
                 scheduler_task_yield(tcb, YIELD_SLEEP);
@@ -162,7 +162,7 @@ void sleep_ticks(uint32_t ticks)
     DISABLE_INTERRUPTS();
 
     /* Task is being suspended. */
-    tcb->status = TASK_SUSPENDED;
+    tcb->state = TASK_SUSPENDED;
 
     /* Return control to the system.
      * We will resume from here when our required delay has been achieved. */

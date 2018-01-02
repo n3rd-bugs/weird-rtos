@@ -259,8 +259,8 @@ void util_print_sys_info(void)
         printf(str);
         P_STR_NCPY(str, P_STR("\t%lu\t%lu\t%lu\t"), sizeof(str));
         printf(str, tcb->stack_size, stack_free, tcb->stack_size - stack_free);
-        P_STR_NCPY(str, P_STR("%li\t%lu\t%lu\t"), sizeof(str));
-        printf(str, tcb->status, tcb->scheduled, tcb->tick_sleep);
+        P_STR_NCPY(str, P_STR("%d\t%lu\t%lu\t"), sizeof(str));
+        printf(str, tcb->state, tcb->scheduled, tcb->tick_sleep);
 #ifdef TASK_USAGE
         P_STR_NCPY(str, P_STR("%lu"), sizeof(str));
         printf(str, usage);
@@ -351,8 +351,8 @@ void util_print_sys_info_assert(void)
         serial_assert_puts((uint8_t *)str, 0);
         snprintf(str, sizeof(str), str_fmt, tcb->stack_size - stack_free);
         serial_assert_puts((uint8_t *)str, 0);
-        P_STR_NCPY(str_fmt, P_STR("%li\t"), sizeof(str_fmt));
-        snprintf(str, sizeof(str), str_fmt, tcb->status);
+        P_STR_NCPY(str_fmt, P_STR("%d\t"), sizeof(str_fmt));
+        snprintf(str, sizeof(str), str_fmt, tcb->state);
         serial_assert_puts((uint8_t *)str, 0);
         P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->scheduled);
@@ -492,8 +492,8 @@ int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *buffer)
 
         if (status == SUCCESS)
         {
-            P_STR_NCPY(str_fmt, P_STR("%li\t"), sizeof(str_fmt));
-            snprintf(str, sizeof(str), str_fmt, tcb->status);
+            P_STR_NCPY(str_fmt, P_STR("%d\t"), sizeof(str_fmt));
+            snprintf(str, sizeof(str), str_fmt, tcb->state);
             status = fs_buffer_list_push(buffer, (uint8_t *)str, strlen(str), 0);
         }
 

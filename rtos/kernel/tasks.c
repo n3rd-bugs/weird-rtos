@@ -55,7 +55,7 @@ void task_create(TASK *tcb, P_STR_T name, uint8_t *stack, uint32_t stack_size, T
     tcb->entry = entry;
     tcb->argv = argv;
     tcb->flags = flags;
-    tcb->status = TASK_FINISHED;
+    tcb->state = TASK_FINISHED;
 
     /* Adjust task's stack pointer. */
     TOS_SET(tcb->tos, stack, stack_size);
@@ -96,7 +96,7 @@ static void task_entry_return(void *argv)
         DISABLE_INTERRUPTS();
 
         /* Update the task status that it is now finished. */
-        tcb->status = TASK_FINISHED;
+        tcb->state = TASK_FINISHED;
 
         /* Task is now the property of the initializer. */
         CONTROL_TO_SYSTEM();

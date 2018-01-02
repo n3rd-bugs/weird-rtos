@@ -93,6 +93,10 @@ typedef struct _condition
      * APIs.  */
     void                    *data;
 
+    /* Condition status, tasks resuming from this condition will have this
+     * status returned to them. */
+    int32_t                 status;
+
     /* Condition flags. */
     uint8_t                 flags;
 

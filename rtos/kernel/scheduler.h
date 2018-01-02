@@ -26,12 +26,6 @@
 #define YIELD_MANUAL                (0x02)
 #define YIELD_SLEEP                 (0x03)
 
-/* Some task resume status. */
-#define TASK_SUSPENDED              (0)
-#define TASK_RESUME                 (1)
-#define TASK_RESUME_SLEEP           (2)
-#define TASK_FINISHED               (3)
-
 /* Global task list. */
 #ifdef TASK_STATS
 extern TASK_LIST sch_task_list;

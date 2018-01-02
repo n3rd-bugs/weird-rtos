@@ -86,7 +86,7 @@ void scheduler_task_remove(TASK *tcb)
     scheduler_lock();
 
     /* Task should be in finished state. */
-    ASSERT(tcb->status != TASK_FINISHED);
+    ASSERT(tcb->state != TASK_FINISHED);
 
 #ifdef TASK_STATS
     /* Remove this task from global task list. */
@@ -197,7 +197,7 @@ void scheduler_task_yield(TASK *tcb, uint8_t from)
     case YIELD_MANUAL:
 
         /* Task is resuming normally. */
-        tcb->status = TASK_RESUME;
+        tcb->state = TASK_RESUME;
 
         break;
 
@@ -205,7 +205,7 @@ void scheduler_task_yield(TASK *tcb, uint8_t from)
 
         /* Task is being resumed from sleep. */
         tcb->tick_sleep = 0;
-        tcb->status = TASK_RESUME_SLEEP;
+        tcb->state = TASK_SLEEP_RESUME;
 
         break;
 

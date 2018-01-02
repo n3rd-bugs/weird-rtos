@@ -27,6 +27,12 @@
 #define TASK_NO_RETURN      0x01        /* This task will never return. */
 #define TASK_SCHED_DRIFT    0x02        /* This task has caused scheduler to miss a tick. */
 
+/* Some task resume status. */
+#define TASK_SUSPENDED              (0)
+#define TASK_RESUME                 (1)
+#define TASK_SLEEP_RESUME           (2)
+#define TASK_FINISHED               (3)
+
 /* This is task entry function. */
 typedef void TASK_ENTRY (void *argv);
 
@@ -82,8 +88,8 @@ struct _task
     uint32_t    tick_sleep;
 #endif /* CONFIG_SLEEP */
 
-    /* Current task status. */
-    int32_t     status;
+    /* Current task state. */
+    uint8_t     state;
 
     /* Number of wait conditions on which this task is waiting. */
     uint8_t     num_conditions;
@@ -96,6 +102,9 @@ struct _task
 
     /* Lock count, how much nested scheduler locks have we acquired. */
     uint8_t     lock_count;
+
+    /* Structure padding. */
+    uint8_t     pad[3];
 };
 
 /* This defines a task list. */
