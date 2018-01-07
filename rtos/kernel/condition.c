@@ -444,6 +444,23 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
         /* Restore old interrupt level. */
         SET_INTERRUPT_LEVEL(interrupt_level);
 
+#ifdef CONFIG_SLEEP
+        /* Check if we did not resume due to a timeout and we were actually
+         * waiting on a timeout. */
+        if ((task_state != TASK_SLEEP_RESUME) && (timeout != MAX_WAIT))
+        {
+            /* Disable preemption. */
+            scheduler_lock();
+
+            /* Remove this task from sleeping tasks before locking the
+             * condition as we might end up being resumed. */
+            sleep_remove_from_list(tcb);
+
+            /* Enable preemption. */
+            scheduler_unlock();
+        }
+#endif /* CONFIG_SLEEP */
+
         /* Enable preemption. */
         scheduler_unlock();
 
@@ -453,6 +470,9 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
         /* Check if we are resumed due to a timeout. */
         if (task_state == TASK_SLEEP_RESUME)
         {
+            /* Should never happen. */
+            ASSERT(timeout == MAX_WAIT);
+
             /* Remove this task from all the conditions. */
             suspend_condition_remove_all(condition, suspend, num_conditions);
 
@@ -468,21 +488,6 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
 
         else
         {
-#ifdef CONFIG_SLEEP
-            /* Check if we were waiting on a timeout. */
-            if (timeout != MAX_WAIT)
-            {
-                /* Disable preemption. */
-                scheduler_lock();
-
-                /* Remove this task from sleeping tasks. */
-                sleep_remove_from_list(tcb);
-
-                /* Enable preemption. */
-                scheduler_unlock();
-            }
-#endif /* CONFIG_SLEEP */
-
             /* Remove the task from all the conditions except the one from
              * which we resumed. */
             suspend_condition_remove(condition, suspend, num_conditions, resume_condition, &return_num);
