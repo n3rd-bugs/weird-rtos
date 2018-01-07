@@ -33,7 +33,7 @@ static void tcp_resume_socket(TCP_PORT *, uint8_t);
 static int32_t tcp_port_wait(TCP_PORT *, uint8_t);
 static int32_t tcp_process_options(FS_BUFFER_LIST *, TCP_PORT *, uint32_t, uint16_t);
 static int32_t tcp_add_option(FS_BUFFER_LIST *, uint8_t, uint8_t, void *, uint8_t);
-static int32_t tcp_add_options(FS_BUFFER_LIST *, TCP_PORT *, uint8_t, uint8_t *, uint8_t);
+static int32_t tcp_add_options(FS_BUFFER_LIST *, uint16_t, uint8_t *, uint8_t, uint8_t *, uint8_t);
 static void tcp_timer_register(TCP_PORT *);
 static void tcp_timer_unregister(TCP_PORT *);
 static void tcp_timeout_update(TCP_PORT *);
@@ -515,7 +515,7 @@ static int32_t tcp_add_option(FS_BUFFER_LIST *buffer, uint8_t type, uint8_t leng
  * This function will add TCP configuration options for the given TCP port, as
  * defined by the option flags.
  */
-static int32_t tcp_add_options(FS_BUFFER_LIST *buffer, TCP_PORT *port, uint8_t opt_flags, uint8_t *opt_size, uint8_t flags)
+static int32_t tcp_add_options(FS_BUFFER_LIST *buffer, uint16_t mss, uint8_t *rcv_wnd_scale, uint8_t opt_flags, uint8_t *opt_size, uint8_t flags)
 {
     int32_t status = SUCCESS;
     uint8_t ret_size = 0, opt_value_8;
@@ -526,7 +526,7 @@ static int32_t tcp_add_options(FS_BUFFER_LIST *buffer, TCP_PORT *port, uint8_t o
     if (opt_flags & TCP_FLAG_MSS)
     {
         /* Add maximum segment size option. */
-        status = tcp_add_option(buffer, TCP_OPT_MSS, 4, &port->mss, (FS_BUFFER_PACKED | flags));
+        status = tcp_add_option(buffer, TCP_OPT_MSS, 4, &mss, (FS_BUFFER_PACKED | flags));
 
         if (status == SUCCESS)
         {
@@ -545,7 +545,7 @@ static int32_t tcp_add_options(FS_BUFFER_LIST *buffer, TCP_PORT *port, uint8_t o
         if (status == SUCCESS)
         {
             /* Save the receive window scale. */
-            port->rcv_wnd_scale = TCP_WND_SCALE;
+            *rcv_wnd_scale = TCP_WND_SCALE;
 
             /* Add number of bytes we have added for window scale option. */
             ret_size = (uint8_t)(ret_size + 3);
@@ -910,8 +910,8 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
     FS_BUFFER_LIST *buffer = NULL;
     int32_t status = SUCCESS;
     FD buffer_fd;
-    uint8_t opt_size = 0, opt_flags;
-    uint16_t csum;
+    uint8_t opt_size = 0, opt_flags, rcv_wnd_scale;
+    uint16_t csum, mss;
     TCP_RTX_DATA *rtx = NULL;
 
     SYS_LOG_FUNCTION_ENTRY(TCP);
@@ -1030,8 +1030,27 @@ static int32_t tcp_send_segment(TCP_PORT *port, SOCKET_ADDRESS *socket_address, 
                         opt_flags = port->flags;
                     }
 
+                    /* Save the maximum segment size and port window scale. */
+                    mss = port->mss;
+                    rcv_wnd_scale = port->rcv_wnd_scale;
+
+                    /* Release lock for the port. */
+                    fd_release_lock(port);
+
+                    /* Obtain lock for buffer file descriptor. */
+                    ASSERT(fd_get_lock(buffer_fd) != SUCCESS);
+
                     /* Add TCP configuration options. */
-                    status = tcp_add_options(buffer, port, opt_flags, &opt_size, (buffer_flags & (uint8_t)(~FS_BUFFER_SUSPEND)));
+                    status = tcp_add_options(buffer, mss, &rcv_wnd_scale, opt_flags, &opt_size, (buffer_flags & (uint8_t)(~FS_BUFFER_SUSPEND)));
+
+                    /* Release lock for buffer descriptor. */
+                    fd_release_lock(buffer_fd);
+
+                    /* Lock the TCP port. */
+                    ASSERT(fd_get_lock(port));
+
+                    /* Update receive window scale. */
+                    port->rcv_wnd_scale = rcv_wnd_scale;
 
                     /* Release lock for the port. */
                     fd_release_lock(port);
@@ -2152,8 +2171,16 @@ int32_t net_process_tcp(FS_BUFFER_LIST *buffer, uint32_t ihl, uint32_t iface_add
                                         /* Clear the TCP port option flag for window scale. */
                                         port->flags &= (TCP_FLAG_WND_SCALE);
 
+                                        /* Obtain lock for buffer file descriptor. */
+                                        /* Both port and buffers are locked here, it is
+                                         * okay as we will not suspend on buffers here. */
+                                        ASSERT(fd_get_lock(buffer->fd) != SUCCESS);
+
                                         /* Process received TCP options. */
                                         status = tcp_process_options(buffer, port, (uint32_t)(ihl + TCP_HRD_SIZE), (uint16_t)(((flags & TCP_HDR_HDR_LEN_MSK) >> (TCP_HDR_HDR_LEN_SHIFT - 2)) - TCP_HRD_SIZE));
+
+                                        /* Release semaphore for the buffer file descriptor. */
+                                        fd_release_lock(buffer->fd);
 
                                         /* If TCP options were successfully parsed. */
                                         if (status == SUCCESS)
@@ -2886,6 +2913,8 @@ int32_t tcp_accept(TCP_PORT *server_port, TCP_PORT *client_port)
                 if (status == SUCCESS)
                 {
                     /* Obtain lock for buffer file descriptor. */
+                    /* Both port and buffers are locked here, it is
+                     * okay as we will not suspend on buffers here. */
                     ASSERT(fd_get_lock(buffer->fd));
 
                     /* Get value for IHL and TCP header flags. */
