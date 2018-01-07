@@ -21,7 +21,7 @@
 /* PPP over serial device data. */
 static PPP ppp_usart2;
 static STM32_USART usart2;
-FS_BUFFER_DATA usart2_buffer_data;
+static FS_BUFFER_DATA usart2_buffer_data;
 static uint8_t usart2_buffer_space[PPP_MAX_BUFFER_SIZE * PPP_NUM_BUFFERS];
 static FS_BUFFER usart2_buffer_ones[PPP_NUM_BUFFERS];
 static FS_BUFFER_LIST usart2_buffer_lists[PPP_NUM_BUFFER_LIST];
