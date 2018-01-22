@@ -43,13 +43,6 @@ void enc28j60_init(ENC28J60 *device)
 
     SYS_LOG_FUNCTION_ENTRY(ENC28J60);
 
-    /* Initialize SPI parameters. */
-    device->spi.baudrate = 21000000;
-    device->spi.cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA);
-
-    /* Do SPI initialization. */
-    spi_init(&device->spi);
-
     /* Set the buffer data structure for this file descriptor. */
     device->fs_buffer_data.buffer_space = device->buffer;
     device->fs_buffer_data.buffer_size = ENC28J60_MAX_BUFFER_SIZE;

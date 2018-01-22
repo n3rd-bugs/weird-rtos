@@ -22,6 +22,7 @@
 /* ENC28J60 device configuration. */
 #define ENC28J60_AVR_RESET_DELAY            (100)
 #define ENC28J60_USE_SPI_BB                 (FALSE)
+#define ENC28J60_AVR_BAUDRATE               (21000000)
 
 /* Bit-bang SPI interface configuration for ENC28J60 controller. */
 #define ENC28J60_AVR_SPI_SS_BB              (4)

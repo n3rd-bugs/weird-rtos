@@ -93,6 +93,13 @@ void enc28j60_stm32f407_init(void)
     /* Initialize name for this device. */
     enc28j60.ethernet_device.fs.name = "\\ethernet\\enc28j60";
 
+    /* Initialize SPI parameters. */
+    enc28j60.spi.baudrate = ENC28J60_STM32F407_BAUDRATE;
+    enc28j60.spi.cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA);
+
+    /* Do SPI initialization. */
+    spi_init(&enc28j60.spi);
+
     /* Do enc28j60 initialization. */
     enc28j60_init(&enc28j60);
 
