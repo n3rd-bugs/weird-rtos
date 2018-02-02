@@ -21,7 +21,9 @@
 #include <semaphore.h>
 
 /* Dynamic memory configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <mem_dynamic_config.h>
+#else
 #define MEM_BNDRY_CHECK
 #define MEM_FREE_CHECK
 #define MEM_ID_CHECK

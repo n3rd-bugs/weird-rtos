@@ -27,7 +27,9 @@
 #error "Console driver is required for LCD_AN driver."
 #endif
 
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <lcd_an_config.h>
+#else
 #define LCD_AN_DEBUG
 //#define LCD_AN_NO_BUSY_WAIT
 

@@ -17,7 +17,9 @@
 #ifdef CONFIG_NET
 
 /* Networking configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <net_config.h>
+#else
 #define NET_IPV4
 #define NET_ICMP
 #define NET_UDP

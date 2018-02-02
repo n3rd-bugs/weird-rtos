@@ -18,7 +18,9 @@
 #include <net.h>
 
 #ifdef NET_DHCP
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <net_dhcp_config.h>
+#else
 #define DHCP_CLIENT
 #endif /* CMAKE_BUILD */
 #ifndef CONFIG_ETHERNET

@@ -24,8 +24,10 @@
 #include <net_dhcp.h>
 #include <net_udp.h>
 
+#ifdef CMAKE_BUILD
+#include <net_dhcp_client_config.h>
+#else
 /* DHCP client configuration. */
-#ifndef CMAKE_BUILD
 #define DHCP_BASE_TIMEOUT       (2000)
 #define DHCP_MAX_TIMEOUT        (64000)
 #define DHCP_MAX_RETRY          (4)

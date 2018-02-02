@@ -16,7 +16,9 @@
 #include <kernel.h>
 
 /* Scheduler lock configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <scheduler_config.h>
+#else
 #define SCHEDULER_MAX_LOCK          (5)
 #endif /* CMAKE_BUILD */
 

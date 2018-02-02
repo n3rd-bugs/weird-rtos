@@ -22,7 +22,9 @@
 #include <console.h>
 
 /* TCP configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <net_tcp_config.h>
+#else
 #define TCP_WND_SIZE                (1024)
 #define TCP_WND_SCALE               (2)
 #define TCP_RTO                     (750)

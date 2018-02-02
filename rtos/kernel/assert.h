@@ -17,7 +17,9 @@
 #include <kernel.h>
 
 /* Assert configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <assert_config.h>
+#else
 #define ASSERT_NONE
 #define ASSERT_FILE_INFO
 #endif /* CMAKE_BUILD */

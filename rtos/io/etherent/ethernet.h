@@ -29,7 +29,9 @@
 #include <net_device.h>
 
 /* Ethernet configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <ethernet_config.h>
+#else
 #define ETHERNET_ENC28J60
 #endif /* CMAKE_BUILD */
 

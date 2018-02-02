@@ -17,7 +17,9 @@
 #ifdef CONFIG_FS
 
 /* Buffer configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <fs_buffer_config.h>
+#else
 //#define FS_BUFFER_DEBUG
 #endif /* CMAKE_BUILD */
 

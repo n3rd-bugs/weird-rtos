@@ -20,7 +20,9 @@
 #ifdef NET_ICMP
 
 /* ICMP configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <net_icmp_config.h>
+#else
 #define ICMP_ENABLE_PING
 #endif /* CMAKE_BUILD */
 

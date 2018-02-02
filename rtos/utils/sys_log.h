@@ -14,7 +14,9 @@
 #define _SYS_LOG_H_
 
 /* System log configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <sys_log_config.h>
+#else
 #define SYS_LOG_NONE
 //#define SYS_LOG_RUNTIME_UPDATE
 #define SYS_LOG_DEFAULT         ((SYS_LOG_INFO) | (SYS_LOG_WARN) | (SYS_LOG_ERROR))

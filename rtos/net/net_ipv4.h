@@ -25,7 +25,9 @@
 typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 #endif
 
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <net_ipv4_config.h>
+#else
 /* IPv4 stack configuration. */
 #define IPV4_ENABLE_FRAG
 

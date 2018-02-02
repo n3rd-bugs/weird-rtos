@@ -17,7 +17,9 @@
 #include <assert.h>
 
 /* SLL configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <sll_config.h>
+#else
 //#define SLL_INLINE
 //#define SLL_DEBUG
 #endif /* CMAKE_BUILD */

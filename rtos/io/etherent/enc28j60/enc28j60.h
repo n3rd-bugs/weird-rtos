@@ -36,7 +36,9 @@
 /* Error code definitions. */
 #define ENC28J60_DISCONNECTED       -11000
 
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <enc28j60_config.h>
+#else
 /* ENC28J60 watch dog configuration. */
 #define ENC28J60_WDT_TIMEOUT        (1000)
 
@@ -46,7 +48,7 @@
 
 /* ENC28J60 configurations. */
 #define ENC28J60_CONTINUE_READ      TRUE
-#define ENC28J60_INT_POLL           TRUE
+#define ENC28J60_INT_POLL           FALSE
 
 /* ENC28J60 device configuration. */
 #define ENC28J60_REV_ID             (0x06)

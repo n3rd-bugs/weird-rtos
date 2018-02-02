@@ -35,7 +35,9 @@
 #define NULL                        (0)
 
 /* Number of system ticks per second. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <kernel_config.h>
+#else
 #define SOFT_TICKS_PER_SEC          (uint32_t)(100)
 #endif /* CMAKE_BUILD */
 #define MS_TO_TICK(a)               ((uint32_t)(((uint32_t)(a) * SOFT_TICKS_PER_SEC) / (1000)))

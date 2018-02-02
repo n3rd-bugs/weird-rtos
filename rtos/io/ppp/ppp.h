@@ -25,7 +25,9 @@
 #include <net.h>
 
 /* PPP configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <ppp_config.h>
+#else
 #define PPP_MODEM_CHAT
 #endif /* CMAKE_BUILD */
 

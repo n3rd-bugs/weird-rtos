@@ -19,7 +19,9 @@
 #ifdef NET_IPV4
 
 /* Number of route entries to manage. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <net_route_config.h>
+#else
 #define NET_NUM_ROUTES          (4)
 #endif /* CMAKE_BUILD */
 

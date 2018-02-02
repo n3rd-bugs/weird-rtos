@@ -21,7 +21,9 @@
 #include <spi.h>
 
 /* Enable file system interface of MMC. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <mmc_spi_config.h>
+#else
 #define MMC_SPI_FS
 #endif /* CMAKE_BUILD */
 

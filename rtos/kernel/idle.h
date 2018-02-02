@@ -16,7 +16,9 @@
 #include <kernel.h>
 
 /* Idle work configurations. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <idle_config.h>
+#else
 //#define IDLE_RUNTIME_UPDATE
 #define IDLE_WORK_MAX           (0)
 #define IDLE_TASK_STACK_SIZE    (64)

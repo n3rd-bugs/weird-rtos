@@ -21,7 +21,9 @@
 #include <console.h>
 
 /* UDP stack configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <net_udp_config.h>
+#else
 #define UDP_CSUM
 #endif /* CMAKE_BUILD */
 

@@ -17,7 +17,9 @@
 #include <config.h>
 
 /* Task configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <tasks_config.h>
+#else
 //#define TASK_STATS
 #define TASK_USAGE
 #define TASK_STACK_PATTERN  'A'
