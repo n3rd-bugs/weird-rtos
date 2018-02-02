@@ -41,6 +41,19 @@
 #define ENC28J60_AVR_SPI_PIN_SCLK_BB        (0x3)
 #define ENC28J60_AVR_SPI_DDR_SCLK_BB        (0x4)
 #define ENC28J60_AVR_SPI_PORT_SCLK_BB       (0x5)
+
+/* Reset PIN configurations. */
+#define ENC28J60_RST                        (4)
+#define ENC28J60_RST_PORT                   (PORTD)
+#define ENC28J60_RST_DDR                    (DDRD)
+#define ENC28J60_RST_PIN                    (PIND)
+
+/* Interrupt PIN configurations. */
+#define ENC28J60_INT_SOURCE                 (INT0)
+#define ENC28J60_INT                        (2)
+#define ENC28J60_INT_PORT                   (PORTD)
+#define ENC28J60_INT_DDR                    (DDRD)
+#define ENC28J60_INT_PIN                    (PIND)
 #endif /* CMAKE_BUILD */
 
 /* Function prototypes. */

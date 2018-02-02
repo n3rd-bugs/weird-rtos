@@ -40,17 +40,17 @@ void enc28j60_avr_init(void)
     /* Clear the enc28j60 device structure. */
     memset(&enc28j60, 0, sizeof(ENC28J60));
 
-    /* Set RST (PD.4) as output and INT (PD.2) as input. */
-    DDRD |= (1 << 4);
-    DDRD &= (uint8_t)~(1 << 2);
+    /* Set RST as output and INT (PD.2) as input. */
+    ENC28J60_RST_DDR |= (1 << ENC28J60_RST);
+    ENC28J60_INT_DDR &= (uint8_t)~(1 << ENC28J60_INT);
 
 #if (ENC28J60_INT_POLL == FALSE)
     /* Disable INT0 interrupt. */
-    EIMSK &= (uint8_t)~(1 << 0);
+    EIMSK &= (uint8_t)~(1 << ENC28J60_INT_SOURCE);
 
     /* Setup INT0 to raise an interrupt on falling edge. */
-    EICRA &= (uint8_t)~(0x03 << 0);
-    EICRA |= (0x02 << 0);
+    EICRA &= (uint8_t)~(0x03 << (ENC28J60_INT_SOURCE * 2));
+    EICRA |= (0x02 << (ENC28J60_INT_SOURCE * 2));
 #endif
 
     /* Initialize device APIs. */
@@ -139,7 +139,7 @@ void enc28j60_avr_enable_interrupt(ENC28J60 *device)
     if (device->flags & ENC28J60_INT_ENABLE)
     {
         /* Enable INT0 to process enc28j60 device interrupts. */
-        EIMSK |= (1 << 0);
+        EIMSK |= (1 << ENC28J60_INT_SOURCE);
     }
 
 } /* enc28j60_avr_enable_interrupt */
@@ -156,7 +156,7 @@ void enc28j60_avr_disable_interrupt(ENC28J60 *device)
     UNUSED_PARAM(device);
 
     /* Disable INT0 interrupt. */
-    EIMSK &= (uint8_t)~(1 << 0);
+    EIMSK &= (uint8_t)~(1 << ENC28J60_INT_SOURCE);
 
 } /* enc28j60_avr_disable_interrupt */
 #endif
@@ -173,7 +173,7 @@ uint8_t enc28j60_avr_interrupt_pin(ENC28J60 *device)
     UNUSED_PARAM(device);
 
     /* Return if interrupt pin is high. */
-    return ((PIND & (1 << 2)) != FALSE);
+    return ((ENC28J60_INT_PIN & (1 << ENC28J60_INT)) != FALSE);
 
 } /* enc28j60_avr_interrupt_pin */
 
@@ -186,8 +186,8 @@ void enc28j60_avr_reset(ENC28J60 *device)
 {
     FD *fd = (FD)device;
 
-    /* Clear the RST, i.e. PD.4. */
-    PORTD &= (uint8_t)~(1 << 4);
+    /* Clear the RST. */
+    ENC28J60_RST_PORT &= (uint8_t)~(1 << ENC28J60_RST);
 
     /* Release lock for this device. */
     fd_release_lock(fd);
@@ -198,8 +198,8 @@ void enc28j60_avr_reset(ENC28J60 *device)
     /* Acquire lock for this device. */
     ASSERT(fd_get_lock(fd) != SUCCESS);
 
-    /* Set the RST, i.e. PD.4. */
-    PORTD |= (1 << 4);
+    /* Set the RST. */
+    ENC28J60_RST_PORT |= (1 << ENC28J60_RST);
 
 } /* enc28j60_avr_reset */
 

@@ -10,5 +10,8 @@ set(atmega_port_values PORTA PORTB PORTC PORTD CACHE INTERNAL "" FORCE)
 # Valid DDR registers.
 set(atmega_ddr_values DDRA DDRB DDRC DDRD CACHE INTERNAL "" FORCE)
 
+# Valid external interrupt sources.
+set(atmega_int_values INT0 INT1 INT2 CACHE INTERNAL "" FORCE)
+
 # Save register map function.
 set(atmega_regmap ${CMAKE_CURRENT_SOURCE_DIR}/atmegaxx4_regmap.cmake CACHE INTERNAL "" FORCE)
