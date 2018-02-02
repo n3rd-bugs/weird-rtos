@@ -802,7 +802,7 @@ int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
     int32_t status = SUCCESS;
     uint8_t flags = FS_BUFFER_SUSPEND;
 
-    /* If this is a buffered console. */
+    /* If this is a buffered descriptor. */
     if (fs->flags & FS_BUFFERED)
     {
         /* Get lock for this file descriptor. */
@@ -824,7 +824,7 @@ int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
             /* Push data on the buffer. */
             if (fs_buffer_list_push(buffer, (uint8_t *)buf, (uint32_t)n, flags) == SUCCESS)
             {
-                /* Pass this buffer to the serial driver. */
+                /* Pass this buffer to the descriptor. */
                 buf = (uint8_t *)buffer;
             }
             else
@@ -848,7 +848,7 @@ int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
 
     if (status == SUCCESS)
     {
-        /* Use the debug FD. */
+        /* Write on the given file descriptor. */
         n = fs_write(fs, buf, n);
 
         /* If file was not written and we tried to write a buffer. */
@@ -868,6 +868,64 @@ int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
     return (n);
 
 } /* fs_puts */
+
+/*
+ * fs_gets
+ * @fd: File descriptor from which we need to read a string.
+ * @buf: Buffer in which data will be read.
+ * @n: Number of bytes to be read.
+ * @return: Returns number of bytes read from the descriptor.
+ * This function read data from the given file descriptor. This API is not
+ * counter part with gets as it will return any data that become available on
+ * the descriptor, rather reading till new line.
+ */
+int32_t fs_gets(FD fd, const uint8_t *buf, int32_t n)
+{
+    FS_BUFFER_LIST *list;
+    FS *fs = (FS *)fd;
+    int32_t status;
+
+    /* If this is a buffered descriptor. */
+    if (fs->flags & FS_BUFFERED)
+    {
+        /* Read data from the given descriptor. */
+        status = fs_read(fs, (uint8_t *)&list, sizeof(FS_BUFFER_LIST *));
+
+        /* If we did read some data. */
+        if (status > 0)
+        {
+            /* Get lock for this file descriptor. */
+            ASSERT(fd_get_lock(fs) != SUCCESS);
+
+            /* Pull data from the RX buffer. */
+            fs_buffer_list_pull(list, (uint8_t *)buf, n, FS_BUFFER_HEAD);
+
+            /* If we have some data left in the list. */
+            if (list->total_length > 0)
+            {
+                /* Put remaining list on the RX list. */
+                fs_buffer_add(fs, list, FS_BUFFER_RX, FS_BUFFER_HEAD);
+            }
+            else
+            {
+                /* Free this buffer list. */
+                fs_buffer_add(fs, list, FS_LIST_FREE, FS_BUFFER_HEAD);
+            }
+
+            /* Release lock for this file descriptor. */
+            fd_release_lock(fs);
+        }
+    }
+    else
+    {
+        /* Read data from the given descriptor. */
+        n = fs_read(fs, (uint8_t *)buf, n);
+    }
+
+    /* Return number of bytes written. */
+    return (n);
+
+} /* fs_gets */
 
 /*
  * fd_data_available

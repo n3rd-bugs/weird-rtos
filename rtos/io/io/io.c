@@ -88,11 +88,10 @@ int io_gets(char *s, int32_t n)
     /* If we do have a serial port. */
     if (serial != NULL)
     {
+        /* Read data from the serial port. */
 #ifdef FS_CONSOLE
-        /* Write given string on the serial port. */
-        n = fs_read(serial, (uint8_t *)s, n);
+        n = fs_gets(serial, (uint8_t *)s, n);
 #else
-        /* Print the result on the serial. */
         n = debug_serial->device.gets(serial, serial->device.data, (uint8_t *)s, n, 0);
 #endif /* FS_CONSOLE */
     }
