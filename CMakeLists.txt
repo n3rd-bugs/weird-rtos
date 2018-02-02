@@ -25,10 +25,11 @@ endif ()
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/helper.cmake)
 
 # Initialize global variables.
-set(RTOS_SOURCES "" CACHE INTERNAL "RTOS_SOURCES" FORCE)
-set(RTOS_LINK_SOURCES "" CACHE INTERNAL "RTOS_LINK_SOURCES" FORCE)
-set(RTOS_INCLUDES "" CACHE INTERNAL "RTOS_INCLUDES" FORCE)
-set(RTOS_DEFS "" CACHE INTERNAL "RTOS_DEFS" FORCE)
+unset(RTOS_SOURCES CACHE)
+unset(RTOS_LINK_SOURCES CACHE)
+unset(RTOS_INCLUDES CACHE)
+unset(RTOS_DEFS CACHE)
+unset(RTOS_DEFS_FILES CACHE)
 set(RTOS_LIB ${PROJECT_NAME} CACHE INTERNAL "RTOS_LIB" FORCE)
 
 # Add CMAKE_BUILD to disable manual configurations.
@@ -41,7 +42,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/rtos)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/port)
 
 # Write a configuration file.
-generate_configuration(${RTOS_DEFS} ${CMAKE_BINARY_DIR}/config/ config_cmake.h)
+generate_configuration(RTOS_DEFS ${CMAKE_BINARY_DIR}/config/ RTOS_DEFS_FILES)
 set(RTOS_INCLUDES ${RTOS_INCLUDES} ${CMAKE_BINARY_DIR}/config/ CACHE INTERNAL "RTOS_INCLUDES" FORCE)
 
 # Create an RTOS library from the collected sources.
