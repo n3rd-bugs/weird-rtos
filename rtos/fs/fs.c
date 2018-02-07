@@ -898,7 +898,7 @@ int32_t fs_gets(FD fd, const uint8_t *buf, int32_t n)
             ASSERT(fd_get_lock(fs) != SUCCESS);
 
             /* Pull data from the RX buffer. */
-            fs_buffer_list_pull(list, (uint8_t *)buf, n, FS_BUFFER_HEAD);
+            fs_buffer_list_pull(list, (uint8_t *)buf, (uint32_t)n, 0);
 
             /* If we have some data left in the list. */
             if (list->total_length > 0)
