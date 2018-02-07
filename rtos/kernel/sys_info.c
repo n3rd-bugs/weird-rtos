@@ -357,6 +357,7 @@ void util_print_sys_info_assert(void)
         P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->scheduled);
         serial_assert_puts((uint8_t *)str, 0);
+        P_STR_NCPY(str_fmt, P_STR("%lu\r\n"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->tick_sleep);
         serial_assert_puts((uint8_t *)str, 0);
 
