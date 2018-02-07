@@ -691,7 +691,7 @@ static int32_t bootload_stk(void)
                     for (i = 0; i < size; i ++)
                     {
                         /* Put a byte on serial. */
-                        bootload_avr_putc(pgm_read_byte_far(load_address + i));
+                        bootload_avr_putc(pgm_read_byte(load_address + i));
                     }
 
                     /* Page read complete. */
