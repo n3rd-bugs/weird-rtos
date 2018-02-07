@@ -195,11 +195,16 @@ static int32_t serial_read(void *fs, uint8_t *buf, int32_t nbytes)
         /* See if we have a buffer to read from. */
         buffer = fs_buffer_get(serial, FS_BUFFER_RX, 0);
 
-        /* If we have a buffer and we are in TX. */
+        /* If we have a buffer to return. */
         if (buffer != NULL)
         {
             /* Return a buffer from the RX list. */
             (*((FS_BUFFER_LIST **)buf)) = buffer;
+        }
+        else
+        {
+            /* We don't have an RX buffer. */
+            n = 0;
         }
     }
     else
