@@ -19,15 +19,15 @@
 
 #ifndef CMAKE_BUILD
 /* Some configurations. */
-#define BAUD_RATE                       115200
+#define BAUD_RATE                       (115200)
 //#define SERIAL_INTERRUPT_MODE
 
 /* Serial buffer configuration. */
-#define SERIAL_MAX_BUFFER_SIZE          16
-#define SERIAL_NUM_BUFFERS              4
-#define SERIAL_NUM_BUFFER_LIST          4
-#define SERIAL_THRESHOLD_BUFFER         0
-#define SERIAL_THRESHOLD_BUFFER_LIST    0
+#define SERIAL_MAX_BUFFER_SIZE          (16)
+#define SERIAL_NUM_BUFFERS              (4)
+#define SERIAL_NUM_BUFFER_LIST          (4)
+#define SERIAL_THRESHOLD_BUFFER         (0)
+#define SERIAL_THRESHOLD_BUFFER_LIST    (0)
 #endif /* CMAKE_BUILD */
 
 /* Function prototypes. */
