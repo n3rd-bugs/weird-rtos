@@ -6,12 +6,12 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 - Highly scalable for number of small to medium scale applications
 - Priority based aperiodic scheduler
 - Dynamic task creation and deletion
-- *Condition* to create application specific signalling mechanisms like timers, events etc.
+- *Condition* to create application specific signaling mechanisms like timers, events etc.
 - *Semaphore* with optional specific interrupt protection
 - *File system* based pipes to support data queues
-- Support for suspending a single task on multiple conditions to eliminate multiple tasks.
-- A small networking stack with IPv4, ARP, UDP, TCP.
-- Support for idle work to offload low priority work from main tasks.
+- Support for suspending a single task on multiple conditions to eliminate multiple tasks
+- A small networking stack with IPv4, ARP, UDP, TCP
+- Support for idle work to offload low priority work from main tasks
 
 ## Supported MCUs and Platforms
 | MCU/Platform | Core | RTOS Features |
