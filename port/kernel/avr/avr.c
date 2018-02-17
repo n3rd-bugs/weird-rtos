@@ -21,7 +21,7 @@
 volatile uint8_t sys_interrupt_level = TRUE;
 
 /* AVR system stack. */
-uint8_t *system_stack_end;
+uint16_t system_stack_end;
 
 /* Flag to specify that we are in ISR context. */
 uint8_t avr_in_isr = FALSE;

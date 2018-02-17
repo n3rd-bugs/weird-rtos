@@ -35,15 +35,29 @@ void avr_stack_fill(void)
 } /* avr_stack_fill */
 
 /*
- * avr_stack_init
- * This function will disable WDT and perform boatload operation if required.
+ * avr_pre_clear
+ * This function will perform pre-BSS clear operations including reseting
+ * watchdog timer.
  */
-void avr_stack_init(void) __attribute__((naked)) __attribute__((section(".init3")));
-void avr_stack_init(void)
+void avr_pre_clear(void) __attribute__((naked)) __attribute__((section(".init3")));
+void avr_pre_clear(void)
 {
     /* Disable watch dog timer. */
     MCUSR = 0;
     wdt_disable();
+
+} /* avr_pre_clear */
+
+/*
+ * avr_sys_setup
+ * This function will perform initial system setup so RTOS can be initiated.
+ */
+void avr_sys_setup(void) __attribute__((naked)) __attribute__((section(".init8")));
+void avr_sys_setup(void)
+{
+    /* Setup system stack. */
+    SP = RAMEND;
+    system_stack_end = SP;
 
 #ifdef CONFIG_BOOTLOAD
     /* Initialize boot loader condition. */
@@ -57,19 +71,10 @@ void avr_stack_init(void)
     }
 #endif
 
-} /* avr_stack_init */
-
-/*
- * avr_sys_stack_pointer_save
- * This function will save the system stack pointer to be used when needed.
- */
-void avr_sys_stack_pointer_save(void) __attribute__((naked)) __attribute__((section(".init8")));
-void avr_sys_stack_pointer_save(void)
-{
-    /* Save the system stack pointer. */
-    system_stack_end = (uint8_t *)SP;
-
     /* Hook STDIO. */
     rtl_avr_init();
+
+    /* Disable system interrupts. */
+    DISABLE_INTERRUPTS();
 
 } /* avr_sys_stack_pointer_save */
