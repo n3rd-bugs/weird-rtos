@@ -235,7 +235,7 @@ void serial_assert_puts(uint8_t *buffer, int32_t nbytes)
 #endif
 
     /* If we have a debug console initialized and a required callback for it. */
-    if ((serial) & (serial->device.puts))
+    if ((serial) && (serial->device.puts))
     {
     /* Transmit required buffer on the serial. */
     serial->device.puts(serial, serial->device.data, buffer, ((nbytes == 0) ? (int32_t)strlen((char *)buffer) : nbytes), 0);
