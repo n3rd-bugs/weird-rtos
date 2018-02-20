@@ -357,8 +357,15 @@ void util_print_sys_info_assert(void)
         P_STR_NCPY(str_fmt, P_STR("%lu\t"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->scheduled);
         serial_assert_puts((uint8_t *)str, 0);
-        P_STR_NCPY(str_fmt, P_STR("%lu\r\n"), sizeof(str_fmt));
+        P_STR_NCPY(str_fmt, P_STR("%lu"), sizeof(str_fmt));
         snprintf(str, sizeof(str), str_fmt, (uint32_t)tcb->tick_sleep);
+        serial_assert_puts((uint8_t *)str, 0);
+        if (tcb == get_current_task())
+        {
+            P_STR_NCPY(str, P_STR("\t<Running>"), sizeof(str));
+            serial_assert_puts((uint8_t *)str, 0);
+        }
+        P_STR_NCPY(str, P_STR("\r\n"), sizeof(str));
         serial_assert_puts((uint8_t *)str, 0);
 
         /* Get the next task. */
