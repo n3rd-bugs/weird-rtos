@@ -106,7 +106,7 @@ typedef uint8_t INT_LVL;
                     "sbrs   r16,        0                       \n\t"   \
                     "rjmp   save_task                           \n\t"   \
                     "push   r1                                  \n\t"   \
-                    "clr    r1                                  \n\t"   \
+                    "eor    r1, r1                              \n\t"   \
                     "push   r2                                  \n\t"   \
                     "push   r3                                  \n\t"   \
                     "push   r4                                  \n\t"   \
@@ -142,8 +142,10 @@ typedef uint8_t INT_LVL;
                     "in     r16,        __SREG__                \n\t"   \
                     "cli                                        \n\t"   \
                     "push   r16                                 \n\t"   \
+                    "in     r16,        0x3B                    \n\t"   \
+                    "push   r16                                 \n\t"   \
                     "push   r1                                  \n\t"   \
-                    "clr    r1                                  \n\t"   \
+                    "eor    r1, r1                              \n\t"   \
                     "push   r2                                  \n\t"   \
                     "push   r3                                  \n\t"   \
                     "push   r4                                  \n\t"   \
@@ -203,8 +205,10 @@ typedef uint8_t INT_LVL;
                     "in     r16, __SREG__           \n\t"   \
                     "sbr    r16, 128                \n\t"   \
                     "push   r16                     \n\t"   \
+                    "in     r16, 0x3B               \n\t"   \
+                    "push   r16                     \n\t"   \
                     "push   r1                      \n\t"   \
-                    "clr    r1                      \n\t"   \
+                    "eor    r1, r1                  \n\t"   \
                     "push   r2                      \n\t"   \
                     "push   r3                      \n\t"   \
                     "push   r4                      \n\t"   \
@@ -296,6 +300,8 @@ typedef uint8_t INT_LVL;
                     "pop    r3                      \n\t"   \
                     "pop    r2                      \n\t"   \
                     "pop    r1                      \n\t"   \
+                    "pop    r16                     \n\t"   \
+                    "out    0x3B, r16               \n\t"   \
                     "pop    r16                     \n\t"   \
                     "sbrs   r16, 7                  \n\t"   \
                     "rjmp   .+8                     \n\t"   \

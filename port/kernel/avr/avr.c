@@ -161,6 +161,9 @@ void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
     *(tcb->tos) = 0x80;                             /* Push SREG on the stack. */
     (tcb->tos)--;
 
+    *(tcb->tos) = 0x00;                             /* Push RAMPZ on the stack. */
+    (tcb->tos)--;
+
     *(tcb->tos) = 0x00;                             /* The compiler expects R1 to be 0. */
     (tcb->tos) -= 0x17;                             /* Push R1-R15, R0, R17-R23 on the stack. */
 
