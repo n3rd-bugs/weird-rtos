@@ -391,6 +391,9 @@ static void usart_handle_rx_interrupt(STM32_USART *usart)
     /* If there is some data available to read. */
     if (usart->reg->SR & USART_SR_RXNE)
     {
+        /* Read the incoming data and also clear the interrupt status. */
+        chr = (uint8_t)usart->reg->DR;
+
         /* Get a RX buffer. */
         buffer = fs_buffer_get(usart, FS_BUFFER_RX, FS_BUFFER_INPLACE);
 
@@ -407,9 +410,6 @@ static void usart_handle_rx_interrupt(STM32_USART *usart)
                 fs_buffer_add(usart, buffer, FS_BUFFER_RX, 0);
             }
         }
-
-        /* Read the incoming data and also clear the interrupt status. */
-        chr = (uint8_t)usart->reg->DR;
 
         /* If we do have a buffer. */
         if (buffer != NULL)

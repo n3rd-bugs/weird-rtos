@@ -226,6 +226,9 @@ static void usart1_handle_rx_interrupt(void)
     /* If data is available to be read. */
     if (USART1->SR & USART_SR_RXNE)
     {
+        /* Read the incoming data and also clear the interrupt status. */
+        chr = (uint8_t)USART1->DR;
+
         /* Get a RX buffer. */
         buffer = fs_buffer_get(&usart1, FS_BUFFER_RX, FS_BUFFER_INPLACE);
 
@@ -242,9 +245,6 @@ static void usart1_handle_rx_interrupt(void)
                 fs_buffer_add(&usart1, buffer, FS_BUFFER_RX, 0);
             }
         }
-
-        /* Read the incoming data and also clear the interrupt status. */
-        chr = (uint8_t)USART1->DR;
 
         /* If we do have a buffer. */
         if (buffer != NULL)
