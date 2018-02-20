@@ -184,7 +184,6 @@ static int32_t usart_avr_init(void *data)
             {
                 /* Toggle RTS reset. */
                 USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
-                while (!(USART0_HW_RTS_PIN & (1 << USART0_HW_RTS))) ;
                 USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
             }
         }
@@ -328,7 +327,6 @@ void usart_handle_rx_interrupt(AVR_USART *usart)
             {
                 /* Toggle RTS reset. */
                 USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
-                while (!(USART0_HW_RTS_PIN & (1 << USART0_HW_RTS))) ;
                 USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
             }
         }
@@ -558,7 +556,6 @@ static int32_t usart_avr_gets(void *fd, void *priv_data, uint8_t *buf, int32_t n
                 {
                     /* Toggle RTS reset. */
                     USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
-                    while (!(USART0_HW_RTS_PIN & (1 << USART0_HW_RTS))) ;
                     USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
                 }
             }
