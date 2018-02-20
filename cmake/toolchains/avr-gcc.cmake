@@ -19,7 +19,7 @@ set(CMAKE_C_USE_RESPONSE_FILE_FOR_OBJECTS ON)
 set(AVR_C_FLAGS "-Os -ffunction-sections -fdata-sections -std=gnu99 -funsigned-char -funsigned-bitfields -Wextra -mrelax -Wall -Wstrict-prototypes" CACHE STRING "C flags.")
 set(AVR_MCU_FLAGS "-mmcu=${TGT_PLATFORM}" CACHE INTERNAL "" FORCE)
 set(AVR_FRQ_FLAGS "-DF_CPU=${F_CPU}" CACHE INTERNAL "" FORCE)
-set(AVR_LINK_FLAGS "-Wl,--gc-sections ${AVR_MCU_FLAGS}" CACHE STRING "LD flags.")
+set(AVR_LINK_FLAGS "-Wl,--gc-sections ${AVR_MCU_FLAGS}" CACHE STRING "LD flags." FORCE)
 
 # Setup c compiler.
 set(CMAKE_SYSTEM_NAME Generic)
