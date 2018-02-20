@@ -449,15 +449,9 @@ int32_t suspend_condition(CONDITION **condition, SUSPEND **suspend, uint8_t *num
          * waiting on a timeout. */
         if ((task_state != TASK_SLEEP_RESUME) && (timeout != MAX_WAIT))
         {
-            /* Disable preemption. */
-            scheduler_lock();
-
             /* Remove this task from sleeping tasks before locking the
              * condition as we might end up being resumed. */
             sleep_remove_from_list(tcb);
-
-            /* Enable preemption. */
-            scheduler_unlock();
         }
 #endif /* CONFIG_SLEEP */
 
