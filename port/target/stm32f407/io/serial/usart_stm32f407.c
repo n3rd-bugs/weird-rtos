@@ -128,7 +128,7 @@ static int32_t usart_stm32f407_init(void *data)
     USART1->CR3 &= ~((USART_CR3_RTSE | USART_CR3_CTSE));
 
     /* Calculate and set the baud rate parameters. */
-    integral = ((25 * PCLK_FREQ) / (4 * BAUD_RATE));
+    integral = ((25 * PCLK_FREQ) / (4 * SERIAL_BAUD_RATE));
     temp = (integral / 100) << 4;
     fractional = integral - (100 * (temp >> 4));
     temp |= ((((fractional * 16) + 50) / 100)) & (0x0F);

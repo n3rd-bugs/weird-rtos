@@ -19,7 +19,7 @@
 
 #ifndef CMAKE_BUILD
 /* Some configurations. */
-#define BAUD_RATE                       19200
+#define SERIAL_BAUD_RATE                115200
 //#define SERIAL_INTERRUPT_MODE
 
 /* Serial buffer configuration. */

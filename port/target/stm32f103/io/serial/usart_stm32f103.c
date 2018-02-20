@@ -57,9 +57,9 @@ void serial_stm32f103_init(void)
     usart1_buffer_data.num_buffer_lists = SERIAL_NUM_BUFFER_LIST;
     usart1_buffer_data.threshold_buffers = SERIAL_THRESHOLD_BUFFER;
     usart1_buffer_data.threshold_lists = SERIAL_THRESHOLD_BUFFER_LIST;
-    usart_stm32f103_register(&usart1, "usart1", 1, BAUD_RATE, &usart1_buffer_data, FALSE, TRUE);
+    usart_stm32f103_register(&usart1, "usart1", 1, SERIAL_BAUD_RATE, &usart1_buffer_data, FALSE, TRUE);
 #else
-    usart_stm32f103_register(&usart1, "usart1", 1, BAUD_RATE, NULL, FALSE, TRUE);
+    usart_stm32f103_register(&usart1, "usart1", 1, SERIAL_BAUD_RATE, NULL, FALSE, TRUE);
 #endif /* SERIAL_INTERRUPT_MODE */
 
 } /* serial_stm32f103_init */
