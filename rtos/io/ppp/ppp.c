@@ -170,8 +170,9 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER_LIST *buffer, PPP_PROTO *prot
     /* Should never happen. */
     ASSERT(tx_buffer == NULL);
 
-    /* Clear the packet structure and transmit buffers. */
+    /* Clear RX/TX packets. */
     memset(&rx_packet, 0, sizeof(PPP_CONF_PKT));
+    memset(&tx_packet, 0, sizeof(PPP_CONF_PKT));
 
     /* Parse the configuration header. */
     status = ppp_packet_configuration_header_parse(buffer, &rx_packet);
@@ -184,9 +185,6 @@ void ppp_configuration_process(PPP *ppp, FS_BUFFER_LIST *buffer, PPP_PROTO *prot
         if ( (rx_packet.code == PPP_CONFIG_REQ) ||
              (rx_packet.code == PPP_TREM_REQ) )
         {
-            /* Clear the transmit packet so that a reply can be initialized. */
-            memset(&tx_packet, 0, sizeof(PPP_CONF_PKT));
-
             /* If this is a configuration request. */
             if (rx_packet.code == PPP_CONFIG_REQ)
             {
@@ -734,6 +732,8 @@ void net_ppp_receive(void *data, int32_t status)
         else
         {
             /* Add the received data to the current RX buffer. */
+            /* We will copy the data as, moving buffers will cause poor
+             * performance. */
             if (fs_buffer_list_move_data(ppp->rx_buffer, buffer, FS_BUFFER_COPY) != SUCCESS)
             {
                 /* Free the receive buffer. */
