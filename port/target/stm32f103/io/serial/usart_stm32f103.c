@@ -74,11 +74,13 @@ void serial_stm32f103_init(void)
  *  will be enabled.
  * @hw_flow: If we need to enable hardware flow control for this USART.
  * @is_debug: If this USART is needed to be used as debug console.
- * @return: Success will be returned if USART was successfully registered.
+ * @return: Success will be returned if USART was successfully registered,
+ *  SERIAL_NOT_FOUND will be returned if requested serial device was not found.
  * This function will register a USART for STM32 platform.
  */
 int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t device_num, uint32_t baud_rate, FS_BUFFER_DATA *buffer_data, uint8_t hw_flow, uint8_t is_debug)
 {
+    int32_t status = SUCCESS;
     uint32_t usart_flags = ((is_debug == TRUE) ? SERIAL_DEBUG : 0);
 
     /* Save the USART data. */
@@ -177,6 +179,13 @@ int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t d
         usart3_data = usart;
 
         break;
+
+    default:
+
+        /* Requested serial device as not found. */
+        status = SERIAL_NOT_FOUND;
+
+        break;
     }
 
     /* Initialize serial device data. */
@@ -201,8 +210,8 @@ int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t d
     /* Register this USARt as a serial device. */
     serial_register(&usart->serial, name, buffer_data, usart_flags);
 
-    /* Always return success. */
-    return (SUCCESS);
+    /* Return status to the caller. */
+    return (status);
 
 } /* usart_stm32f103_register */
 

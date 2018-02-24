@@ -59,6 +59,7 @@ This list is needed to be updated whenever a new error code is added.
     I2C_MSG_NACKED          -1600
     I2C_TIMEOUT             -1601
     I2C_IO_ERROR            -1602
+    SERIAL_NOT_FOUND        -1700
     ENC28J60_DISCONNECTED   -11000
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001

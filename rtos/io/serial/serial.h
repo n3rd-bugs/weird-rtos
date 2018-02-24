@@ -23,6 +23,9 @@
 #endif  /* CONFIG_FS */
 #include <stdarg.h>
 
+/* Error code definitions. */
+#define SERIAL_NOT_FOUND            (-1700)
+
 /* Serial device flag definitions. */
 #define SERIAL_DEBUG                0x01
 #define SERIAL_INT                  0x02
