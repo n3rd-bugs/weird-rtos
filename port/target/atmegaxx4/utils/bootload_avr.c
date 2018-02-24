@@ -687,11 +687,19 @@ static int32_t bootload_stk(void)
                     /* Send that we are in sync. */
                     bootload_avr_putc(STK_INSYNC);
 
+                    /* Toggle the progress LED. */
+                    PORTC ^= (1 << 3);
+
                     /* Send back the read memory. */
                     for (i = 0; i < size; i ++)
                     {
                         /* Put a byte on serial. */
+#if defined(pgm_read_byte_far)
+                        bootload_avr_putc(pgm_read_byte_far(load_address + i));
+
+#else
                         bootload_avr_putc(pgm_read_byte(load_address + i));
+#endif /* defined(pgm_read_byte_far) */
                     }
 
                     /* Page read complete. */
