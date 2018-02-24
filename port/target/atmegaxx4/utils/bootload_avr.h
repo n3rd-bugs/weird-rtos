@@ -36,8 +36,8 @@
 #define BOOTLOAD_RESET      0x1f000
 
 /* Defines the condition when we need to perform boot load operation. */
-#define BOOTLOAD_COND_INIT  (DDRD &= ((uint8_t)~(1 << 3)))
-#define BOOTLOAD_COND       ((PIND & (1 << 3)) == 0)
+#define BOOTLOAD_COND_INIT  (DDRA &= ((uint8_t)~(1 << 6)))
+#define BOOTLOAD_COND       ((PINA & (1 << 6)) == 0)
 
 /* Helper macros. */
 #define BOOTLOAD_BTOH(a)    (((a) > 9) ? (a) + 0x37 : (a) + '0')
