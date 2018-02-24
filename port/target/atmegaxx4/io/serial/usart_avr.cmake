@@ -9,6 +9,8 @@ if (${SERIAL_INTERRUPT_MODE})
     setup_option_def(SERIAL_THRESHOLD_BUFFER 0 INT "Number of threshold buffers for the serial device (interrupt mode)." CONFIG_FILE "usart_avr_config")
     setup_option_def(SERIAL_THRESHOLD_BUFFER_LIST 0 INT "Number of threshold buffer lists for the serial device (interrupt mode)." CONFIG_FILE "usart_avr_config")
 endif ()
+setup_option_def(USART_HW_TOGGLE_DELAY 0 INT "Factor of delay we need to add when toggling RTS." CONFIG_FILE "usart_avr_config")
+
 setup_option_def(USART0_HW_RTS 5 INT "Request to send (RTS) pin number." VALUE_LIST atmega_pinnum_values CONFIG_FILE "usart_avr_config")
 setup_option_def(USART0_HW_RTS_PORT PORTD MACRO "Request to send (RTS) PORT register." VALUE_LIST atmega_port_values CONFIG_FILE "usart_avr_config")
 setup_option_def(USART0_HW_RTS_DDR DDRD MACRO "Request to send (RTS) DDR register." VALUE_LIST atmega_ddr_values CONFIG_FILE "usart_avr_config")
@@ -23,3 +25,18 @@ setup_option_def(USART0_HW_CTS 7 INT "Clear to send (CTS) pin number." VALUE_LIS
 setup_option_def(USART0_HW_CTS_PORT PORTD MACRO "Clear to send (CTS) PORT register." VALUE_LIST atmega_port_values CONFIG_FILE "usart_avr_config")
 setup_option_def(USART0_HW_CTS_DDR DDRD MACRO "Clear to send (CTS) DDR register." VALUE_LIST atmega_ddr_values CONFIG_FILE "usart_avr_config")
 setup_option_def(USART0_HW_CTS_PIN PIND MACRO "Clear to send (CTS) PIN register." VALUE_LIST atmega_pin_values CONFIG_FILE "usart_avr_config")
+
+setup_option_def(USART1_HW_RTS 5 INT "Request to send (RTS) pin number." VALUE_LIST atmega_pinnum_values CONFIG_FILE "usart_avr_config")
+setup_option_def(USART1_HW_RTS_PORT PORTD MACRO "Request to send (RTS) PORT register." VALUE_LIST atmega_port_values CONFIG_FILE "usart_avr_config")
+setup_option_def(USART1_HW_RTS_DDR DDRD MACRO "Request to send (RTS) DDR register." VALUE_LIST atmega_ddr_values CONFIG_FILE "usart_avr_config")
+setup_option_def(USART1_HW_RTS_PIN PIND MACRO "Request to send (RTS) PIN register." VALUE_LIST atmega_pin_values CONFIG_FILE "usart_avr_config")
+
+setup_option_def(USART1_HW_RTS_RESET 6 INT "Request to send (RTS) reset pin number." VALUE_LIST atmega_pinnum_values CONFIG_FILE "usart_avr_config")
+setup_option_def(USART1_HW_RTS_RESET_PORT PORTD MACRO "Request to send (RTS) reset PORT register." VALUE_LIST atmega_port_values CONFIG_FILE "usart_avr_config")
+setup_option_def(USART1_HW_RTS_RESET_DDR DDRD MACRO "Request to send (RTS) reset DDR register." VALUE_LIST atmega_ddr_values CONFIG_FILE "usart_avr_config")
+setup_option_def(USART1_HW_RTS_RESET_PIN PIND MACRO "Request to send (RTS) reset PIN register." VALUE_LIST atmega_pin_values CONFIG_FILE "usart_avr_config")
+
+setup_option_def(USART1_HW_CTS 7 INT "Clear to send (CTS) pin number." VALUE_LIST atmega_pinnum_values CONFIG_FILE "usart_avr_config")
+setup_option_def(USART1_HW_CTS_PORT PORTD MACRO "Clear to send (CTS) PORT register." VALUE_LIST atmega_port_values CONFIG_FILE "usart_avr_config")
+setup_option_def(USART1_HW_CTS_DDR DDRD MACRO "Clear to send (CTS) DDR register." VALUE_LIST atmega_ddr_values CONFIG_FILE "usart_avr_config")
+setup_option_def(USART1_HW_CTS_PIN PIND MACRO "Clear to send (CTS) PIN register." VALUE_LIST atmega_pin_values CONFIG_FILE "usart_avr_config")

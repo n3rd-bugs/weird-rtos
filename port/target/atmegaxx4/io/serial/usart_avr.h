@@ -33,7 +33,10 @@
 #define SERIAL_THRESHOLD_BUFFER         (0)
 #define SERIAL_THRESHOLD_BUFFER_LIST    (0)
 
-/* RTS/CTS signal pins. */
+/* RTS toggle delay. */
+#define USART_HW_TOGGLE_DELAY           (0)
+
+/* RTS/CTS signal pins for USART0. */
 #define USART0_HW_RTS                   (5)
 #define USART0_HW_RTS_PORT              (PORTD)
 #define USART0_HW_RTS_DDR               (DDRD)
@@ -46,7 +49,24 @@
 #define USART0_HW_CTS_PORT              (PORTD)
 #define USART0_HW_CTS_DDR               (DDRD)
 #define USART0_HW_CTS_PIN               (PIND)
+
+/* RTS/CTS signal pins for USART1. */
+#define USART1_HW_RTS                   (5)
+#define USART1_HW_RTS_PORT              (PORTD)
+#define USART1_HW_RTS_DDR               (DDRD)
+#define USART1_HW_RTS_PIN               (PIND)
+#define USART1_HW_RTS_RESET             (6)
+#define USART1_HW_RTS_RESET_PORT        (PORTD)
+#define USART1_HW_RTS_RESET_DDR         (DDRD)
+#define USART1_HW_RTS_RESET_PIN         (PIND)
+#define USART1_HW_CTS                   (7)
+#define USART1_HW_CTS_PORT              (PORTD)
+#define USART1_HW_CTS_DDR               (DDRD)
+#define USART1_HW_CTS_PIN               (PIND)
 #endif /* CMAKE_BUILD */
+
+/* Macro to detect if USART1 is available on the platform. */
+#define USART1_AVAILABLE                (defined(UDR1))
 
 /* AVR USART data. */
 typedef struct _avr_usart
@@ -70,7 +90,7 @@ typedef struct _avr_usart
 
 /* Function prototypes. */
 void serial_avr_init(void);
-void usart_avr_register(AVR_USART *, const char *, FS_BUFFER_DATA *, uint8_t);
+void usart_avr_register(AVR_USART *, const char *, uint8_t, uint32_t, FS_BUFFER_DATA *, uint8_t, uint8_t);
 
 #endif /* CONFIG_SERIAL */
 #endif /* _USART_AVR_H_ */

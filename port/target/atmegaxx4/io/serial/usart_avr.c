@@ -25,12 +25,13 @@
 
 /* Internal function prototypes. */
 static int32_t usart_avr_init(void *);
-void usart_handle_tx_interrupt(AVR_USART *);
-void usart_handle_rx_interrupt(AVR_USART *);
+static void usart_handle_tx_interrupt(AVR_USART *);
+static void usart_handle_rx_interrupt(AVR_USART *);
 static void usart_avr_enable_interrupt(void *);
 static void usart_avr_disable_interrupt(void *);
 static int32_t usart_avr_puts(void *, void *, const uint8_t *, int32_t, uint32_t);
 static int32_t usart_avr_gets(void *, void *, uint8_t *, int32_t, uint32_t);
+static void usart_avr_toggle_delay(void);
 
 /* Target serial port. */
 static AVR_USART usart0;
@@ -41,25 +42,24 @@ static FS_BUFFER usart0_buffer_ones[SERIAL_NUM_BUFFERS];
 static FS_BUFFER_LIST usart0_buffer_lists[SERIAL_NUM_BUFFER_LIST];
 #endif /* SERIAL_INTERRUPT_MODE */
 
+/* USART data for each device in the system. */
+static AVR_USART *avr_usart0;
+#if USART1_AVAILABLE
+static AVR_USART *avr_usart1;
+#endif /* USART1_AVAILABLE */
+
 /*
  * serial_avr_init
  * This will initialize serial interface(s) for this target.
  */
 void serial_avr_init(void)
 {
-    /* Initialize serial device data. */
-    usart0.serial.device.init = &usart_avr_init;
-    usart0.serial.device.puts = &usart_avr_puts;
-    usart0.serial.device.gets = &usart_avr_gets;
-    usart0.serial.device.data = &usart0;
+    uint8_t enable_hw_flow;
 
-    /* Initialize AVR debug USART data. */
-    usart0.num = 0;
-    usart0.baudrate = SERIAL_BAUD_RATE;
 #ifdef SERIAL_ENABLE_HW_FLOW
-    usart0.hw_flow_enabled = TRUE;
+    enable_hw_flow = TRUE;
 #else
-    usart0.hw_flow_enabled = FALSE;
+    enable_hw_flow = FALSE;
 #endif /* SERIAL_ENABLE_HW_FLOW */
 
 #ifdef SERIAL_INTERRUPT_MODE
@@ -72,25 +72,42 @@ void serial_avr_init(void)
     usart0_buffer_data.num_buffer_lists = SERIAL_NUM_BUFFER_LIST;
 
     /* Register an AVR USART. */
-    usart_avr_register(&usart0, "usart0", &usart0_buffer_data, TRUE);
+    usart_avr_register(&usart0, "usart0", 0, SERIAL_BAUD_RATE, &usart0_buffer_data, enable_hw_flow, TRUE);
 #else
     /* Register an AVR USART. */
-    usart_avr_register(&usart0, "usart0", NULL, TRUE);
+    usart_avr_register(&usart0, "usart0", 0, SERIAL_BAUD_RATE, NULL, enable_hw_flow, TRUE);
 #endif /* SERIAL_INTERRUPT_MODE */
 
 } /* serial_avr_init */
 
 /*
  * usart_avr_register
- * usart: AVR USART to be registered.
- * name: Name of this USART.
- * buffer_data: Buffer data for this USART.
- * is_debug: If this is a debugging USART.
+ * @usart: AVR USART to be registered.
+ * @name: Name of this USART instance.
+ * @device_num: USART device number we need to register.
+ * @boud_rate: USART baud rate.
+ * @buffer_data: Buffer data for this USART, if not null USART interrupt mode
+ *  will be enabled.
+ * @hw_flow: If we need to enable hardware flow control for this USART.
+ * @is_debug: If this USART is needed to be used as debug console.
+ * @return: Success will be returned if USART was successfully registered,
+ *  SERIAL_NOT_FOUND will be returned if requested serial device was not found.
  * This will register an AVR USART device.
  */
-void usart_avr_register(AVR_USART *usart, const char *name, FS_BUFFER_DATA *buffer_data, uint8_t is_debug)
+void usart_avr_register(AVR_USART *usart, const char *name, uint8_t num, uint32_t baudrate, FS_BUFFER_DATA *buffer_data, uint8_t enable_hw_flow, uint8_t is_debug)
 {
     uint32_t flags;
+
+    /* Initialize AVR debug USART data. */
+    usart->num = num;
+    usart->baudrate = baudrate;
+    usart->hw_flow_enabled = enable_hw_flow;
+
+    /* Initialize serial device data. */
+    usart->serial.device.init = &usart_avr_init;
+    usart->serial.device.puts = &usart_avr_puts;
+    usart->serial.device.gets = &usart_avr_gets;
+    usart->serial.device.data = usart;
 
     /* If this is a debug USART. */
     if (is_debug)
@@ -127,7 +144,9 @@ void usart_avr_register(AVR_USART *usart, const char *name, FS_BUFFER_DATA *buff
 
 /*
  * usart_avr_init
- * This function initializes UART1 for AVR.
+ * @return: Success if device was successfully initialized,
+ *  SERIAL_NOT_FOUND will be returned if requested serial device was not found.
+ * This function initializes a USART device for AVR.
  */
 static int32_t usart_avr_init(void *data)
 {
@@ -165,7 +184,6 @@ static int32_t usart_avr_init(void *data)
     {
     /* If this is USART0. */
     case 0:
-
         /* If HW flow control is enabled. */
         if (usart->hw_flow_enabled == TRUE)
         {
@@ -184,6 +202,7 @@ static int32_t usart_avr_init(void *data)
             {
                 /* Toggle RTS reset. */
                 USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
+                usart_avr_toggle_delay();
                 USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
             }
         }
@@ -206,6 +225,72 @@ static int32_t usart_avr_init(void *data)
         UCSR0B = (1 << RXEN0)  | (1 << TXEN0);
         UCSR0C = (1 << USBS0) | (3 << UCSZ00);
 
+        /* Should never happen. */
+        ASSERT(avr_usart0 != NULL);
+
+        /* Save USART data. */
+        avr_usart0 = usart;
+
+        break;
+
+#if USART1_AVAILABLE
+    /* If this is USART1. */
+    case 1:
+        /* If HW flow control is enabled. */
+        if (usart->hw_flow_enabled == TRUE)
+        {
+            /* Configure CTS pin as input.  */
+            USART1_HW_CTS_DDR &= (uint8_t)~(1 << USART1_HW_CTS);
+
+            /* Configure RTS pin as input.  */
+            USART1_HW_RTS_DDR &= (uint8_t)~(1 << USART1_HW_RTS);
+
+            /* Configure RTS reset pin as output. */
+            USART1_HW_RTS_RESET_DDR |= (1 << USART1_HW_RTS_RESET);
+            USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
+
+            /* If RTS is in reset state. */
+            if (!(USART1_HW_RTS_PIN & (1 << USART1_HW_RTS)))
+            {
+                /* Toggle RTS reset. */
+                USART1_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART1_HW_RTS_RESET);
+                usart_avr_toggle_delay();
+                USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
+            }
+        }
+
+        /* Only choose U2X if error rating is better. */
+        if (error_u1x <= error_u2x)
+        {
+            UCSR1A &= (uint8_t)~(1 << U2X0);
+            UBRR1H = ubrr_val_u1x >> 8;
+            UBRR1L = ubrr_val_u1x  & 0xFF;
+        }
+        else
+        {
+            UCSR1A |= (1 << U2X1);
+            UBRR1H = ubrr_val_u2x >> 8;
+            UBRR1L = ubrr_val_u2x  & 0xFF;
+        }
+
+        /* Enable RX and TX. */
+        UCSR1B = (1 << RXEN1)  | (1 << TXEN1);
+        UCSR1C = (1 << USBS1) | (3 << UCSZ10);
+
+        /* Should never happen. */
+        ASSERT(avr_usart1 != NULL);
+
+        /* Save USART data. */
+        avr_usart1 = usart;
+
+        break;
+#endif /* USART1_AVAILABLE */
+
+    default:
+
+        /* Requested serial device was not found. */
+        status = SERIAL_NOT_FOUND;
+
         break;
     }
 
@@ -222,18 +307,41 @@ ISR(USART0_TX_vect, ISR_NAKED)
 {
     ISR_ENTER();
 
+    /* Should never happen. */
+    ASSERT(avr_usart0 == NULL);
+
     /* Handle TX interrupt. */
-    usart_handle_tx_interrupt(&usart0);
+    usart_handle_tx_interrupt(avr_usart0);
 
     ISR_EXIT();
 
 } /* ISR(USART0_TX_vect, ISR_NAKED) */
 
+#if USART1_AVAILABLE
+/*
+ * ISR(USART1_TX_vect, ISR_NAKED)
+ * This is USART1 TX interrupt.
+ */
+ISR(USART1_TX_vect, ISR_NAKED)
+{
+    ISR_ENTER();
+
+    /* Should never happen. */
+    ASSERT(avr_usart1 == NULL);
+
+    /* Handle TX interrupt. */
+    usart_handle_tx_interrupt(avr_usart1);
+
+    ISR_EXIT();
+
+} /* ISR(USART1_TX_vect, ISR_NAKED) */
+#endif /* USART1_AVAILABLE */
+
 /*
  * usart_handle_tx_interrupt
  * This function handles TX interrupt.
  */
-void usart_handle_tx_interrupt(AVR_USART *usart)
+static void usart_handle_tx_interrupt(AVR_USART *usart)
 {
     FS_BUFFER_LIST *buffer;
     uint8_t chr;
@@ -273,6 +381,22 @@ void usart_handle_tx_interrupt(AVR_USART *usart)
             UDR0 = ((uint32_t)chr) & 0xFF;
 
             break;
+
+#if USART1_AVAILABLE
+        /* If this is USART1. */
+        case 1:
+            /* If HW flow control is enabled. */
+            if (usart->hw_flow_enabled == TRUE)
+            {
+                /* Wait for CTS signal. */
+                while (USART1_HW_CTS_PIN & (1 << USART1_HW_CTS)) ;
+            }
+
+            /* Put a byte on USART to continue TX. */
+            UDR1 = ((uint32_t)chr) & 0xFF;
+
+            break;
+#endif /* USART1_AVAILABLE */
         }
     }
     else
@@ -291,22 +415,49 @@ ISR(USART0_RX_vect, ISR_NAKED)
 {
     ISR_ENTER();
 
+    /* Should never happen. */
+    ASSERT(avr_usart0 == NULL);
+
     /* While we have a byte to read. */
     while (UCSR0A & (1 << RXC0))
     {
         /* Handle RX interrupt. */
-        usart_handle_rx_interrupt(&usart0);
+        usart_handle_rx_interrupt(avr_usart0);
     }
 
     ISR_EXIT();
 
 } /* ISR(USART0_RX_vect, ISR_NAKED) */
 
+#if USART1_AVAILABLE
+/*
+ * ISR(USART1_RX_vect, ISR_NAKED)
+ * This is USART1 RX interrupt.
+ */
+ISR(USART1_RX_vect, ISR_NAKED)
+{
+    ISR_ENTER();
+
+    /* Should never happen. */
+    ASSERT(avr_usart1 == NULL);
+
+    /* While we have a byte to read. */
+    while (UCSR1A & (1 << RXC1))
+    {
+        /* Handle RX interrupt. */
+        usart_handle_rx_interrupt(avr_usart1);
+    }
+
+    ISR_EXIT();
+
+} /* ISR(USART1_RX_vect, ISR_NAKED) */
+#endif /* USART1_AVAILABLE */
+
 /*
  * usart_handle_rx_interrupt
  * This function handles RX interrupt.
  */
-void usart_handle_rx_interrupt(AVR_USART *usart)
+static void usart_handle_rx_interrupt(AVR_USART *usart)
 {
     FS_BUFFER_LIST *buffer;
     uint8_t chr;
@@ -322,15 +473,30 @@ void usart_handle_rx_interrupt(AVR_USART *usart)
         /* If HW flow control is enabled. */
         if (usart->hw_flow_enabled == TRUE)
         {
-            /* If RTS is in reset state. */
-            if (!(USART0_HW_RTS_PIN & (1 << USART0_HW_RTS)))
-            {
-                /* Toggle RTS reset. */
-                USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
-                USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
-            }
+            /* Toggle RTS reset. */
+            USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
+            usart_avr_toggle_delay();
+            USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
         }
         break;
+
+#if USART1_AVAILABLE
+    /* If this is USART1. */
+    case 1:
+        /* Read the incoming data and also clear the interrupt. */
+        chr = (uint8_t)UDR1;
+
+        /* If HW flow control is enabled. */
+        if (usart->hw_flow_enabled == TRUE)
+        {
+            /* Toggle RTS reset. */
+            USART1_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART1_HW_RTS_RESET);
+            usart_avr_toggle_delay();
+            USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
+        }
+
+        break;
+#endif /* USART1_AVAILABLE */
     }
 
     /* Get a RX buffer. */
@@ -379,6 +545,15 @@ static void usart_avr_enable_interrupt(void *data)
         UCSR0B |= ((1 << RXCIE0) | (1 << TXCIE0));
 
         break;
+
+#if USART1_AVAILABLE
+    /* If this is USART1. */
+    case 1:
+        /* Enable the USART0 IRQ channel. */
+        UCSR1B |= ((1 << RXCIE1) | (1 << TXCIE1));
+
+        break;
+#endif /* USART1_AVAILABLE */
     }
 
 } /* usart_avr_enable_interrupt */
@@ -400,6 +575,15 @@ static void usart_avr_disable_interrupt(void *data)
         UCSR0B &= ((uint8_t)~((1 << RXCIE0) | (1 << TXCIE0)));
 
         break;
+
+#if USART1_AVAILABLE
+    /* If this is USART1. */
+    case 1:
+        /* Disable the USART0 IRQ channel. */
+        UCSR1B &= ((uint8_t)~((1 << RXCIE1) | (1 << TXCIE1)));
+
+        break;
+#endif /* USART1_AVAILABLE */
     }
 
 } /* usart_avr_disable_interrupt */
@@ -460,6 +644,22 @@ static int32_t usart_avr_puts(void *fd, void *priv_data, const uint8_t *buf, int
                 UDR0 = (chr);
 
                 break;
+
+#if USART1_AVAILABLE
+            /* If this is USART1. */
+            case 1:
+                /* If HW flow control is enabled. */
+                if (usart->hw_flow_enabled == TRUE)
+                {
+                    /* Wait for CTS signal. */
+                    while (USART1_HW_CTS_PIN & (1 << USART1_HW_CTS)) ;
+                }
+
+                /* Put a byte on USART to start TX. */
+                UDR1 = (chr);
+
+                break;
+#endif /* USART1_AVAILABLE */
             }
         }
     }
@@ -500,6 +700,38 @@ static int32_t usart_avr_puts(void *fd, void *priv_data, const uint8_t *buf, int
             }
 
             break;
+
+#if USART1_AVAILABLE
+        /* If this is USART1. */
+        case 1:
+            /* While we have some data to be printed. */
+            while (nbytes > 0)
+            {
+                /* If HW flow control is enabled. */
+                if (usart->hw_flow_enabled == TRUE)
+                {
+                    /* Wait for CTS signal. */
+                    while (USART1_HW_CTS_PIN & (1 << USART1_HW_CTS)) ;
+                }
+
+                /* Add this byte. */
+                UDR1 = (*buf);
+
+                /* Wait for this byte to be sent. */
+                while ((UCSR1A & (1 << UDRE1)) == 0)
+                {
+                    ;
+                }
+
+                /* Decrement number of bytes remaining. */
+                nbytes --;
+
+                /* Move forward in the buffer. */
+                buf++;
+            }
+
+            break;
+#endif /* USART1_AVAILABLE */
         }
     }
 
@@ -534,7 +766,6 @@ static int32_t usart_avr_gets(void *fd, void *priv_data, uint8_t *buf, int32_t n
     {
     /* If this is USART0. */
     case 0:
-
         /* While we have some data to be printed. */
         while (nbytes > 0)
         {
@@ -551,13 +782,10 @@ static int32_t usart_avr_gets(void *fd, void *priv_data, uint8_t *buf, int32_t n
             /* If HW flow control is enabled. */
             if (usart->hw_flow_enabled == TRUE)
             {
-                /* If RTS is in reset state. */
-                if (!(USART0_HW_RTS_PIN & (1 << USART0_HW_RTS)))
-                {
-                    /* Toggle RTS reset. */
-                    USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
-                    USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
-                }
+                /* Toggle RTS reset. */
+                USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
+                usart_avr_toggle_delay();
+                USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
             }
 
             /* Decrement number of bytes remaining. */
@@ -568,10 +796,63 @@ static int32_t usart_avr_gets(void *fd, void *priv_data, uint8_t *buf, int32_t n
         }
 
         break;
+
+#if USART1_AVAILABLE
+    /* If this is USART1. */
+    case 1:
+        /* While we have some data to be printed. */
+        while (nbytes > 0)
+        {
+            /* While we have a byte to read. */
+            while ((UCSR1A & (1 << RXC1)) == 0)
+            {
+                /* Yield the current task. */
+                task_yield();
+            }
+
+            /* Read a byte from USART. */
+            *buf = (uint8_t)UDR1;
+
+            /* If HW flow control is enabled. */
+            if (usart->hw_flow_enabled == TRUE)
+            {
+                /* Toggle RTS reset. */
+                USART1_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART1_HW_RTS_RESET);
+                usart_avr_toggle_delay();
+                USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
+            }
+
+            /* Decrement number of bytes remaining. */
+            nbytes --;
+
+            /* Move forward in the buffer. */
+            buf++;
+        }
+
+        break;
+#endif /* USART1_AVAILABLE */
     }
 
     /* Return number of bytes read. */
     return (to_read - nbytes);
 
 } /* usart_avr_gets */
+
+/*
+ * usart_avr_toggle_delay
+ * This function will add some delay when toggling RTS pin.
+ */
+static void usart_avr_toggle_delay(void)
+{
+#if (USART_HW_TOGGLE_DELAY > 0)
+    volatile uint8_t i;
+
+    /* Add some delay. */
+    for (i = 0; i < USART_HW_TOGGLE_DELAY; i++)
+    {
+        asm volatile("nop");
+    }
+#endif /* (USART_HW_TOGGLE_DELAY > 0) */
+
+} /* usart_avr_toggle_delay */
 #endif /* CONFIG_SERIAL */
