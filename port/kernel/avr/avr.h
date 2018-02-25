@@ -79,16 +79,16 @@ typedef uint8_t INT_LVL;
 
 #define CPU_ISR_RETURN()    asm volatile ( "reti" :: );
 
-#define CPU_ISR_ENTER()     {                               \
-                                SAVE_CONTEXT_ISR();         \
-                                LOAD_SYSTEM_STACK();        \
-                                avr_in_isr = TRUE;          \
-                                sys_interrupt_level = 0;    \
+#define CPU_ISR_ENTER()     {                                       \
+                                SAVE_CONTEXT_ISR();                 \
+                                LOAD_SYSTEM_STACK();                \
+                                avr_in_isr = TRUE;                  \
+                                sys_interrupt_level = 0;            \
                             }
 
-#define CPU_ISR_EXIT()      {                               \
-                                avr_in_isr = FALSE;         \
-                                RESTORE_CONTEXT();          \
+#define CPU_ISR_EXIT()      {                                       \
+                                avr_in_isr = FALSE;                 \
+                                RESTORE_CONTEXT();                  \
                             }
 
 /* Load system stack. */
@@ -106,7 +106,7 @@ typedef uint8_t INT_LVL;
                     "sbrs   r16,        0                       \n\t"   \
                     "rjmp   save_task                           \n\t"   \
                     "push   r1                                  \n\t"   \
-                    "eor    r1, r1                              \n\t"   \
+                    "eor    r1,         r1                      \n\t"   \
                     "push   r2                                  \n\t"   \
                     "push   r3                                  \n\t"   \
                     "push   r4                                  \n\t"   \
@@ -145,7 +145,7 @@ typedef uint8_t INT_LVL;
                     "in     r16,        0x3B                    \n\t"   \
                     "push   r16                                 \n\t"   \
                     "push   r1                                  \n\t"   \
-                    "eor    r1, r1                              \n\t"   \
+                    "eor    r1,         r1                      \n\t"   \
                     "push   r2                                  \n\t"   \
                     "push   r3                                  \n\t"   \
                     "push   r4                                  \n\t"   \
@@ -306,10 +306,10 @@ typedef uint8_t INT_LVL;
                     "sbrs   r16, 7                  \n\t"   \
                     "rjmp   .+8                     \n\t"   \
                     "cbr    r16, 128                \n\t"   \
-                    "out    __SREG__,r16            \n\t"   \
+                    "out    __SREG__, r16           \n\t"   \
                     "pop    r16                     \n\t"   \
                     "reti                           \n\t"   \
-                    "out    __SREG__,r16            \n\t"   \
+                    "out    __SREG__, r16           \n\t"   \
                     "pop    r16                     \n\t"   \
                     "ret                            \n\t"   \
                     :: [tos_offset] "M" (OFFSETOF(TASK, tos))    \
