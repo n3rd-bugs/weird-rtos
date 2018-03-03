@@ -16,19 +16,22 @@
 #include <kernel.h>
 
 #ifdef CONFIG_BOOTLOAD
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <bootload_avr_config.h>
+#else
 #define BOOTLOADER_LOADED
 #define BOOTLOAD_MMC
 #define BOOTLOAD_STK
 //#define BOOTLOAD_MMC_HEX_NONLINEAR
 #endif /* CMAKE_BUILD */
 
+/* Error code definitions. */
 #define BOOTLOAD_COMPLETE   -21000
 #define BOOTLOAD_ERROR      -21001
 
 /* Serial configurations for boot loader. */
-#define BOOT_BAUD_RATE      (115200)
-#define BOOT_BAUD_TOL       (5)
+#define BOOTLOAD_BAUD_RATE  (115200)
+#define BOOTLOAD_BAUD_TOL   (5)
 
 /* Macro to be used to move a function in the boot loader section. */
 #define BOOTLOAD_SECTION    __attribute__ ((section (".boot")))
@@ -43,14 +46,12 @@
 #define BOOTLOAD_BTOH(a)    (((a) > 9) ? (a) + 0x37 : (a) + '0')
 
 /* Link the boot loader API. */
-#define BOOTLOAD            bootload_avr
+#define BOOTLOAD            bootload_entry
 
 /* Function prototypes. */
-#ifdef BOOTLOADER_LOADED
-void bootload_avr(void);
-#else
+void bootload_entry(void);
+#ifndef BOOTLOADER_LOADED
 void bootload_avr(void) BOOTLOAD_SECTION;
-
 int32_t bootload_disk_initialize(uint8_t *) BOOTLOAD_SECTION;
 int32_t bootload_disk_read(uint8_t, uint8_t *, uint32_t, uint32_t, uint32_t *) BOOTLOAD_SECTION;
 #if _USE_WRITE
@@ -60,6 +61,5 @@ int32_t bootload_disk_write(uint8_t, const uint8_t *, uint32_t, uint32_t) BOOTLO
 int32_t bootload_disk_ioctl(uint8_t, void *) BOOTLOAD_SECTION;
 #endif
 #endif /* BOOTLOADER_LOADED */
-
 #endif /* CONFIG_BOOTLOAD */
 #endif /* _BOOTLOAD_AVR_H_ */

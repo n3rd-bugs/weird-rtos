@@ -13,10 +13,6 @@
 #ifndef _ATMEGAXX4_H_
 #define _ATMEGAXX4_H_
 
-#ifdef CONFIG_BOOTLOAD
-#include <bootload_avr.h>
-#endif /* CONFIG_BOOTLOAD */
-
 #ifdef CONFIG_SERIAL
 #include <usart_avr.h>
 #endif /* CONFIG_SERIAL */

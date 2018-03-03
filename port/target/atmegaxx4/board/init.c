@@ -13,6 +13,9 @@
 #include <kernel.h>
 #include <avr/wdt.h>
 #include <avr.h>
+#ifdef CONFIG_BOOTLOAD
+#include <bootload_avr.h>
+#endif /* CONFIG_BOOTLOAD */
 
 /*
  * avr_stack_fill

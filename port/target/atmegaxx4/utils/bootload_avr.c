@@ -17,8 +17,8 @@
 #include <stk500v1.h>
 #include <avr/boot.h>
 #include <avr/pgmspace.h>
-#define BAUD        BOOT_BAUD_RATE
-#define BAUD_TOL    BOOT_BAUD_TOL
+#define BAUD        BOOTLOAD_BAUD_RATE
+#define BAUD_TOL    BOOTLOAD_BAUD_TOL
 #include <util/setbaud.h>
 #include <avr/wdt.h>
 
@@ -46,21 +46,21 @@ static void bootload_avr_flush_buffer(uint8_t *, uint32_t, uint32_t) BOOTLOAD_SE
 #endif /* (defined(BOOTLOAD_MMC) || defined(BOOTLOAD_STK)) */
 #endif /* BOOTLOADER_LOADED */
 
-#ifdef BOOTLOADER_LOADED
-
 /*
- * bootload_avr
+ * bootload_entry
  * This function will jump to already flashed boot loader's reset vector
  * causing boot loader to execute.
  */
-void bootload_avr(void)
+void bootload_entry(void)
 {
     /* Jump to boot loader reset vector. */
     asm volatile (
                   "jmp  %[boot_vector]      \n\t"
                   :: [boot_vector] "g" (BOOTLOAD_RESET)
                   );
-} /* bootload_avr */
+} /* bootload_entry */
+
+#ifdef BOOTLOADER_LOADED
 
 /* Stubbed vector table definition. */
 void bootvector_table(void) STACK_LESS BOOTVECTOR_SECTION;
@@ -175,6 +175,9 @@ void bootload_avr(void)
     {
         /* Start the application. */
         bootload_application();
+
+        /* We should not return for this function. */
+        for (;;) ;
     }
 
 } /* bootload_avr */
@@ -573,9 +576,9 @@ static int32_t bootload_stk(void)
         case STK_LOAD_ADDRESS:
 
             /* Save the load address. */
-            load_address = bootload_avr_getc();
-            load_address |= bootload_avr_getc() << 8;
-            load_address += load_address;
+            load_address = (uint32_t)bootload_avr_getc();
+            load_address |= (((uint32_t)bootload_avr_getc()) << 8);
+            load_address = (uint32_t)(load_address << 1);
 
             /* Send empty reply. */
             stk500_empty_reply();
@@ -625,8 +628,8 @@ static int32_t bootload_stk(void)
         case STK_PROG_PAGE:
 
             /* Receive the size of data we need to program. */
-            size = bootload_avr_getc() << 8;
-            size |= bootload_avr_getc();
+            size = ((uint16_t)bootload_avr_getc() << 8);
+            size |= ((uint16_t)bootload_avr_getc());
 
             /* Get the region needed to be programmed. */
             switch (bootload_avr_getc())
@@ -672,8 +675,8 @@ static int32_t bootload_stk(void)
         case STK_READ_PAGE:
 
             /* Receive the size of data we need to read. */
-            size = bootload_avr_getc() << 8;
-            size |= bootload_avr_getc();
+            size = ((uint16_t)bootload_avr_getc() << 8);
+            size |= ((uint16_t)bootload_avr_getc());
 
             /* Get the region needed to be read. */
             switch (bootload_avr_getc())
@@ -871,8 +874,9 @@ static void bootload_avr_flush_buffer(uint8_t *buffer, uint32_t load_address, ui
     uint32_t i;
     uint16_t word;
 
-    /* If we have some data to flush. */
-    if (num_bytes > 0)
+    /* If given load address will not overwrite the bootloader and
+     * we have some data to flush. */
+    if ((load_address < BOOTLOAD_RESET) && (num_bytes > 0))
     {
         /* Toggle the progress LED. */
         PORTC ^= (1 << 3);
@@ -903,6 +907,5 @@ static void bootload_avr_flush_buffer(uint8_t *buffer, uint32_t load_address, ui
 
 } /* bootload_avr_flush_buffer */
 #endif /* (defined(BOOTLOAD_MMC) || defined(BOOTLOAD_STK)) */
-
 #endif /* BOOTLOADER_LOADED */
 #endif /* CONFIG_BOOTLOAD */
