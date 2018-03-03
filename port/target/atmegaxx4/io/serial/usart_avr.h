@@ -33,8 +33,9 @@
 #define SERIAL_THRESHOLD_BUFFER         (0)
 #define SERIAL_THRESHOLD_BUFFER_LIST    (0)
 
-/* RTS toggle delay. */
+/* USART HW configurations. */
 #define USART_HW_TOGGLE_DELAY           (0)
+#define USART_HW_RTS_RECOVER_DELAY      (20000)
 
 /* RTS/CTS signal pins for USART0. */
 #define USART0_HW_RTS                   (5)
@@ -73,6 +74,9 @@ typedef struct _avr_usart
 {
     /* Serial data for this USRAT. */
     SERIAL      serial;
+
+    /* Hardware tick at which line was asserted. */
+    uint64_t    last_asserted;
 
     /* Baud rate for this serial device. */
     uint32_t    baudrate;

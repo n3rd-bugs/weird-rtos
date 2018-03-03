@@ -467,6 +467,9 @@ static void usart_handle_rx_interrupt(AVR_USART *usart)
             USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
             usart_avr_toggle_delay();
             USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
+
+            /* Clear last asserted tick. */
+            usart->last_asserted = 0;
         }
         break;
 
@@ -483,6 +486,9 @@ static void usart_handle_rx_interrupt(AVR_USART *usart)
             USART1_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART1_HW_RTS_RESET);
             usart_avr_toggle_delay();
             USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
+
+            /* Clear last asserted tick. */
+            usart->last_asserted = 0;
         }
 
         break;
@@ -776,6 +782,9 @@ static int32_t usart_avr_gets(void *fd, void *priv_data, uint8_t *buf, int32_t n
                 USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
                 usart_avr_toggle_delay();
                 USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
+
+                /* Clear last asserted tick. */
+                usart->last_asserted = 0;
             }
 
             /* Decrement number of bytes remaining. */
@@ -810,6 +819,9 @@ static int32_t usart_avr_gets(void *fd, void *priv_data, uint8_t *buf, int32_t n
                 USART1_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART1_HW_RTS_RESET);
                 usart_avr_toggle_delay();
                 USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
+
+                /* Clear last asserted tick. */
+                usart->last_asserted = 0;
             }
 
             /* Decrement number of bytes remaining. */
@@ -853,10 +865,24 @@ static void usart_avr_recover_rts(void *data)
                 /* Try to lock USART. */
                 if (fd_try_get_lock(usart, 0) == SUCCESS)
                 {
-                    /* Toggle RTS reset. */
-                    USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
-                    usart_avr_toggle_delay();
-                    USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
+                    /* If line was not asserted. */
+                    if (usart->last_asserted == 0)
+                    {
+                        /* Save the last assertion tick. */
+                        usart->last_asserted = current_hardware_tick();
+                    }
+
+                    /* If we are asserted long enough. */
+                    else if (INT64CMP(current_hardware_tick(), usart->last_asserted) > (int64_t)US_TO_HW_TICK(USART_HW_RTS_RECOVER_DELAY))
+                    {
+                        /* Toggle RTS reset. */
+                        USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
+                        usart_avr_toggle_delay();
+                        USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
+
+                        /* Clear last asserted tick. */
+                        usart->last_asserted = 0;
+                    }
 
                     /* Release USART lock. */
                     fd_release_lock(usart);
@@ -875,10 +901,24 @@ static void usart_avr_recover_rts(void *data)
                 /* Try to lock USART. */
                 if (fd_try_get_lock(usart, 0) == SUCCESS)
                 {
-                    /* Toggle RTS reset. */
-                    USART1_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART1_HW_RTS_RESET);
-                    usart_avr_toggle_delay();
-                    USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
+                    /* If line was not asserted. */
+                    if (usart->last_asserted == 0)
+                    {
+                        /* Save the last assertion tick. */
+                        usart->last_asserted = current_hardware_tick();
+                    }
+
+                    /* If we are asserted long enough. */
+                    else if (INT64CMP(current_hardware_tick(), usart->last_asserted) > (int64_t)US_TO_HW_TICK(USART_HW_RTS_RECOVER_DELAY))
+                    {
+                        /* Toggle RTS reset. */
+                        USART1_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART1_HW_RTS_RESET);
+                        usart_avr_toggle_delay();
+                        USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
+
+                        /* Clear last asserted tick. */
+                        usart->last_asserted = 0;
+                    }
 
                     /* Release USART lock. */
                     fd_release_lock(usart);

@@ -10,6 +10,7 @@ if (${SERIAL_INTERRUPT_MODE})
     setup_option_def(SERIAL_THRESHOLD_BUFFER_LIST 0 INT "Number of threshold buffer lists for the serial device (interrupt mode)." CONFIG_FILE "usart_avr_config")
 endif ()
 setup_option_def(USART_HW_TOGGLE_DELAY 0 INT "Factor of delay we need to add when toggling RTS." CONFIG_FILE "usart_avr_config")
+setup_option_def(USART_HW_RTS_RECOVER_DELAY 100000 INT "Number of micro-seconds after which we will reset the RTS again." CONFIG_FILE "usart_avr_config")
 
 setup_option_def(USART0_HW_RTS 5 INT "Request to send (RTS) pin number." VALUE_LIST atmega_pinnum_values CONFIG_FILE "usart_avr_config")
 setup_option_def(USART0_HW_RTS_PORT PORTD MACRO "Request to send (RTS) PORT register." VALUE_LIST atmega_port_values CONFIG_FILE "usart_avr_config")
