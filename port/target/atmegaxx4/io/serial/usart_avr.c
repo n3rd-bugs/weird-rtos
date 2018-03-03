@@ -16,6 +16,7 @@
 #include <stdio.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
+#include <idle.h>
 
 #ifdef SERIAL_INTERRUPT_MODE
 #ifndef FS_CONSOLE
@@ -31,6 +32,7 @@ static void usart_avr_enable_interrupt(void *);
 static void usart_avr_disable_interrupt(void *);
 static int32_t usart_avr_puts(void *, void *, const uint8_t *, int32_t, uint32_t);
 static int32_t usart_avr_gets(void *, void *, uint8_t *, int32_t, uint32_t);
+static void usart_avr_recover_rts(void *);
 static void usart_avr_toggle_delay(void);
 
 /* Target serial port. */
@@ -197,14 +199,8 @@ static int32_t usart_avr_init(void *data)
             USART0_HW_RTS_RESET_DDR |= (1 << USART0_HW_RTS_RESET);
             USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
 
-            /* If RTS is in reset state. */
-            if (!(USART0_HW_RTS_PIN & (1 << USART0_HW_RTS)))
-            {
-                /* Toggle RTS reset. */
-                USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
-                usart_avr_toggle_delay();
-                USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
-            }
+            /* Register work to recover RTS. */
+            idle_add_work(&usart_avr_recover_rts, usart);
         }
 
         /* Only choose U2X if error rating is better. */
@@ -249,14 +245,8 @@ static int32_t usart_avr_init(void *data)
             USART1_HW_RTS_RESET_DDR |= (1 << USART1_HW_RTS_RESET);
             USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
 
-            /* If RTS is in reset state. */
-            if (!(USART1_HW_RTS_PIN & (1 << USART1_HW_RTS)))
-            {
-                /* Toggle RTS reset. */
-                USART1_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART1_HW_RTS_RESET);
-                usart_avr_toggle_delay();
-                USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
-            }
+            /* Register work to recover RTS. */
+            idle_add_work(&usart_avr_recover_rts, usart);
         }
 
         /* Only choose U2X if error rating is better. */
@@ -837,6 +827,70 @@ static int32_t usart_avr_gets(void *fd, void *priv_data, uint8_t *buf, int32_t n
     return (to_read - nbytes);
 
 } /* usart_avr_gets */
+
+/*
+ * usart_avr_recover_rts
+ * @data: USART for which we need to recover RTS.
+ * This function will try to recover the RTS signal if it gets asserted
+ * Indefinitely without any incoming frame.
+ */
+static void usart_avr_recover_rts(void *data)
+{
+    AVR_USART *usart = (AVR_USART *)data;
+
+    /* If HW flow control is enabled. */
+    if (usart->hw_flow_enabled == TRUE)
+    {
+        /* Process according to the device number. */
+        switch (usart->num)
+        {
+        /* If this is USART0. */
+        case 0:
+
+            /* If RTS is in reset state. */
+            if (!(USART0_HW_RTS_PIN & (1 << USART0_HW_RTS)))
+            {
+                /* Try to lock USART. */
+                if (fd_try_get_lock(usart, 0) == SUCCESS)
+                {
+                    /* Toggle RTS reset. */
+                    USART0_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART0_HW_RTS_RESET);
+                    usart_avr_toggle_delay();
+                    USART0_HW_RTS_RESET_PORT |= (1 << USART0_HW_RTS_RESET);
+
+                    /* Release USART lock. */
+                    fd_release_lock(usart);
+                }
+            }
+
+            break;
+
+#if USART1_AVAILABLE
+        /* If this is USART1. */
+        case 1:
+
+            /* If RTS is in reset state. */
+            if (!(USART1_HW_RTS_PIN & (1 << USART1_HW_RTS)))
+            {
+                /* Try to lock USART. */
+                if (fd_try_get_lock(usart, 0) == SUCCESS)
+                {
+                    /* Toggle RTS reset. */
+                    USART1_HW_RTS_RESET_PORT &= (uint8_t)~(1 << USART1_HW_RTS_RESET);
+                    usart_avr_toggle_delay();
+                    USART1_HW_RTS_RESET_PORT |= (1 << USART1_HW_RTS_RESET);
+
+                    /* Release USART lock. */
+                    fd_release_lock(usart);
+                }
+            }
+
+            break;
+#endif /* USART1_AVAILABLE */
+        }
+    }
+
+} /* usart_avr_recover_rts */
 
 /*
  * usart_avr_toggle_delay
