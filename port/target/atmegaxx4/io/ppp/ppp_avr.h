@@ -16,7 +16,9 @@
 
 #ifdef CONFIG_PPP
 
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <ppp_avr_config.h>
+#else
 /* PPP configurations. */
 #define PPP_BAUD_RATE                   (115200)
 #define PPP_MAX_BUFFER_SIZE             (32)

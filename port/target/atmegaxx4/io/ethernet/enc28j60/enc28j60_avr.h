@@ -18,7 +18,9 @@
 #ifdef ETHERNET_ENC28J60
 #include <enc28j60.h>
 
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <enc28j60_avr_config.h>
+#else
 /* ENC28J60 device configuration. */
 #define ENC28J60_AVR_RESET_DELAY            (100)
 #define ENC28J60_USE_SPI_BB                 (FALSE)

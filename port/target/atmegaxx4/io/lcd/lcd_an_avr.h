@@ -19,7 +19,9 @@
 #ifdef CONFIG_LCD_AN
 #include <lcd_an_target.h>
 
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <lcd_an_avr_config.h>
+#else
 /* LCD configuration for AVR. */
 /* Number of rows and columns on this LCD. */
 #define LCD_AN_AVR_ROWS     (4)

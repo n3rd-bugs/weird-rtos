@@ -17,7 +17,9 @@
 #ifdef CONFIG_OLED
 #include <oled_target.h>
 
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <oled_avr_config.h>
+#else
 /* OLED configuration for AVR. */
 #define OLED_AVR_I2C_ADDRESS        (0x3C)
 #define OLED_AVR_PIN_SCL            (0x3)

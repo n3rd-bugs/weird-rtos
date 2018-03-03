@@ -18,7 +18,9 @@
 #include <i2c.h>
 
 /* I2C configuration. */
-#ifndef CMAKE_BUILD
+#ifdef CMAKE_BUILD
+#include <i2c_bb_avr_config.h>
+#else
 #define AVR_SLOW_I2C
 #define AVR_I2C_DELAY        (1)
 #endif /* CMAKE_BUILD */
