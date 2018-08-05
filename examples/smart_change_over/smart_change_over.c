@@ -1247,6 +1247,9 @@ void log_entry(void *argv)
 
     for (;;)
     {
+        /* Reset LCD interface. */
+        fs_ioctl(lcd_an_fd, LCD_AN_RESET, NULL);
+
         /* If we should update display. */
         systick = current_system_tick();
 
