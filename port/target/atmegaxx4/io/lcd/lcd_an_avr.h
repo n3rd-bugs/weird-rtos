@@ -92,6 +92,7 @@
 
 /* Function prototypes. */
 void lcd_an_avr_init(void);
+int32_t lcd_an_avr_reset(void);
 
 #endif /* CONFIG_LCD_AN */
 

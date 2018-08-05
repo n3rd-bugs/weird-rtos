@@ -57,6 +57,33 @@ void lcd_an_pcf8574_init(LCD_AN_PCF8574 *lcd_an)
 } /* lcd_pcf8574_init */
 
 /*
+ * lcd_an_pcf8574_reset
+ * @lcd_an: PCF8574 LCD device.
+ * This function is responsible for resetting the alphanumeric LCD over
+ * PCF8574 device.
+ */
+int32_t lcd_an_pcf8574_reset(LCD_AN_PCF8574 *lcd_an)
+{
+    int status = SUCCESS;
+
+    /* Reinitialize the GPIO controller. */
+    status = pcf8574_init(&lcd_an->gpio);
+
+    if (status == SUCCESS)
+    {
+        /* Configure all pins as output and high. */
+        lcd_an->gpio.out_mask = lcd_an->gpio.out_data = 0xFF;
+
+        /* Reset LCD interface. */
+        status = lcd_an_reset(&lcd_an->lcd);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* lcd_an_pcf8574_reset */
+
+/*
  * lcd_an_pcf8574_set_en
  * @lcd: LCD driver for which this function was called.
  * This function is responsible for output high on enable pin.

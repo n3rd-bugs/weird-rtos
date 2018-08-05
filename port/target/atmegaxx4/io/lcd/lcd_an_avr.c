@@ -150,6 +150,25 @@ void lcd_an_avr_init(void)
 
 } /* lcd_an_avr_init */
 
+
+/*
+ * lcd_an_avr_reset
+ * This function will reset the LCD interface.
+ */
+int32_t lcd_an_avr_reset(void)
+{
+    int32_t status = SUCCESS;
+
+#ifdef CONFIG_LCD_PCF8574
+    /* Reset the PCF8574 LCD device. */
+    status = lcd_an_pcf8574_reset(&avr_lcd_an);
+#endif
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* lcd_an_avr_reset */
+
 #ifndef CONFIG_LCD_PCF8574
 /*
  * lcd_an_avr_set_en

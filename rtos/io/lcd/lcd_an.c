@@ -112,6 +112,69 @@ void lcd_an_register(LCD_AN *lcd)
 } /* lcd_an_register */
 
 /*
+ * lcd_an_reset
+ * @lcd: LCD data.
+ * This function will reset the LCD driver.
+ */
+int32_t lcd_an_reset(LCD_AN *lcd)
+{
+    int32_t status = SUCCESS;
+
+    /* Initialize LCD. */
+    lcd->clr_rs(lcd);
+    lcd->set_rw(lcd);
+    lcd->clr_en(lcd);
+
+#if (LCD_AN_INIT_DELAY > 0)
+    /* Need to wait at least 15ms on power up. */
+    sleep_fms(LCD_AN_INIT_DELAY);
+#endif
+
+    /* Initialize LCD in 4-bit mode ignore status from initial commands. */
+    lcd_an_write_register(lcd, LCD_IGNORE_WAIT, 0x33);
+    lcd_an_write_register(lcd, LCD_IGNORE_WAIT, 0x32);
+    status = lcd_an_write_register(lcd, 0, 0x28);
+
+    if (status == SUCCESS)
+    {
+        status = lcd_an_write_register(lcd, 0, 0x08);
+    }
+
+    if (status == SUCCESS)
+    {
+        status = lcd_an_write_register(lcd, 0, 0x01);
+
+#if (LCD_AN_CLEAR_DELAY > 0)
+        /* Wait for sometime before writing any more data. */
+        sleep_fms(LCD_AN_CLEAR_DELAY);
+#endif
+    }
+
+    if (status == SUCCESS)
+    {
+        status = lcd_an_write_register(lcd, 0, 0x06);
+    }
+
+    if (status == SUCCESS)
+    {
+        status = lcd_an_write_register(lcd, 0, 0x0C);
+    }
+
+    if (status == SUCCESS)
+    {
+        /* Reset the cursor location. */
+        lcd->cur_column = lcd->cur_row = 0;
+
+        /* There is always some space available for data to be sent. */
+        lcd->console.fs.flags |= FS_SPACE_AVAILABLE;
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* lcd_an_reset */
+
+/*
  * lcd_an_send_nibble
  * @lcd: LCD driver on which a nibble is needed to be sent.
  * @cmd: Nibble needed to be sent.
@@ -496,6 +559,18 @@ static int32_t lcd_an_ioctl(void *priv_data, uint32_t cmd, void *param)
         /* Create a custom LCD character. */
         status = lcd_an_create_custom_char(lcd, (uint8_t)data->index,
                                            (uint8_t *)data->param);
+
+        break;
+
+    /* Need to reset the LCD interface. */
+    case LCD_AN_RESET:
+
+#ifdef LCD_AN_TGT_RESET
+        /* Reset LCD subsystem. */
+        status = LCD_AN_TGT_RESET();
+#else
+        status = SUCCESS;
+#endif
 
         break;
 

@@ -19,6 +19,7 @@
 
 /* Hook-up LCD OS stack. */
 #define LCD_AN_TGT_INIT()           lcd_an_avr_init()
+#define LCD_AN_TGT_RESET()          lcd_an_avr_reset()
 
 #endif /* CONFIG_LCD_AN */
 #endif /* _LCD_AN_TARGET_H_ */

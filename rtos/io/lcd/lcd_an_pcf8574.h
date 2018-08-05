@@ -47,6 +47,7 @@ typedef struct lcd_an_pcf8574
 
 /* Function prototypes. */
 void lcd_an_pcf8574_init(LCD_AN_PCF8574 *);
+int32_t lcd_an_pcf8574_reset(LCD_AN_PCF8574 *);
 
 #endif /* CONFIG_LCD_PCF8574 */
 #endif /* CONFIG_LCD_AN */

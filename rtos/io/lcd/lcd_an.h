@@ -55,6 +55,7 @@
 
 /* LCD IOCTL commands. */
 #define LCD_AN_CUSTOM_CHAR     (1)
+#define LCD_AN_RESET           (2)
 
 /* LCD strcuture. */
 typedef struct _lcd_an LCD_AN;
@@ -113,6 +114,7 @@ extern FD lcd_an_fd;
 /* Function prototypes. */
 void lcd_an_init(void);
 void lcd_an_register(LCD_AN *);
+int32_t lcd_an_reset(LCD_AN *);
 
 #endif /* CONFIG_LCD_AN */
 
