@@ -721,6 +721,15 @@ static void enc28j60_receive_packet(ENC28J60 *device)
                     /* Don't copy the trailing CRC. */
                     packet_length = (uint16_t)(packet_length - ENC28J60_CRC_LEN);
 
+#if (ENC28J60_SOFT_MAX_RX_FRAME > 0)
+                    /* If we need to receive more bytes. */
+                    if (packet_length > ENC28J60_SOFT_MAX_RX_FRAME)
+                    {
+                        /* Only try to receive the bytes that we can. */
+                        packet_length = ENC28J60_SOFT_MAX_RX_FRAME;
+                    }
+#endif /* ENC28J60_SOFT_MAX_RX_FRAME */
+
                     /* While we have some data to copy. */
                     while (packet_length > 0)
                     {

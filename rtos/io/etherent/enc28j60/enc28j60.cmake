@@ -12,5 +12,6 @@ setup_option_def(ENC28J60_NUM_THR_BUFFER 8 INT "Number of threshold buffers for 
 setup_option_def(ENC28J60_NUM_THR_LIST 4 INT "Number of threshold buffer lists for ENC28J60 device." CONFIG_FILE "enc28j60_config")
 setup_option_def(ENC28J60_NUM_ARP 4 INT "Number of ARP entries for ENC28J60 device." CONFIG_FILE "enc28j60_config")
 setup_option_def(ENC28J60_NUM_IPV4_FRAGS 2 INT "Number of IPv4 fragments for ENC28J60 device." CONFIG_FILE "enc28j60_config")
+setup_option_def(ENC28J60_SOFT_MAX_RX_FRAME 0 INT "Configures the maximum number of bytes we will process in an incomming frame, if zero there is no restriction." CONFIG_FILE "enc28j60_config")
 setup_option_def(ENC28J60_DEFAULT_IP 0xC0A80032 INT "Default IP address for ENC28J60 device if DHCP client is disabled." CONFIG_FILE "enc28j60_config")
 setup_option_def(ENC28J60_DEFAULT_SUBNET 0xFFFFFF00 INT "Default subnet mask for ENC28J60 device if DHCP client is disabled." CONFIG_FILE "enc28j60_config")
