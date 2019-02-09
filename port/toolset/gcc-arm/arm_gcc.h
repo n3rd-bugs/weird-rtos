@@ -30,6 +30,9 @@
 #define NOOPTIMIZATION      __attribute__((optimize("O0")))
 #define SPEEDOPTIMIZATION   __attribute__((optimize("O3")))
 
+#ifdef LITTLE_ENDIAN
+#undef LITTLE_ENDIAN
+#endif
 #define LITTLE_ENDIAN
 
 /* If buffered IO is required. */
