@@ -40,7 +40,7 @@ function (setup_target target_name sources)
     set_target_properties(${target_name} PROPERTIES OUTPUT_NAME ${target_name}.elf LINK_FLAGS "-Wl,-Map,\"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.map\"")
 
     # Add target to generate a HEX file for this build.
-    add_custom_target(${target_name}.hex ALL ${AVR_OBJCOPY} -R .eeprom -R .fuse -R .lock -R .signature -O ihex "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.hex" DEPENDS ${target_name})
+    add_custom_target(${target_name}.hex ALL ${AVR_OBJCOPY} -R .eeprom -O ihex "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.hex" DEPENDS ${target_name})
 
     # Add a target to create ASM listing.
     add_custom_target(${target_name}.lss ALL ${AVR_OBJDUMP} -h -S "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" > "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.lss" DEPENDS ${target_name})
@@ -51,6 +51,6 @@ function (setup_target target_name sources)
     # If we have AVR dude configuration.
     if (${TGT_PLATFORM}_DUDE_MCU)
         # Add a target for AVR dude.
-        add_custom_target(${target_name}.dude ${AVR_DUDE} -p${${TGT_PLATFORM}_DUDE_MCU} -c${${TGT_PLATFORM}_DUDE_DRIVER} -P${${TGT_PLATFORM}_DUDE_SER} -b${${TGT_PLATFORM}_DUDE_BOUD} -D -Uflash:w:${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.hex:a DEPENDS ${target_name}.hex)
+        add_custom_target(${target_name}.dude cd ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} && ${AVR_DUDE} -p${${TGT_PLATFORM}_DUDE_MCU} -c${${TGT_PLATFORM}_DUDE_DRIVER} -P${${TGT_PLATFORM}_DUDE_SER} -b${${TGT_PLATFORM}_DUDE_BOUD} -D -Uflash:w:${target_name}.hex:a DEPENDS ${target_name}.hex)
     endif ()
 endfunction ()
