@@ -37,7 +37,7 @@ function (setup_target target_name sources)
     add_executable(${target_name} ${RTOS_LINK_SOURCES} ${${sources}})
     target_link_libraries(${target_name} ${RTOS_LIB} m)
     target_include_directories(${target_name} PUBLIC ${RTOS_INCLUDES})
-    set_target_properties(${target_name} PROPERTIES OUTPUT_NAME ${target_name}.elf LINK_FLAGS "-Wl,-Map,${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.map")
+    set_target_properties(${target_name} PROPERTIES OUTPUT_NAME ${target_name}.elf LINK_FLAGS "-Wl,-Map,\"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.map\"")
 
     # Add target to generate a HEX file for this build.
     add_custom_target(${target_name}.hex ALL ${AVR_OBJCOPY} -R .eeprom -R .fuse -R .lock -R .signature -O ihex "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.elf" "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${target_name}.hex" DEPENDS ${target_name})

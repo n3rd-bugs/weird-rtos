@@ -9,7 +9,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/utils)
 # If we are targeting  
 if (TGT_PLATFORM STREQUAL atmega1284)
     # Update link flags to include linker file.
-    set(CMAKE_EXE_LINKER_FLAGS "-T${CMAKE_CURRENT_SOURCE_DIR}/atmega1284p.ld ${CMAKE_EXE_LINKER_FLAGS}" CACHE STRING "" FORCE)
+    set(CMAKE_EXE_LINKER_FLAGS "-T\"${CMAKE_CURRENT_SOURCE_DIR}/atmega1284p.ld\" ${CMAKE_EXE_LINKER_FLAGS}" CACHE STRING "" FORCE)
 endif ()
 
 # Add a configuration option for target platform.
