@@ -22,6 +22,7 @@
 #else
 //#define TASK_STATS
 #define TASK_USAGE
+#define TASK_USAGE_RETAIN
 #define TASK_STACK_PATTERN  'A'
 #endif /* CMAKE_BUILD */
 
@@ -48,6 +49,11 @@ struct _task
 
     /* Tick at which this task was last scheduled. */
     uint64_t    last_active_tick;
+
+#ifdef TASK_USAGE_RETAIN
+    /* Number of ticks this task was scheduled in last reset. */
+    uint64_t    last_total_active_ticks;
+#endif /* TASK_USAGE_RETAIN */
 #endif /* (defined(TASK_STATS) && defined(TASK_USAGE)) */
 
     /* Task entry function. */

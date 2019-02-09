@@ -33,6 +33,14 @@ static uint64_t sys_last_active_tick;
 /* Tick at which we reset the usage statistics. */
 static uint64_t sys_clock_base;
 
+#ifdef TASK_USAGE_RETAIN
+/* Last number of ticks system context was active. */
+static uint64_t last_sys_total_active_ticks;
+
+/* Last session's interval in ticks. */
+static uint64_t last_session_ticks;
+#endif /*TASK_USAGE_RETAIN*/
+
 /*
  * mark_task_entry
  * This function marks the entry of a task if we are in one.
@@ -77,6 +85,11 @@ void usage_reset(void)
 {
     TASK *tcb = sch_task_list.head;
 
+#ifdef TASK_USAGE_RETAIN
+    /* Save the last session's interval. */
+    last_session_ticks =  current_hardware_tick() - sys_clock_base;
+#endif /*TASK_USAGE_RETAIN*/
+
     /* Pick the new base clock. */
     sys_clock_base = current_hardware_tick();
 
@@ -86,12 +99,22 @@ void usage_reset(void)
     /* Traverse the list of all the tasks. */
     while (tcb != NULL)
     {
+#ifdef TASK_USAGE_RETAIN
+        /* Save old total ticks. */
+        tcb->last_total_active_ticks = tcb->total_active_ticks;
+#endif /*TASK_USAGE_RETAIN*/
+
         /* Reset total active ticks for this task. */
         tcb->total_active_ticks = 0;
 
         /* Get the next task. */
         tcb = tcb->next_global;
     }
+
+#ifdef TASK_USAGE_RETAIN
+    /* Save the last total system active ticks. */
+    last_sys_total_active_ticks = sys_total_active_ticks;
+#endif /*TASK_USAGE_RETAIN*/
 
     /* Reset total system active ticks. */
     sys_total_active_ticks = 0;
@@ -124,11 +147,17 @@ void usage_reset(void)
 uint64_t usage_calculate(TASK *task, uint64_t scale)
 {
     uint64_t usage;
+#ifndef TASK_USAGE_RETAIN
     INT_LVL interrupt_level;
+#endif /* TASK_USAGE_RETAIN */
 
     /* If we have task. */
     if (task != NULL)
     {
+#ifdef TASK_USAGE_RETAIN
+        /* Pick the last session's total number of active ticks. */
+        usage = task->last_total_active_ticks;
+#else
         /* Pick the total number of active ticks. */
         usage = task->total_active_ticks;
 
@@ -145,15 +174,25 @@ uint64_t usage_calculate(TASK *task, uint64_t scale)
             /* Restore old interrupt level. */
             SET_INTERRUPT_LEVEL(interrupt_level);
         }
+#endif /*TASK_USAGE_RETAIN*/
     }
     else
     {
+#ifdef TASK_USAGE_RETAIN
+        /* Pick the last session's ticks for which we were active in system context. */
+        usage = last_sys_total_active_ticks;
+#else
         /* Pick the ticks we were active in system context. */
         usage = sys_total_active_ticks;
+#endif /*TASK_USAGE_RETAIN*/
     }
 
     /* Calculate and scale the usage. */
+#ifdef TASK_USAGE_RETAIN
+    usage = ((usage * scale) / (last_session_ticks));
+#else
     usage = ((usage * scale) / (current_hardware_tick() - sys_clock_base));
+#endif /*TASK_USAGE_RETAIN*/
 
     /* Return the usage to the caller. */
     return (usage);
