@@ -30,6 +30,7 @@ typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 #else
 /* IPv4 stack configuration. */
 #define IPV4_ENABLE_FRAG
+// #define IPV4_ALLOW_SIZE_MISMATCH
 
 /* IPv4 fragmentation configuration. */
 #define IPV4_FRAG_TIMEOUT           (60000)
