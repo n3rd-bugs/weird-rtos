@@ -20,8 +20,8 @@ if (${CONFIG_BOOTLOAD})
     endif ()
     
     # Setup AVR dude options.
-    setup_option_def(${TGT_PLATFORM}_DUDE_MCU "m1284p" STRING "AVR dude MCU." CONFIG_FILE "bootload_avr_config")
-    setup_option_def(${TGT_PLATFORM}_DUDE_DRIVER "arduino" STRING "AVR dude driver." CONFIG_FILE "bootload_avr_config")
-    setup_option_def(${TGT_PLATFORM}_DUDE_SER "COM6" STRING "AVR dude serial port." CONFIG_FILE "bootload_avr_config")
-    setup_option_def(${TGT_PLATFORM}_DUDE_BOUD "115200" STRING "AVR dude boudrate." CONFIG_FILE "bootload_avr_config")
+    setup_option_def(${TGT_PLATFORM}_DUDE_MCU "m1284p" STRING "AVR dude MCU." CONFIG_FILE "unused")
+    setup_option_def(${TGT_PLATFORM}_DUDE_DRIVER "arduino" STRING "AVR dude driver." CONFIG_FILE "unused")
+    setup_option_def(${TGT_PLATFORM}_DUDE_SER "COM1" STRING "AVR dude serial port." CONFIG_FILE "unused")
+    setup_option_def(${TGT_PLATFORM}_DUDE_BOUD "115200" STRING "AVR dude boudrate." CONFIG_FILE "unused")
 endif ()
