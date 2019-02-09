@@ -25,6 +25,7 @@
 #include <net_udp_config.h>
 #else
 #define UDP_CSUM
+// #define UDP_ALLOW_SIZE_MISMATCH
 #endif /* CMAKE_BUILD */
 
 /* UDP header definitions. */

@@ -234,13 +234,17 @@ int32_t net_process_udp(FS_BUFFER_LIST *buffer, uint32_t ihl, uint32_t iface_add
         /* Pull the length of UDP datagram. */
         ASSERT(fs_buffer_list_pull_offset(buffer, &length, 2, (ihl + UDP_HRD_LEN_OFFSET), (FS_BUFFER_INPLACE | FS_BUFFER_PACKED)) != SUCCESS);
 
+#ifndef UDP_ALLOW_SIZE_MISMATCH
         /* If UDP header length value is not correct. */
         if (buffer->total_length < (ihl + length))
         {
             /* Invalid UDP header. */
             status = NET_INVALID_HDR;
         }
-        else if (buffer->total_length > (ihl + length))
+        else
+#endif
+        /* If we have padding at the end of UDP frame. */
+        if (buffer->total_length > (ihl + length))
         {
             /* Pull padding from the buffer. */
             ASSERT(fs_buffer_list_pull(buffer, NULL, (buffer->total_length - (ihl + length)), FS_BUFFER_TAIL) != SUCCESS);
