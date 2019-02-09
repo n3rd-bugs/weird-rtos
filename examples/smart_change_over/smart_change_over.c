@@ -726,12 +726,6 @@ int32_t weird_view_demo_task_stats(uint16_t id, FS_BUFFER_LIST *buffer)
         status = util_print_sys_info_buffer(buffer);
     }
 
-    if (status == SUCCESS)
-    {
-        /* Reset CPU usage. */
-        usage_reset();
-    }
-
     /* Always return success. */
     return (SUCCESS);
 
@@ -1309,9 +1303,6 @@ void log_entry(void *argv)
         P_STR_CPY(str, P_STR("\r\n"));
         printf(str);
 
-        /* Calculate the tick at which we need to display log. */
-        target_time += LOG_DELAY;
-
         P_STR_CPY(str, P_STR("V(M): "));
         printf(str);
         P_STR_CPY(str, P_STR("%ld"));
@@ -1332,13 +1323,13 @@ void log_entry(void *argv)
         printf(str, generator_approx);
 #endif /* (COMPUTE_APPROX == TRUE) */
 
-        /* Sleep for some time. */
-        /* Pick the system tick. */
-        systick = current_system_tick();
-        if (target_time > TICK_TO_MS(systick))
-        {
-            sleep_fms(target_time - TICK_TO_MS(systick));
-        }
+#if (defined(TASK_STATS) && defined(TASK_USAGE))
+        /* Reset CPU usage. */
+        usage_reset();
+#endif /* (defined(TASK_STATS) && defined(TASK_USAGE)) */
+
+        /* Calculate the tick at which we need to display log. */
+        target_time += LOG_DELAY;
     }
 
 } /* log_entry */
