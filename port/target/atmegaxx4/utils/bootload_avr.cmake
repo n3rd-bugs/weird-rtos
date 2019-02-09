@@ -25,11 +25,3 @@ if (${CONFIG_BOOTLOAD})
     setup_option_def(${TGT_PLATFORM}_DUDE_SER "COM6" STRING "AVR dude serial port." CONFIG_FILE "bootload_avr_config")
     setup_option_def(${TGT_PLATFORM}_DUDE_BOUD "115200" STRING "AVR dude boudrate." CONFIG_FILE "bootload_avr_config")
 endif ()
-
-# Setup AVR dude options.
-if (TGT_PLATFORM STREQUAL atmega1284)
-    setup_option_def(${TGT_PLATFORM}_DUDE_MCU "m1284p" STRING "AVR dude MCU." CONFIG_FILE "bootload_avr_config")
-    setup_option_def(${TGT_PLATFORM}_DUDE_DRIVER "stk500v1" STRING "AVR dude driver." CONFIG_FILE "bootload_avr_config")
-    setup_option_def(${TGT_PLATFORM}_DUDE_SER "COM6" STRING "AVR dude serial port." CONFIG_FILE "bootload_avr_config")
-    setup_option_def(${TGT_PLATFORM}_DUDE_BOUD "460800" STRING "AVR dude boudrate." CONFIG_FILE "bootload_avr_config")
- endif ()
