@@ -40,6 +40,9 @@ setup_option(ENC28J60_SOFT_MAX_RX_FRAME 384)
 # Setup networking stack configurations.
 setup_option(NET_COND_STACK_SIZE 512)
 setup_option(IPV4_ENABLE_FRAG OFF)
+setup_option(IPV4_ALLOW_SIZE_MISMATCH ON)
+setup_option(UDP_ALLOW_SIZE_MISMATCH ON)
+setup_option(UDP_CSUM OFF)
 setup_option(NET_NUM_ROUTES 2)
 setup_option(NET_TCP OFF)
 
