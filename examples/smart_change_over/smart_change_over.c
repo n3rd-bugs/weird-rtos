@@ -1223,7 +1223,7 @@ void adc_int_unlock(void *data)
  */
 void log_entry(void *argv)
 {
-    uint32_t systick, ip_address, target_time = 0;
+    uint32_t systick, ip_address, target_time = (current_system_tick() / SOFT_TICKS_PER_SEC) * 1000;
     static FD *enc28j60_fd = NULL;
     uint8_t day, hour, min, sec, milisec;
     char str[10];
@@ -1241,11 +1241,19 @@ void log_entry(void *argv)
 
     for (;;)
     {
-        /* Reset LCD interface. */
-        fs_ioctl(lcd_an_fd, LCD_AN_RESET, NULL);
+        /* Sleep for some time. */
+        /* Pick the system tick. */
+        systick = current_system_tick();
+        if (target_time > TICK_TO_MS(systick))
+        {
+            sleep_fms(target_time - TICK_TO_MS(systick));
+        }
 
         /* If we should update display. */
         systick = current_system_tick();
+
+        /* Reset LCD interface. */
+        fs_ioctl(lcd_an_fd, LCD_AN_RESET, NULL);
 
         /* Try to get the assigned IP address to the ethernet controller. */
         ip_address = IPV4_ADDR_UNSPEC;
