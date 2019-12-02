@@ -46,7 +46,7 @@ typedef struct _sll_head
  * @return: Returns if a member already exists in a list.
  * This function will return if a member already exists in a list.
  */
-inline uint8_t sll_in_list(void *list, void *node, int offset)                                          \
+static inline uint8_t sll_in_list(void *list, void *node, int offset)                                          \
 {                                                                                                       \
     void *list_node = ((SLL_HEAD *)list)->head;                                                         \
     uint8_t in_list = FALSE;                                                                            \
@@ -69,7 +69,7 @@ inline uint8_t sll_in_list(void *list, void *node, int offset)                  
  * @offset: Offset of the "next" member in the node structure.
  * This function adds the given node on a list's head.
  */
-inline void sll_push(void *list, void *node, int offset)                                \
+static inline void sll_push(void *list, void *node, int offset)                                \
 {                                                                                       \
     ASSERT(node == NULL);                                                            \
     ASSERT(sll_in_list(list, node, offset));                                         \
@@ -88,7 +88,7 @@ inline void sll_push(void *list, void *node, int offset)                        
  * @return: Node that was removed from the list's head.
  * This function removes and returns the head node of the given list.
  */
-inline void *sll_pop(void *list, int offset)                                            \
+static inline void *sll_pop(void *list, int offset)                                            \
 {                                                                                       \
     void *node = ((SLL_HEAD *)list)->head;                                              \
                                                                                         \
@@ -115,7 +115,7 @@ inline void *sll_pop(void *list, int offset)                                    
  * @offset: Offset of the "next" member in the node structure.
  * This function adds a node at the end (tail) of the given list.
  */
-inline void sll_append(void *list, void *node, int offset)                              \
+static inline void sll_append(void *list, void *node, int offset)                              \
 {                                                                                       \
     ASSERT(node == NULL);                                                            \
     ASSERT(sll_in_list(list, node, offset));                                         \
@@ -141,7 +141,7 @@ inline void sll_append(void *list, void *node, int offset)                      
  * This function adds a new node in the given list, according to the sorting
  * criteria set by the sort function.
  */
-inline void sll_insert(void *list, void *node, uint8_t (*sort)(void *, void *), int offset)                         \
+static inline void sll_insert(void *list, void *node, uint8_t (*sort)(void *, void *), int offset)                         \
 {                                                                                                                   \
     void *list_node = ((SLL_HEAD *)list)->head;                                                                     \
     ASSERT(node == NULL);                                                                                        \
@@ -178,7 +178,7 @@ inline void sll_insert(void *list, void *node, uint8_t (*sort)(void *, void *), 
  * This function will search for a particular node, as defined in the match
  * routine.
  */
-inline void *sll_search(void *list, void **prev_node, uint8_t (*match)(void *, void *), void *param, int offset)    \
+static inline void *sll_search(void *list, void **prev_node, uint8_t (*match)(void *, void *), void *param, int offset)    \
 {                                                                                                                   \
     void *list_node = ((SLL_HEAD *)list)->head;                                                                     \
     void *node = NULL;                                                                                              \
@@ -220,7 +220,7 @@ inline void *sll_search(void *list, void **prev_node, uint8_t (*match)(void *, v
  * @offset: Offset of the "next" member in a node structure.
  * This function removes a particular node from the given list.
  */
-inline void sll_remove_node(void *list, void *node, void *prev_node, int offset)                                    \
+static inline void sll_remove_node(void *list, void *node, void *prev_node, int offset)                                    \
 {                                                                                                                   \
     ASSERT(node == NULL);                                                                                        \
     if (((SLL_HEAD *)list)->head == node)                                                                           \
@@ -251,7 +251,7 @@ inline void sll_remove_node(void *list, void *node, void *prev_node, int offset)
  * @return: Node that was removed form the list.
  * This function will search for a particular node.
  */
-inline void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *param, int offset)                  \
+static inline void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *param, int offset)                  \
 {                                                                                                                   \
     void *list_node;                                                                                                \
     void *node = sll_search(list, &list_node, match, param, offset);                                                \
@@ -270,7 +270,7 @@ inline void *sll_search_pop(void *list, uint8_t (*match)(void *, void *), void *
  * @offset: Offset of the "next" member in a node structure.
  * This function adds a new node in the given link list at the given location.
  */
-inline void sll_add_node(void *list, void *node, void *prev_node, int offset)                                       \
+static inline void sll_add_node(void *list, void *node, void *prev_node, int offset)                                       \
 {                                                                                                                   \
     ASSERT(node == NULL);                                                                                        \
     ASSERT(sll_in_list(list, node, offset));                                                                     \
@@ -302,7 +302,7 @@ inline void sll_add_node(void *list, void *node, void *prev_node, int offset)   
  * @return: Returns node if it was removed otherwise null is returned.
  * This function removes a particular node from the given list.
  */
-inline void *sll_remove(void *list, void *node, int offset)                             \
+static inline void *sll_remove(void *list, void *node, int offset)                             \
 {                                                                                       \
     void *list_node = ((SLL_HEAD *)list)->head;                                         \
     ASSERT(node == NULL);                                                            \
@@ -341,7 +341,7 @@ inline void *sll_remove(void *list, void *node, int offset)                     
  * @return: Returns the number of item in this list.
  * This function will return the number of items in a given list.
  */
-inline uint32_t sll_num_items(void *list, int offset)                                   \
+static inline uint32_t sll_num_items(void *list, int offset)                                   \
 {                                                                                       \
     void *list_node = ((SLL_HEAD *)list)->head;                                         \
     uint32_t ret_num = 0;                                                               \
