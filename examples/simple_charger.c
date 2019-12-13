@@ -117,7 +117,7 @@ void control_entry(void *argv)
         /* Check if battery is fully charged. */
         else if (battery_level > BATTERY_HIGH)
         {
-            /* If charger was on for more than the initial 
+            /* If charger was on for more than the initial
              * on delay. */
             if ((charger_on == TRUE) &&
                 ((current_system_tick() - charge_start) > INITIAL_CHARGE_DELAY))

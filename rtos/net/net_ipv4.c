@@ -333,7 +333,7 @@ int32_t net_process_ipv4(FS_BUFFER_LIST *buffer, uint32_t flags)
         else if (ip_length > buffer->total_length)
         {
 #ifdef IPV4_ALLOW_SIZE_MISMATCH
-            /* Adjust the IP length, the upper layer 
+            /* Adjust the IP length, the upper layer
              * will discard this frame if needed. */
             ip_length = buffer->total_length;
 #else

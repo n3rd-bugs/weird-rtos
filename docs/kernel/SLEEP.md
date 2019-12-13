@@ -14,27 +14,27 @@ On each tick sleep is invoked to see if there is a task that can be resumed. If 
 
 ## APIs
 ### sleep\_ticks
-This API will suspend the current task for the number of provided software ticks. As system clock rate can change so it is not recommended to call this API directly, use [sleep_ms](SLEEP.md#sleep_ms) instead.  
-**takes** the number of ticks to suspend the current task.  
+This API will suspend the current task for the number of provided software ticks. As system clock rate can change so it is not recommended to call this API directly, use [sleep_ms](SLEEP.md#sleep_ms) instead.
+**takes** the number of ticks to suspend the current task.
 Implemented by [sleep.c](../../rtos/kernel/sleep.c).
 
 ### sleep\_hw\_ticks
-This API will block the current task for the number of provided hardware ticks. This API performs a busy wait and is not recommended. As system clock rate can change so it is not recommended to call this API directly, use [sleep_us](SLEEP.md#sleep_us) instead.  
-**takes** the number of hardware ticks to block the current task.  
+This API will block the current task for the number of provided hardware ticks. This API performs a busy wait and is not recommended. As system clock rate can change so it is not recommended to call this API directly, use [sleep_us](SLEEP.md#sleep_us) instead.
+**takes** the number of hardware ticks to block the current task.
 Implemented by [sleep.c](../../rtos/kernel/sleep.c).
 
 ## Helper Macros
 ### sleep\_ms
-This suspends the current task for the given number of milliseconds. If the provided milliseconds are not granule with the system tick, they will be wrapped to the smallest tick after which we need to resume this task.  
-**takes** the number of milliseconds to suspend the current task.  
+This suspends the current task for the given number of milliseconds. If the provided milliseconds are not granule with the system tick, they will be wrapped to the smallest tick after which we need to resume this task.
+**takes** the number of milliseconds to suspend the current task.
 Implemented by [sleep.h](../../rtos/kernel/sleep.h).
 
 ### sleep\_fms
-This is like [sleep_ms](SLEEP.md#sleep_ms) but it forces sleep for a tick if the computed ticks are 0.  
-**takes** the number of milliseconds to suspend the current task.  
+This is like [sleep_ms](SLEEP.md#sleep_ms) but it forces sleep for a tick if the computed ticks are 0.
+**takes** the number of milliseconds to suspend the current task.
 Implemented by [sleep.h](../../rtos/kernel/sleep.h).
 
 ### sleep\_us
-This suspends the current task for the given number of microseconds. This APIs is not recommended to use as this performs a busy wait.  
-**takes** the number of microseconds to block the current task.  
+This suspends the current task for the given number of microseconds. This APIs is not recommended to use as this performs a busy wait.
+**takes** the number of microseconds to block the current task.
 Implemented by [sleep.h](../../rtos/kernel/sleep.h).

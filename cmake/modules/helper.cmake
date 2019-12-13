@@ -12,13 +12,13 @@ function (setup_option_def configuration default_value type description)
     else ()
         set(cache_type STRING)
     endif ()
-    
+
     # Setup a configuration option.
     set(${configuration} ${default_value} CACHE ${cache_type} "")
-    
+
     # Force to add option description.
     set(${configuration} ${${configuration}} CACHE ${cache_type} ${description} FORCE)
-    
+
     # If a value function was provided.
     if (setup_option_def_VALUE_FUN)
         # Translate the value.
@@ -28,7 +28,7 @@ function (setup_option_def configuration default_value type description)
         # Use the given value as it is.
         set(configuration_value ${${configuration}} CACHE INTERNAL "" FORCE)
     endif ()
-    
+
     # If a value list was provided.
     if (setup_option_def_VALUE_LIST)
         # Set possible options for this configuration.
@@ -37,7 +37,7 @@ function (setup_option_def configuration default_value type description)
             message(FATAL_ERROR "${configuration} must be one of ${${setup_option_def_VALUE_LIST}}")
         endif()
     endif ()
-    
+
     # If we have a destination configuration file.
     if (setup_option_def_CONFIG_FILE)
         list(APPEND RTOS_DEFS_FILES "${setup_option_def_CONFIG_FILE}")
@@ -45,7 +45,7 @@ function (setup_option_def configuration default_value type description)
         list(APPEND RTOS_DEFS_FILES "config_cmake")
     endif ()
     set(RTOS_DEFS_FILES ${RTOS_DEFS_FILES} CACHE INTERNAL "RTOS_DEFS_FILES" FORCE)
-    
+
     # If this is a define option.
     if (${type} STREQUAL "DEFINE")
         # If option is enabled.
@@ -107,10 +107,10 @@ endfunction ()
 function (setup_option_list_values configuration values delimiter)
     # First remove all the spaces.
     string(REPLACE " " "" configuration_list ${${configuration}})
-    
+
     # Now divide the string on the given delimiter.
     string(REPLACE ${delimiter} ";" configuration_list ${configuration_list})
-    
+
     # Verify all the items in the configuration does exist in the given list.
     foreach(list_item ${configuration_list})
         if(NOT ${list_item} IN_LIST ${values})
@@ -124,25 +124,25 @@ function (generate_configuration configuration_list file_path file_list)
     # Get the number of configurations.
     list(LENGTH ${configuration_list} count)
     math(EXPR count "${count}-1")
-    
+
     # Get the number of files.
     list(LENGTH ${file_list} count)
-    
+
     # Clear file list.
     unset(CONFIG_FILE_LIST CACHE)
     unset(CONFIG_FILENAME_LIST CACHE)
-    
+
     # If we have atleast one configuration.
     if (${count} GREATER 0)
         # Start from 0 index.
         math(EXPR count "${count}-1")
-        
+
         # Parse all the configurations and initialize file data.
         foreach (i RANGE ${count})
             # Pick the configuration and destination configuration file.
             list(GET ${configuration_list} ${i} config)
             list(GET ${file_list} ${i} file_name)
-            
+
             # If we are creating a new file.
             if (NOT DEFINED CONFIG_FILE_${file_name})
                 # Add file header.
@@ -166,7 +166,7 @@ function (generate_configuration configuration_list file_path file_list)
                 list(APPEND CONFIG_FILE_LIST CONFIG_FILE_${file_name})
                 list(APPEND CONFIG_FILENAME_LIST ${file_name})
             endif ()
-            
+
             # If we need to add this configuration.
             if (config)
                 # Add this configuration to the file data.
@@ -174,39 +174,39 @@ function (generate_configuration configuration_list file_path file_list)
             endif ()
         endforeach ()
     endif ()
-    
+
     # Get the number of configuration files.
     list(LENGTH CONFIG_FILE_LIST count)
-    
+
     # If we have atleast one file.
     if (${count} GREATER 0)
         # Start from 0 index.
         math(EXPR count "${count}-1")
-        
+
         # Add each configuration option.
         foreach (i RANGE ${count})
             # Get the file data and the corresponding file name.
             list(GET CONFIG_FILE_LIST ${i} config_file)
             list(GET CONFIG_FILENAME_LIST ${i} file_name)
-            
+
             # Append file footer.
             set(config_file "${${config_file}}\n\n#endif /* _${file_name}_h_ */\n")
-            
+
             # Test if configuration file already exists.
             if (EXISTS "${file_path}/${file_name}.h")
                 # Read the existing configuration file.
                 file(READ "${file_path}/${file_name}.h" file_data)
             endif ()
-            
+
             # See if we really need to update this configuration file.
             if ((NOT EXISTS "${file_path}/${file_name}.h") OR (NOT ${file_data} STREQUAL ${config_file}))
                 # Write this configuration file.
                 file(WRITE "${file_path}/${file_name}.h" "${config_file}")
             endif ()
-            
+
             # Again get the file data.
             list(GET CONFIG_FILE_LIST ${i} config_file)
-            
+
             # Unset the file data so we don't add it to cache list.
             unset(${config_file} CACHE)
         endforeach ()

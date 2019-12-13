@@ -122,89 +122,89 @@ typedef struct _task
 
 ## APIs
 ### scheduler\_init
-This API must be called before invoking scheduler. This initializes scheduler internals.  
+This API must be called before invoking scheduler. This initializes scheduler internals.
 Implemented by [scheduler.c](../../rtos/kernel/scheduler.c).
 
 ### scheduler\_task\_add
-This API adds a task in the scheduler. [task_create](SCHEDULER.md#task_create) must be called to initilize a task's control block before adding it in the scheduler.  
-**takes** the task control block that is needed to be added in the scheduler.  
-**takes** the priority for this task.  
+This API adds a task in the scheduler. [task_create](SCHEDULER.md#task_create) must be called to initilize a task's control block before adding it in the scheduler.
+**takes** the task control block that is needed to be added in the scheduler.
+**takes** the priority for this task.
 Implemented by [scheduler.c](../../rtos/kernel/scheduler.c).
 
 ### scheduler\_task\_remove
-Removes a finished task from the scheduler.  
-**takes** the task control block that is needed to be removed from scheduler.  
+Removes a finished task from the scheduler.
+**takes** the task control block that is needed to be removed from scheduler.
 Implemented by [scheduler.c](../../rtos/kernel/scheduler.c).
 
 ### scheduler\_lock
-This API will lock the context of current task (interrupts can still schedule out this task), If an other higher priority task becomes ready, context switch will remain pended until scheduler is unlocked.  
+This API will lock the context of current task (interrupts can still schedule out this task), If an other higher priority task becomes ready, context switch will remain pended until scheduler is unlocked.
 Implemented by [scheduler.c](../../rtos/kernel/scheduler.c).
 
 ### scheduler\_unlock
-This API will unlock the context of current task. This will invoke the scheduler if the system has missed a scheduling point. The context may be scheduled out if a higher priority task is now ready.  
+This API will unlock the context of current task. This will invoke the scheduler if the system has missed a scheduling point. The context may be scheduled out if a higher priority task is now ready.
 Implemented by [scheduler.c](../../rtos/kernel/scheduler.c).
 
 ### task\_create
-This API initializes a task control block so that it can be added in the scheduler.  
-**takes** the task control block needed to be initialized.  
-**takes** the name for this task.  
-**takes** the task stack that will be used to run this task.  
-**takes** the task stack size.  
-**takes** the task entry function.  
-**takes** the arguments that will be passed to the task.  
-**takes** the flags for this task to set if this task might finish or not.  
+This API initializes a task control block so that it can be added in the scheduler.
+**takes** the task control block needed to be initialized.
+**takes** the name for this task.
+**takes** the task stack that will be used to run this task.
+**takes** the task stack size.
+**takes** the task entry function.
+**takes** the arguments that will be passed to the task.
+**takes** the flags for this task to set if this task might finish or not.
 Implemented by [tasks.c](../../rtos/kernel/tasks.c).
 
 ### task\_yield
-This API will try to yield current task. Task will only be switched if an higher or same priority task is found on the ready list.  
+This API will try to yield current task. Task will only be switched if an higher or same priority task is found on the ready list.
 Implemented by [kernel.c](../../rtos/kernel/kernel.c).
 
 ### kernel\_run
-This API will start the system scheduler, this should be called once the system is initialized.  
+This API will start the system scheduler, this should be called once the system is initialized.
 Implemented by [kernel.c](../../rtos/kernel/kernel.c).
 
 ### current\_system\_tick
-This API will return the system clock's current tick. Application can use helper macros to convert this tick into actual time.  
-**returns** the current system tick.  
+This API will return the system clock's current tick. Application can use helper macros to convert this tick into actual time.
+**returns** the current system tick.
 Implemented by [kernel.c](../../rtos/kernel/kernel.c).
 
 ## Helper Macros
 ### SOFT\_TICKS\_PER\_SEC
-This is the number of clock ticks per second.  
+This is the number of clock ticks per second.
 Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### MS\_TO\_TICK
-This converts the given milliseconds to the number of equivalent system ticks.  
-**takes** number of milliseconds.  
+This converts the given milliseconds to the number of equivalent system ticks.
+**takes** number of milliseconds.
 Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### TICK\_TO\_MS
-This converts the given ticks to the number of equivalent milliseconds.  
-**takes** number of ticks.  
+This converts the given ticks to the number of equivalent milliseconds.
+**takes** number of ticks.
 Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### US\_TO\_HW\_TICK
-This converts the given milliseconds to the number of equivalent hardware ticks.  
-**takes** number of milliseconds.  
+This converts the given milliseconds to the number of equivalent hardware ticks.
+**takes** number of milliseconds.
 Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### HW\_TICK\_TO\_US
-This converts the given hardware ticks to the number of equivalent milliseconds.  
-**takes** number of hardware ticks.  
+This converts the given hardware ticks to the number of equivalent milliseconds.
+**takes** number of hardware ticks.
 Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### ISR\_ENTER
-This must be the first statement of an interrupt service routine.  
+This must be the first statement of an interrupt service routine.
 Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### ISR\_EXIT
-This must be the last statement of an interrupt service routine.  
+This must be the last statement of an interrupt service routine.
 Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### KERNEL\_RUNNING
-This returns true if the kernel scheduler is running.  
+This returns true if the kernel scheduler is running.
 Implemented by [kernel.h](../../rtos/kernel/kernel.h).
 
 ### get\_current\_task
-This will return the control block of the the current task. Null will be returned if called from an interrupt service routine.  
+This will return the control block of the the current task. Null will be returned if called from an interrupt service routine.
 Implemented by [kernel.h](../../rtos/kernel/kernel.h).

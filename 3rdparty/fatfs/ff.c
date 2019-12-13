@@ -1980,7 +1980,7 @@ FRESULT load_xdir (	/* FR_INT_ERR: invalid entry block */
 }
 
 
-#if !_FS_READONLY || _FS_RPATH != 0 
+#if !_FS_READONLY || _FS_RPATH != 0
 /*------------------------------------------------*/
 /* exFAT: Load the object's directory entry block */
 /*------------------------------------------------*/

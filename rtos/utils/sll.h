@@ -129,7 +129,7 @@ static inline void sll_append(void *list, void *node, int offset)               
     {                                                                                   \
         ((SLL_HEAD *)list)->head = ((SLL_HEAD *)list)->tail = node;                     \
     }                                                                                   \
-} /* sll_append */  
+} /* sll_append */
 
 /*
  * sll_insert

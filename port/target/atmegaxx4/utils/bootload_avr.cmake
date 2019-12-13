@@ -18,7 +18,7 @@ if (${CONFIG_BOOTLOAD})
         setup_option_def(BOOTLOAD_MMC_DO_DDR DDRA MACRO "MMC SPI data-out (DO) DDR to be used by MMC bootloader." VALUE_LIST atmega_ddr_values CONFIG_FILE "bootload_avr_config")
         setup_option_def(BOOTLOAD_MMC_DO_PIN PINA MACRO "MMC SPI data-out (DO) PIN to be used by MMC bootloader." VALUE_LIST atmega_pin_values CONFIG_FILE "bootload_avr_config")
     endif ()
-    
+
     # Setup AVR dude options.
     setup_option_def(${TGT_PLATFORM}_DUDE_MCU "m1284p" STRING "AVR dude MCU." CONFIG_FILE "unused")
     setup_option_def(${TGT_PLATFORM}_DUDE_DRIVER "arduino" STRING "AVR dude driver." CONFIG_FILE "unused")

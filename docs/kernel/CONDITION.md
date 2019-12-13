@@ -21,13 +21,13 @@ A major feature that an OS provides is to allow tasks to wait for a certain cond
 ### How it works
 Weird RTOS breaks the suspension criteria in two parts
 
-- *condition*  
+- *condition*
 As it's name suggest it defines the condition for suspension, e.g. condition to suspend on semaphore availability, condition to suspend on data availability on a socket etc. All the components that allow suspension provides APIs to query their condition.
 
-- *suspend*  
+- *suspend*
 This defines the suspension criteria. This mainly holds the task suspended on a condition and if we need to wait indefinitely or not.
 
-So when a task wants to suspend on something it first create/initialize a condition for that, e.g. query semaphore for its condition or get data available condition for a socket or even create its own condition. Then it will initialize a suspend criteria to tell the OS how much it wants to wait on this condition. Once both are available it will suspend and start waiting for the condition to be satisfied. Once the OS detects that a condition is now satisfied it will resume this task.  
+So when a task wants to suspend on something it first create/initialize a condition for that, e.g. query semaphore for its condition or get data available condition for a socket or even create its own condition. Then it will initialize a suspend criteria to tell the OS how much it wants to wait on this condition. Once both are available it will suspend and start waiting for the condition to be satisfied. Once the OS detects that a condition is now satisfied it will resume this task.
 If an application needs to suspend on more than one conditions, it will first get all the conditions along with their suspend criteria and then create an array of pointers of these conditions and suspend criteria, and then suspend on them. Once resumed from a condition, OS will provide the index in the array for which task was resumed.
 
 ### Multiple tasks suspension
@@ -128,17 +128,17 @@ typedef struct _condition
 
 ## APIs
 ### suspend\_condition
-This will suspend the caller task to wait for criteria(s).  
-**takes** the array of conditions for which we need to suspend this task.  
-**takes** the array of suspend criteria for each condition.  
-**takes** the pointer to number of conditions we are waiting for. Can be null for one condition otherwise the index of the condition for which we resumed will be returned here.  
-**takes** the flag to specify if the condition and suspend data is already locked or needed to be locked.  
-**returns** success if a condition was satisfied, otherwise an error will be returned.  
+This will suspend the caller task to wait for criteria(s).
+**takes** the array of conditions for which we need to suspend this task.
+**takes** the array of suspend criteria for each condition.
+**takes** the pointer to number of conditions we are waiting for. Can be null for one condition otherwise the index of the condition for which we resumed will be returned here.
+**takes** the flag to specify if the condition and suspend data is already locked or needed to be locked.
+**returns** success if a condition was satisfied, otherwise an error will be returned.
 Implemented by [condition.c](../../rtos/kernel/condition.c).
 
 ### resume\_condition
-This will resume any tasks waiting for a condition.  
-**takes** the condition for which we need to resume tasks.  
-**takes** the resume data.  
-**takes** the flag to specify if the condition and suspend data is already locked or needed to be locked.  
+This will resume any tasks waiting for a condition.
+**takes** the condition for which we need to resume tasks.
+**takes** the resume data.
+**takes** the flag to specify if the condition and suspend data is already locked or needed to be locked.
 Implemented by [condition.c](../../rtos/kernel/condition.c).
