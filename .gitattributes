@@ -1,2 +1,10 @@
 *.c text eol=cr
 *.h text eol=cr
+*.ld text eol=cr
+*.py text eol=cr
+*.ui text eol=cr
+*.bat text eol=cr
+*.txt text eol=cr
+*.md text eol=cr
+*.cmake text eol=cr
+*.cfg text eol=cr
