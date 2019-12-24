@@ -1,6 +1,6 @@
 # Load default configurations.
-set(TGT_PLATFORM stm32f407discovery CACHE STRING "Target platform.")
-set_property(CACHE TGT_PLATFORM PROPERTY STRINGS "stm32f407discovery" "stm32f103c8t6")
+set(TGT_PLATFORM stm32f030f4p6 CACHE STRING "Target platform.")
+set_property(CACHE TGT_PLATFORM PROPERTY STRINGS "stm32f030f4p6" "stm32f103c8t6" "stm32f407vgt6" "stm32f411ceu6")
 set(TGT_TOOL "gcc-arm" CACHE STRING "Target Tools.")
 
 # Find required tool-sets.
@@ -21,13 +21,13 @@ set(ARM_C_FLAGS "-Os -fmessage-length=0 -std=gnu99 -fsigned-char -ffunction-sect
 set(ARM_LINK_FLAGS "--specs=nosys.specs -Xlinker --gc-sections " CACHE STRING "LD flags.")
 
 # Select the target CPU.
-# If this is STM32F407Discovery.
-if (${TGT_PLATFORM} STREQUAL "stm32f407discovery")
-    # We have a cortex-M4.
-    set(TGT_CPU "cortex-m4" CACHE STRING "Target CPU." FORCE)
+# If this is STM32F030f4p6.
+if (${TGT_PLATFORM} STREQUAL "stm32f030f4p6")
+    # We have a cortex-M3.
+    set(TGT_CPU "cortex-m0" CACHE STRING "Target CPU." FORCE)
 
     # Update c-flags.
-    set(ARM_MCU_FLAGS "-mcpu=${TGT_CPU} -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16" CACHE INTERNAL "" FORCE)
+    set(ARM_MCU_FLAGS "-mcpu=${TGT_CPU} -mthumb" CACHE INTERNAL "" FORCE)
 
 # If this is STM32F103C8T6.
 elseif (${TGT_PLATFORM} STREQUAL "stm32f103c8t6")
@@ -37,10 +37,29 @@ elseif (${TGT_PLATFORM} STREQUAL "stm32f103c8t6")
     # Update c-flags.
     set(ARM_MCU_FLAGS "-mcpu=${TGT_CPU} -mthumb" CACHE INTERNAL "" FORCE)
 
+# If this is STM32F407VGT6.
+elseif (${TGT_PLATFORM} STREQUAL "stm32f407vgt6")
+    # We have a cortex-M4.
+    set(TGT_CPU "cortex-m4" CACHE STRING "Target CPU." FORCE)
+
+    # Update c-flags.
+    set(ARM_MCU_FLAGS "-mcpu=${TGT_CPU} -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16" CACHE INTERNAL "" FORCE)
+
+# If this is STM32F411CEU6.
+elseif (${TGT_PLATFORM} STREQUAL "stm32f411ceu6")
+    # We have a cortex-M4.
+    set(TGT_CPU "cortex-m4" CACHE STRING "Target CPU." FORCE)
+
+    # Update c-flags.
+    set(ARM_MCU_FLAGS "-mcpu=${TGT_CPU} -mthumb -mfloat-abi=hard -mfpu=fpv4-sp-d16" CACHE INTERNAL "" FORCE)
+
 # Must be not supported.
 else()
     message(FATAL_ERROR "Unsupported device ${TGT_PLATFORM}.")
 endif ()
+
+# Define minimum IDLE task stack size.
+set(kernel_idle_stack_min 128 CACHE INTERNAL "" FORCE)
 
 # Set c and link flags.
 set(CMAKE_C_FLAGS "${ARM_MCU_FLAGS} ${ARM_C_FLAGS}" CACHE STRING "" FORCE)
