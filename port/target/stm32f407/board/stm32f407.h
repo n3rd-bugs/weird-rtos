@@ -23,13 +23,11 @@
 
 /* Required definitions for scheduling. */
 #define CORTEX_M4_PEND_SV_REG           (SCB->ICSR)
-#define CORTEX_M4_PEND_SV_MAST          (SCB_ICSR_PENDSVSET_Msk)
-#define CORTEX_M4_INT_PEND_SV_PRI_REG   (SCB->SHP[10])
-#define CORTEX_M4_SYS_TICK_REG          (SysTick->CTRL)
-#define CORTEX_M4_SYS_TICK_MASK         (SysTick_CTRL_TICKINT_Msk)
-#define CORTEX_M4_INT_SYS_TICK_PRI_REG  (SCB->SHP[11])
-#define CORTEX_M4_INT_SYS_PRI           (0x1)
+#define CORTEX_M4_PEND_SV_MASK          (SCB_ICSR_PENDSVSET_Msk)
+#define CORTEX_M4_INT_SYS_PRI           (0xFF)
+#define CORTEX_M4_SET_PENDSV_PRI()      NVIC_SetPriority(PendSV_IRQn, CORTEX_M4_INT_SYS_PRI)
 
+/* Control FPU support. */
 #define CORTEX_M4_FPU                   (TRUE)
 
 /* End of BSS marks the start of system stack. */
