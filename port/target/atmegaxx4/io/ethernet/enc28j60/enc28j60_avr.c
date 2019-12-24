@@ -94,15 +94,15 @@ void enc28j60_avr_init(void)
     enc28j60.spi.slave_select = &spi_avr_slave_select;
     enc28j60.spi.slave_unselect = &spi_avr_slave_unselect;
     enc28j60.spi.msg = &spi_avr_message;
-#endif
+#endif /* (ENC28J60_USE_SPI_BB == TRUE) */
 
     /* Initialize name for this device. */
     enc28j60.ethernet_device.fs.name = "\\ethernet\\enc28j60";
 
     /* Initialize SPI parameters. */
-#if (ENC28J60_INT_POLL == TRUE)
+#if (ENC28J60_USE_SPI_BB == FALSE)
     enc28j60.spi.baudrate = ENC28J60_AVR_BAUDRATE;
-#endif /* (ENC28J60_INT_POLL == FALSE) */
+#endif /* (ENC28J60_USE_SPI_BB == TRUE) */
     enc28j60.spi.cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA);
 
     /* Do SPI initialization. */
