@@ -84,7 +84,7 @@ struct _dhcp_client_device
     uint32_t    xid;
 
     /* Current timeout for DHCP client. */
-    uint16_t    current_timeout;
+    uint32_t    current_timeout;
 
     /* DHCP client state. */
     uint8_t     state;
@@ -97,7 +97,7 @@ struct _dhcp_client_device
     uint8_t     address_assigned;
 
     /* Structure padding. */
-    uint8_t     pad[3];
+    uint8_t     pad[1];
 
 };
 
