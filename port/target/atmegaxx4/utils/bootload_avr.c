@@ -39,6 +39,7 @@ static int32_t bootload_stk(void) BOOTLOAD_SECTION;
 static void stk500_reply(uint8_t) BOOTLOAD_SECTION;
 static void stk500_empty_reply(void) BOOTLOAD_SECTION;
 static void bootload_avr_putc(volatile uint8_t) BOOTLOAD_SECTION;
+static void bootload_avr_puts(uint8_t *) BOOTLOAD_SECTION;
 static uint8_t bootload_avr_getc(void) BOOTLOAD_SECTION;
 #endif /* BOOTLOAD_STK */
 #if (defined(BOOTLOAD_MMC) || defined(BOOTLOAD_STK))
@@ -217,7 +218,7 @@ static int32_t bootload_mmc(void)
     {
         /* Read the HEX offset. */
         offset = 0;
-        bootload_disk_read(type, hex_buffer, 0, 9, &offset);
+        bootload_disk_read(type, hex_buffer, BOOTLOAD_MMC_BOOTLOAD_MARK_SECTOR_LOCATION, 9, &offset);
         start_offset = ((uint32_t)hex_buffer[0] << 24) + ((uint32_t)hex_buffer[1] << 16) + ((uint32_t)hex_buffer[2] << 8) + ((uint32_t)hex_buffer[3] << 0);
         bootload_disk_read(type, NULL, 0, 0, &offset);
 
@@ -423,6 +424,16 @@ static int32_t bootload_stk(void)
     uint32_t load_address = 0,  i;
     uint16_t size, page_size = 256;
     uint8_t byte, boot_page_buffer[256];
+
+    /* Initialize a welcome message. */
+    boot_page_buffer[0] = 'W'; boot_page_buffer[1] = 'e'; boot_page_buffer[2] = 'i'; boot_page_buffer[3] = 'r'; boot_page_buffer[4] = 'd';
+    boot_page_buffer[5] = '-'; boot_page_buffer[6] = 'R'; boot_page_buffer[7] = 'T'; boot_page_buffer[8] = 'O'; boot_page_buffer[9] = 'S';
+    boot_page_buffer[10] = ' '; boot_page_buffer[11] = 'b'; boot_page_buffer[12] = 'o'; boot_page_buffer[13] = 'o'; boot_page_buffer[14] = 't';
+    boot_page_buffer[15] = 'l'; boot_page_buffer[16] = 'o'; boot_page_buffer[17] = 'a'; boot_page_buffer[18] = 'd'; boot_page_buffer[19] = 'e';
+    boot_page_buffer[20] = 'r'; boot_page_buffer[21] = '\r'; boot_page_buffer[22] = '\n'; boot_page_buffer[23] = '\0';
+
+    /* Print a welcome message. */
+    bootload_avr_puts(boot_page_buffer);
 
     /* Process programmer commands. */
     while (status != BOOTLOAD_COMPLETE)
@@ -839,6 +850,25 @@ static void bootload_avr_putc(volatile uint8_t byte)
     UDR0 = byte;
 
 } /* bootload_avr_putc */
+
+/*
+ * bootload_avr_puts
+ * @bytes: Null terminated string to be sent.
+ * This function sends a null terminated string.
+ */
+static void bootload_avr_puts(uint8_t *bytes)
+{
+    /* While we do not have a null terminator. */
+    while (*bytes)
+    {
+        /* Put this byte. */
+        bootload_avr_putc(*bytes);
+
+        /* Pick next byte. */
+        bytes++;
+    }
+
+} /* bootload_avr_puts */
 
 /*
  * bootload_avr_getc

@@ -23,6 +23,7 @@
 #define BOOTLOAD_MMC
 #define BOOTLOAD_STK
 //#define BOOTLOAD_MMC_HEX_NONLINEAR
+#define BOOTLOAD_MMC_BOOTLOAD_MARK_SECTOR_LOCATION      0
 #endif /* CMAKE_BUILD */
 
 /* Error code definitions. */
@@ -31,12 +32,19 @@
 
 /* Serial configurations for boot loader. */
 #define BOOTLOAD_BAUD_RATE  (115200)
-#define BOOTLOAD_BAUD_TOL   (5)
+#define BOOTLOAD_BAUD_TOL   (2)
 
 /* Macro to be used to move a function in the boot loader section. */
 #define BOOTLOAD_SECTION    __attribute__ ((section (".boot")))
 #define BOOTVECTOR_SECTION  __attribute__ ((section (".boot_vector")))
-#define BOOTLOAD_RESET      0x1f000
+#if defined(AVR_MCU_atmega644p)
+#define BOOTLOAD_RESET      0x0000F000
+#elif defined(AVR_MCU_atmega1284p)
+#define BOOTLOAD_RESET      0x0001F000
+#else
+#error "Bootloader is not supported on sepecified AVR target"
+#endif
+
 
 /* Defines the condition when we need to perform boot load operation. */
 #define BOOTLOAD_COND_INIT  (DDRA &= ((uint8_t)~(1 << 6)))
