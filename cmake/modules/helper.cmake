@@ -75,6 +75,9 @@ function (setup_option_def configuration default_value type description)
     elseif (${type} STREQUAL "INT")
         # Add this to RTOS configuration list with an integral value.
         set(configuration_output "#define ${configuration} \(${configuration_value}\)")
+    elseif (${type} STREQUAL "UINT32")
+        # Add this to RTOS configuration list with an integral value.
+        set(configuration_output "#define ${configuration} \((uint32_t)${configuration_value}\)")
     elseif (${type} STREQUAL "MACRO")
         # Add this to RTOS configuration list as a MACRO value.
         set(configuration_output "#define ${configuration} \(${configuration_value}\)")
