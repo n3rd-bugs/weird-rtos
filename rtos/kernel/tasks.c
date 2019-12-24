@@ -82,6 +82,9 @@ static void task_entry_return(void *argv)
 {
     TASK *tcb = get_current_task();
 
+    /* Assert if interrupts are not enabled here. */
+    ASSERT(sys_interrupt_level != TRUE);
+
     /* We will run the task until we are actually killed. */
     while (TRUE)
     {
