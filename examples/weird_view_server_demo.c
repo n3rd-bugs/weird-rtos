@@ -217,7 +217,7 @@ int32_t weird_view_demo_switch_data(uint16_t id, uint8_t *state)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(id);
 
-#if (TARGET_PLATFORM == PLAT_STM32F407_DISC)
+#if (TARGET_PLATFORM == PLAT_STM32F407VGT6)
     /* If switch is active. */
     if (GPIOA->IDR & 0x01)
     {
@@ -259,7 +259,7 @@ void weird_view_demo_switch_req(uint16_t id, uint8_t state)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(id);
 
-#if (TARGET_PLATFORM == PLAT_STM32F407_DISC)
+#if (TARGET_PLATFORM == PLAT_STM32F407VGT6)
     /* If on requested. */
     if (state == TRUE)
     {
@@ -510,7 +510,7 @@ int main(void)
     socket_address.local_ip = IPV4_ADDR_UNSPEC;
     socket_address.local_port = 11000;
 
-#if (TARGET_PLATFORM == PLAT_STM32F407_DISC)
+#if (TARGET_PLATFORM == PLAT_STM32F407VGT6)
     /* Enable GPIOA and GPIOD clock. */
     RCC->AHB1ENR |= 0x00000009;
 
