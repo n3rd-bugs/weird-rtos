@@ -16,7 +16,7 @@ setup_option(CONFIG_WEIRD_VIEW ON)
 
 # Setup IDLE task options.
 setup_option(IDLE_WORK_MAX 1)
-setup_option(IDLE_TASK_STACK_SIZE 196)
+setup_option(IDLE_TASK_STACK_SIZE 192)
 
 # Update the number of ticks per second to 10.
 setup_option(SOFT_TICKS_PER_SEC 10)
@@ -29,13 +29,13 @@ setup_option(TASK_USAGE_RETAIN ON)
 # Setup enc28j60 configurations.
 setup_option(ENC28J60_INT_POLL ON)
 setup_option(ENC28J60_MAX_BUFFER_SIZE 32)
-setup_option(ENC28J60_NUM_BUFFERS 14)
+setup_option(ENC28J60_NUM_BUFFERS 16)
 setup_option(ENC28J60_NUM_BUFFER_LISTS 4)
 setup_option(ENC28J60_NUM_THR_BUFFER 0)
 setup_option(ENC28J60_NUM_THR_LIST 0)
 setup_option(ENC28J60_NUM_ARP 1)
 setup_option(ENC28J60_NUM_IPV4_FRAGS 0)
-setup_option(ENC28J60_SOFT_MAX_RX_FRAME 384)
+setup_option(ENC28J60_SOFT_MAX_RX_FRAME 512)
 
 # Setup networking stack configurations.
 setup_option(NET_COND_STACK_SIZE 512)
@@ -62,5 +62,10 @@ setup_option(LCD_AN_AVR_PIN_NUM_SCL 0)
 setup_option(LCD_AN_AVR_PIN_NUM_SDA 1)
 
 # Setup target configuration.
-setup_option(TGT_PLATFORM atmega644)
+#setup_option(TGT_PLATFORM atmega1284p)
+setup_option(TGT_PLATFORM atmega644p)
 setup_option(F_CPU 20000000UL)
+
+# Setup bootloader
+setup_option(CONFIG_BOOTLOAD ON)
+setup_option(BOOTLOAD_MMC OFF)

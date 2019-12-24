@@ -29,6 +29,8 @@
 #ifdef CONFIG_SERIAL
 #include <serial.h>
 #endif
+#include <rtl.h>
+#include <io.h>
 
 /* Definitions to communicate with other side. */
 #define DEVICE_NAME         "Smart Change Over"
@@ -94,13 +96,13 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 };
 
 /* Control task definitions. */
-#define CONTROL_TASK_STACK_SIZE         160
+#define CONTROL_TASK_STACK_SIZE         128
 uint8_t control_stack[CONTROL_TASK_STACK_SIZE];
 TASK control_cb;
 void control_entry(void *argv);
 
 /* LCD task definitions. */
-#define LOG_TASK_STACK_SIZE             384
+#define LOG_TASK_STACK_SIZE             320
 uint8_t log_stack[LOG_TASK_STACK_SIZE];
 TASK log_cb;
 void log_entry(void *argv);
@@ -1092,7 +1094,7 @@ void adc_sample_process(void *data, int32_t status)
         {
             printf("%d\r\n", adc_wave[i]);
         }
-        printf("-------------\r\n");
+        io_puts("-------------\r\n");
 #endif
 #endif /* (COMPUTE_APPROX == TRUE) */
 
@@ -1265,70 +1267,90 @@ void log_entry(void *argv)
         min = (uint8_t)((systick / (60LU * SOFT_TICKS_PER_SEC)) - (((uint32_t)day * 1440LU) + ((uint32_t)hour * 60LU)));
         sec = (uint8_t)((systick / (SOFT_TICKS_PER_SEC)) - (((uint32_t)day * 86400LU) + ((uint32_t)hour * 3600LU) + ((uint32_t)min * 60LU)));
         milisec = (uint8_t)((systick) - ((((uint32_t)day * 86400LU) + ((uint32_t)hour * 3600LU) + ((uint32_t)min * 60LU) + ((uint32_t)sec)) * SOFT_TICKS_PER_SEC));
-        P_STR_CPY(str, P_STR("\f\t%02u:"));
-        printf(str, day);
-        P_STR_CPY(str, P_STR("%02u:"));
-        printf(str, hour);
-        P_STR_CPY(str, P_STR("%02u:"));
-        printf(str, min);
-        P_STR_CPY(str, P_STR("%02u."));
-        printf(str, sec);
-        P_STR_CPY(str, P_STR("%02u"));
-        printf(str, (TICK_TO_MS(milisec) / 10));
+        P_STR_CPY(str, P_STR("\f\t"));
+        io_puts(str, -1);
+        rtl_ultoa(day, (uint8_t*)str, 99, RTL_ULTOA_LEADING_ZEROS);
+        io_puts(str, -1);
+        P_STR_CPY(str, P_STR(":"));
+        io_puts(str, -1);
+        rtl_ultoa(hour, (uint8_t*)str, 24, RTL_ULTOA_LEADING_ZEROS);
+        io_puts(str, -1);
+        P_STR_CPY(str, P_STR(":"));
+        io_puts(str, -1);
+        rtl_ultoa(min, (uint8_t*)str, 59, RTL_ULTOA_LEADING_ZEROS);
+        io_puts(str, -1);
+        P_STR_CPY(str, P_STR(":"));
+        io_puts(str, -1);
+        rtl_ultoa(sec, (uint8_t*)str, 59, RTL_ULTOA_LEADING_ZEROS);
+        io_puts(str, -1);
+        P_STR_CPY(str, P_STR("."));
+        io_puts(str, -1);
+        rtl_ultoa((TICK_TO_MS(milisec) / 10), (uint8_t*)str, 99, RTL_ULTOA_LEADING_ZEROS);
+        io_puts(str, -1);
         P_STR_CPY(str, P_STR("\r\n"));
-        printf(str);
+        io_puts(str, -1);
 
-        P_STR_CPY(str, P_STR("%ld"));
-        printf(str, (uint32_t)(ip_address >> 24));
-        P_STR_CPY(str, P_STR(".%ld"));
-        printf(str, ((uint32_t)(ip_address >> 16)) & 0xFF);
-        P_STR_CPY(str, P_STR(".%ld"));
-        printf(str, ((uint32_t)(ip_address >> 8)) & 0xFF);
-        P_STR_CPY(str, P_STR(".%ld "));
-        printf(str, ((uint32_t)(ip_address & 0xFF)));
+        rtl_ultoa_b10((uint32_t)((ip_address >> 24) & 0xFF), (uint8_t*)str);
+        io_puts(str, -1);
+        P_STR_CPY(str, P_STR("."));
+        io_puts(str, -1);
+        rtl_ultoa_b10((uint32_t)((ip_address >> 16) & 0xFF), (uint8_t*)str);
+        io_puts(str, -1);
+        P_STR_CPY(str, P_STR("."));
+        io_puts(str, -1);
+        rtl_ultoa_b10((uint32_t)((ip_address >> 8) & 0xFF), (uint8_t*)str);
+        io_puts(str, -1);
+        P_STR_CPY(str, P_STR("."));
+        io_puts(str, -1);
+        rtl_ultoa_b10((uint32_t)(ip_address & 0xFF), (uint8_t*)str);
+        io_puts(str, -1);
 
         /* If generator power is on. */
         if (IN_GENPWR_ON & (1 << PIN_GENPWR_ON))
         {
             P_STR_CPY(str, P_STR("P"));
-            printf(str);
+            io_puts(str, -1);
         }
 
         /* If generator self is on. */
         if (IN_GENSELF_ON & (1 << PIN_GENSELF_ON))
         {
             P_STR_CPY(str, P_STR("S"));
-            printf(str);
+            io_puts(str, -1);
         }
 
         /* If change over is on. */
         if (IN_CHANGE_OVER & (1 << PIN_CHANGE_OVER))
         {
             P_STR_CPY(str, P_STR("C"));
-            printf(str);
+            io_puts(str, -1);
         }
 
         P_STR_CPY(str, P_STR("\r\n"));
-        printf(str);
+        io_puts(str, -1);
 
         P_STR_CPY(str, P_STR("V(M): "));
-        printf(str);
-        P_STR_CPY(str, P_STR("%ld"));
-        printf(str, main_volt);
+        io_puts(str, -1);
+        rtl_ultoa_b10(main_volt, (uint8_t*)str);
+        io_puts(str, -1);
 #if (COMPUTE_APPROX == TRUE)
-        P_STR_CPY(str, P_STR(", %ld"));
-        printf(str, main_approx);
+        P_STR_CPY(str, P_STR(", "));
+        io_puts(str, -1);
+        rtl_ultoa_b10(main_approx, (uint8_t*)str);
+        io_puts(str, -1);
 #endif /* (COMPUTE_APPROX == TRUE) */
         P_STR_CPY(str, P_STR("\r\n"));
-        printf(str);
+        io_puts(str, -1);
 
         P_STR_CPY(str, P_STR("V(G): "));
-        printf(str);
-        P_STR_CPY(str, P_STR("%ld"));
-        printf(str, generator_volt);
+        io_puts(str, -1);
+        rtl_ultoa_b10(generator_volt, (uint8_t*)str);
+        io_puts(str, -1);
 #if (COMPUTE_APPROX == TRUE)
-        P_STR_CPY(str, P_STR(", %ld"));
-        printf(str, generator_approx);
+        P_STR_CPY(str, P_STR(", "));
+        io_puts(str, -1);
+        rtl_ultoa_b10(generator_approx, (uint8_t*)str);
+        io_puts(str, -1);
 #endif /* (COMPUTE_APPROX == TRUE) */
 
 #if (defined(TASK_STATS) && defined(TASK_USAGE))
@@ -1431,7 +1453,7 @@ int main(void)
 
     /* Initialize log task. */
     task_create(&log_cb, P_STR("LOG"), log_stack, LOG_TASK_STACK_SIZE, &log_entry, (void *)0, TASK_NO_RETURN);
-    scheduler_task_add(&log_cb, 255);
+    scheduler_task_add(&log_cb, 254);
 
     /* Run scheduler. */
     kernel_run();
