@@ -50,8 +50,10 @@ struct _suspend
     /* Suspend link list member. */
     SUSPEND     *next;
 
+#ifdef CONFIG_SLEEP
     /* System tick at which we will resume this condition. */
     uint32_t    timeout;
+#endif /* CONFIG_SLEEP */
 
     /* Task suspended on this. */
     TASK        *task;
@@ -62,8 +64,12 @@ struct _suspend
     /* Status to be returned to a suspended task. */
     int32_t     status;
 
+#ifdef CONFIG_SLEEP
     /* Flag to specify if the timer is enabled. */
     uint8_t     timeout_enabled;
+#else
+    uint8_t     pad_timeout_enabled[1];
+#endif /* CONFIG_SLEEP */
 
     /* Priority for this suspend. */
     uint8_t     priority;

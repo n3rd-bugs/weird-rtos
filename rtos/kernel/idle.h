@@ -43,6 +43,9 @@ typedef struct _idle_work
 
 } IDLE_WORK;
 
+/* Exported variables. */
+extern TASK idle_task;
+
 /* Function prototypes. */
 void idle_task_init(void);
 TASK *idle_task_get(void);

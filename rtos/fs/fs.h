@@ -89,8 +89,10 @@ struct _fs
     /* File system buffer data. */
     FS_BUFFER_DATA  *buffer;
 
+#ifdef CONFIG_SLEEP
     /* This will hold the timeout if blocking mode is used. */
     uint32_t    timeout;
+#endif /* CONFIG_SLEEP */
 
     /* File system specific flags. */
     uint16_t    flags;

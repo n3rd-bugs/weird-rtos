@@ -121,6 +121,7 @@ void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEN
     suspend->priority = SUSPEND_MIN_PRIORITY;
     suspend->status = SUCCESS;
 
+#ifdef CONFIG_SLEEP
     /* If we don't want to wait indefinitely. */
     if (timeout != MAX_WAIT)
     {
@@ -133,6 +134,10 @@ void semaphore_condition_get(SEMAPHORE *semaphore, CONDITION **condition, SUSPEN
         /* Wait indefinitely. */
         suspend->timeout_enabled = FALSE;
     }
+#else
+    /* Remove compiler warning. */
+    UNUSED_PARAM(timeout);
+#endif /* CONFIG_SLEEP */
 
     /* Return the condition for this semaphore. */
     *condition = &semaphore->condition;

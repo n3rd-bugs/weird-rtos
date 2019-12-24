@@ -21,9 +21,6 @@ TASK *current_task = NULL;
  * executing the interrupt. */
 TASK *return_task = NULL;
 
-/* This is used for time keeping in the system. */
-uint32_t current_tick = 0;
-
 /*
  * task_yield
  * This function is used to yield the current task. This can be called from any
@@ -56,9 +53,6 @@ void task_yield(void)
         interrupt_level = GET_INTERRUPT_LEVEL();
         DISABLE_INTERRUPTS();
 
-        /* Re-enqueue/schedule this task in the scheduler. */
-        scheduler_task_yield(current_task, YIELD_MANUAL);
-
         /* Schedule next task and enable interrupts. */
         CONTROL_TO_SYSTEM();
 
@@ -84,47 +78,21 @@ void task_yield(void)
 } /* task_yield */
 
 /*
- * current_system_tick
- * @return: Current system tick.
- * This function returns the number of system ticks elapsed from the system
- * boot.
- */
-uint32_t current_system_tick(void)
-{
-    uint32_t return_tick;
-    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
-
-    /* Disable global interrupts. */
-    DISABLE_INTERRUPTS();
-
-    /* Atomically save the current system tick. */
-    return_tick = current_tick;
-
-    /* Restore old interrupt level. */
-    SET_INTERRUPT_LEVEL(interrupt_level);
-
-    /* Return current system tick. */
-   return (return_tick);
-
-} /* current_system_tick */
-
-/*
  * kernel_run
  * This function starts the operating system. In normal operation this function
  * should never return.
  */
 void kernel_run(void)
 {
-#ifndef SYS_LOG_NONE
+#ifdef SYS_LOG_ENABLE
     /* Initialize system logging. */
     sys_log_init();
-#endif
+#endif /* SYS_LOG_ENABLE */
 
+#ifdef CONFIG_SLEEP
     /* Initialize system clock. */
     system_tick_Init();
-
-    /* Get the first task that is needed to run. */
-    current_task = scheduler_get_next_task();
+#endif /* CONFIG_SLEEP */
 
     /* Load/restore task's context. */
     RESTORE_CONTEXT_FIRST();

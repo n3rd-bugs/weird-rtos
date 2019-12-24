@@ -392,7 +392,9 @@ void fs_buffer_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_
 
     /* Initialize file system parameter. */
     suspend->param = param;
+#ifdef CONFIG_SLEEP
     suspend->timeout_enabled = FALSE;
+#endif /* CONFIG_SLEEP */
     suspend->priority = fs->priority;
     suspend->status = SUCCESS;
 

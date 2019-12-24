@@ -22,8 +22,8 @@ static INTLCK idle_work_lock;
 #endif /* (IDLE_WORK_MAX > 0) */
 
 /* Definitions for idle task. */
+TASK idle_task;
 static void idle_task_entry(void *);
-static TASK idle_task;
 static uint8_t idle_task_stack[IDLE_TASK_STACK_SIZE];
 /*
  * idle_task_init
@@ -33,7 +33,7 @@ void idle_task_init(void)
 {
     /* Initialize idle task's control block and stack. */
     task_create(&idle_task, P_STR("Idle"), idle_task_stack, IDLE_TASK_STACK_SIZE, &idle_task_entry, (void *)0x00, TASK_NO_RETURN);
-    scheduler_task_add(&idle_task, 255);
+    scheduler_task_add(&idle_task, (SCHEDULER_MAX_PRI + 1));
 
 #if ((IDLE_WORK_MAX > 0) && defined(IDLE_RUNTIME_UPDATE))
     /* Initialize IDL work lock. */
@@ -266,9 +266,6 @@ static void idle_task_entry(void *argv)
                 do_fun(priv_data);
             }
         }
-
-        /* Yield the current task to allow any background tasks to run. */
-        task_yield();
 #endif /* (IDLE_WORK_MAX >  0) */
     }
 

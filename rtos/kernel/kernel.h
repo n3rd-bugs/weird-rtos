@@ -107,12 +107,10 @@ extern uint32_t current_tick;
 /* Kernel macro definitions. */
 #define get_current_task(void)      (current_task)
 #define set_current_task(task)      current_task = task
-#define process_system_tick(void)   current_tick ++
 
 /* Public function prototypes. */
 void kernel_run(void);
 void task_yield(void);
-uint32_t current_system_tick(void);
 
 #if (defined(TASK_STATS) && defined(TASK_USAGE))
 void mark_task_entry(void);

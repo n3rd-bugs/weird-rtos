@@ -26,7 +26,7 @@ typedef struct _console
 #ifdef CONFIG_SEMAPHORE
     /* Data lock. */
     SEMAPHORE   lock;
-#endif
+#endif /* CONFIG_SEMAPHORE */
 } CONSOLE;
 
 /* Console data. */
@@ -42,7 +42,7 @@ typedef struct _console_data
 #ifdef CONFIG_SEMAPHORE
     /* Data lock. */
     SEMAPHORE   lock;
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
 } CONSOLE_DATA;
 

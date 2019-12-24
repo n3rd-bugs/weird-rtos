@@ -27,6 +27,10 @@ void sleep_hw_ticks(uint64_t);
 #define sleep_fms(ms)               sleep_ticks((MS_TO_TICK((ms)) > 0) ? MS_TO_TICK((ms)) : 1)
 #define sleep_us(us)                sleep_hw_ticks(US_TO_HW_TICK((us)))
 
+/* Kernel APIs. */
+uint32_t current_system_tick(void);
+uint8_t process_system_tick(void);
+
 #endif /* CONFIG_SLEEP */
 
 #endif /* _SLEEP_H_ */

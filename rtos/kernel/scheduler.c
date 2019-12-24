@@ -61,8 +61,17 @@ void scheduler_task_add(TASK *tcb, uint8_t priority)
     /* Update the task control block. */
     tcb->priority = priority;
 
+#ifdef ASSERT_ENABLE
+    /* If this is not the idle task. */
+    if (tcb != &idle_task)
+    {
+        /* Validate priority level. */
+        ASSERT((priority > SCHEDULER_MAX_PRI));
+    }
+#endif /* ASSERT_ENABLE */
+
     /* Enqueue this task in the ready list. */
-    scheduler_task_yield(tcb, YIELD_INIT);
+    scheduler_task_yield(tcb, YIELD_SYSTEM);
 
 #ifdef TASK_STATS
     /* Append this task to the global task list. */
@@ -161,8 +170,10 @@ TASK *scheduler_get_next_task(void)
 {
     TASK *tcb = NULL;
 
+#ifdef CONFIG_SLEEP
     /* Resume any of the sleeping tasks. */
     sleep_process_system_tick();
+#endif /* CONFIG_SLEEP */
 
     /* Get the task we need to run */
     tcb = (TASK *)sll_pop(&sch_ready_task_list, OFFSETOF(TASK, next));
@@ -193,18 +204,22 @@ void scheduler_task_yield(TASK *tcb, uint8_t from)
     /* Adjust the task control block as required. */
     switch (from)
     {
+#ifdef CONFIG_SLEEP
     case YIELD_SLEEP:
 
         /* Task is being resumed from sleep. */
         tcb->tick_sleep = 0;
         tcb->state = TASK_SLEEP_RESUME;
+        tcb->resume_from = TASK_RESUME_SLEEP;
 
         break;
+#endif /* CONFIG_SLEEP */
 
     default:
 
         /* Task is resuming normally. */
         tcb->state = TASK_RESUME;
+        tcb->resume_from = TASK_RESUME_SYSTEM;
 
         break;
     }

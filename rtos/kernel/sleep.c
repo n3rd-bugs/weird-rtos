@@ -19,6 +19,12 @@
 /* Global variable definitions. */
 static TASK_LIST sleep_task_list = {NULL, NULL};
 
+/* This is used for time keeping in the system. */
+uint32_t current_tick = 0;
+
+/* Local function definitions. */
+static uint8_t sleep_walk(void *node, void *param);
+
 /*
  * sleep_task_sort
  * @node: Existing task in the sleeping task list.
@@ -48,7 +54,7 @@ static uint8_t sleep_task_sort(void *node, void *task)
     /* Return if we need to schedule this task before the given node. */
     return (schedule);
 
-} /* sleep_task_sort. */
+} /* sleep_task_sort */
 
 /*
  * sleep_process_system_tick
@@ -57,44 +63,34 @@ static uint8_t sleep_task_sort(void *node, void *task)
  */
 void sleep_process_system_tick(void)
 {
-    TASK *tcb = NULL, *tcb_break = NULL;
+    void *prev_node;
+    TASK *tcb;
+    uint8_t do_break = FALSE;
 
-    for (;;)
+    /* While we have no task to resume. */
+    while ((sleep_task_list.head) && (do_break == FALSE))
     {
-        /* Check if we need to schedule a sleeping task. */
-        if ( (sleep_task_list.head != tcb_break) &&
-             (INT32CMP(current_system_tick(), sleep_task_list.head->tick_sleep) >= 0) )
-        {
-            /* Schedule this sleeping task. */
-            tcb = (TASK *)sll_pop(&sleep_task_list, OFFSETOF(TASK, next_sleep));
+        /* Walk the sleep task list and resume any tasks needed to be resumed. */
+        tcb = sll_search(&sleep_task_list, &prev_node, &sleep_walk, &do_break, OFFSETOF(TASK, next_sleep));
 
-            /* Task is not resumed. */
-            if (tcb->state == TASK_SUSPENDED)
+        /* If we do have a task needed to be resumed. */
+        if (do_break == FALSE)
+        {
+            /* If we have a task to resume. */
+            if (tcb != NULL)
             {
+                /* Remove this task from the sleep list. */
+                sll_remove_node(&sleep_task_list, tcb, prev_node, OFFSETOF(TASK, next_sleep));
+
                 /* Yield this task. */
                 scheduler_task_yield(tcb, YIELD_SLEEP);
             }
             else
             {
-                /* Lets not get this task out of sleep any time soon. */
-                tcb->tick_sleep = MAX_WAIT;
-
-                /* Put back this task on the scheduler list at the end. */
-                /* We will remove it from this list when we will resume. */
-                sll_append(&sleep_task_list, tcb, OFFSETOF(TASK, next_sleep));
-
-                /* Save the task at which we will need to break the search. */
-                tcb_break = tcb;
-
-                /* This is not the task we need. */
-                tcb = NULL;
-
-                /* Check if we can resume the next task. */
-                continue;
+                /* We have no more tasks to process. */
+                break;
             }
         }
-
-        break;
     }
 
 } /* sleep_process_system_tick */
@@ -162,7 +158,7 @@ void sleep_ticks(uint32_t ticks)
     DISABLE_INTERRUPTS();
 
     /* Task is being suspended. */
-    tcb->state = TASK_SUSPENDED;
+    tcb->state = TASK_TO_BE_SUSPENDED;
 
     /* Return control to the system.
      * We will resume from here when our required delay has been achieved. */
@@ -195,5 +191,90 @@ void sleep_hw_ticks(uint64_t ticks)
     }
 
 } /* sleep_hw_ticks */
+
+/*
+ * current_system_tick
+ * @return: Current system tick.
+ * This function returns the number of system ticks elapsed from the system
+ * boot.
+ */
+uint32_t current_system_tick(void)
+{
+    uint32_t return_tick;
+    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
+
+    /* Disable global interrupts. */
+    DISABLE_INTERRUPTS();
+
+    /* Atomically save the current system tick. */
+    return_tick = current_tick;
+
+    /* Restore old interrupt level. */
+    SET_INTERRUPT_LEVEL(interrupt_level);
+
+    /* Return current system tick. */
+   return (return_tick);
+
+} /* current_system_tick */
+
+/*
+ * process_system_tick
+ * @return: TRUE if we need to trigger scheduler.
+ * This function is called from tick source to update system tick.
+ */
+uint8_t process_system_tick(void)
+{
+    uint8_t trigger_scheduler = FALSE;
+
+    /* Increment current tick. */
+    current_tick++;
+
+    /* If we need to schedule a context switch. */
+    if ( (sleep_task_list.head != NULL) &&
+         (INT32CMP(current_tick, sleep_task_list.head->tick_sleep) >= 0) )
+    {
+        /* Trigger scheduler. */
+        trigger_scheduler = TRUE;
+    }
+
+    return (trigger_scheduler);
+
+} /* process_system_tick */
+
+/*
+ * sleep_walk
+ * @node: A task in the sleep list.
+ * @do_break: Flag to specify if we need to break out of this loop.
+ * This is match function to traverse sleep suspend list.
+ */
+static uint8_t sleep_walk(void *node, void *do_break)
+{
+    TASK *tcb = (TASK *)node;
+    uint8_t matched = FALSE;
+
+    /* If we need to resume this task. */
+    if (INT32CMP(current_tick, tcb->tick_sleep) >= 0)
+    {
+        /* If task is in suspended state. */
+        if (tcb->state == TASK_SUSPENDED)
+        {
+            /* Need to resume this task. */
+            matched = TRUE;
+        }
+    }
+    else
+    {
+        /* Sleep list is sorted, if we have a task that is needed to be
+         * resumed in future, just break. */
+        matched = TRUE;
+
+        /* Break the loop. */
+        *((uint8_t *)do_break) = TRUE;
+    }
+
+    /* Return if we have reached our criteria. */
+    return (matched);
+
+} /* sleep_walk */
 
 #endif /* CONFIG_SLEEP */

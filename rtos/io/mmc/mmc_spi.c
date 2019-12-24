@@ -447,9 +447,9 @@ int32_t mmc_spi_init(void *device)
     int32_t status = MMC_SPI_CMD_ERROR;
     SPI_MSG msg;
     uint8_t retries, resp[5];
-#ifndef SYS_LOG_NONE
+#ifdef SYS_LOG_ENABLE
     uint64_t num_sector;
-#endif /* SYS_LOG_NONE */
+#endif /* SYS_LOG_ENABLE */
 
     SYS_LOG_FUNCTION_ENTRY(MMC);
 
@@ -666,7 +666,7 @@ int32_t mmc_spi_init(void *device)
     mmc_spi_unlock(mmc);
 #endif /* MMC_SPI_FS */
 
-#ifndef SYS_LOG_NONE
+#ifdef SYS_LOG_ENABLE
     if (status == SUCCESS)
     {
         /* Get the number of sectors on this MMC card. */
@@ -675,7 +675,7 @@ int32_t mmc_spi_init(void *device)
             SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "MMC has 0x%08lX%08lX sectors", (uint32_t)(num_sector >> 32), (uint32_t)(num_sector));
         }
     }
-#endif /* SYS_LOG_NONE */
+#endif /* SYS_LOG_ENABLE */
 
     SYS_LOG_FUNCTION_EXIT_STATUS(MMC, status);
 
@@ -1071,7 +1071,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
                         else
                         {
                             SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_DEBUG, "DATARSP 0x%02X", line);
-                        
+
                         }
                     }
                 }

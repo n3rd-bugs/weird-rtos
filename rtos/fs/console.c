@@ -53,7 +53,7 @@ void console_init(void)
 #ifdef CONFIG_SEMAPHORE
     /* Create a semaphore to protect global console data. */
     semaphore_create(&console_data.lock, 1);
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
     /* Register console with file system. */
     fs_register(&console_fs);
@@ -87,7 +87,9 @@ void console_register(CONSOLE *console)
     /* Initialize console FS data. */
     console->fs.get_lock = console_lock;
     console->fs.release_lock = console_unlock;
+#ifdef CONFIG_SLEEP
     console->fs.timeout = MAX_WAIT;
+#endif /* CONFIG_SLEEP */
 
     /* Initialize file system condition. */
     fs_condition_init(&console->fs);
@@ -98,7 +100,7 @@ void console_register(CONSOLE *console)
 #else
     /* Enable scheduling. */
     scheduler_unlock();
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
 } /* console_register */
 
@@ -119,14 +121,14 @@ void console_unregister(CONSOLE *console)
     /* Obtain the lock for the console needed to be unregistered. */
     if (semaphore_obtain(&console->lock, MAX_WAIT) == SUCCESS)
     {
-#endif
+#endif /* CONFIG_SEMAPHORE */
         /* Resume all tasks waiting on this file descriptor. */
         fd_handle_criteria((FD)console, NULL, FS_NODE_DELETED);
 
 #ifdef CONFIG_SEMAPHORE
         /* Delete the console lock. */
         semaphore_destroy(&console->lock);
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
         /* Just remove this console from console list. */
         ASSERT(sll_remove(&console_data.list, console, OFFSETOF(CONSOLE, fs.next)) != console);
@@ -139,7 +141,7 @@ void console_unregister(CONSOLE *console)
 #else
     /* Enable scheduling. */
     scheduler_unlock();
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
 } /* console_unregister */
 
@@ -161,7 +163,7 @@ static void *console_open(void *priv_data, char *name, uint32_t flags)
 #ifdef CONFIG_SEMAPHORE
     /* Obtain the global data lock. */
     ASSERT(semaphore_obtain(&console_data.lock, MAX_WAIT) != SUCCESS);
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
     /* Initialize a search parameter. */
     param.name = name;
@@ -180,7 +182,7 @@ static void *console_open(void *priv_data, char *name, uint32_t flags)
 #ifdef CONFIG_SEMAPHORE
     /* Release the global data lock. */
     semaphore_release(&console_data.lock);
-#endif
+#endif /* CONFIG_SEMAPHORE */
 
     if (fd != NULL)
     {
@@ -220,7 +222,7 @@ static int32_t console_lock(void *fd, uint32_t timeout)
 
     /* Return success. */
     return (SUCCESS);
-#endif
+#endif /* CONFIG_SEMAPHORE */
 } /* console_lock */
 
 /*
@@ -239,7 +241,7 @@ static void console_unlock(void *fd)
 
     /* Enable scheduling. */
     scheduler_unlock();
-#endif
+#endif /* CONFIG_SEMAPHORE */
 } /* console_unlock */
 
 #endif /* FS_CONSOLE */

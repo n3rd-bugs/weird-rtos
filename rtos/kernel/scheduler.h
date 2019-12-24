@@ -20,13 +20,12 @@
 #include <scheduler_config.h>
 #else
 #define SCHEDULER_MAX_LOCK          (5)
+#define SCHEDULER_MAX_PRI           (254)
 #endif /* CMAKE_BUILD */
 
 /* Defines the origin from which this task is being yielded.  */
-#define YIELD_INIT                  (0x00)
-#define YIELD_SYSTEM                (0x01)
-#define YIELD_MANUAL                (0x02)
-#define YIELD_SLEEP                 (0x03)
+#define YIELD_SYSTEM                (0x00)
+#define YIELD_SLEEP                 (0x01)
 
 /* Global task list. */
 #ifdef TASK_STATS

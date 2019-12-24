@@ -20,15 +20,12 @@
 #ifdef CMAKE_BUILD
 #include <assert_config.h>
 #else
-#define ASSERT_NONE
+//#define ASSERT_ENABLE
 #define ASSERT_FILE_INFO
 #endif /* CMAKE_BUILD */
 
 /* Error handling. */
-#ifdef ASSERT_NONE
-#define ASSERT(raise)                    ((void)(raise));
-#define ASSERT_INFO(raise, file, line)   ((void)(raise)); ((void)(file)); ((void)(line));
-#else
+#ifdef ASSERT_ENABLE
 #ifdef ASSERT_FILE_INFO
 #define ASSERT(raise)           {                                               \
                                     if ((raise) != FALSE)                       \
@@ -65,7 +62,10 @@
                                     }                                           \
                                 }
 #endif /* ASSERT_FILE_INFO */
-#endif /* ASSERT_NONE */
+#else
+#define ASSERT(raise)                    ((void)(raise));
+#define ASSERT_INFO(raise, file, line)   ((void)(raise)); ((void)(file)); ((void)(line));
+#endif /* ASSERT_ENABLE */
 
 /* Function prototypes. */
 void system_assert(int32_t, char *, uint32_t, TASK *);

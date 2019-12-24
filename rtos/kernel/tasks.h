@@ -31,10 +31,18 @@
 #define TASK_SCHED_DRIFT    0x02        /* This task has caused scheduler to miss a tick. */
 
 /* Some task resume status. */
-#define TASK_SUSPENDED              (0)
-#define TASK_RESUME                 (1)
-#define TASK_SLEEP_RESUME           (2)
-#define TASK_FINISHED               (3)
+#define TASK_TO_BE_SUSPENDED        (0)     /* Task is being suspended indefinitely. */
+#define TASK_SUSPENDED              (1)     /* Task is suspended indefinitely. */
+#define TASK_RUNNING                (2)     /* Task is currently running. */
+#define TASK_RESUME                 (3)     /* Task is to be resumed manually. */
+#define TASK_SLEEP_RESUME           (4)     /* Task is to be resumed due to a timeout. */
+#define TASK_FINISHED               (5)     /* Task is finished. */
+
+/* Resume from definitions. */
+#define TASK_RESUME_SYSTEM          (0)     /* Task was resumed manually. */
+#ifdef CONFIG_SLEEP
+#define TASK_RESUME_SLEEP           (1)     /* Task was resumed due to a timeout. */
+#endif /* CONFIG_SLEEP */
 
 /* This is task entry function. */
 typedef void TASK_ENTRY (void *argv);
@@ -111,8 +119,11 @@ struct _task
     /* Lock count, how much nested scheduler locks have we acquired. */
     uint8_t     lock_count;
 
+    /* Holds the reference from where it was resumed. */
+    uint8_t     resume_from;
+
     /* Structure padding. */
-    uint8_t     pad[3];
+    uint8_t     pad[2];
 };
 
 /* This defines a task list. */

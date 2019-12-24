@@ -313,6 +313,7 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
     suspend->priority = fs->priority;
     suspend->status = SUCCESS;
 
+#ifdef CONFIG_SLEEP
     /* If timeout is enabled for this descriptor. */
     if (fs->timeout != MAX_WAIT)
     {
@@ -324,6 +325,7 @@ void fs_condition_get(FD fd, CONDITION **condition, SUSPEND *suspend, FS_PARAM *
         /* Timeout is not enabled */
         suspend->timeout_enabled = FALSE;
     }
+#endif /* CONFIG_SLEEP */
 
     /* Return the condition for this file system. */
     *condition = &(fs->condition);
@@ -801,6 +803,13 @@ int32_t fs_puts(FD fd, const uint8_t *buf, int32_t n)
     FS *fs = (FS *)fd;
     int32_t status = SUCCESS;
     uint8_t flags = FS_BUFFER_SUSPEND;
+
+    /* If this is a null terminated string. */
+    if (n == -1)
+    {
+        /* Compute the string length. */
+        n = (int32_t)strlen((char *)buf);
+    }
 
     /* If this is a buffered descriptor. */
     if (fs->flags & FS_BUFFERED)

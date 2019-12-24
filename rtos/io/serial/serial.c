@@ -59,7 +59,7 @@ void serial_register(SERIAL *serial, const char *name, void *buffer, uint32_t fl
 {
 #ifdef FS_CONSOLE
     FS_BUFFER_DATA *buffer_data = (FS_BUFFER_DATA *)buffer;
-    char fs_name[64];
+    char fs_name[64] = "\\console\\";
 #else
 
     /* Remove some compiler warnings. */
@@ -103,7 +103,7 @@ void serial_register(SERIAL *serial, const char *name, void *buffer, uint32_t fl
         {
 #ifdef FS_CONSOLE
             /* Set debug file descriptor. */
-            snprintf(fs_name, 64, "\\console\\%s", name);
+            strncat(fs_name, name, (64 - sizeof("\\console\\")));
             debug_fd = fs_open(fs_name, 0);
 #else
             /* Set the debug serial port. */
