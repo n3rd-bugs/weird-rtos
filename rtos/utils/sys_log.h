@@ -17,12 +17,35 @@
 #ifdef CMAKE_BUILD
 #include <sys_log_config.h>
 #else
-#define SYS_LOG_NONE
+//#define SYS_LOG_ENABLE
 //#define SYS_LOG_RUNTIME_UPDATE
-#define SYS_LOG_DEFAULT         ((SYS_LOG_INFO) | (SYS_LOG_WARN) | (SYS_LOG_ERROR))
+
+/* Define static log levels for each component. */
+#define SYS_LOG_DEFAULT             ((SYS_LOG_INFO) | (SYS_LOG_WARN) | (SYS_LOG_ERROR))
+#define SYS_LOG_LEVEL_DEF           SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_MMC           SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_ENC28J60      SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_FATFS         SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_TFTPS         SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_ROUTE         SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_ARP           SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_NET_BUFFER    SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_NET_CONDITION SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_NET_CSUM      SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_NET_DEVICE    SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_DHCPC         SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_DHCP          SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_ICMP          SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_IPV4          SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_NET_PROCESS   SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_TCP           SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_UDP           SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_NET_WORK      SYS_LOG_DEFAULT
+#define SYS_LOG_LEVEL_NET           SYS_LOG_DEFAULT
 #endif /* CMAKE_BUILD */
 
 /* System logging level definitions. */
+#define SYS_LOG_NONE            (0x00)
 #define SYS_LOG_FUNCTION_CALL   (0x01)
 #define SYS_LOG_DEBUG           (0x02)
 #define SYS_LOG_INFO            (0x04)
@@ -72,41 +95,11 @@ enum
 #ifdef SYS_LOG_RUNTIME_UPDATE
 /* Export log levels. */
 extern SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
-#else
-/* Define static log levels for each component. */
-#define SYS_LOG_LEVEL_DEF           SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_MMC           SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_ENC28J60      SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_FATFS         SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_TFTPS         SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_ROUTE         SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_ARP           SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_BUFFER    SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_CONDITION SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_CSUM      SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_DEVICE    SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_DHCPC         SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_DHCP          SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_ICMP          SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_IPV4          SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_PROCESS   SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_TCP           SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_UDP           SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_WORK      SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET           SYS_LOG_DEFAULT
 #endif /* SYS_LOG_RUNTIME_UPDATE */
 
 /* Helper macro definitions. */
 #define SYS_LOG_IP(ip)  (((uint8_t *)&ip)[3]), (((uint8_t *)&ip)[2]), (((uint8_t *)&ip)[1]), (((uint8_t *)&ip)[0])
-#ifdef SYS_LOG_NONE
-#define SYS_LOG_MSG(component, level, message, ...)
-#define SYS_LOG_FUNCTION_MSG(component, level, message, ...)
-#define SYS_LOG_FUNCTION_ENTRY(component)
-#define SYS_LOG_FUNCTION_EXIT_STATUS(component, status)
-#define SYS_LOG_FUNCTION_EXIT(component)
-#define SYS_LOG_HEXDUMP(component, level, message, bytes, num_bytes)
-#define SYS_LOG_FUNCTION_HEXDUMP(component, level, message, bytes, num_bytes)
-#else
+#ifdef SYS_LOG_ENABLE
 #ifdef SYS_LOG_RUNTIME_UPDATE
 #define SYS_LOG_LEVEL_SET(component, level)                                                                             \
         (log_level[SYS_LOG_ ## component] = level)
@@ -166,6 +159,14 @@ extern SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
 void sys_log_init(void);
 void sys_log(uint8_t *, const uint8_t *, ...);
 void sys_log_hexdump(uint8_t *, const uint8_t *, uint8_t *, uint32_t, ...);
-#endif /* SYS_LOG_NONE */
+#else
+#define SYS_LOG_MSG(component, level, message, ...)
+#define SYS_LOG_FUNCTION_MSG(component, level, message, ...)
+#define SYS_LOG_FUNCTION_ENTRY(component)
+#define SYS_LOG_FUNCTION_EXIT_STATUS(component, status)
+#define SYS_LOG_FUNCTION_EXIT(component)
+#define SYS_LOG_HEXDUMP(component, level, message, bytes, num_bytes)
+#define SYS_LOG_FUNCTION_HEXDUMP(component, level, message, bytes, num_bytes)
+#endif /* SYS_LOG_ENABLE */
 
 #endif

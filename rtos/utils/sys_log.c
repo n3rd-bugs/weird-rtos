@@ -12,10 +12,13 @@
  */
 #include <kernel.h>
 
-#ifndef SYS_LOG_NONE
+#ifdef SYS_LOG_ENABLE
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <io.h>
+#include <rtl.h>
+#include <serial.h>
 
 #ifdef SYS_LOG_RUNTIME_UPDATE
 /* For each component we want to enable logging an entry must exist here. */
@@ -29,13 +32,37 @@ SYS_LOG_LEVEL log_level[SYS_LOG_MAX];
 void sys_log_init(void)
 {
 #ifdef SYS_LOG_RUNTIME_UPDATE
-    uint32_t i;
-
     /* Set default level for all the components. */
-    for (i = 0; i < SYS_LOG_MAX; i++)
-    {
-        log_level[i] = SYS_LOG_DEFAULT;
-    }
+    log_level[SYS_LOG_DEF]              = SYS_LOG_LEVEL_DEF;
+#ifdef CONFIG_MMC
+    log_level[SYS_LOG_MMC]              = SYS_LOG_LEVEL_MMC;
+#endif /* CONFIG_MMC */
+#ifdef CONFIG_ETHERNET
+    log_level[SYS_LOG_ENC28J60]         = SYS_LOG_LEVEL_ENC28J60;
+#endif /* CONFIG_ETHERNET */
+#ifdef CONFIG_FS
+    log_level[SYS_LOG_FATFS]            = SYS_LOG_LEVEL_FATFS;
+#endif /* CONFIG_FS */
+#ifdef CONFIG_TFTPS
+    log_level[SYS_LOG_TFTPS]            = SYS_LOG_LEVEL_TFTPS;
+#endif /* CONFIG_TFTPS */
+#ifdef CONFIG_NET
+    log_level[SYS_LOG_ROUTE]            = SYS_LOG_LEVEL_ROUTE;
+    log_level[SYS_LOG_ARP]              = SYS_LOG_LEVEL_ARP;
+    log_level[SYS_LOG_NET_BUFFER]       = SYS_LOG_LEVEL_NET_BUFFER;
+    log_level[SYS_LOG_NET_CONDITION]    = SYS_LOG_LEVEL_NET_CONDITION;
+    log_level[SYS_LOG_NET_CSUM]         = SYS_LOG_LEVEL_NET_CSUM;
+    log_level[SYS_LOG_NET_DEVICE]       = SYS_LOG_LEVEL_NET_DEVICE;
+    log_level[SYS_LOG_DHCPC]            = SYS_LOG_LEVEL_DHCPC;
+    log_level[SYS_LOG_DHCP]             = SYS_LOG_LEVEL_DHCP;
+    log_level[SYS_LOG_ICMP]             = SYS_LOG_LEVEL_ICMP;
+    log_level[SYS_LOG_IPV4]             = SYS_LOG_LEVEL_IPV4;
+    log_level[SYS_LOG_NET_PROCESS]      = SYS_LOG_LEVEL_NET_PROCESS;
+    log_level[SYS_LOG_TCP]              = SYS_LOG_LEVEL_TCP;
+    log_level[SYS_LOG_UDP]              = SYS_LOG_LEVEL_UDP;
+    log_level[SYS_LOG_NET_WORK]         = SYS_LOG_LEVEL_NET_WORK;
+    log_level[SYS_LOG_NET]              = SYS_LOG_LEVEL_NET;
+#endif /* CONFIG_NET */
 #endif /* SYS_LOG_RUNTIME_UPDATE */
 } /* sys_log_init */
 
@@ -60,13 +87,15 @@ void sys_log(uint8_t *comp_name, const uint8_t *message, ...)
 
 #ifdef CONFIG_SERIAL
     /* Print the component name. */
-    printf("[%s] ", comp_name);
+    io_puts("[", -1);
+    io_puts((const char *)comp_name, -1);
+    io_puts("]", -1);
 
     /* Print the given message. */
     vprintf((const char *)message, vl);
 
     /* Add a new line. */
-    printf("\r\n");
+    io_puts("\r\n", -1);
 #endif /* CONFIG_SERIAL */
 
     /* Destroy the argument list. */
@@ -100,7 +129,9 @@ void sys_log_hexdump(uint8_t *comp_name, const uint8_t *message, uint8_t *bytes,
 
 #ifdef CONFIG_SERIAL
     /* Print the component name. */
-    printf("[%s] ", comp_name);
+    io_puts("[", -1);
+    io_puts((const char *)comp_name, -1);
+    io_puts("]", -1);
 
     /* If we need to print a message before actual bytes. */
     if (message != NULL)
@@ -124,7 +155,7 @@ void sys_log_hexdump(uint8_t *comp_name, const uint8_t *message, uint8_t *bytes,
     }
 
     /* Add a new line. */
-    printf("\r\n");
+    io_puts("\r\n", -1);
 #endif /* CONFIG_SERIAL */
 
     /* Destroy the argument list. */
@@ -132,4 +163,4 @@ void sys_log_hexdump(uint8_t *comp_name, const uint8_t *message, uint8_t *bytes,
 
 } /* sys_log_hexdump */
 
-#endif /* SYS_LOG_NONE */
+#endif /* SYS_LOG_ENABLE */
