@@ -16,16 +16,10 @@
 #include <kernel.h>
 
 /* ISR callback definition. */
-typedef void (*const isr)(void);
-typedef IRQn_Type interrupt;
-
-/* IRS table type definition. */
-typedef struct {
-    isr     callback[0x4C];
-} VECTOR_TABLE;
+typedef void (*const ISR)(void);
 
 /* Exported variables. */
 extern uint32_t sys_stack_start;
-extern VECTOR_TABLE system_isr_table;
+extern ISR system_isr_table[];
 
 #endif /* ISR_H */

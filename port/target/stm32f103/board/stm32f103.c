@@ -20,6 +20,7 @@
 /* Used to manage 64 bit system clock. */
 static uint32_t clock_64_high_48 = 0;
 
+#ifdef CONFIG_SLEEP
 /*
  * system_tick_Init
  * This is responsible for initializing system timer tick. This will not
@@ -57,6 +58,7 @@ void system_tick_Init(void)
     NVIC->ISER[28 >> 5] |= (1 << 28);
 
 } /* system_tick_Init */
+#endif /* CONFIG_SLEEP */
 
 /*
  * isr_servicecall_handle

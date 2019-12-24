@@ -21,7 +21,7 @@
 #ifndef CMAKE_BUILD
 /* ENC28J60 device configuration. */
 #define ENC28J60_STM32F103_RESET_DELAY  (100)
-#define ENC28J60_STM32F407_BAUDRATE     (20000000)
+#define ENC28J60_STM32F103_BAUDRATE     (20000000)
 #endif /* CMAKE_BUILD */
 
 /* Function prototypes. */
