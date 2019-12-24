@@ -36,7 +36,7 @@
 #define LITTLE_ENDIAN
 
 /* If buffered IO is required. */
-#define IO_BUFFERED
+// #define IO_BUFFERED
 
 /* Function prototypes. */
 void rtl_arm_init(void);
