@@ -35,5 +35,8 @@
 #ifndef P_MEM_CPY
 #define P_MEM_CPY                   memcpy
 #endif
+#ifndef PROGMEM
+#define PROGMEM
+#endif
 
 #endif /* _PSTRING_H_ */
