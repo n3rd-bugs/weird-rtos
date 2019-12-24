@@ -22,7 +22,6 @@ extern volatile INT_LVL sys_interrupt_level;
                                             asm("   CPSID   I   ");     \
                                             sys_interrupt_level = 0;    \
                                         }
-
 #define ENABLE_INTERRUPTS()             {                               \
                                             sys_interrupt_level = 1;    \
                                             asm("   DSB         ");     \
@@ -30,8 +29,8 @@ extern volatile INT_LVL sys_interrupt_level;
                                             asm("   CPSIE   I   ");     \
                                         }
 #define GET_INTERRUPT_LEVEL()           (sys_interrupt_level)
-#define SET_INTERRUPT_LEVEL(n)          {                               \
-                                            if (n == 0)                 \
+#define SET_INTERRUPT_LEVEL(lvl)        {                               \
+                                            if (lvl == 0)               \
                                             {                           \
                                                 DISABLE_INTERRUPTS();   \
                                             }                           \
@@ -41,28 +40,10 @@ extern volatile INT_LVL sys_interrupt_level;
                                             }                           \
                                         }
 
+/* Scheduling macros. */
 #define RESTORE_CONTEXT_FIRST()         run_first_task()
-
-#define PEND_SV()                       {                                           \
-                                            asm("   DSB    ");                      \
-                                            asm("   ISB    ");                      \
-                                            CORTEX_M3_PEND_SV_REG |= CORTEX_M3_PEND_SV_MAST;     \
-                                            CORTEX_M3_SYS_TICK_REG &= ~(CORTEX_M3_SYS_TICK_MASK);\
-                                            asm volatile                            \
-                                            (                                       \
-                                            "   MOVS        r0, #1          \r\n"   \
-                                            "   MSR         BASEPRI, r0     \r\n"   \
-                                            );                                      \
-                                        }
-
+#define PEND_SV()                       CORTEX_M3_PEND_SV_REG |= CORTEX_M3_PEND_SV_MASK
 #define CONTROL_TO_SYSTEM()             control_to_system()
-
-#define RETURN_ENABLING_INTERRUPTS()    {                               \
-                                            ENABLE_INTERRUPTS();        \
-                                            asm("   BX      LR  ");     \
-                                        }
-
-#define INITIAL_XPSR                    0x01000000
 
 /* Memory definitions. */
 #define STATIC_MEM_START                ((uint8_t *)(&static_start))
@@ -70,6 +51,7 @@ extern volatile INT_LVL sys_interrupt_level;
 #define DYNAMIC_MEM_START               ((uint8_t *)(&dynamic_start))
 #define DYNAMIC_MEM_END                 ((uint8_t *)(&dynamic_end))
 
+/* Stack frame definitions. */
 typedef struct _hardware_stack_farme
 {
     uint32_t r0;
@@ -94,6 +76,7 @@ typedef struct _software_stack_farme
     uint32_t r11;
 } software_stack_farme;
 
+/* Stack manipulation macros. */
 #define TOS_SET(tos, sp, size)      (tos = (sp + size))
 
 /* Exported variables. */
@@ -111,6 +94,7 @@ ISR_FUN cpu_interrupt(void);
 ISR_FUN nmi_interrupt(void);
 ISR_FUN hard_fault_interrupt(void);
 ISR_FUN isr_servicecall_handle(void);
+NAKED_ISR_FUN isr_sv_handle(void);
 NAKED_ISR_FUN isr_pendsv_handle(void);
 ISR_FUN isr_sysclock_handle(void);
 ISR_FUN isr_clock64_tick(void);

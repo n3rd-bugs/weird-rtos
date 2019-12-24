@@ -18,12 +18,6 @@
  * FALSE: Interrupt Disabled */
 volatile INT_LVL sys_interrupt_level = TRUE;
 
-/* Local variable definitions. */
-/* We need to keep this to save the stack pointer for the task we are
- * switching from. */
-/* Removing this requires implementation of naked ISR functions. */
-static TASK *last_task;
-
 /*
  * stack_init
  * @tcb: Task control block needed to be initialized.
@@ -49,13 +43,14 @@ void stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
     init_stack_frame->r12   = 0;
     init_stack_frame->pc    = (uint32_t)task_entry;
     init_stack_frame->lr    = (uint32_t)0x0;
-    init_stack_frame->psr   = INITIAL_XPSR;
+    init_stack_frame->psr   = (uint32_t)0x01000000;
 
     /* Push a dummy software stack frame. */
     tcb->tos -= sizeof(software_stack_farme);
 
+    /* Update LR. */
     init_soft_stack_frame = (software_stack_farme *)(tcb->tos);
-    init_soft_stack_frame->r14 = 0xFFFFFFFD;
+    init_soft_stack_frame->lr = 0xFFFFFFFD;
 
 #ifdef TASK_STATS
     /* Break the task stack pattern. */
@@ -70,25 +65,31 @@ void stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
  */
 void run_first_task(void)
 {
-    /* We are running the first task so there is no last task. */
-    last_task = NULL;
-
     /* Set default interrupt level as disabled. */
     sys_interrupt_level = FALSE;
 
+    /* Get the task needed to run. */
+    current_task = scheduler_get_next_task();
+
     /* Set PendSV and System Tick interrupt priorities to avoid nested
      * interrupts. */
-    CORTEX_M4_INT_PEND_SV_PRI_REG = CORTEX_M4_INT_SYS_PRI;
-    CORTEX_M4_INT_SYS_TICK_PRI_REG = CORTEX_M4_INT_SYS_PRI;
-
-    /* Schedule a context switch. */
-    PEND_SV();
+    CORTEX_M4_SET_PENDSV_PRI();
 
     /* Mark entry to a new task. */
     MARK_ENTRY();
 
-    /* Enable interrupts. */
-    ENABLE_INTERRUPTS();
+    /* Set default interrupt level as enabled. */
+    sys_interrupt_level = TRUE;
+
+    /* Invoke service call to start first task. */
+    asm volatile
+    (
+    "   CPSIE       I           \r\n"   /* Enable all interrupts. */
+    "   CPSIE       F           \r\n"
+    "   DSB                     \r\n"   /* Memory barrier. */
+    "   ISB                     \r\n"
+    "   SVC         0           \r\n"   /* Invoke service call to start first task. */
+    );
 
     /* Should never get here. */
     ASSERT(TRUE);
@@ -100,58 +101,32 @@ void run_first_task(void)
  */
 void control_to_system(void)
 {
-    /* If we have not already scheduled a context switch. */
-    if (last_task == NULL)
+    INT_LVL int_level;
+
+    /* If we are not in an ISR. */
+    if (return_task == NULL)
     {
-        /* If we are not in an ISR. */
-        if (return_task == NULL)
-        {
-            /* We may switch to a new task so mark an exit. */
-            MARK_EXIT();
-        }
+        /* Mark entry to a new task. */
+        MARK_ENTRY();
+    }
 
-        /* Save the task from which we will be switching. */
-        last_task = current_task;
+    /* Get interrupt level. */
+    int_level = GET_INTERRUPT_LEVEL();
 
-        /* Process and get the next task in this task's context. */
-        current_task = scheduler_get_next_task();
+    /* Enable interrupts. */
+    ENABLE_INTERRUPTS();
 
-        /* Check if we need to switch context. */
-        if (current_task != last_task)
-        {
-            /* If we are not in an ISR. */
-            if (return_task == NULL)
-            {
-                /* Mark entry to a new task. */
-                MARK_ENTRY();
-            }
+    /* Schedule a context switch. */
+    PEND_SV();
 
-            /* Schedule a context switch. */
-            PEND_SV();
+    /* Restore interrupt level. */
+    SET_INTERRUPT_LEVEL(int_level);
 
-            /* Enable interrupts. */
-            ENABLE_INTERRUPTS();
-
-            /* If we are not in an ISR. */
-            if (return_task == NULL)
-            {
-                /* Again mark an exit. */
-                MARK_EXIT();
-            }
-        }
-
-        else
-        {
-            /* We are not scheduling a context switch. */
-            last_task = NULL;
-        }
-
-        /* If we are not in ISR. */
-        if (return_task == NULL)
-        {
-            /* Mark entry to a new task. */
-            MARK_ENTRY();
-        }
+    /* If we are not in an ISR. */
+    if (return_task == NULL)
+    {
+        /* Again mark an exit. */
+        MARK_EXIT();
     }
 
 } /* control_to_system */
@@ -162,122 +137,143 @@ void control_to_system(void)
  */
 ISR_FUN isr_sysclock_handle(void)
 {
+    /* Disable other interrupts. */
+    DISABLE_INTERRUPTS();
+
+#ifdef CONFIG_SLEEP
     /* Process system tick. */
-    process_system_tick();
-
-    /* We may switch to a new task so mark an exit. */
-    MARK_EXIT();
-
-    /* If we have already scheduled a context switch. */
-    if (last_task == NULL)
+    if (process_system_tick())
     {
         /* Check if we can actually preempt the current task. */
         if (current_task->lock_count == 0)
         {
-            /* Save the current task pointer. */
-            last_task = current_task;
+            /* We should never have a task here with state not running. */
+            ASSERT(current_task->state != TASK_RUNNING);
 
-            /* Re-enqueue/schedule this task in the scheduler. */
-            scheduler_task_yield(current_task, YIELD_MANUAL);
-
-            /* Get the task that should run next. */
-            current_task = scheduler_get_next_task();
-
-            /* Check if we need to switch context. */
-            if (current_task != last_task)
-            {
-                /* Schedule a context switch. */
-                PEND_SV();
-            }
-
-            else
-            {
-                /* We are not scheduling a context switch. */
-                last_task = NULL;
-            }
+            /* Schedule a context switch. */
+            PEND_SV();
         }
-
         else
         {
             /* Set the flag that we need to process a context switch. */
             current_task->flags |= TASK_SCHED_DRIFT;
         }
     }
+#endif /* CONFIG_SLEEP */
 
-    /* Mark entry to a new task. */
-    MARK_ENTRY();
+    /* Enable interrupts. */
+    ENABLE_INTERRUPTS();
 
 } /* isr_sysclock_handle */
 
 /*
+ * isr_sv_handle
+ * This SV interrupt handle.
+ */
+NAKED_ISR_FUN isr_sv_handle(void)
+{
+    /* Load context for the first task. */
+    asm volatile
+    (
+    "   LDR         R1, =current_task       \r\n"   /* Load task pointer. */
+    "   LDR         R1, [R1, #0]            \r\n"
+    "   MOV         R2, %[tos_offset]       \r\n"   /* Load TOS pointer. */
+    "   LDR         R0, [R1, R2]            \r\n"   /* Load TOS. */
+    "   LDMIA       R0!, {R4 - R11, LR}     \r\n"   /* Load R4 - R11, LR from task stack. */
+#if (CORTEX_M4_FPU == TRUE)
+    "   TST         LR, #0x10               \r\n"   /* Test if we need to restore FPU registers. */
+    "   IT          EQ                      \r\n"
+    "   VLDMIAEQ    R0!, {S16 - S31}        \r\n"   /* Load S16 - S31 from FPU. */
+#endif
+    "   MSR         PSP, R0                 \r\n"   /* Save stack pointer (program). */
+    "   ISB                                 \r\n"   /* Memory barrier. */
+    "   ORR         LR, #0x04               \r\n"   /* Return in program mode. */
+    "   BX          LR                      \r\n"
+    :: [tos_offset] "I" (OFFSETOF(TASK, tos))
+    );
+
+} /* isr_sv_handle */
+
+/*
  * isr_pendsv_handle
- * This is pendSV interrupt handle.
+ * This is pendSV interrupt handle. This should not nest an interrupt.
  */
 NAKED_ISR_FUN isr_pendsv_handle(void)
 {
-    /* Disable global interrupts. */
+    /* Save current task's context. */
     asm volatile
     (
-    "   CPSID       I                   \r\n"
+    "   CPSID       I                       \r\n"   /* Disable interrupts. */
+    "   MOV         R0, SP                  \r\n"   /* Save SP in R0. */
+    "   PUSH        {R0, LR}                \r\n"   /* Save R0 and LR in stack. */
+    "   MRS         R0, PSP                 \r\n"   /* Load PSP in R0. */
+    "   ISB                                 \r\n"
+#if (CORTEX_M4_FPU == TRUE)
+    "   TST         LR, #0x10               \r\n"   /* Test if we need to save FPU registers. */
+    "   IT          EQ                      \r\n"
+    "   VSTMDBEQ    R0!, {S16 - S31}        \r\n"   /* Save S16 - S31 in stack. */
+#endif
+    "   STMDB       R0!, {R4 - R11, LR}     \r\n"   /* Save R4 - R11, LR in stack. */
+    "   LDR         R1, =current_task       \r\n"   /* Load current task pointer. */
+    "   LDR         R1, [R1, #0]            \r\n"
+    "   MOV         R2, %[tos_offset]       \r\n"   /* Load TOS offset for the TCB. */
+    "   STR         R0, [R1, R2]            \r\n"   /* Save the TOS in the TCB. */
+    :: [tos_offset] "I" (OFFSETOF(TASK, tos))
     );
 
-    /* Check if need to save last task context. */
-    if (last_task)
-    {
-        /* Save last task context on stack. */
-        asm volatile
-        (
-        "   MRS         %[sp], PSP              \r\n"
-#if (CORTEX_M4_FPU == TRUE)
-        "   TST         R14, #0x10              \r\n"
-        "   IT          eq                      \r\n"
-        "   VSTMDBEQ    %[sp]!, {S16 - S31}     \r\n"
-#endif
-        "   STMDB       %[sp]!, {R4 - R11, R14} \r\n"
-        :
-        [sp] "=r" (last_task->tos)
-        );
+    /* We are switching to a new task so mark an exit. */
+    MARK_EXIT();
 
 #ifdef TASK_STATS
-        /* Break the task stack pattern. */
-        *(last_task->tos - 1) = 0x00;
+    /* Break the task stack pattern. */
+    *(current_task->tos - 1) = 0x00;
 #endif /* TASK_STATS */
+
+    /* If current task is in running state. */
+    if (current_task->state == TASK_RUNNING)
+    {
+        /* Return the current task. */
+        scheduler_task_yield(current_task, YIELD_SYSTEM);
     }
 
-    /* Clear the last task. */
-    last_task = NULL;
+    /* If we are in process of suspending this task. */
+    else if (current_task->state == TASK_TO_BE_SUSPENDED)
+    {
+        /* We just suspended this task. */
+        current_task->state = TASK_SUSPENDED;
+    }
 
-    /* Load context for new task. */
+    /* Get the next task needed to run. */
+    current_task = scheduler_get_next_task();
+
+    /* Set the current task as running. */
+    current_task->state = TASK_RUNNING;
+
+    /* Mark entry to a new task. */
+    MARK_ENTRY();
+
+    /* Load context for current task. */
     asm volatile
     (
-    "   LDMIA       %[sp]!, {R4 - R11, R14} \r\n"
+    "   LDMIA       %[sp]!, {R4 - R11, LR}  \r\n"   /* Load R4 -R11, LR from stack. */
 #if (CORTEX_M4_FPU == TRUE)
-    "   TST         R14, #0x10              \r\n"
+    "   TST         LR, #0x10               \r\n"   /* Test if we also need to restore FPU. */
     "   IT          eq                      \r\n"
-    "   VLDMIAEQ    %[sp]!, {S16 - S31}     \r\n"
+    "   VLDMIAEQ    %[sp]!, {S16 - S31}     \r\n"   /* Restore S16 - S31 for FPU. */
 #endif
-    "   MSR         PSP, %[sp]              \r\n"
+    "   MSR         PSP, %[sp]              \r\n"   /* Update PSP. */
     ::
     [sp] "r" (current_task->tos)
     );
 
-    /* Clear the priority mask to enable other interrupts. */
-    asm volatile
-    (
-    "   MOVS        r0, #0                  \r\n"
-    "   MSR         BASEPRI, r0             \r\n"
-    );
-
-    /* Enable system tick interrupt. */
-    CORTEX_M4_SYS_TICK_REG |= (CORTEX_M4_SYS_TICK_MASK);
-
     /* Enable interrupts and return from this function. */
     asm volatile
     (
-    "   DSB                             \r\n"
-    "   ISB                             \r\n"
-    "   CPSIE       I                   \r\n"
-    "   BX          LR                  \r\n"
+    "   LDMIA       SP!, {R0, LR}           \r\n"   /* Load R0 and LR. */
+    "   MOV         SP, R0                  \r\n"   /* Update SP. */
+    "   CPSIE       I                       \r\n"   /* Enable interrupts. */
+    "   ISB                                 \r\n"
+    "   BX          LR                      \r\n"   /* Return. */
     );
 
 } /* isr_pendsv_handle */

@@ -39,25 +39,13 @@ extern volatile INT_LVL sys_interrupt_level;
                                                 ENABLE_INTERRUPTS();    \
                                             }                           \
                                         }
-#define RESTORE_CONTEXT_FIRST()         run_first_task()
-#define PEND_SV()                       {                                           \
-                                            asm("   DSB    ");                      \
-                                            asm("   ISB    ");                      \
-                                            CORTEX_M4_PEND_SV_REG |= CORTEX_M4_PEND_SV_MAST;     \
-                                            CORTEX_M4_SYS_TICK_REG &= ~(CORTEX_M4_SYS_TICK_MASK);\
-                                            asm volatile                            \
-                                            (                                       \
-                                            "   MOVS        r0, #1          \r\n"   \
-                                            "   MSR         BASEPRI, r0     \r\n"   \
-                                            );                                      \
-                                        }
-#define CONTROL_TO_SYSTEM()             control_to_system()
-#define RETURN_ENABLING_INTERRUPTS()    {                               \
-                                            ENABLE_INTERRUPTS();        \
-                                            asm("   BX      LR  ");     \
-                                        }
-#define INITIAL_XPSR                    0x01000000
 
+/* Scheduling macros. */
+#define RESTORE_CONTEXT_FIRST()         run_first_task()
+#define PEND_SV()                       CORTEX_M4_PEND_SV_REG |= CORTEX_M4_PEND_SV_MASK;
+#define CONTROL_TO_SYSTEM()             control_to_system()
+
+/* Stack frame definitions. */
 typedef struct _hardware_stack_farme
 {
     uint32_t r0;
@@ -80,9 +68,10 @@ typedef struct _software_stack_farme
     uint32_t r9;
     uint32_t r10;
     uint32_t r11;
-    uint32_t r14;
+    uint32_t lr;
 } software_stack_farme;
 
+/* Stack manipulation macros. */
 #define TOS_SET(tos, sp, size)      (tos = (sp + size))
 
 /* Exported variables. */
@@ -100,6 +89,7 @@ ISR_FUN cpu_interrupt(void);
 ISR_FUN nmi_interrupt(void);
 ISR_FUN hard_fault_interrupt(void);
 ISR_FUN isr_servicecall_handle(void);
+NAKED_ISR_FUN isr_sv_handle(void);
 NAKED_ISR_FUN isr_pendsv_handle(void) NOOPTIMIZATION;
 ISR_FUN isr_sysclock_handle(void);
 ISR_FUN isr_clock64_tick(void);
