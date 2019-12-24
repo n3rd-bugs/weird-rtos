@@ -2,8 +2,7 @@ ENTRY(system_entry)
 
 MEMORY
 {
-    m_interrupts    (RX): ORIGIN = 0x08000000, LENGTH = 0x000001E0
-    m_text          (RX): ORIGIN = 0x080001E0, LENGTH = 0x000FFE20
+    m_text          (RX): ORIGIN = 0x08000000, LENGTH = 0x00100000
     m_data          (RW): ORIGIN = 0x20000000, LENGTH = 0x00020000
     m_cram          (RX): ORIGIN = 0x10000000, LENGTH = 0x00010000
 }
@@ -13,14 +12,9 @@ heap_size = 512;
 SECTIONS
 {
     . = ALIGN(4);
-    .interrupts :
-    {
-         KEEP(*(.system_isr_table))
-    } > m_interrupts
-
-    . = ALIGN(4);
     .text :
     {
+         KEEP(*(.interrupts))
         *(.text)
         *(.text*)
         *(.rodata)
