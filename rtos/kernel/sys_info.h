@@ -23,16 +23,18 @@
 void usage_reset(void);
 uint64_t usage_calculate(TASK *, uint64_t);
 uint32_t util_task_calc_free_stack(TASK *);
+#ifdef CONFIG_SERIAL
 void util_print_sys_info(void);
+#endif /* CONFIG_SERIAL */
 #ifdef SYS_STACK_SIZE
 uint32_t util_system_calc_free_stack(void);
-#endif
+#endif /* SYS_STACK_SIZE */
 #ifdef CONFIG_SERIAL
 void util_print_sys_info_assert(void);
-#endif
+#endif /* CONFIG_SERIAL */
 #ifdef CONFIG_FS
 int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *);
-#endif
+#endif /* CONFIG_FS */
 
 #endif /* TASK_STATS */
 #endif /* _SYS_INFO_H_ */
