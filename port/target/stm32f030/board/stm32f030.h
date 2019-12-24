@@ -1,0 +1,51 @@
+/*
+ * stm32f030.h
+ *
+ * Copyright (c) 2020 Usama Masood <mirzaon@gmail.com>
+ *
+ * Standard MIT License apply on this source code, with the inclusion of below
+ * clause.
+ *
+ * This source is for educational purpose only, and should never be used for
+ * any other purpose. If this source is used for other than educational purpose
+ * (in any form, direct or indirect) the author will not be liable for any
+ * outcome.
+ */
+
+#ifndef _STM32F030_H_
+#define _STM32F030_H_
+
+#include <kernel.h>
+#include <stm32f0xx.h>
+
+/* Peripheral clock configuration. */
+#define SYS_FREQ                        48054540
+#define PCLK_FREQ                       (SYS_FREQ)
+#define HW_TICKS_PER_SEC                (PCLK_FREQ)
+
+/* Required definitions for scheduling. */
+#define CORTEX_M0_PEND_SV_REG           (SCB->ICSR)
+#define CORTEX_M0_PEND_SV_MASK          (SCB_ICSR_PENDSVSET_Msk)
+#define CORTEX_M0_INT_SYS_PRI           (0xFF)
+#define CORTEX_M0_SET_PENDSV_PRI()      NVIC_SetPriority(PendSV_IRQn, CORTEX_M0_INT_SYS_PRI)
+
+/* End of BSS marks the start of system stack. */
+extern uint32_t _ebss;
+
+/* Memory configuration. */
+#define SYSTEM_STACK                    (((uint8_t *)&_ebss) + TARGET_HEAP_SIZE)
+#define STM32F030_STACK_END             (0x20001000)
+#define SYS_STACK_SIZE                  (STM32F030_STACK_END - (uint32_t)SYSTEM_STACK)
+
+/* System registers. */
+#define STM32_UUID                      ((uint8_t *)0x1FFF7A10)
+
+/* Function prototypes. */
+uint64_t current_hardware_tick(void);
+
+/* Helper functions. */
+void system_entry(void);
+void sysclock_init(void);
+void wdt_disbale(void);
+
+#endif /* _STM32F030_H_ */
