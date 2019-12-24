@@ -1,5 +1,6 @@
 # Setup configuration options.
 setup_option_def(SERIAL_BAUD_RATE 115200 INT "USART boudrate." CONFIG_FILE "usart_avr_config")
+setup_option_def(SERIAL_BAUD_RATE_FIXED ON DEFINE "Fixed USART boudrate." CONFIG_FILE "usart_avr_config")
 setup_option_def(SERIAL_INTERRUPT_MODE OFF DEFINE "Use interrupts to transfer data over debug serial." CONFIG_FILE "usart_avr_config")
 setup_option_def(SERIAL_ENABLE_HW_FLOW OFF DEFINE "Use external RTS/CTS signals for debug serial." CONFIG_FILE "usart_avr_config")
 if (${SERIAL_INTERRUPT_MODE})

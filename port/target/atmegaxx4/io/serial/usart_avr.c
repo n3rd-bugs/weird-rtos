@@ -17,6 +17,11 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <idle.h>
+#ifdef SERIAL_BAUD_RATE_FIXED
+#define BAUD        SERIAL_BAUD_RATE
+#define BAUD_TOL    10
+#include <util/setbaud.h>
+#endif /* SERIAL_BAUD_RATE_FIXED */
 
 #ifdef SERIAL_INTERRUPT_MODE
 #ifndef FS_CONSOLE
@@ -154,6 +159,7 @@ static int32_t usart_avr_init(void *data)
 {
     AVR_USART *usart = (AVR_USART *)data;
     int32_t status = SUCCESS;
+#ifndef SERIAL_BAUD_RATE_FIXED
     uint16_t ubrr_val_u1x, ubrr_val_u2x;
     double baud_u1x, baud_u2x, error_u1x, error_u2x;
 
@@ -180,6 +186,7 @@ static int32_t usart_avr_init(void *data)
     {
         error_u2x *= -1.0;
     }
+#endif /* SERIAL_BAUD_RATE_FIXED */
 
     /* Process according to the device number. */
     switch (usart->num)
@@ -203,6 +210,18 @@ static int32_t usart_avr_init(void *data)
             idle_add_work(&usart_avr_recover_rts, usart);
         }
 
+#ifdef SERIAL_BAUD_RATE_FIXED
+        /* Initialize the serial interface. */
+        /* Set the configured baud-rate. */
+        UBRR0H = UBRRH_VALUE;
+        UBRR0L = UBRRL_VALUE;
+
+#if USE_2X
+        UCSR0A |= (1 << U2X0);
+#else
+        UCSR0A &= ~(1 << U2X0);
+#endif /* USE_2X */
+#else
         /* Only choose U2X if error rating is better. */
         if (error_u1x <= error_u2x)
         {
@@ -216,6 +235,7 @@ static int32_t usart_avr_init(void *data)
             UBRR0H = ubrr_val_u2x >> 8;
             UBRR0L = ubrr_val_u2x  & 0xFF;
         }
+#endif /* SERIAL_BAUD_RATE_FIXED */
 
         /* Enable RX and TX. */
         UCSR0B = (1 << RXEN0)  | (1 << TXEN0);
@@ -249,6 +269,18 @@ static int32_t usart_avr_init(void *data)
             idle_add_work(&usart_avr_recover_rts, usart);
         }
 
+#ifdef SERIAL_BAUD_RATE_FIXED
+        /* Initialize the serial interface. */
+        /* Set the configured baud-rate. */
+        UBRR1H = UBRRH_VALUE;
+        UBRR1L = UBRRL_VALUE;
+
+#if USE_2X
+        UCSR1A |= (1 << U2X0);
+#else
+        UCSR1A &= ~(1 << U2X0);
+#endif /* USE_2X */
+#else
         /* Only choose U2X if error rating is better. */
         if (error_u1x <= error_u2x)
         {
@@ -262,6 +294,7 @@ static int32_t usart_avr_init(void *data)
             UBRR1H = ubrr_val_u2x >> 8;
             UBRR1L = ubrr_val_u2x  & 0xFF;
         }
+#endif /* SERIAL_BAUD_RATE_FIXED */
 
         /* Enable RX and TX. */
         UCSR1B = (1 << RXEN1)  | (1 << TXEN1);

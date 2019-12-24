@@ -23,6 +23,7 @@
 #else
 /* Some configurations. */
 #define SERIAL_BAUD_RATE                (115200)
+#define SERIAL_BAUD_RATE_FIXED
 //#define SERIAL_INTERRUPT_MODE
 //#define SERIAL_ENABLE_HW_FLOW
 
