@@ -1,6 +1,6 @@
 # Load default AVR configurations.
 set(TGT_PLATFORM atmega644 CACHE STRING "Target platform.")
-set_property(CACHE TGT_PLATFORM PROPERTY STRINGS "atmega644" "atmega1284")
+set_property(CACHE TGT_PLATFORM PROPERTY STRINGS "atmega644" "atmega644p" "atmega644a" "atmega644pa" "atmega1284" "atmega1284p")
 set(TGT_CPU "avr" CACHE INTERNAL "Target CPU." FORCE)
 set(TGT_TOOL "gcc-avr" CACHE STRING "Target Tools.")
 set(F_CPU 20000000UL CACHE STRING "Target frequency.")
@@ -28,6 +28,9 @@ set(CMAKE_C_FLAGS "${AVR_MCU_FLAGS} ${AVR_FRQ_FLAGS} ${AVR_C_FLAGS}" CACHE STRIN
 set(CMAKE_EXE_LINKER_FLAGS "${AVR_LINK_FLAGS}" CACHE STRING "" FORCE)
 set(CMAKE_C_LINK_EXECUTABLE "\"${AVR_CC}\" <LINK_FLAGS> -o <TARGET> <OBJECTS> <LINK_LIBRARIES>" CACHE STRING "" FORCE)
 
+# Define minimum IDLE task stack size.
+set(kernel_idle_stack_min 64 CACHE INTERNAL "" FORCE)
+
 # This function will setup a target for AVR.
 function (setup_target target_name sources)
     # Add CMAKE_BUILD to disable manual configurations.
@@ -51,6 +54,6 @@ function (setup_target target_name sources)
     # If we have AVR dude configuration.
     if (${TGT_PLATFORM}_DUDE_MCU)
         # Add a target for AVR dude.
-        add_custom_target(${target_name}.dude cd ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} && ${AVR_DUDE} -p${${TGT_PLATFORM}_DUDE_MCU} -c${${TGT_PLATFORM}_DUDE_DRIVER} -P${${TGT_PLATFORM}_DUDE_SER} -b${${TGT_PLATFORM}_DUDE_BOUD} -D -Uflash:w:${target_name}.hex:a DEPENDS ${target_name}.hex)
+        add_custom_target(${target_name}.dude cd ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} && ${AVR_DUDE} -p${${TGT_PLATFORM}_DUDE_MCU} -c${${TGT_PLATFORM}_DUDE_DRIVER} -P${${TGT_PLATFORM}_DUDE_SER} -b${${TGT_PLATFORM}_DUDE_BOUD} -Uflash:w:${target_name}.hex:a DEPENDS ${target_name}.hex)
     endif ()
 endfunction ()

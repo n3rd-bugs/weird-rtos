@@ -27,6 +27,205 @@ uint16_t system_stack_end;
 uint8_t avr_in_isr = FALSE;
 
 /*
+ * stack_init
+ * @tcb: Task control block for which stack is needed to be initialized.
+ * @entry: Task entry function.
+ * @argv: Argument that is needed to be passed to the task.
+ * This function initializes stack for a new task.
+ */
+void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
+{
+    /* The start of the task entry will be popped off the stack last, so place
+     * it on first. */
+    *(tcb->tos) = ((uint16_t)entry & 0x00FF);
+    (tcb->tos)--;
+
+    *(tcb->tos) = ((uint16_t)entry & 0xFF00) >> 8;
+    (tcb->tos)--;
+
+    /* Push R16 on the stack. */
+    (tcb->tos)--;
+
+    /* Push SREG on the stack. */
+    *(tcb->tos) = 0x80;
+    (tcb->tos)--;
+
+    /* Push RAMPZ on the stack. */
+    *(tcb->tos) = 0x00;
+    (tcb->tos)--;
+
+    /* The compiler expects R1 to be 0. */
+    *(tcb->tos) = 0x00;
+
+    /* Push R1-R15, R0, R17-R23 on the stack. */
+    (tcb->tos) -= 0x17;
+
+    /* Push R24 on the stack. */
+    *(tcb->tos) = ((uint16_t)argv & 0x00FF);
+    (tcb->tos)--;
+
+    /* Push R25 on the stack. */
+    *(tcb->tos) = ((uint16_t)argv & 0xFF00) >> 8;
+    (tcb->tos)--;
+
+    /* Push R26-R31 on the stack. */
+    (tcb->tos) -= 0x06;
+
+    /* Push system interrupt level for this task. */
+    *(tcb->tos) = TRUE;
+    (tcb->tos)--;
+
+} /* stack_init */
+
+#ifdef CONFIG_SLEEP
+/*
+ * system_tick_Init
+ * This initializes system tick. On AVR we are using Timer1 with CCP1 module to
+ * reload the timer when expired.
+ */
+void system_tick_Init(void)
+{
+    /* Using 16bit timer 1 to generate the system tick. */
+    TCNT1 = 0x00;
+    OCR1A = (((SYS_FREQ / SOFT_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
+
+    /* Setup clock source and compare match behavior. */
+    TCCR1B =  0x03 | 0x08;
+
+    /* Enable the compare A match interrupt. */
+    TIMSK1 |= 0x02;
+
+} /* system_tick_Init */
+#endif /* CONFIG_SLEEP */
+
+/*
+ * current_hardware_tick
+ * @return: This function will return hardware system tick.
+ * This function will return current hardware tick.
+ */
+uint64_t current_hardware_tick(void)
+{
+#ifdef CONFIG_SLEEP
+    /* Return hardware system tick. */
+    return (((uint64_t)(current_system_tick() + (uint64_t)((TIFR1 & (1 << OCF1A)) ? 1 : 0)) * (uint64_t)(SYS_FREQ / SOFT_TICKS_PER_SEC / 64)) + (uint64_t)TCNT1);
+#else
+    /* Return hardware system tick. */
+    return (((uint64_t)((uint64_t)((TIFR1 & (1 << OCF1A)) ? 1 : 0)) * (uint64_t)(SYS_FREQ / SOFT_TICKS_PER_SEC / 64)) + (uint64_t)TCNT1);
+#endif /* CONFIG_SLEEP */
+} /* current_hardware_tick */
+
+/*
+ * ISR(TIMER1_COMPA_vect, ISR_NAKED)
+ * This is timer interrupt that will be called at each system tick.
+ */
+ISR(TIMER1_COMPA_vect, ISR_NAKED)
+{
+    /* Save the context on the current task's stack. */
+    /* This will also disable global interrupts. */
+    SAVE_CONTEXT_ISR();
+
+    /* Load system stack. */
+    LOAD_SYSTEM_STACK();
+
+    /* Clear the interrupt level. */
+    sys_interrupt_level = 0;
+
+#ifdef CONFIG_SLEEP
+    /* Process system tick. */
+    if (process_system_tick())
+    {
+        /* We may switch to a new task so mark an exit. */
+        MARK_EXIT();
+
+        /* Check if we can actually preempt the current task. */
+        if (current_task->lock_count == 0)
+        {
+            /* We should never have a task here with state not running. */
+            ASSERT(current_task->state != TASK_RUNNING);
+
+            /* Re-enqueue/schedule this task in the scheduler. */
+            scheduler_task_yield(current_task, YIELD_SYSTEM);
+
+            /* Get and set the task that should run next. */
+            set_current_task(scheduler_get_next_task());
+
+            /* Set the current task as running. */
+            current_task->state = TASK_RUNNING;
+        }
+
+        else
+        {
+            /* Set the flag that we need to process a context switch. */
+            current_task->flags |= TASK_SCHED_DRIFT;
+        }
+
+        /* Mark entry to a new task. */
+        MARK_ENTRY();
+    }
+#endif /* CONFIG_SLEEP */
+
+    /* Restore the previous task's context. */
+    RESTORE_CONTEXT();
+
+} /* ISR(TIMER1_COMPA_vect, ISR_NAKED) */
+
+/*
+ * control_to_system
+ */
+NAKED_FUN control_to_system(void)
+{
+    /* Save context for either a task or an ISR. */
+    SAVE_CONTEXT_CTS();
+
+    /* If we are in a task. */
+    if (avr_in_isr == FALSE)
+    {
+        /* We may switch to a new task so mark an exit. */
+        MARK_EXIT();
+    }
+
+    /* If current task is in running state. */
+    if (current_task->state == TASK_RUNNING)
+    {
+        /* Return the current task. */
+        scheduler_task_yield(current_task, YIELD_SYSTEM);
+    }
+
+    /* If we are in process of suspending this task. */
+    else if (current_task->state == TASK_TO_BE_SUSPENDED)
+    {
+        /* We just suspended this task. */
+        current_task->state = TASK_SUSPENDED;
+    }
+
+    /* Context has already been saved, just switch to new
+     * task here. */
+    set_current_task((TASK *)scheduler_get_next_task());
+
+    /* Set the current task as running. */
+    current_task->state = TASK_RUNNING;
+
+    /* If we are in a task. */
+    if (avr_in_isr == FALSE)
+    {
+        /* Mark entry to a new task. */
+        MARK_ENTRY();
+
+        /* Restore the next task's context. */
+        RESTORE_CONTEXT();
+    }
+    else
+    {
+        /* Restore the interrupt context. */
+        RESTORE_STACK();
+
+        /* Return from this function. */
+        RETURN_FUNCTION();
+    }
+
+} /* control_to_system */
+
+/*
  * ISR(__vector_default)
  * This function will stub out any rogue interrupts, and
  * will reset the system if triggered.
@@ -61,160 +260,3 @@ ISR(__vector_default, ISR_NAKED)
     CPU_ISR_EXIT();
 
 } /* ISR(__vector_default) */
-
-/*
- * ISR(TIMER1_COMPA_vect, ISR_NAKED)
- * This is timer interrupt that will be called at each system tick.
- */
-ISR(TIMER1_COMPA_vect, ISR_NAKED)
-{
-    /* Save the context on the current task's stack. */
-    /* This will also disable global interrupts. */
-    SAVE_CONTEXT_ISR();
-
-    /* Load system stack. */
-    LOAD_SYSTEM_STACK();
-
-    /* Clear the interrupt level. */
-    sys_interrupt_level = 0;
-
-    /* Process system tick. */
-    process_system_tick();
-
-    /* We may switch to a new task so mark an exit. */
-    MARK_EXIT();
-
-    /* Check if we can actually preempt the current task. */
-    if (current_task->lock_count == 0)
-    {
-        /* Re-enqueue/schedule this task in the scheduler. */
-        scheduler_task_yield(current_task, YIELD_MANUAL);
-
-        /* Get and set the task that should run next. */
-        set_current_task(scheduler_get_next_task());
-    }
-
-    else
-    {
-        /* Set the flag that we need to process a context switch. */
-        current_task->flags |= TASK_SCHED_DRIFT;
-    }
-
-    /* Mark entry to a new task. */
-    MARK_ENTRY();
-
-    /* Restore the previous task's context. */
-    RESTORE_CONTEXT();
-
-} /* ISR(TIMER1_COMPA_vect, ISR_NAKED) */
-
-/*
- * current_hardware_tick
- * @return: This function will return hardware system tick.
- * This function will return current hardware tick.
- */
-uint64_t current_hardware_tick(void)
-{
-    /* Return hardware system tick. */
-    return (((uint64_t)(current_system_tick() + (uint64_t)((TIFR1 & (1 << OCF1A)) ? 1 : 0)) * (uint64_t)(SYS_FREQ / SOFT_TICKS_PER_SEC / 64)) + (uint64_t)TCNT1);
-
-} /* current_hardware_tick */
-
-/*
- * system_tick_Init
- * This initializes system tick. On AVR we are using Timer1 with CCP1 module to
- * reload the timer when expired.
- */
-void system_tick_Init(void)
-{
-    /* Using 16bit timer 1 to generate the system tick. */
-    TCNT1 = 0x00;
-    OCR1A = (((SYS_FREQ / SOFT_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
-
-    /* Setup clock source and compare match behavior. */
-    TCCR1B =  0x03 | 0x08;
-
-    /* Enable the compare A match interrupt. */
-    TIMSK1 |= 0x02;
-
-} /* system_tick_Init */
-
-/*
- * stack_init
- * @tcb: Task control block for which stack is needed to be initialized.
- * @entry: Task entry function.
- * @argv: Argument that is needed to be passed to the task.
- * This function initializes stack for a new task.
- */
-void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
-{
-    /* The start of the task code will be popped off the stack last, so place
-     * it on first. */
-    *(tcb->tos) = ((uint16_t)entry & 0x00FF);
-    (tcb->tos)--;
-
-    *(tcb->tos) = ((uint16_t)entry & 0xFF00) >> 8;
-    (tcb->tos)--;
-
-    (tcb->tos)--;                                   /* Push R16 on the stack. */
-
-    *(tcb->tos) = 0x80;                             /* Push SREG on the stack. */
-    (tcb->tos)--;
-
-    *(tcb->tos) = 0x00;                             /* Push RAMPZ on the stack. */
-    (tcb->tos)--;
-
-    *(tcb->tos) = 0x00;                             /* The compiler expects R1 to be 0. */
-    (tcb->tos) -= 0x17;                             /* Push R1-R15, R0, R17-R23 on the stack. */
-
-    *(tcb->tos) = ((uint16_t)argv & 0x00FF);
-    (tcb->tos)--;                                   /* Push R24 on the stack. */
-
-    *(tcb->tos) = ((uint16_t)argv & 0xFF00) >> 8;
-    (tcb->tos)--;                                   /* Push R25 on the stack. */
-
-    (tcb->tos) -= 0x06;                             /* Push R26-R31 on the stack. */
-
-    *(tcb->tos) = TRUE;                             /* Push system interrupt level for this task. */
-    (tcb->tos)--;
-
-} /* stack_init */
-
-/*
- * control_to_system
- */
-NAKED_FUN control_to_system(void)
-{
-    /* Save context for either a task or an ISR. */
-    SAVE_CONTEXT_CTS();
-
-    /* If we are in a task. */
-    if (avr_in_isr == FALSE)
-    {
-        /* We may switch to a new task so mark an exit. */
-        MARK_EXIT();
-    }
-
-    /* Context has already been saved, just switch to new
-     * task here. */
-    set_current_task((TASK *)scheduler_get_next_task());
-
-    /* If we are in a task. */
-    if (avr_in_isr == FALSE)
-    {
-        /* Mark entry to a new task. */
-        MARK_ENTRY();
-
-        /* Restore the next task's context. */
-        RESTORE_CONTEXT();
-    }
-    else
-    {
-        /* Restore the interrupt context. */
-        RESTORE_STACK();
-
-        /* Return from this function. */
-        RETURN_FUNCTION();
-    }
-
-} /* control_to_system */

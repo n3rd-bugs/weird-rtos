@@ -63,7 +63,9 @@
 #include <tasks.h>
 
 /* Following functions must be implemented by target porting layer. */
+#ifdef CONFIG_SLEEP
 void system_tick_Init(void);
+#endif /* CONFIG_SLEEP */
 void stack_init(TASK *, TASK_ENTRY *, void *);
 
 /* This must be implemented by application. */
