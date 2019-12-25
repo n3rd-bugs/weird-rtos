@@ -19,7 +19,7 @@
 #ifdef TASK_STATS
 #ifdef CONFIG_FS
 #include <fs.h>
-#endif
+#endif /* CONFIG_FS */
 #include <string.h>
 #include <rtl.h>
 
@@ -31,18 +31,24 @@ static const char __sys_info_sm_status[] PROGMEM = "S(M)\tStatus\t";
 #ifdef TASK_USAGE
 static const char __sys_info_cpu[] PROGMEM = "CPU(%)\t";
 #endif /* TASK_USAGE */
+#ifdef CONFIG_SERIAL
 static const char __sys_info_running[] PROGMEM = "\t<Running>";
+#endif /* CONFIG_SERIAL */
 static const char __sys_info_system[] PROGMEM = "SYSTEM\t-\t";
 static const char __sys_info_dash[] PROGMEM = "\t-";
 static const char __sys_info_tab[] PROGMEM = "\t";
 static const char __sys_info_new_line[] PROGMEM = "\r\n";
 #ifdef CONFIG_SLEEP
 static const char __sys_info_nt_st[] PROGMEM = "n(T)\ts(T)\r\n";
+#ifdef CONFIG_SERIAL
 static const char __sys_info_dash_dash_dash[] PROGMEM = "\t-\t-\t-\r\n";
+#endif /* CONFIG_SERIAL */
 static const char __sys_info_dash_dash[] PROGMEM = "\t-\t-\r\n";
 #else
 static const char __sys_info_nt_st[] PROGMEM = "n(T)\r\n";
+#ifdef CONFIG_SERIAL
 static const char __sys_info_dash_dash_dash[] PROGMEM = "\t-\t-\r\n";
+#endif /* CONFIG_SERIAL */
 static const char __sys_info_dash_dash[] PROGMEM = "\t-\r\n";
 #endif /* CONFIG_SLEEP */
 
