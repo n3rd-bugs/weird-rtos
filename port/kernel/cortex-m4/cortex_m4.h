@@ -90,8 +90,10 @@ ISR_FUN nmi_interrupt(void);
 ISR_FUN hard_fault_interrupt(void);
 ISR_FUN isr_servicecall_handle(void);
 NAKED_ISR_FUN isr_sv_handle(void);
-NAKED_ISR_FUN isr_pendsv_handle(void) NOOPTIMIZATION;
+NAKED_ISR_FUN isr_pendsv_handle(void);
+#ifdef CONFIG_SLEEP
 ISR_FUN isr_sysclock_handle(void);
 ISR_FUN isr_clock64_tick(void);
+#endif /* CONFIG_SLEEP */
 
 #endif /* _CORTEX_M4_H_ */

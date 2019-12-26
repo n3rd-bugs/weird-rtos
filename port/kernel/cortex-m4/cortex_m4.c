@@ -131,6 +131,7 @@ void control_to_system(void)
 
 } /* control_to_system */
 
+#ifdef CONFIG_SLEEP
 /*
  * isr_sysclock_handle
  * This is system tick interrupt handle.
@@ -140,7 +141,6 @@ ISR_FUN isr_sysclock_handle(void)
     /* Disable other interrupts. */
     DISABLE_INTERRUPTS();
 
-#ifdef CONFIG_SLEEP
     /* Process system tick. */
     if (process_system_tick())
     {
@@ -159,12 +159,12 @@ ISR_FUN isr_sysclock_handle(void)
             current_task->flags |= TASK_SCHED_DRIFT;
         }
     }
-#endif /* CONFIG_SLEEP */
 
     /* Enable interrupts. */
     ENABLE_INTERRUPTS();
 
 } /* isr_sysclock_handle */
+#endif /* CONFIG_SLEEP */
 
 /*
  * isr_sv_handle

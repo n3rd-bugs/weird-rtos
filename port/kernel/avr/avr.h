@@ -392,6 +392,5 @@ typedef uint8_t INT_LVL;
 /* Function prototypes. */
 void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv);
 NAKED_FUN control_to_system(void);
-uint64_t current_hardware_tick(void);
 
 #endif /* _AVR_H_ */

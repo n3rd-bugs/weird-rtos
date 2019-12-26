@@ -10,17 +10,12 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-#include <stdio.h>
-#include <stdarg.h>
 #include <kernel.h>
-#ifdef CONFIG_FS
-#include <fs.h>
-#endif /* CONFIG_FS */
 
+#ifdef CONFIG_SLEEP
 /* Used to manage 64 bit system clock. */
 static uint32_t clock_64_high_48 = 0;
 
-#ifdef CONFIG_SLEEP
 /*
  * system_tick_Init
  * This is responsible for initializing system timer tick. This will not
@@ -58,7 +53,6 @@ void system_tick_Init(void)
     NVIC->ISER[28 >> 5] |= (1 << 28);
 
 } /* system_tick_Init */
-#endif /* CONFIG_SLEEP */
 
 /*
  * isr_servicecall_handle
@@ -89,3 +83,4 @@ uint64_t current_hardware_tick(void)
     return (((uint64_t)(clock_64_high_48 + ((TIM2->SR & TIM_DIER_UIE) ? 1 : 0)) * 0xFFFF) + (uint64_t)(TIM2->CNT));
 
 } /* pit_get_clock */
+#endif /* CONFIG_SLEEP */

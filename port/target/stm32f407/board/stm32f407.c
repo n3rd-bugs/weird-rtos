@@ -10,12 +10,7 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-#include <stdio.h>
-#include <stdarg.h>
 #include <kernel.h>
-#ifdef CONFIG_FS
-#include <fs.h>
-#endif /* CONFIG_FS */
 
 /* Used to manage 64 bit system clock. */
 uint32_t clock_64_high_32 = 0;

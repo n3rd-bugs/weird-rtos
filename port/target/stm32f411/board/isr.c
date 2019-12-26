@@ -21,6 +21,8 @@
 /* ISR definitions. */
 void __attribute__ ((weak, alias("cpu_interrupt"))) nmi_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) hard_fault_interrupt(void);
+void __attribute__ ((weak, alias("cpu_interrupt"))) isr_sysclock_handle(void);
+void __attribute__ ((weak, alias("cpu_interrupt"))) isr_clock64_tick(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) usart1_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) usart2_interrupt(void);
 

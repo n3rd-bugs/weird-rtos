@@ -44,8 +44,10 @@ extern uint32_t _ebss;
 /* System registers. */
 #define STM32_UUID                      ((uint8_t *)0x1FFF7A10)
 
+#ifdef CONFIG_SLEEP
 /* Function prototypes. */
 uint64_t current_hardware_tick(void);
+#endif /* CONFIG_SLEEP */
 
 /* Helper functions. */
 void system_entry(void);

@@ -21,6 +21,9 @@
 #include <fs_target.h>
 #endif /* CONFIG_FS */
 
-/* Any other configuration is being managed by Eclipse plugin for avr-gcc. */
+/* Function prototypes. */
+#ifdef CONFIG_SLEEP
+uint64_t current_hardware_tick(void);
+#endif /* CONFIG_SLEEP */
 
 #endif /* _ATMEGAXX4_H_ */
