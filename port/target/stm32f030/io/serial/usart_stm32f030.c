@@ -105,21 +105,21 @@ int32_t usart_stm32f030_register(STM32_USART *usart, const char *name, uint8_t d
         /* Enable clock for GPIOA. */
         RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
 
-        /* Set alternate function for PA9 (TX) and PA10 (RX). */
-        GPIOA->MODER &= (uint32_t)~(GPIO_MODER_MODER9 | GPIO_MODER_MODER10);
-        GPIOA->MODER |= (GPIO_MODER_MODER9_1 | GPIO_MODER_MODER10_1);
+        /* Set alternate function for PA2 (TX) and PA3 (RX). */
+        GPIOA->MODER &= (uint32_t)~(GPIO_MODER_MODER2 | GPIO_MODER_MODER3);
+        GPIOA->MODER |= (GPIO_MODER_MODER2_1 | GPIO_MODER_MODER3_1);
 
-        /* Select output mode for PA9 and input mode for PA10. */
-        GPIOA->OTYPER &= (uint16_t)~(GPIO_OTYPER_OT_9);
-        GPIOA->OTYPER |= GPIO_OTYPER_OT_10;
+        /* Select output mode for PA2 and input mode for PA3. */
+        GPIOA->OTYPER &= (uint16_t)~(GPIO_OTYPER_OT_2);
+        GPIOA->OTYPER |= GPIO_OTYPER_OT_3;
 
-        /* Select high speed for PA9 */
-        GPIOA->OSPEEDR &= (uint32_t)~(GPIO_OSPEEDER_OSPEEDR9);
-        GPIOA->OSPEEDR |= GPIO_OSPEEDER_OSPEEDR9_1;
+        /* Select high speed for PA2 */
+        GPIOA->OSPEEDR &= (uint32_t)~(GPIO_OSPEEDER_OSPEEDR2);
+        GPIOA->OSPEEDR |= GPIO_OSPEEDER_OSPEEDR2_1;
 
         /* Select USART1 AF for PA9 and PA10. */
-        GPIOA->AFR[1] &= (uint32_t)~((0xF << ((9 % 8) << 2)) | (0xF << ((10 % 8) << 2)));
-        GPIOA->AFR[1] |= (0x1 << ((9 % 8) << 2)) | (0x1 << ((10 % 8) << 2));
+        GPIOA->AFR[0] &= (uint32_t)~((0xF << ((2 % 8) << 2)) | (0xF << ((3 % 8) << 2)));
+        GPIOA->AFR[0] |= (0x1 << ((2 % 8) << 2)) | (0x1 << ((3 % 8) << 2));
 
         /* Save the USART register. */
         usart->reg = USART1;
