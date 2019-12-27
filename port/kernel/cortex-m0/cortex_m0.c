@@ -61,6 +61,9 @@ void run_first_task(void)
     /* Get the task needed to run. */
     current_task = scheduler_get_next_task();
 
+    /* Mark this task as running. */
+    current_task->state = TASK_RUNNING;
+
     /* Set PendSV and System Tick interrupt priorities to avoid nested
      * interrupts. */
     CORTEX_M0_SET_PENDSV_PRI();

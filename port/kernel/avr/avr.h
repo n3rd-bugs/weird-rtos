@@ -372,6 +372,7 @@ typedef uint8_t INT_LVL;
 #define RESTORE_CONTEXT_FIRST()                                         \
     {                                                                   \
         current_task = scheduler_get_next_task();                       \
+        current_task->state = TASK_RUNNING;                             \
         MARK_ENTRY();                                                   \
         sys_interrupt_level = TRUE;                                     \
         RESTORE_CONTEXT();                                              \

@@ -48,7 +48,7 @@ void sysclock_init(void)
     RCC->CFGR2 &= (uint32_t)0xFFFFFFF0;
 
     /* Reset USARTSW[1:0], I2CSW, CECSW and ADCSW bits. */
-    RCC->CFGR3 &= (uint32_t)0xFFFFFEAC;
+    RCC->CFGR3 &= (uint32_t)0xFFFFFEEC;
 
     /* Reset HSI14 bit. */
     RCC->CR2 &= (uint32_t)0xFFFFFFFE;
