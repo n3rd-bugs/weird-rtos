@@ -278,11 +278,6 @@ int32_t i2c_stm32f103_message(I2C_DEVICE *device, I2C_MSG *message)
             /* Return timeout error to the caller. */
             status = I2C_TIMEOUT;
         }
-
-        if (status != SUCCESS)
-        {
-            sleep_ms(0);
-        }
 #else
 
         /* Send a start bit. */
@@ -505,13 +500,13 @@ int32_t i2c_stm32f103_message(I2C_DEVICE *device, I2C_MSG *message)
                 break;
             }
         }
-
-        if (status != SUCCESS)
-        {
-            /* Reinitialize this device to recover from error state. */
-            i2c_stm32f103_init(device);
-        }
 #endif /* STM_I2C_INT_MODE */
+    }
+
+    if (status != SUCCESS)
+    {
+        /* Reinitialize this device to recover from error state. */
+        i2c_stm32f103_init(device);
     }
 
     /* Return status to the caller. */
@@ -808,7 +803,7 @@ ISR_FUN i2c1_event_interrupt(void)
 } /* i2c1_event_interrupt */
 
 /*
- * i2c1_event_interrupt
+ * i2c1_error_interrupt
  * This function handles the I2C error interrupt.
  */
 ISR_FUN i2c1_error_interrupt(void)
@@ -853,7 +848,7 @@ ISR_FUN i2c1_error_interrupt(void)
 
     ISR_EXIT();
 
-} /* i2c1_event_interrupt */
+} /* i2c1_error_interrupt */
 
 /*
  * i2c1_stm32f103_enable_interrupt.
