@@ -212,12 +212,12 @@ int32_t i2c_stm32f103_message(I2C_DEVICE *device, I2C_MSG *message)
     int32_t status = SUCCESS;
     uint32_t timeout;
     I2C_STM32 *i2c_stm = (I2C_STM32 *)device->data;
+    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
 #ifdef STM_I2C_INT_MODE
     CONDITION *condition = &i2c_stm->condition;
     SUSPEND *suspend = &i2c_stm->suspend;
 #else
     int32_t i;
-    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
 #endif /* STM_I2C_INT_MODE */
 
     /* Wait for I2C to get out of busy state. */
@@ -230,6 +230,9 @@ int32_t i2c_stm32f103_message(I2C_DEVICE *device, I2C_MSG *message)
         i2c_stm->msg = message;
         i2c_stm->bytes_transfered = 0;
         i2c_stm->flags = 0;
+
+        /* Disable interrupts. */
+        DISABLE_INTERRUPTS();
 
         /* Enable event and error interrupts for this I2C. */
         i2c_stm->i2c_reg->CR2 |= (I2C_CR2_ITERREN | I2C_CR2_ITEVTEN);
@@ -251,6 +254,9 @@ int32_t i2c_stm32f103_message(I2C_DEVICE *device, I2C_MSG *message)
 
         /* Disable buffer, event and error interrupts for this I2C. */
         i2c_stm->i2c_reg->CR2 &= (uint16_t)~(I2C_CR2_ITBUFEN | I2C_CR2_ITERREN | I2C_CR2_ITEVTEN);
+
+        /* Restore old interrupt level. */
+        SET_INTERRUPT_LEVEL(interrupt_level);
 
         if (status == SUCCESS)
         {

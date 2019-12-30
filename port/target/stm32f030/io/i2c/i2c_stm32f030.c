@@ -43,7 +43,7 @@ void i2c_stm32f030_init(I2C_DEVICE *device)
         /* Enable clock for GPIOA. */
         RCC->AHBENR |= RCC_AHBENR_GPIOAEN;
 
-        /* Set alternate function for PA9 (SDA) and PA10 (SCL). */
+        /* Set alternate function for PA9 (SCL) and PA10 (SDA). */
         GPIOA->MODER &= (uint32_t)~(GPIO_MODER_MODER9 | GPIO_MODER_MODER10);
         GPIOA->MODER |= (GPIO_MODER_MODER9_1 | GPIO_MODER_MODER10_1);
 
@@ -123,7 +123,7 @@ void i2c_stm32f030_init(I2C_DEVICE *device)
 
         /* This is I2C1. */
         case 1:
-            /* Set alternate function for PA9 (SDA) and PA10 (SCL). */
+            /* Set alternate function for PA9 (SCL) and PA10 (SDA). */
             GPIOA->MODER &= (uint32_t)~(GPIO_MODER_MODER9 | GPIO_MODER_MODER10);
             GPIOA->MODER |= (GPIO_MODER_MODER9_0 | GPIO_MODER_MODER10_0);
             GPIOA->PUPDR &= (uint32_t)~(GPIO_PUPDR_PUPDR9 | GPIO_PUPDR_PUPDR10);
@@ -194,6 +194,7 @@ int32_t i2c_stm32f030_message(I2C_DEVICE *device, I2C_MSG *message)
     I2C_STM32 *i2c_stm = (I2C_STM32 *)device->data;
     int32_t i;
     int32_t remaining_size = message->length;
+    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
 #ifdef STM_I2C_INT_MODE
     CONDITION *condition = &i2c_stm->condition;
     SUSPEND *suspend = &i2c_stm->suspend;
@@ -226,7 +227,7 @@ int32_t i2c_stm32f030_message(I2C_DEVICE *device, I2C_MSG *message)
                 this_size = 0xFF;
 
                 /* Update the CR2 with slave address, number of bytes to be sent and enable reload mode. */
-                i2c_stm->i2c_reg->CR2 |= (uint32_t)(((uint32_t)(device->address << 1) & I2C_CR2_SADD) | (((uint32_t)i2c_stm->this_transfer << 16 ) & I2C_CR2_NBYTES) | (uint32_t)I2C_CR2_RELOAD);
+                i2c_stm->i2c_reg->CR2 |= (uint32_t)(((uint32_t)(device->address << 1) & I2C_CR2_SADD) | (((uint32_t)this_size << 16 ) & I2C_CR2_NBYTES) | (uint32_t)I2C_CR2_RELOAD);
                 i2c_stm->do_continue = TRUE;
             }
             else
@@ -235,7 +236,7 @@ int32_t i2c_stm32f030_message(I2C_DEVICE *device, I2C_MSG *message)
                 this_size = (uint8_t)remaining_size;
 
                 /* Update the CR2 with slave address, number of bytes to be sent and enable auto end mode. */
-                i2c_stm->i2c_reg->CR2 |= (uint32_t)(((uint32_t)(device->address << 1) & I2C_CR2_SADD) | (((uint32_t)i2c_stm->this_transfer << 16 ) & I2C_CR2_NBYTES) | (uint32_t)I2C_CR2_AUTOEND);
+                i2c_stm->i2c_reg->CR2 |= (uint32_t)(((uint32_t)(device->address << 1) & I2C_CR2_SADD) | (((uint32_t)this_size << 16 ) & I2C_CR2_NBYTES) | (uint32_t)I2C_CR2_AUTOEND);
                 i2c_stm->do_continue = FALSE;
             }
 
@@ -248,6 +249,9 @@ int32_t i2c_stm32f030_message(I2C_DEVICE *device, I2C_MSG *message)
                 /* This is a read request. */
                 i2c_stm->i2c_reg->CR2 |= (I2C_CR2_RD_WRN);
             }
+
+            /* Disable interrupts. */
+            DISABLE_INTERRUPTS();
 
             /* Enable I2C interrupts. */
             i2c_stm->i2c_reg->CR1 |= (I2C_CR1_TXIE | I2C_CR1_RXIE | I2C_CR1_NACKIE | I2C_CR1_STOPIE | I2C_CR1_TCIE | I2C_CR1_ERRIE);
@@ -267,14 +271,14 @@ int32_t i2c_stm32f030_message(I2C_DEVICE *device, I2C_MSG *message)
             /* Disable buffer, event and error interrupts for this I2C. */
             i2c_stm->i2c_reg->CR1 &= (uint32_t)~(I2C_CR1_TXIE | I2C_CR1_RXIE | I2C_CR1_NACKIE | I2C_CR1_STOPIE | I2C_CR1_TCIE | I2C_CR1_ERRIE);
 
+            /* Restore old interrupt level. */
+            SET_INTERRUPT_LEVEL(interrupt_level);
+
             if (status == SUCCESS)
             {
-                /* If a bus error was detected. */
-                if (i2c_stm->flags & I2C_STM32_ERROR)
+                /* If a bus error was detected or not all of the data was transfered. */
+                if ((i2c_stm->flags & I2C_STM32_ERROR) || (i2c_stm->this_transfer > 0))
                 {
-                    /* Reinitialize this device to recover from error state. */
-                    i2c_stm32f030_init(device);
-
                     /* Return IO error to the caller. */
                     status = I2C_IO_ERROR;
                 }
