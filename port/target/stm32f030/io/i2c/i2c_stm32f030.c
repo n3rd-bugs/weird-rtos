@@ -194,8 +194,8 @@ int32_t i2c_stm32f030_message(I2C_DEVICE *device, I2C_MSG *message)
     I2C_STM32 *i2c_stm = (I2C_STM32 *)device->data;
     int32_t i;
     int32_t remaining_size = message->length;
-    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
 #ifdef STM_I2C_INT_MODE
+    INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
     CONDITION *condition = &i2c_stm->condition;
     SUSPEND *suspend = &i2c_stm->suspend;
 #else
