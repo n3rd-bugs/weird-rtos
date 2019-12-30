@@ -225,6 +225,12 @@ int32_t oled_ssd1306_register(SSD1306 *oled)
 
     if (status == SUCCESS)
     {
+        /* Clear the display. */
+        status = oled_ssd1306_display(oled, NULL, 0, oled->width, 0, oled->height);
+    }
+
+    if (status == SUCCESS)
+    {
         /* Turn-on the display. */
         status = oled_ssd1306_command(oled, SSD1306_DISPLAYON);
     }
@@ -297,6 +303,13 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
         /* Number of bytes to transfer. */
         num_bytes = ((num_col * num_row) / 8);
 
+        /* If a buffer was not given. */
+        if (!buffer)
+        {
+            /* Just fill with zeros. */
+            memset(&display_buffer[1], 0, (uint8_t)this_bytes);
+        }
+
         /* Send 16 bytes of data at a time. */
         for (i = 0; ((status == SUCCESS) && (i < num_bytes)); i += 16)
         {
@@ -313,8 +326,12 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
                 this_bytes = 16;
             }
 
-            /* Copy buffer data. */
-            memcpy(&display_buffer[1], &buffer[i], (uint8_t)this_bytes);
+            /* If a buffer was given. */
+            if (buffer)
+            {
+                /* Copy buffer data. */
+                memcpy(&display_buffer[1], &buffer[i], (uint8_t)this_bytes);
+            }
 
             /* Send this chunk on I2C bus. */
             status = i2c_message(&oled->i2c, &msg, 1);
