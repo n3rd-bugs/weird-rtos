@@ -10,7 +10,6 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
 #include <kernel.h>
 #include <sys_info.h>
 #include <string.h>

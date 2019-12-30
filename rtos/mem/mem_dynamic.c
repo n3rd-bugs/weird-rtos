@@ -47,7 +47,6 @@
  *  The memory search is optimized using pages, user can define pages with
  *  same allocation size if he wants the memory to be evenly allocated.
  */
-
 #include <kernel.h>
 #include <mem.h>
 

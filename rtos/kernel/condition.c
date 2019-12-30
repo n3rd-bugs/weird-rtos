@@ -10,7 +10,6 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
 #include <kernel.h>
 #include <condition.h>
 #include <sll.h>

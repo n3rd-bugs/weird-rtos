@@ -10,7 +10,6 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
 #include <kernel.h>
 
 /* Global interrupt level. */
