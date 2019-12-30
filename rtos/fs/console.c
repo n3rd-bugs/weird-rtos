@@ -29,7 +29,7 @@ static void console_unlock(void *);
 static int32_t console_lock(void *, uint32_t);
 
 /* File system definition. */
-FS console_fs =
+static FS console_fs =
 {
         /* Console file system root node. */
         .name = "\\console",
