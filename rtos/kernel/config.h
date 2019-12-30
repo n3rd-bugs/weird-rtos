@@ -42,6 +42,7 @@
 //#define CONFIG_LCD_PCF8574
 //#define CONFIG_PPP
 //#define CONFIG_ETHERNET
+//#define CONFIG_OLED
 
 /* API's. */
 //#define CONFIG_WEIRD_VIEW
