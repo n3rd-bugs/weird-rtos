@@ -16,10 +16,8 @@
 #include <lcd_an.h>
 #include <lcd_an_target.h>
 
-#ifdef LCD_AN_DEBUG
 /* Alphanumeric LCD debug file descriptor. */
 FD lcd_an_fd = NULL;
-#endif
 
 /* Internal function prototypes. */
 static void lcd_an_send_nibble(LCD_AN *, uint8_t);
@@ -50,6 +48,7 @@ void lcd_an_init(void)
 void lcd_an_register(LCD_AN *lcd)
 {
     int32_t status = SUCCESS;
+    char fs_name[64] = "\\console\\";
 
     /* Initialize LCD. */
     lcd->clr_rs(lcd);
@@ -104,16 +103,14 @@ void lcd_an_register(LCD_AN *lcd)
         /* There is always some space available for data to be sent. */
         lcd->console.fs.flags |= FS_SPACE_AVAILABLE;
 
-#ifdef LCD_AN_DEBUG
         /* If this is a debug device. */
         if (lcd->flags & LCD_FLAG_DEBUG)
         {
             /* Open this as debug descriptor. */
-            lcd_an_fd = fs_open(lcd->console.fs.name, 0);
+            strncat(fs_name, lcd->console.fs.name, (64 - sizeof("\\console\\")));
+            lcd_an_fd = fs_open(fs_name, 0);
         }
-#endif
     }
-
 } /* lcd_an_register */
 
 /*

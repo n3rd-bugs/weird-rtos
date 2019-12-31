@@ -48,13 +48,11 @@ int io_puts(const char *s, int32_t n)
 #endif /* CONFIG_SERIAL */
 
 #ifdef CONFIG_LCD_AN
-#ifdef LCD_AN_DEBUG
     if (lcd_an_fd != NULL)
     {
         /* Print this string on the LCD-AN. */
         n = fs_puts(lcd_an_fd, (const uint8_t *)s, n);
     }
-#endif /* LCD_AN_DEBUG */
 #endif /* CONFIG_LCD_AN */
 
 #ifndef CONFIG_SERIAL
