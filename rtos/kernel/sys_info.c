@@ -22,6 +22,7 @@
 #endif /* CONFIG_FS */
 #include <string.h>
 #include <rtl.h>
+#include <io.h>
 
 /* String definitions. */
 static const char __sys_info_sys_tick[] PROGMEM = "System tick: ";
@@ -292,26 +293,26 @@ void util_print_sys_info(void)
 #ifdef CONFIG_SLEEP
     /* Print current system tick. */
     P_STR_NCPY(str, __sys_info_sys_tick, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     rtl_ultoa_b10(current_system_tick(), (uint8_t*)str);
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     P_STR_NCPY(str, __sys_info_new_line, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
 #endif /* CONFIG_SLEEP */
 
     /* Print table header. */
     P_STR_NCPY(str, __sys_info_name_pri, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     P_STR_NCPY(str, __sys_info_st_sf, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     P_STR_NCPY(str, __sys_info_sm_status, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
 #ifdef TASK_USAGE
     P_STR_NCPY(str, __sys_info_cpu, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
 #endif /* TASK_USAGE */
     P_STR_NCPY(str, __sys_info_nt_st, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
 
     /* Print information about all the tasks in the system. */
     while (tcb != NULL)
@@ -327,50 +328,50 @@ void util_print_sys_info(void)
         /* Print task information. */
         P_STR_NCPY(str, tcb->name, (P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name));
         str[(P_STR_LEN(tcb->name) > sizeof(str)) ? (sizeof(str) - 1) : P_STR_LEN(tcb->name)] = '\0';
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         rtl_ultoa_b10(tcb->priority, (uint8_t*)str);
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         rtl_ultoa_b10(tcb->stack_size, (uint8_t*)str);
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         rtl_ultoa_b10(stack_free, (uint8_t*)str);
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         rtl_ultoa_b10(tcb->stack_size - stack_free, (uint8_t*)str);
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         rtl_ultoa_b10(tcb->state, (uint8_t*)str);
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
 #ifdef TASK_USAGE
         P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         rtl_ultoa_b10(usage, (uint8_t*)str);
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
 #endif /* TASK_USAGE */
         P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         rtl_ultoa_b10(tcb->scheduled, (uint8_t*)str);
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
 #ifdef CONFIG_SLEEP
         P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
         rtl_ultoa_b10(tcb->tick_sleep, (uint8_t*)str);
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
 #endif /* CONFIG_SLEEP */
         if (tcb == get_current_task())
         {
             P_STR_NCPY(str, __sys_info_running, sizeof(str));
-            fs_puts(debug_fd, (uint8_t *)str, -1);
+            io_puts(str, -1);
         }
         P_STR_NCPY(str, __sys_info_new_line, sizeof(str));
-        fs_puts(debug_fd, (uint8_t *)str, -1);
+        io_puts(str, -1);
 
         /* Get the next task. */
         tcb = tcb->next_global;
@@ -387,27 +388,27 @@ void util_print_sys_info(void)
 
     /* Print system stack information. */
     P_STR_NCPY(str, __sys_info_system, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     rtl_ultoa_b10((uint32_t)SYS_STACK_SIZE, (uint8_t*)str);
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     rtl_ultoa_b10(stack_free, (uint8_t*)str);
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     rtl_ultoa_b10(SYS_STACK_SIZE - stack_free, (uint8_t*)str);
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     P_STR_NCPY(str, __sys_info_dash, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
 #ifdef TASK_USAGE
     P_STR_NCPY(str, __sys_info_tab, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
     rtl_ultoa_b10(usage, (uint8_t*)str);
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
 #endif /* TASK_USAGE */
     P_STR_NCPY(str, __sys_info_dash_dash, sizeof(str));
-    fs_puts(debug_fd, (uint8_t *)str, -1);
+    io_puts(str, -1);
 #endif /* SYS_STACK_SIZE */
 
 } /* util_print_sys_info */
