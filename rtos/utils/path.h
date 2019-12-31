@@ -10,13 +10,12 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
 #ifndef _PATH_H_
 #define _PATH_H_
 
 #include <kernel.h>
 
 /* Function prototypes. */
-uint32_t util_path_match(const char *, char **);
+uint32_t util_path_match(const char *, const char **);
 
 #endif /* _PATH_H_ */

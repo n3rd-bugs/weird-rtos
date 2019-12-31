@@ -73,7 +73,7 @@ struct _fs
     const char  *name;
 
     /* File operations. */
-    void        *(*open) (void *, char *, uint32_t);
+    void        *(*open) (void *, const char *, uint32_t);
     void        (*close) (void **);
     int32_t     (*write) (void *, const uint8_t *, int32_t);
     int32_t     (*read) (void *, uint8_t *, int32_t);
@@ -137,15 +137,15 @@ typedef struct _file_desc
 /* Search parameter for fs_sreach_filesystem. */
 typedef struct _dir_param
 {
-    char        *name;
-    char        *matched;
+    const char  *name;
+    const char  *matched;
     void        *priv;
 } DIR_PARAM;
 
 /* Search parameter for fs_sreach_filesystem. */
 typedef struct _node_param
 {
-    char        *name;
+    const char  *name;
     void        *priv;
 } NODE_PARAM;
 
@@ -157,7 +157,7 @@ typedef struct _node_param
 void fs_init(void);
 
 /* File APIs. */
-FD fs_open(char *, uint32_t);
+FD fs_open(const char *, uint32_t);
 void fs_close(FD *);
 
 int32_t fd_get_lock(FD);

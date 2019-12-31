@@ -24,7 +24,7 @@ static PIPE_DATA pipe_data;
 /* Internal function prototypes. */
 static int32_t pipe_lock(void *, uint32_t);
 static void pipe_unlock(void *);
-static void *pipe_open(void *, char *, uint32_t);
+static void *pipe_open(void *, const char *, uint32_t);
 
 /* File system definition. */
 FS pipe_fs =
@@ -219,7 +219,7 @@ static void pipe_unlock(void *fd)
  * @flags: Open flags.
  * This function will open a pipe node.
  */
-static void *pipe_open(void *priv_data, char *name, uint32_t flags)
+static void *pipe_open(void *priv_data, const char *name, uint32_t flags)
 {
     NODE_PARAM param;
     void *fd = NULL;

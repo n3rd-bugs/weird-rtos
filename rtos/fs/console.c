@@ -23,7 +23,7 @@
 static CONSOLE_DATA console_data;
 
 /* Function prototypes. */
-static void *console_open(void *, char *, uint32_t);
+static void *console_open(void *, const char *, uint32_t);
 static void console_unlock(void *);
 static int32_t console_lock(void *, uint32_t);
 
@@ -151,7 +151,7 @@ void console_unregister(CONSOLE *console)
  * @flags: Open flags.
  * This function will open a console node.
  */
-static void *console_open(void *priv_data, char *name, uint32_t flags)
+static void *console_open(void *priv_data, const char *name, uint32_t flags)
 {
     NODE_PARAM param;
     void *fd = NULL;

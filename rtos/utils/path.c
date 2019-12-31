@@ -21,9 +21,9 @@
  * This function matches two paths. On return the path will be updated to
  * the point where paths were matched.
  */
-uint32_t util_path_match(const char *requires, char **path)
+uint32_t util_path_match(const char *requires, const char **path)
 {
-    char *tmp = *path;
+    const char *tmp = *path;
     uint32_t match = FALSE;
 
     /* Match the given path. */

@@ -144,7 +144,7 @@ void fs_unregister(FS *file_system)
 uint8_t fs_sreach_directory(void *node, void *param)
 {
     FS *node_fs = (FS *)node;
-    char *path = ((DIR_PARAM *)param)->name;
+    const char *path = ((DIR_PARAM *)param)->name;
     uint8_t match = FALSE;
 
     /* Match the file system path. */
@@ -188,7 +188,7 @@ uint8_t fs_sreach_directory(void *node, void *param)
 uint8_t fs_sreach_node(void *node, void *param)
 {
     FS *node_fs = (FS *)node;
-    char *path = ((NODE_PARAM *)param)->name;
+    const char *path = ((NODE_PARAM *)param)->name;
     uint8_t match = FALSE;
 
     /* Match the file system path and this is a exact match. */
@@ -440,7 +440,7 @@ void fd_handle_criteria(void *fd, FS_PARAM *param, int32_t status)
  * This function opens a named node with given flags. The name should not
  * end with a '\\'.
  */
-FD fs_open(char *name, uint32_t flags)
+FD fs_open(const char *name, uint32_t flags)
 {
     DIR_PARAM param;
     FS *fs = NULL;
