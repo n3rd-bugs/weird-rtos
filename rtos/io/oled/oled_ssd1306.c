@@ -18,8 +18,11 @@
 #include <string.h>
 
 /* Internal function prototypes. */
+static int32_t oled_ssd1306_display(GFX *, uint8_t *, uint32_t, uint32_t, uint32_t, uint32_t);
+static int32_t oled_ssd1306_power(GFX *, uint8_t);
+static int32_t oled_ssd1306_clear_display(GFX *);
+static int32_t oled_ssd1306_invert(GFX *, uint8_t);
 static int32_t oled_ssd1306_command(SSD1306 *, uint8_t);
-
 /*
  * oled_ssd1306_init
  * This function is responsible for initializing OLED-SSD1306 subsystem.
@@ -71,7 +74,7 @@ int32_t oled_ssd1306_register(SSD1306 *oled)
         if (status == SUCCESS)
         {
             /* Set multiplex to the height of OLED. */
-            status = oled_ssd1306_command(oled, (uint8_t)(oled->height - 1));
+            status = oled_ssd1306_command(oled, (uint8_t)(oled->gfx.height - 1));
         }
     }
 
@@ -225,14 +228,14 @@ int32_t oled_ssd1306_register(SSD1306 *oled)
 
     if (status == SUCCESS)
     {
-        /* Clear the display. */
-        status = oled_ssd1306_display(oled, NULL, 0, oled->width, 0, oled->height);
-    }
+        /* Hook up graphics for this OLED. */
+        oled->gfx.display = &oled_ssd1306_display;
+        oled->gfx.power = &oled_ssd1306_power;
+        oled->gfx.clear = &oled_ssd1306_clear_display;
+        oled->gfx.invert = &oled_ssd1306_invert;
 
-    if (status == SUCCESS)
-    {
-        /* Turn-on the display. */
-        status = oled_ssd1306_command(oled, SSD1306_DISPLAYON);
+        /* Register this with graphics. */
+        graphics_register(&oled->gfx);
     }
 
     /* Return status to the caller. */
@@ -242,7 +245,7 @@ int32_t oled_ssd1306_register(SSD1306 *oled)
 
 /*
  * oled_ssd1306_display
- * @oled: SSD1306 device data.
+ * @gfx: Graphics data.
  * @buffer: Buffer to display.
  * @col: Starting column.
  * @num_col: Number of columns.
@@ -250,10 +253,12 @@ int32_t oled_ssd1306_register(SSD1306 *oled)
  * @num_row: Number of rows.
  * This function will display a buffer on OLED.
  */
-int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_t num_col, uint8_t row, uint8_t num_row)
+static int32_t oled_ssd1306_display(GFX *gfx, uint8_t *buffer, uint32_t col, uint32_t num_col, uint32_t row, uint32_t num_row)
 {
-    int32_t status, i, num_bytes, this_bytes;
-    uint8_t display_buffer[17];
+    SSD1306 *oled = (SSD1306 *)gfx;
+    int32_t i, this_bytes, num_bytes;
+    int32_t status;
+    uint8_t display_buffer[OLED_I2C_CHUNK_SIZE + 1];
     I2C_MSG msg;
 
     /* Set column address. */
@@ -262,7 +267,7 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
     if (status == SUCCESS)
     {
         /* Set the column start address. */
-        status = oled_ssd1306_command(oled, col);
+        status = oled_ssd1306_command(oled, (uint8_t)col);
 
         if (status == SUCCESS)
         {
@@ -280,7 +285,7 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
         if (status == SUCCESS)
         {
             /* Set the page start address. */
-            status = oled_ssd1306_command(oled, (row / 8));
+            status = oled_ssd1306_command(oled, (uint8_t)(row / 8));
         }
 
         if (status == SUCCESS)
@@ -297,24 +302,24 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
 
         /* Initialize I2C message. */
         msg.buffer = display_buffer;
-        msg.length = 17;
+        msg.length = OLED_I2C_CHUNK_SIZE + 1;
         msg.flags = I2C_MSG_WRITE;
 
         /* Number of bytes to transfer. */
-        num_bytes = ((num_col * num_row) / 8);
+        num_bytes = (int32_t)((num_col * num_row) / 8);
 
         /* If a buffer was not given. */
         if (!buffer)
         {
             /* Just fill with zeros. */
-            memset(&display_buffer[1], 0, (uint8_t)this_bytes);
+            memset(&display_buffer[1], 0, OLED_I2C_CHUNK_SIZE);
         }
 
-        /* Send 16 bytes of data at a time. */
-        for (i = 0; ((status == SUCCESS) && (i < num_bytes)); i += 16)
+        /* Send configured bytes of data at a time. */
+        for (i = 0; ((status == SUCCESS) && (i < num_bytes)); i += OLED_I2C_CHUNK_SIZE)
         {
-            /* If we have less than 16 bytes to transfer. */
-            if ((num_bytes - i) < 16)
+            /* If we have less than configured bytes to transfer. */
+            if ((num_bytes - i) < OLED_I2C_CHUNK_SIZE)
             {
                 /* Transfer the remaining number of bytes. */
                 this_bytes = num_bytes - i;
@@ -322,8 +327,8 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
             }
             else
             {
-                /* Transfer all the 16 bytes. */
-                this_bytes = 16;
+                /* Transfer all the bytes. */
+                this_bytes = OLED_I2C_CHUNK_SIZE;
             }
 
             /* If a buffer was given. */
@@ -344,13 +349,51 @@ int32_t oled_ssd1306_display(SSD1306 *oled, uint8_t *buffer, uint8_t col, uint8_
 } /* oled_ssd1306_display */
 
 /*
+ * oled_ssd1306_power
+ * @gfx: Graphics data.
+ * @turn_on: If we are needed to turn on the display.
+ * This function will clear the display.
+ */
+static int32_t oled_ssd1306_power(GFX *gfx, uint8_t turn_on)
+{
+    SSD1306 *oled = (SSD1306 *)gfx;
+    int32_t status;
+
+    /* Update the display power. */
+    status = oled_ssd1306_command(oled, (turn_on == TRUE) ? SSD1306_DISPLAYON : SSD1306_DISPLAYOFF);
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* oled_ssd1306_power */
+
+/*
+ * oled_ssd1306_clear_display
+ * @gfx: Graphics data.
+ * This function will clear the display.
+ */
+static int32_t oled_ssd1306_clear_display(GFX *gfx)
+{
+    SSD1306 *oled = (SSD1306 *)gfx;
+    int32_t status;
+
+    /* Clear the display. */
+    status = oled_ssd1306_display(&oled->gfx, NULL, 0, oled->gfx.width, 0, oled->gfx.height);
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* oled_ssd1306_clear_display */
+
+/*
  * oled_ssd1306_invert
- * @oled: SSD1306 device data.
+ * @gfx: Graphics data.
  * @invert: Flag to specify if we need to invert the display.
  * This function will invert SSD1306 display.
  */
-int32_t oled_ssd1306_invert(SSD1306 *oled, uint8_t invert)
+static int32_t oled_ssd1306_invert(GFX *gfx, uint8_t invert)
 {
+    SSD1306 *oled = (SSD1306 *)gfx;
     int32_t status;
 
     /* If we need to invert the display. */

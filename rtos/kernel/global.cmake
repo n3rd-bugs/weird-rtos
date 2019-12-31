@@ -10,6 +10,7 @@ setup_option_def(CONFIG_PCF8574 OFF DEFINE "Enable I2C based PCF8574 GPIO contro
 setup_option_def(CONFIG_SPI OFF DEFINE "Enable SPI support.")
 setup_option_def(CONFIG_MMC OFF DEFINE "Enable MMC card support.")
 setup_option_def(CONFIG_OLED OFF DEFINE "Enable OLED support.")
+setup_option_def(CONFIG_GFX OFF DEFINE "Enable graphics support.")
 setup_option_def(CONFIG_ADC OFF DEFINE "Enable ADC support.")
 setup_option_def(CONFIG_LCD_AN OFF DEFINE "Enable alphanumeric LCD driver.")
 setup_option_def(CONFIG_LCD_PCF8574 OFF DEFINE "Enable alphanumeric LCD driver over PCF8574 GPIO controller.")

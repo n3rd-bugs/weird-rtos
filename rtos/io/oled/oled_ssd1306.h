@@ -23,6 +23,16 @@
 #error "I2C is required for OLED."
 #endif /* CONFIG_I2C */
 #include <i2c.h>
+#ifndef CONFIG_GFX
+#error "Graphics is needed to be enabled for OLED."
+#endif /* CONFIG_GFX */
+#include <gfx.h>
+
+#ifdef CMAKE_BUILD
+#include <oled_config.h>
+#else
+#define OLED_I2C_CHUNK_SIZE         (16)
+#endif /* CMAKE_BUILD */
 
 /* SSD1306 definitions. */
 #define SSD1306_MEMORYMODE          (0x20)
@@ -52,26 +62,23 @@
 /* OLED driver data. */
 typedef struct _ssd1306
 {
+    /* Graphics data for this driver. */
+    GFX         gfx;
+
     /* I2C device associated with this OLED. */
     I2C_DEVICE  i2c;
-
-    /* OLED dimensions. */
-    uint8_t     height;
-    uint8_t     width;
 
     /* Flags. */
     uint8_t     flags;
 
     /* Structure padding. */
-    uint8_t     pad[1];
+    uint8_t     pad[3];
 
 } SSD1306;
 
 /* Function prototypes. */
 void oled_ssd1306_init(void);
 int32_t oled_ssd1306_register(SSD1306 *);
-int32_t oled_ssd1306_display(SSD1306 *, uint8_t *, uint8_t, uint8_t, uint8_t, uint8_t);
-int32_t oled_ssd1306_invert(SSD1306 *, uint8_t);
 
 #endif /* CONFIG_OLED */
 #endif /* _OLED_SSD1306_H_ */

@@ -26,6 +26,24 @@ static I2C_STM32 stm32_lcd_i2c =
 };
 static SSD1306 stm32_ssd1306 =
 {
+    /* Graphics configurations. */
+    .gfx =
+    {
+        /* Console configurations. */
+        .console =
+        {
+            .fs =
+            {
+                /* Name of this interface. */
+                .name = "oled1",
+            },
+        },
+
+        /* Display dimensions. */
+        .width      = 128,
+        .height     = 64,
+    },
+
     /* I2C configuration. */
     .i2c =
     {
@@ -36,8 +54,6 @@ static SSD1306 stm32_ssd1306 =
     },
 
     /* OLED configuration. */
-    .width          = 128,
-    .height         = 64,
     .flags          = 0,
 };
 

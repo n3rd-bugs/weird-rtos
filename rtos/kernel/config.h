@@ -43,6 +43,7 @@
 //#define CONFIG_PPP
 //#define CONFIG_ETHERNET
 //#define CONFIG_OLED
+//#define CONFIG_GFX
 
 /* API's. */
 //#define CONFIG_WEIRD_VIEW
