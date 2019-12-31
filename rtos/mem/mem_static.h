@@ -10,7 +10,6 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
 #ifndef MEM_STATIC_H
 #define MEM_STATIC_H
 

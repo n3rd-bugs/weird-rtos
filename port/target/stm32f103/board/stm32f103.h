@@ -10,7 +10,6 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
 #ifndef _STM32F103_H_
 #define _STM32F103_H_
 

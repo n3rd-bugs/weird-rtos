@@ -11,7 +11,6 @@
  * (in any form, direct or indirect) the author will not be liable for any
  * outcome.
  */
-
 #ifndef _STM32F411_H_
 #define _STM32F411_H_
 

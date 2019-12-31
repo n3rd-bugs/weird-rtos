@@ -10,7 +10,6 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
 #ifndef _LCD_AN_AVR_H_
 #define _LCD_AN_AVR_H_
 

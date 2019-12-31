@@ -10,7 +10,6 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
 #ifndef _ASSERT_H_
 #define _ASSERT_H_
 

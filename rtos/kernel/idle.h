@@ -10,7 +10,6 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
 #ifndef _IDLE_H_
 #define _IDLE_H_
 #include <kernel.h>
