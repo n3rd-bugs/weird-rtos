@@ -18,7 +18,7 @@
 
 #ifdef LCD_AN_DEBUG
 /* Alphanumeric LCD debug file descriptor. */
-FD lcd_an_fd;
+FD lcd_an_fd = NULL;
 #endif
 
 /* Internal function prototypes. */
@@ -105,7 +105,12 @@ void lcd_an_register(LCD_AN *lcd)
         lcd->console.fs.flags |= FS_SPACE_AVAILABLE;
 
 #ifdef LCD_AN_DEBUG
-        lcd_an_fd = fs_open("\\console\\lcd1", 0);
+        /* If this is a debug device. */
+        if (lcd->flags & LCD_FLAG_DEBUG)
+        {
+            /* Open this as debug descriptor. */
+            lcd_an_fd = fs_open(lcd->console.fs.name, 0);
+        }
 #endif
     }
 

@@ -10,7 +10,6 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-
 #ifndef _LCD_AN_H_
 #define _LCD_AN_H_
 
@@ -18,14 +17,14 @@
 
 #ifdef CONFIG_FS
 #include <fs.h>
-#endif
+#endif /* CONFIG_FS */
 
 #ifdef CONFIG_LCD_AN
 #ifdef FS_CONSOLE
 #include <console.h>
 #else
 #error "Console driver is required for LCD_AN driver."
-#endif
+#endif /* CONFIG_LCD_AN */
 
 #ifdef CMAKE_BUILD
 #include <lcd_an_config.h>
@@ -50,14 +49,17 @@
 #define LCD_AN_INTERNAL_ERROR   -1303
 
 /* LCD register flags. */
-#define LCD_DATA_REG            0x01
-#define LCD_IGNORE_WAIT         0x02
+#define LCD_DATA_REG            (0x01)
+#define LCD_IGNORE_WAIT         (0x02)
+
+/* LCD device flags. */
+#define LCD_FLAG_DEBUG          (0x01)
 
 /* LCD IOCTL commands. */
 #define LCD_AN_CUSTOM_CHAR     (1)
 #define LCD_AN_RESET           (2)
 
-/* LCD strcuture. */
+/* LCD structure. */
 typedef struct _lcd_an LCD_AN;
 
 /* Target APIs. */
@@ -96,6 +98,12 @@ struct _lcd_an
     /* Current location of cursor. */
     uint16_t    cur_row;
     uint16_t    cur_column;
+
+    /* Device flags. */
+    uint8_t     flags;
+
+    /* Structure padding. */
+    uint8_t     pad[3];
 };
 
 /* Alphanumeric LCD ioctl data. */
@@ -109,7 +117,7 @@ typedef struct _lcd_an_ioctl_data
 #ifdef LCD_AN_DEBUG
 /* Alphanumeric LCD debug file descriptor. */
 extern FD lcd_an_fd;
-#endif
+#endif /* LCD_AN_DEBUG */
 
 /* Function prototypes. */
 void lcd_an_init(void);
@@ -117,5 +125,4 @@ void lcd_an_register(LCD_AN *);
 int32_t lcd_an_reset(LCD_AN *);
 
 #endif /* CONFIG_LCD_AN */
-
 #endif /* _LCD_AN_H_ */

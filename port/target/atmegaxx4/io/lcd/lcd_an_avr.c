@@ -49,6 +49,8 @@ static LCD_AN_PCF8574 avr_lcd_an =
         .priv_data      = &avr_lcd_an,
         .row            = LCD_AN_AVR_ROWS,
         .column         = LCD_AN_AVR_COLS,
+
+        .flags      = LCD_FLAG_DEBUG;
     },
 
     /* GPIO I2C configuration. */
@@ -109,6 +111,8 @@ static LCD_AN avr_lcd_an =
 
     .row        = LCD_AN_AVR_ROWS,
     .column     = LCD_AN_AVR_COLS,
+
+    .flags      = LCD_FLAG_DEBUG;
 };
 #endif
 
