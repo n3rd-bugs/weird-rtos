@@ -15,6 +15,7 @@
 #ifdef CONFIG_LCD_AN
 #include <lcd_an.h>
 #include <lcd_an_target.h>
+#include <string.h>
 
 /* Alphanumeric LCD debug file descriptor. */
 FD lcd_an_fd = NULL;
