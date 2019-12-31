@@ -14,6 +14,9 @@
 #ifdef CONFIG_LCD_AN
 #include <lcd_an.h>
 #endif /* CONFIG_LCD_AN */
+#ifdef CONFIG_GFX
+#include <gfx.h>
+#endif /* CONFIG_GFX */
 #ifdef CONFIG_SERIAL
 #include <serial.h>
 #endif /* CONFIG_SERIAL */
@@ -34,6 +37,22 @@ int io_puts(const char *s, int32_t n)
     SERIAL *serial = debug_serial;
 #endif /* FS_CONSOLE */
 
+#ifdef CONFIG_LCD_AN
+    if (lcd_an_fd != NULL)
+    {
+        /* Print this string on the LCD-AN. */
+        fs_puts(lcd_an_fd, (const uint8_t *)s, n);
+    }
+#endif /* CONFIG_LCD_AN */
+
+#ifdef CONFIG_GFX
+    if (gfx_fd != NULL)
+    {
+        /* Print this string on the graphics driver. */
+        fs_puts(gfx_fd, (const uint8_t *)s, n);
+    }
+#endif /* CONFIG_GFX */
+
     /* If we do have a serial port. */
     if (serial != NULL)
     {
@@ -46,14 +65,6 @@ int io_puts(const char *s, int32_t n)
 #endif /* FS_CONSOLE */
     }
 #endif /* CONFIG_SERIAL */
-
-#ifdef CONFIG_LCD_AN
-    if (lcd_an_fd != NULL)
-    {
-        /* Print this string on the LCD-AN. */
-        n = fs_puts(lcd_an_fd, (const uint8_t *)s, n);
-    }
-#endif /* CONFIG_LCD_AN */
 
 #ifndef CONFIG_SERIAL
 #ifndef CONFIG_LCD_AN

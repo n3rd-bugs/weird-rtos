@@ -42,6 +42,9 @@ static SSD1306 stm32_ssd1306 =
         /* Display dimensions. */
         .width      = 128,
         .height     = 64,
+
+        /* Use this for debug interface. */
+        .flags      = GFX_FLAG_DEBUG,
     },
 
     /* I2C configuration. */
