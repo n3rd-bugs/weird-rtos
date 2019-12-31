@@ -69,7 +69,11 @@ void graphics_register(GFX *gfx)
  * @priv_data: GFX device data for which this was called.
  * @buf: String needed to be printed.
  * @nbytes: Number of bytes to be printed from the string.
- * @return: Number of bytes will be returned if write was successful
+ * @return: Number of bytes will be returned if write was successful,
+ *  GFX_ROW_FULL will be returned if there is no more rows to print the buffer,
+ *  GFX_COLUMN_FULL will be returned if there is no more columns to print
+ *      the buffer,
+ *  GFX_CHAR_NOT_SUPPORTED will be returned if an unsupported character was given.
  * This function prints a string on a graphics display.
  */
 static int32_t gfx_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
