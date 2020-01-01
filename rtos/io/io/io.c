@@ -36,6 +36,7 @@ int io_puts(const char *s, int32_t n)
 #else
     SERIAL *serial = debug_serial;
 #endif /* FS_CONSOLE */
+#endif /* CONFIG_SERIAL */
 
 #ifdef CONFIG_LCD_AN
     if (lcd_an_fd != NULL)
@@ -53,6 +54,7 @@ int io_puts(const char *s, int32_t n)
     }
 #endif /* CONFIG_GFX */
 
+#ifdef CONFIG_SERIAL
     /* If we do have a serial port. */
     if (serial != NULL)
     {
@@ -66,12 +68,14 @@ int io_puts(const char *s, int32_t n)
     }
 #endif /* CONFIG_SERIAL */
 
+#ifndef CONFIG_GFX
 #ifndef CONFIG_SERIAL
 #ifndef CONFIG_LCD_AN
     /* Remove a compiler warning. */
     UNUSED_PARAM(s);
 #endif /* CONFIG_SERIAL */
 #endif /* CONFIG_LCD_AN */
+#endif /* CONFIG_GFX */
 
     /* Return number of bytes printed. */
     return (n);

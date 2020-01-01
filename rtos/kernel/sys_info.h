@@ -23,9 +23,7 @@
 void usage_reset(void);
 uint64_t usage_calculate(TASK *, uint64_t);
 uint32_t util_task_calc_free_stack(TASK *);
-#ifdef CONFIG_SERIAL
 void util_print_sys_info(void);
-#endif /* CONFIG_SERIAL */
 #ifdef SYS_STACK_SIZE
 uint32_t util_system_calc_free_stack(void);
 #endif /* SYS_STACK_SIZE */

@@ -32,9 +32,7 @@ static const char __sys_info_sm_status[] PROGMEM = "S(M)\tStatus\t";
 #ifdef TASK_USAGE
 static const char __sys_info_cpu[] PROGMEM = "CPU(%)\t";
 #endif /* TASK_USAGE */
-#ifdef CONFIG_SERIAL
 static const char __sys_info_running[] PROGMEM = "\t<Running>";
-#endif /* CONFIG_SERIAL */
 static const char __sys_info_system[] PROGMEM = "SYSTEM\t-\t";
 static const char __sys_info_dash[] PROGMEM = "\t-";
 static const char __sys_info_tab[] PROGMEM = "\t";
@@ -275,7 +273,6 @@ uint32_t util_system_calc_free_stack(void)
 } /* util_system_calc_free_stack */
 #endif
 
-#ifdef CONFIG_SERIAL
 /*
  * util_print_sys_info
  * This function prints generalized information about the operating system.
@@ -412,7 +409,6 @@ void util_print_sys_info(void)
 #endif /* SYS_STACK_SIZE */
 
 } /* util_print_sys_info */
-#endif /* CONFIG_SERIAL */
 
 #ifdef CONFIG_SERIAL
 /*
