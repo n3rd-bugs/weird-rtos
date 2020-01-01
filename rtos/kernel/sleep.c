@@ -128,6 +128,9 @@ void sleep_remove_from_list(TASK *tcb)
     /* Remove this task from the list of sleeping tasks. */
     ASSERT(sll_remove(&sleep_task_list, tcb, OFFSETOF(TASK, next_sleep)) != tcb);
 
+    /* Clear the sleep tick as we are just removed from the sleeping task list. */
+    tcb->tick_sleep = 0;
+
 } /* sleep_remove_from_list */
 
 /*
