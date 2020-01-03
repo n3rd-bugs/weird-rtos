@@ -1,4 +1,7 @@
 # Add subdirectories.
+if (${CONFIG_DHT})
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dhtxx)
+endif ()
 if (${CONFIG_FS})
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/fs)
 endif ()

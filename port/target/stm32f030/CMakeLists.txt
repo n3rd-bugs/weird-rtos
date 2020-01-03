@@ -1,3 +1,6 @@
+# Inlcude platform definitions.
+include(${CMAKE_CURRENT_SOURCE_DIR}/stm32f030.cmake)
+
 # Add subdirectories.
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/board)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/generic)
