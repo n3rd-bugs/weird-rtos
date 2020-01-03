@@ -189,8 +189,7 @@ void sleep_hw_ticks(uint64_t ticks)
     hw_tick = current_hardware_tick();
     while ((current_hardware_tick() - hw_tick) < ticks)
     {
-        /* Yield current task to execute any high priority task. */
-        task_yield();
+        ;
     }
 
 } /* sleep_hw_ticks */
