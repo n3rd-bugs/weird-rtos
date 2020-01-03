@@ -15,7 +15,7 @@
 
 #ifdef CONFIG_SLEEP
 /* Used to manage 64 bit system clock. */
-uint32_t clock_64_high_32 = 0;
+uint64_t clock_64_high_48 = 0;
 
 /*
  * system_tick_Init
@@ -27,31 +27,31 @@ void system_tick_Init(void)
     /* Configure system tick. */
     SysTick_Config((SYS_FREQ/SOFT_TICKS_PER_SEC));
 
-    /* Configure TIMER2 for 64-bit timer. */
+    /* Configure TIMER3 for 64-bit timer. */
 
-    /* Enable clock for TIMER1 */
-    RCC->APB1ENR |= 0x01;
+    /* Enable clock for TIMER3 */
+    RCC->APB1ENR |= RCC_APB1ENR_TIM3EN;
 
     /* Count up, and count with the frequency of PCLK/2. */
-    TIM2->CR1 &= (uint16_t)~(TIM_CR1_DIR | TIM_CR1_CMS | TIM_CR1_CKD);
+    TIM3->CR1 &= (uint16_t)~(TIM_CR1_DIR | TIM_CR1_CMS | TIM_CR1_CKD);
 
     /* Reload when overflow. */
-    TIM2->ARR = 0xFFFFFFFF;
+    TIM3->ARR = 0xFFFF;
 
     /* Clear the initial count. */
-    TIM2->CNT = 0;
+    TIM3->CNT = 0;
 
     /* No pre-scale. */
-    TIM2->PSC = 0;
+    TIM3->PSC = 0;
 
     /* Enable timer. */
-    TIM2->CR1 |= TIM_CR1_CEN;
+    TIM3->CR1 |= TIM_CR1_CEN;
 
     /* Enable timer interrupt. */
-    TIM2->DIER |=  TIM_DIER_UIE;
+    TIM3->DIER |=  TIM_DIER_UIE;
 
     /* Enable timer interrupt in NVIC. */
-    NVIC->ISER[28 >> 5] |= (1 << 28);
+    NVIC_EnableIRQ(TIM3_IRQn);
 
 } /* system_tick_Init */
 
@@ -64,10 +64,10 @@ ISR_FUN isr_clock64_tick(void)
     ISR_ENTER();
 
     /* Clear the interrupt. */
-    TIM2->SR = (uint16_t)~TIM_DIER_UIE;
+    TIM3->SR = (uint16_t)~TIM_DIER_UIE;
 
     /* Timer roll over. */
-    clock_64_high_32++;
+    clock_64_high_48++;
 
     ISR_EXIT();
 
@@ -81,7 +81,7 @@ ISR_FUN isr_clock64_tick(void)
 uint64_t current_hardware_tick(void)
 {
     /* Add and return current timer value. */
-    return (((uint64_t)(clock_64_high_32 + ((TIM2->SR & TIM_DIER_UIE) ? 1 : 0)) * 0xFFFFFFFF) + (uint64_t)(TIM2->CNT));
+    return (((uint64_t)(clock_64_high_48 + ((TIM3->SR & TIM_DIER_UIE) ? 1 : 0)) << 16) + (uint64_t)(TIM3->CNT));
 
 } /* pit_get_clock */
 #endif /* CONFIG_SLEEP */

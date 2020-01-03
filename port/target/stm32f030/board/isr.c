@@ -61,7 +61,7 @@ __attribute__ ((section (".interrupts"), used)) ISR system_isr_table[] =
     (ISR)&cpu_interrupt,                /*  0x0d  TIM1 Break Update Trigger and Commutation */
     (ISR)&cpu_interrupt,                /*  0x0e  TIM1 Capture Compare                      */
     (ISR)&cpu_interrupt,                /*  0x0f                                            */
-    (ISR)&cpu_interrupt,                /*  0x10  TIM3                                      */
+    (ISR)&isr_clock64_tick,             /*  0x10  TIM3                                      */
     (ISR)&cpu_interrupt,                /*  0x11                                            */
     (ISR)&cpu_interrupt,                /*  0x12                                            */
     (ISR)&cpu_interrupt,                /*  0x13  TIM14                                     */
