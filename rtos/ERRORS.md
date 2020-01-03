@@ -63,6 +63,8 @@ This list is needed to be updated whenever a new error code is added.
     GFX_CHAR_NOT_SUPPORTED  -1800
     GFX_ROW_FULL            -1801
     GFX_COLUMN_FULL         -1802
+    DHTXX_TIMEOUT           -1900
+    DHTXX_CSUM_ERROR        -1901
     ENC28J60_DISCONNECTED   -11000
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001
