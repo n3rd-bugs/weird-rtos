@@ -39,8 +39,12 @@ int32_t spi_message(SPI_DEVICE *device, SPI_MSG *messages, uint32_t num_messages
 {
     int32_t status = SUCCESS;
 
-    /* Select slave for the device. */
-    device->slave_select(device);
+    /* If software slave selection is needed. */
+    if (!(device->cfg_flags & SPI_CFG_ENABLE_HARD_SS))
+    {
+        /* Select slave for the device. */
+        device->slave_select(device);
+    }
 
     /* While we have a SPI message to send. */
     while (num_messages --)
@@ -61,8 +65,12 @@ int32_t spi_message(SPI_DEVICE *device, SPI_MSG *messages, uint32_t num_messages
         }
     }
 
-    /* Un-select the SPI device. */
-    device->slave_unselect(device);
+    /* If software slave selection is needed. */
+    if (!(device->cfg_flags & SPI_CFG_ENABLE_HARD_SS))
+    {
+        /* Un-select the SPI device. */
+        device->slave_unselect(device);
+    }
 
     /* Return status to the caller. */
     return (status);
