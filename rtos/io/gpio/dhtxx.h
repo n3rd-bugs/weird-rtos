@@ -22,35 +22,23 @@
 #define DHTXX_INIT_DELAY        (2000)
 #define DHTXX_INIT_SIGNAL_DELAY (60)
 #define DHTXX_SIGNAL_DELAY      (100)
-#define DHTXX_DATA_LOW_DELAY    (60)
+#define DHTXX_DATA_LOW_DELAY    (100)
 #define DHTXX_DATA_HIGH_DELAY   (100)
-#define DHTXX_DATA_ZERO_DELAY   (50)
+#define DHTXX_DATA_ZERO_DELAY   (60)
+#define DHTXX_DATA_RETRY_DELAY  (100)
+#define DHTXX_DATA_NUM_RETIES   (20)
 
 /* Error code definitions. */
 #define DHTXX_TIMEOUT           (-1900)
 #define DHTXX_CSUM_ERROR        (-1901)
-
-/* Helper macros. */
-#define DHTXX_TIMED(expression, timeout, delta)                                                 \
-    {                                                                                           \
-        uint64_t hw_tick = current_hardware_tick();                                             \
-        while ((expression) && ((current_hardware_tick() - hw_tick) < US_TO_HW_TICK(timeout)))  \
-        {                                                                                       \
-            ;                                                                                   \
-        }                                                                                       \
-        delta = (uint16_t)HW_TICK_TO_US(current_hardware_tick() - hw_tick);                     \
-        if (delta >= timeout)                                                                   \
-        {                                                                                       \
-            status = DHTXX_TIMEOUT;                                                             \
-        }                                                                                       \
-    }
+#define DHTXX_LINE_ERROR        (-1902)
 
 /* Macro to convert raw temperature to 10's or centigrade */
-#define DHTXX_TEMP(raw, temp)                                                                   \
-{                                                                                               \
-    temp = raw & 0x7FFF;                                                                        \
-    if (raw & 0x8000)                                                                           \
-        temp = -temp;                                                                           \
+#define DHTXX_TEMP(raw, temp)                                                       \
+{                                                                                   \
+    temp = raw & 0x7FFF;                                                            \
+    if (raw & 0x8000)                                                               \
+        temp = -temp;                                                               \
 }
 
 /* DHT sensor structure. */
