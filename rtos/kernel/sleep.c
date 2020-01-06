@@ -187,10 +187,7 @@ void sleep_hw_ticks(uint64_t ticks)
 
     /* Wait before reading back from the LCD. */
     hw_tick = current_hardware_tick();
-    while ((current_hardware_tick() - hw_tick) < ticks)
-    {
-        ;
-    }
+    while ((current_hardware_tick() - hw_tick) < ticks) ;
 
 } /* sleep_hw_ticks */
 
