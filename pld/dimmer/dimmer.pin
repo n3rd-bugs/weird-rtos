@@ -1,0 +1,25 @@
+
+
+ Pin # | Name     | Pin Type
+-----------------------------
+   1   | CLOCK    | Clock
+   2   | PWM0     | Input
+   3   | PWM1     | Input
+   4   | PWM2     | Input
+   5   | PWM3     | Input
+   6   | RC2      | Input
+   7   | NC       | Input
+   8   | NC       | Input
+   9   | LINE     | Input
+  10   | GND      | GND
+  11   | NC       | /OE
+  12   | RC1      | Output
+  13   | COUNT0   | Output
+  14   | COUNT1   | Output
+  15   | COUNT2   | Output
+  16   | COUNT3   | Output
+  17   | CONTROL  | Output
+  18   | PHASE2   | Output
+  19   | PHASE1   | Output
+  20   | VCC      | VCC
+

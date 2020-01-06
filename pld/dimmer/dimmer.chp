@@ -1,0 +1,25 @@
+
+
+                                GAL16V8
+
+                          -------\___/-------
+                    CLOCK |  1           20 | VCC
+                          |                 |
+                     PWM0 |  2           19 | PHASE1
+                          |                 |
+                     PWM1 |  3           18 | PHASE2
+                          |                 |
+                     PWM2 |  4           17 | CONTROL
+                          |                 |
+                     PWM3 |  5           16 | COUNT3
+                          |                 |
+                      RC2 |  6           15 | COUNT2
+                          |                 |
+                       NC |  7           14 | COUNT1
+                          |                 |
+                       NC |  8           13 | COUNT0
+                          |                 |
+                     LINE |  9           12 | RC1
+                          |                 |
+                      GND | 10           11 | NC
+                          -------------------
