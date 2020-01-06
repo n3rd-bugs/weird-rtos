@@ -190,7 +190,6 @@ void i2c_stm32f030_init(I2C_DEVICE *device)
 int32_t i2c_stm32f030_message(I2C_DEVICE *device, I2C_MSG *message)
 {
     int32_t status = SUCCESS;
-    uint32_t timeout;
     I2C_STM32 *i2c_stm = (I2C_STM32 *)device->data;
     int32_t i;
     int32_t remaining_size = message->length;

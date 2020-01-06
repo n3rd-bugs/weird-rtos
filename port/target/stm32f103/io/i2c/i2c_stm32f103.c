@@ -210,7 +210,6 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
 int32_t i2c_stm32f103_message(I2C_DEVICE *device, I2C_MSG *message)
 {
     int32_t status = SUCCESS;
-    uint32_t timeout;
     I2C_STM32 *i2c_stm = (I2C_STM32 *)device->data;
     INT_LVL interrupt_level = GET_INTERRUPT_LEVEL();
 #ifdef STM_I2C_INT_MODE

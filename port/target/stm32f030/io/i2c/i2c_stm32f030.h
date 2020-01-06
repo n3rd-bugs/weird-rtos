@@ -34,29 +34,9 @@
 
 /* Helper macros. */
 #ifdef STM_I2C_BUSY_YIELD
-#define I2C_STM_TIMED(expression)   {                                                                                                   \
-                                        timeout = current_system_tick();                                                                \
-                                        while ((expression) && ((current_system_tick() - timeout) < MS_TO_TICK(STM_I2C_INT_TIMEOUT)))   \
-                                        {                                                                                               \
-                                            task_yield();                                                                               \
-                                        }                                                                                               \
-                                        if ((current_system_tick() - timeout) >= MS_TO_TICK(STM_I2C_INT_TIMEOUT))                       \
-                                        {                                                                                               \
-                                            status = I2C_TIMEOUT;                                                                       \
-                                        }                                                                                               \
-                                    }
+#define I2C_STM_TIMED(expression)   POLL_SW_MS_Y((expression), STM_I2C_INT_TIMEOUT, status, I2C_TIMEOUT)
 #else
-#define I2C_STM_TIMED(expression)   {                                                                                                   \
-                                        timeout = current_system_tick();                                                                \
-                                        while ((expression) && ((current_system_tick() - timeout) < MS_TO_TICK(STM_I2C_INT_TIMEOUT)))   \
-                                        {                                                                                               \
-                                            ;                                                                                           \
-                                        }                                                                                               \
-                                        if ((current_system_tick() - timeout) >= MS_TO_TICK(STM_I2C_INT_TIMEOUT))                       \
-                                        {                                                                                               \
-                                            status = I2C_TIMEOUT;                                                                       \
-                                        }                                                                                               \
-                                    }
+#define I2C_STM_TIMED(expression)   POLL_SW_MS((expression), STM_I2C_INT_TIMEOUT, status, I2C_TIMEOUT)
 #endif /* STM_I2C_BUSY_YIELD */
 
 /* STM32F030 I2C configuration structure. */
