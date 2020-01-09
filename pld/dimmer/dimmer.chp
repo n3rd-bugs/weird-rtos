@@ -5,21 +5,21 @@
                           -------\___/-------
                     CLOCK |  1           20 | VCC
                           |                 |
-                     PWM0 |  2           19 | PHASE1
+                     PWM0 |  2           19 | COUNT3
                           |                 |
-                     PWM1 |  3           18 | PHASE2
+                     PWM1 |  3           18 | COUNT2
                           |                 |
-                     PWM2 |  4           17 | CONTROL
+                     PWM2 |  4           17 | COUNT1
                           |                 |
-                     PWM3 |  5           16 | COUNT3
+                     PWM3 |  5           16 | COUNT0
                           |                 |
-                      RC2 |  6           15 | COUNT2
+                       NC |  6           15 | LINEINV
                           |                 |
-                       NC |  7           14 | COUNT1
+                       NC |  7           14 | RESET
                           |                 |
-                       NC |  8           13 | COUNT0
+                       NC |  8           13 | CONTROL
                           |                 |
-                     LINE |  9           12 | RC1
+                     LINE |  9           12 | TRIG
                           |                 |
                       GND | 10           11 | NC
                           -------------------

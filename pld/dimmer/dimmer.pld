@@ -1,48 +1,43 @@
 GAL16V8
 DIMMER
 
-CLOCK   PWM0    PWM1    PWM2    PWM3    RC2     NC      NC      LINE    GND
-NC      RC1     COUNT0  COUNT1  COUNT2  COUNT3  CONTROL PHASE2  PHASE1  VCC
+CLOCK   PWM0    PWM1    PWM2    PWM3    NC      NC      NC      LINE    GND
+NC      TRIG    CONTROL RESET   LINEINV COUNT0  COUNT1  COUNT2  COUNT3  VCC
 
 ; Produce a reset for duty cycle counter.
-PHASE1.R = LINE
-PHASE2.R = PHASE1
+LINEINV.R   =  /LINE
+RESET.R     =  /LINEINV *  LINE +  LINEINV * /LINE
 
 ; 4 bit counter for trigger.
-COUNT0.R =  /PHASE1 * /PHASE2 * /COUNT0 +
-             PHASE1 *  PHASE2 * /COUNT0
+COUNT0.R    =   RESET * /COUNT0 + 
+                RESET *  COUNT0 * COUNT1 * COUNT2 * COUNT3
 
-COUNT1.R =  /PHASE1 * /PHASE2 * /COUNT1 *  COUNT0 +
-             PHASE1 *  PHASE2 * /COUNT1 *  COUNT0 +
-            /PHASE1 * /PHASE2 *  COUNT1 * /COUNT0 +
-             PHASE1 *  PHASE2 *  COUNT1 * /COUNT0
+COUNT1.R    =   RESET * /COUNT1 *  COUNT0 +
+                RESET *  COUNT1 * /COUNT0 + 
+                RESET *  COUNT0 * COUNT1 * COUNT2 * COUNT3
 
-COUNT2.R =  /PHASE1 * /PHASE2 *  COUNT2 * /COUNT1 +
-             PHASE1 *  PHASE2 *  COUNT2 * /COUNT1 +
-            /PHASE1 * /PHASE2 *  COUNT2 * /COUNT0 +
-             PHASE1 *  PHASE2 *  COUNT2 * /COUNT0 +
-            /PHASE1 * /PHASE2 * /COUNT2 *  COUNT1 *  COUNT0 +
-             PHASE1 *  PHASE2 * /COUNT2 *  COUNT1 *  COUNT0
+COUNT2.R    =   RESET *  COUNT2 * /COUNT1 +
+                RESET *  COUNT2 * /COUNT0 +
+                RESET * /COUNT2 *  COUNT1 *  COUNT0 + 
+                RESET *  COUNT0 * COUNT1 * COUNT2 * COUNT3
 
-COUNT3.R =  /PHASE1 * /PHASE2 *  COUNT3 * /COUNT2 +
-             PHASE1 *  PHASE2 *  COUNT3 * /COUNT2 +
-            /PHASE1 * /PHASE2 *  COUNT3 * /COUNT1 +
-             PHASE1 *  PHASE2 *  COUNT3 * /COUNT1 +
-            /PHASE1 * /PHASE2 *  COUNT3 * /COUNT0 +
-             PHASE1 *  PHASE2 *  COUNT3 * /COUNT0 +
-            /PHASE1 * /PHASE2 * /COUNT3 *  COUNT2 *  COUNT1 *  COUNT0 +
-             PHASE1 *  PHASE2 * /COUNT3 *  COUNT2 *  COUNT1 *  COUNT0
+COUNT3.R    =   RESET *  COUNT3 * /COUNT2 +
+                RESET *  COUNT3 * /COUNT1 +
+                RESET *  COUNT3 * /COUNT0 +
+                RESET * /COUNT3 *  COUNT2 *  COUNT1 *  COUNT0 + 
+                RESET *  COUNT0 * COUNT1 * COUNT2 * COUNT3
 
-; Pulse to trigger output when input value matches the counter.
-CONTROL.R =  COUNT0 * /PWM0 + /COUNT0 *  PWM0 +
-             COUNT1 * /PWM1 + /COUNT1 *  PWM1 +
-             COUNT2 * /PWM2 + /COUNT2 *  PWM2 +
-             COUNT3 * /PWM3 + /COUNT3 *  PWM3
+; Trigger low when cout matches.
+CONTROL.R   =   COUNT0 *  PWM0 + /COUNT0 * /PWM0 +
+                COUNT1 *  PWM1 + /COUNT1 * /PWM1 +
+                COUNT2 *  PWM2 + /COUNT2 * /PWM2 +
+                COUNT3 *  PWM3 + /COUNT3 * /PWM3
 
-; A NOT gate to generate clock.
-RC1       = /RC2
+; Low pulse to trigger output.
+TRIG.R      =   CONTROL +  
+                RESET *  COUNT0 *  COUNT1 *  COUNT2 *  COUNT3 +  
+               /PWM0 * /PWM1 * /PWM2 * /PWM3
 
 DESCRIPTION
 
 Impelments a configurable delayed trigger mechanism for TRIAC.
-Feedback the RC1 and RC2 with 20Kohm series 5Kohm POT, connect a 0.1uF on RC2.
