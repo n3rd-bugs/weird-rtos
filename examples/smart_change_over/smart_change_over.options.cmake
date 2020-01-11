@@ -28,8 +28,8 @@ setup_option(TASK_USAGE_RETAIN ON)
 
 # Setup enc28j60 configurations.
 setup_option(ENC28J60_INT_POLL ON)
-setup_option(ENC28J60_MAX_BUFFER_SIZE 32)
-setup_option(ENC28J60_NUM_BUFFERS 16)
+setup_option(ENC28J60_MAX_BUFFER_SIZE 64)
+setup_option(ENC28J60_NUM_BUFFERS 8)
 setup_option(ENC28J60_NUM_BUFFER_LISTS 4)
 setup_option(ENC28J60_NUM_THR_BUFFER 0)
 setup_option(ENC28J60_NUM_THR_LIST 0)
