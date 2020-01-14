@@ -53,7 +53,7 @@ struct _dht_xx
 };
 
 /* Function prototypes. */
-void dhtxx_init();
+void dhtxx_init(void);
 int32_t dhtxx_register(DHT_XX *);
 int32_t dhtxx_read(DHT_XX *, uint16_t *, uint16_t *, uint8_t);
 

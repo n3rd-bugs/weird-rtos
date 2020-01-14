@@ -27,6 +27,9 @@ setup_option_hide(AVR_MCU_${TGT_PLATFORM})
 # Set heap size for this platform.
 setup_option_def(TARGET_HEAP_SIZE "0" MACRO "Target heap size.")
 
+# Configure bootloader for this platform
+setup_option_def(CONFIG_BOOTLOAD OFF DEFINE "Enable bootloader support.")
+
 # Setup AVR dude options.
 if (TGT_PLATFORM STREQUAL atmega1284)
     setup_option_def(${TGT_PLATFORM}_DUDE_MCU "m1284" STRING "AVR dude MCU." CONFIG_FILE "unused")

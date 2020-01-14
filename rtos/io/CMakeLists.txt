@@ -1,3 +1,19 @@
+# Various IO drivers.
+setup_option_def(CONFIG_ETHERNET OFF DEFINE "Enable ethernet support.")
+setup_option_def(CONFIG_ADC OFF DEFINE "Enable ADC support.")
+setup_option_def(CONFIG_GFX OFF DEFINE "Enable graphics support.")
+setup_option_def(CONFIG_1WIRE OFF DEFINE "Enable 1Wire protocol driver.")
+setup_option_def(CONFIG_DHT OFF DEFINE "Enable DHT temperature sensor driver.")
+setup_option_def(CONFIG_PCF8574 OFF DEFINE "Enable I2C based PCF8574 GPIO controller driver.")
+setup_option_def(CONFIG_I2C OFF DEFINE "Enable I2C support.")
+setup_option_def(CONFIG_LCD_AN OFF DEFINE "Enable alphanumeric LCD driver.")
+setup_option_def(CONFIG_LCD_PCF8574 OFF DEFINE "Enable alphanumeric LCD driver over PCF8574 GPIO controller.")
+setup_option_def(CONFIG_MMC OFF DEFINE "Enable MMC card support.")
+setup_option_def(CONFIG_OLED OFF DEFINE "Enable OLED support.")
+setup_option_def(CONFIG_PPP OFF DEFINE "Enable PPP protocol support.")
+setup_option_def(CONFIG_SERIAL OFF DEFINE "Enable serial IO support.")
+setup_option_def(CONFIG_SPI OFF DEFINE "Enable SPI support.")
+
 # Add subdirectories.
 if (${CONFIG_ADC})
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/adc)

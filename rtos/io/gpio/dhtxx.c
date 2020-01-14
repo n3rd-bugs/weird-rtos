@@ -18,7 +18,7 @@
  * dhtxx_init
  * This function will initialize DHTXX devices.
  */
-void dhtxx_init()
+void dhtxx_init(void)
 {
 #ifdef DHT_TGT_INIT
     DHT_TGT_INIT();
