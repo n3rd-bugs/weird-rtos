@@ -44,8 +44,8 @@ int32_t dhtxx_register(DHT_XX *dht)
 /*
  * dhtxx_read
  * @dht: DHTXX device needed to be read.
- * @rh: Value of relative humidity will be returned here.
- * @temperature: Raw value of temperature will be returned here.
+ * @rh: Value of relative humidity will be returned here in mC.
+ * @temperature: Raw value of temperature will be returned here in mC.
  * @disable_interrupts: If set to true interrupts will be disabled while reading
  *  from sensor.
  * @return: Return success if readings were successfully read,
@@ -175,8 +175,8 @@ int32_t dhtxx_read(DHT_XX *dht, uint16_t *rh, uint16_t *temperature, uint8_t dis
         else
         {
             /* Return the readings read. */
-            *rh = (uint16_t)((reading >> 24) & 0xFFFFF);
-            *temperature = (uint16_t)((reading >> 8) & 0xFFFFF);
+            *rh = (uint16_t)(((reading >> 24) & 0xFFFFF) * 100);
+            *temperature = (uint16_t)(((reading >> 8) & 0xFFFFF) * 100);
         }
     }
 

@@ -66,6 +66,9 @@ This list is needed to be updated whenever a new error code is added.
     DHTXX_TIMEOUT           -1900
     DHTXX_CSUM_ERROR        -1901
     DHTXX_LINE_ERROR        -1902
+    ONEWIRE_TIMEOUT         -2000
+    ONEWIRE_NO_DEVICE       -2001
+    DS182X_CONV_TIMEOUT     -2100
     ENC28J60_DISCONNECTED   -11000
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001

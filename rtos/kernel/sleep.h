@@ -41,7 +41,7 @@ void sleep_hw_ticks(uint64_t);
 #define POLL_HW_US_D(expression, timeout, delta, status, error_status)              \
     {                                                                               \
         uint16_t __tick = (uint16_t)current_hardware_tick();                        \
-        uint16_t __timeout_ticks = US_TO_HW_TICK(timeout);                          \
+        uint16_t __timeout_ticks = (uint16_t)US_TO_HW_TICK(timeout);                \
         do                                                                          \
         {                                                                           \
             delta = (uint16_t)((uint16_t)current_hardware_tick() - __tick);         \
@@ -56,7 +56,7 @@ void sleep_hw_ticks(uint64_t);
 #define POLL_HW_US_D_Y(expression, timeout, delta, status, error_status)            \
     {                                                                               \
         uint16_t __tick = (uint16_t)current_hardware_tick();                        \
-        uint16_t __timeout_ticks = US_TO_HW_TICK(timeout);                          \
+        uint16_t __timeout_ticks = (uint16_t)US_TO_HW_TICK(timeout);                \
         do                                                                          \
         {                                                                           \
             delta = (uint16_t)((uint16_t)current_hardware_tick() - __tick);         \
