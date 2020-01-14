@@ -19,14 +19,7 @@
 #error "SPI is required for MMC SPI."
 #endif
 #include <spi.h>
-
-/* Enable file system interface of MMC. */
-#ifdef CMAKE_BUILD
 #include <mmc_spi_config.h>
-#else
-#define MMC_SPI_FS
-#endif /* CMAKE_BUILD */
-
 #ifdef MMC_SPI_FS
 #include <fs.h>
 #ifdef CONFIG_SEMAPHORE

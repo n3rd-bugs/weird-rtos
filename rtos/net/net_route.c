@@ -328,7 +328,7 @@ int32_t route_get(FD *device, uint32_t destination, uint32_t *iface_addr, uint32
         route_unlock();
     }
 
-    SYS_LOG_FUNCTION_EXIT_STATUS(ROUTE, status);
+    //SYS_LOG_FUNCTION_EXIT_STATUS(ROUTE, status);
 
     /* Return status to the caller. */
     return (status);

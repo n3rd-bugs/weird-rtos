@@ -16,13 +16,7 @@
 
 #ifdef CONFIG_DHT
 #include <dhtxx.h>
-
-#ifdef CMAKE_BUILD
 #include <dhtxx_stm32_config.h>
-#else
-#define DHTXX_STM32_DATA_PORT       (GPIOB)
-#define DHTXX_STM32_DATA_PIN        (1)
-#endif /* CMAKE_BUILD */
 
 /* DHT sensor structure. */
 typedef struct _dht_xx_stm32

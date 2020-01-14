@@ -27,13 +27,7 @@
 #include <fs.h>
 #include <fs_buffer.h>
 #include <net_device.h>
-
-/* Ethernet configuration. */
-#ifdef CMAKE_BUILD
 #include <ethernet_config.h>
-#else
-#define ETHERNET_ENC28J60
-#endif /* CMAKE_BUILD */
 
 /* Ethernet error definitions. */
 #define ETH_TX_BLOCKED      -1100

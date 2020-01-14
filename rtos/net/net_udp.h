@@ -19,14 +19,7 @@
 
 #ifdef NET_UDP
 #include <console.h>
-
-/* UDP stack configuration. */
-#ifdef CMAKE_BUILD
 #include <net_udp_config.h>
-#else
-#define UDP_CSUM
-// #define UDP_ALLOW_SIZE_MISMATCH
-#endif /* CMAKE_BUILD */
 
 /* UDP header definitions. */
 #define UDP_HRD_LENGTH              (8)

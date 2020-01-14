@@ -12,19 +12,10 @@
  */
 #ifndef _BOOTLOAD_AVR_H_
 #define _BOOTLOAD_AVR_H_
-
 #include <kernel.h>
 
 #ifdef CONFIG_BOOTLOAD
-#ifdef CMAKE_BUILD
 #include <bootload_avr_config.h>
-#else
-#define BOOTLOADER_LOADED
-#define BOOTLOAD_MMC
-#define BOOTLOAD_STK
-//#define BOOTLOAD_MMC_HEX_NONLINEAR
-#define BOOTLOAD_MMC_BOOTLOAD_MARK_SECTOR_LOCATION      0
-#endif /* CMAKE_BUILD */
 
 /* Error code definitions. */
 #define BOOTLOAD_COMPLETE   -21000

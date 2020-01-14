@@ -27,12 +27,7 @@
 #error "Graphics is needed to be enabled for OLED."
 #endif /* CONFIG_GFX */
 #include <gfx.h>
-
-#ifdef CMAKE_BUILD
 #include <oled_config.h>
-#else
-#define OLED_I2C_CHUNK_SIZE         (16)
-#endif /* CMAKE_BUILD */
 
 /* SSD1306 definitions. */
 #define SSD1306_MEMORYMODE          (0x20)

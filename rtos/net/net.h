@@ -15,19 +15,7 @@
 #include <kernel.h>
 
 #ifdef CONFIG_NET
-
-/* Networking configuration. */
-#ifdef CMAKE_BUILD
 #include <net_config.h>
-#else
-#define NET_IPV4
-#define NET_ICMP
-#define NET_UDP
-#define NET_TCP
-#define NET_ARP
-#define NET_DHCP
-#endif /* CMAKE_BUILD */
-
 #include <net_buffer.h>
 #include <net_device.h>
 #include <net_process.h>

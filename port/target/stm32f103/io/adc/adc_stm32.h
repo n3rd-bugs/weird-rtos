@@ -16,10 +16,7 @@
 
 #ifdef CONFIG_ADC
 #include <adc.h>
-
-/* Default ADC configuration. */
-#ifndef CMAKE_BUILD
-#endif /* CMAKE_BUILD */
+#include <adc_stm32_config.h>
 
 /* ADC channel definitions. */
 #define ADC_STM32_CHN_PB0   (8)

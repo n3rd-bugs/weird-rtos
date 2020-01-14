@@ -18,13 +18,7 @@
 #include <net.h>
 
 #ifdef NET_ICMP
-
-/* ICMP configuration. */
-#ifdef CMAKE_BUILD
 #include <net_icmp_config.h>
-#else
-#define ICMP_ENABLE_PING
-#endif /* CMAKE_BUILD */
 
 /* ICMP definitions. */
 #define ICMP_ECHO_REPLY         0

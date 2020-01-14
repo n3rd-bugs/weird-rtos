@@ -12,6 +12,9 @@
  */
 #include <kernel.h>
 
+#ifndef _GFX_H_
+#define _GFX_H_
+
 #ifdef CONFIG_FS
 #include <fs.h>
 #endif /* CONFIG_FS */
@@ -21,11 +24,7 @@
 #endif /* FS_CONSOLE */
 
 #ifdef CONFIG_GFX
-#ifdef CMAKE_BUILD
 #include <gfx_config.h>
-#else
-#define GFX_TAB_SIZE            (3)
-#endif /* CMAKE_BUILD */
 
 /* Error code definitions. */
 #define GFX_CHAR_NOT_SUPPORTED  (-1800)
@@ -77,3 +76,4 @@ struct _gfx
 void graphics_register(GFX *);
 
 #endif /* CONFIG_GFX */
+#endif /* _GFX_H_ */

@@ -19,15 +19,7 @@
 #include <stdarg.h>
 #include <semaphore.h>
 #include <condition.h>
-
-/* File system configuration. */
-#ifdef CMAKE_BUILD
 #include <fs_config.h>
-#else
-#define FS_CONSOLE
-//#define FS_PIPE
-//#define FS_FAT
-#endif /* CMAKE_BUILD */
 
 /* Error definitions. */
 #define FS_NODE_DELETED         -800

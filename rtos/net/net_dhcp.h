@@ -18,11 +18,7 @@
 #include <net.h>
 
 #ifdef NET_DHCP
-#ifdef CMAKE_BUILD
 #include <net_dhcp_config.h>
-#else
-#define DHCP_CLIENT
-#endif /* CMAKE_BUILD */
 #ifndef CONFIG_ETHERNET
 #error "For now only devices using ethernet are supported."
 #endif

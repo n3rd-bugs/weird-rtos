@@ -21,21 +21,12 @@
 #include <net_dhcp.h>
 #endif
 
+#include <net_ipv4_config.h>
+
 #ifdef DHCP_CLIENT
 typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 #endif
 
-#ifdef CMAKE_BUILD
-#include <net_ipv4_config.h>
-#else
-/* IPv4 stack configuration. */
-#define IPV4_ENABLE_FRAG
-// #define IPV4_ALLOW_SIZE_MISMATCH
-
-/* IPv4 fragmentation configuration. */
-#define IPV4_FRAG_TIMEOUT           (60000)
-#define IPV4_FRAG_DROP_TIMEOUT      (5000)
-#endif /* CMAKE_BUILD */
 
 /* Protocol definitions. */
 #define IP_PROTO_ICMP               (0x01)

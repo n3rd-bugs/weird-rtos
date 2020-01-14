@@ -30,13 +30,6 @@
 #define TOOL_AVR_GCC        0x01
 #define TOOL_ARM_GCC        0x02
 
-/* RTOS configuration. */
-#ifndef CMAKE_BUILD
-#define TARGET_PLATFORM     PLAT_ATMEGAXX4
-#define TARGET_CPU          TARGET_AVR
-#define TARGET_TOOLS        TOOL_AVR_GCC
-#endif
-
 /* Toolset includes. */
 #if (TARGET_TOOLS == TOOL_AVR_GCC)
 #include <avr_gcc.h>

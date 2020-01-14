@@ -25,22 +25,7 @@
 #else
 #error "Console driver is required for LCD_AN driver."
 #endif /* CONFIG_LCD_AN */
-
-#ifdef CMAKE_BUILD
 #include <lcd_an_config.h>
-#else
-#define LCD_AN_DEBUG
-//#define LCD_AN_NO_BUSY_WAIT
-
-/* Alphanumeric LCD configurations */
-#define LCD_AN_BUSY_TIMEOUT     (100)
-#define LCD_AN_TAB_SIZE         (3)
-
-/* LCD delay configurations. */
-#define LCD_AN_INIT_DELAY       (0)
-#define LCD_AN_CLEAR_DELAY      (10)
-#define LCD_AN_READ_DELAY       (5)
-#endif /* CMAKE_BUILD */
 
 /* LCD error code definitions. */
 #define LCD_AN_TIME_OUT         -1300

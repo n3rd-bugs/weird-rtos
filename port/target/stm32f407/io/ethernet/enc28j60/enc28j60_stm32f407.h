@@ -17,12 +17,7 @@
 
 #ifdef ETHERNET_ENC28J60
 #include <enc28j60.h>
-
-#ifndef CMAKE_BUILD
-/* ENC28J60 device configuration. */
-#define ENC28J60_STM32F407_RESET_DELAY  (100)
-#define ENC28J60_STM32F407_BAUDRATE     (20000000)
-#endif /* CMAKE_BUILD */
+#include <enc28j60_stm32_config.h>
 
 /* Function prototypes. */
 void enc28j60_stm32f407_init(void);

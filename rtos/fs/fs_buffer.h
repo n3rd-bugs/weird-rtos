@@ -15,13 +15,7 @@
 #include <kernel.h>
 
 #ifdef CONFIG_FS
-
-/* Buffer configuration. */
-#ifdef CMAKE_BUILD
 #include <fs_buffer_config.h>
-#else
-//#define FS_BUFFER_DEBUG
-#endif /* CMAKE_BUILD */
 
 /* Buffer type definition. */
 #define FS_BUFFER_FREE      1

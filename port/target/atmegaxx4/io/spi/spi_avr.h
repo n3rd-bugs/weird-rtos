@@ -16,13 +16,7 @@
 
 #ifdef CONFIG_SPI
 #include <spi.h>
-
-#ifdef CMAKE_BUILD
 #include <spi_avr_config.h>
-#else
-/* Maximum timeout to wait for SPI message to process. */
-#define AVR_SPI_TIMEOUT             (100)
-#endif
 
 /* SPCR register definitions. */
 #define AVR_SPI_SPCR_SPIE_SHIFT     (7)

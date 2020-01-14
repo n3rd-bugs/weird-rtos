@@ -21,6 +21,7 @@
 #include <assert.h>
 #include <sys_log.h>
 #include <sleep.h>
+#include <kernel_config.h>
 
 /* Some return codes. */
 #define SUCCESS                     (0)
@@ -34,12 +35,7 @@
 #endif
 #define NULL                        (0)
 
-/* Number of system ticks per second. */
-#ifdef CMAKE_BUILD
-#include <kernel_config.h>
-#else
-#define SOFT_TICKS_PER_SEC          (uint32_t)(100)
-#endif /* CMAKE_BUILD */
+/* Tick to time conversion macros. */
 #define MS_TO_TICK(a)               ((uint32_t)(((uint32_t)(a) * SOFT_TICKS_PER_SEC) / (1000)))
 #define TICK_TO_MS(a)               ((uint32_t)(((uint32_t)(a) * 1000) / (SOFT_TICKS_PER_SEC)))
 #define US_TO_HW_TICK(a)            ((uint64_t)(((uint64_t)(a) * HW_TICKS_PER_SEC) / (1000000)))

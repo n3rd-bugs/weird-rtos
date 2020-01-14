@@ -15,16 +15,7 @@
 
 #include <stdint.h>
 #include <config.h>
-
-/* Task configuration. */
-#ifdef CMAKE_BUILD
 #include <tasks_config.h>
-#else
-//#define TASK_STATS
-#define TASK_USAGE
-#define TASK_USAGE_RETAIN
-#define TASK_STACK_PATTERN  'A'
-#endif /* CMAKE_BUILD */
 
 /* These defines different task flags. */
 #define TASK_NO_RETURN      0x01        /* This task will never return. */

@@ -16,19 +16,7 @@
 #include <kernel.h>
 #ifdef CONFIG_SERIAL
 #include <stdarg.h>
-
-#ifndef CMAKE_BUILD
-/* Some configurations. */
-#define SERIAL_BAUD_RATE                115200
-//#define SERIAL_INTERRUPT_MODE
-
-/* Serial buffer configuration. */
-#define SERIAL_MAX_BUFFER_SIZE          128
-#define SERIAL_NUM_BUFFERS              128
-#define SERIAL_NUM_BUFFER_LIST          64
-#define SERIAL_THRESHOLD_BUFFER         6
-#define SERIAL_THRESHOLD_BUFFER_LIST    2
-#endif /* CMAKE_BUILD */
+#include <usart_stm32_config.h>
 
 /* Function prototypes. */
 void serial_stm32f407_init(void);

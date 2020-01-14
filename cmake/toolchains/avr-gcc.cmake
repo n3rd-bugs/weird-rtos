@@ -33,9 +33,6 @@ set(kernel_idle_stack_min 64 CACHE INTERNAL "" FORCE)
 
 # This function will setup a target for AVR.
 function (setup_target target_name sources)
-    # Add CMAKE_BUILD to disable manual configurations.
-    add_definitions(-DCMAKE_BUILD)
-
     # Add an executable target.
     add_executable(${target_name} ${RTOS_LINK_SOURCES} ${${sources}})
     target_link_libraries(${target_name} ${RTOS_LIB} m)

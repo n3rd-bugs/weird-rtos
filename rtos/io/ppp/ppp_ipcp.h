@@ -16,14 +16,7 @@
 #include <kernel.h>
 
 #ifdef CONFIG_PPP
-
-/* PPP IP configurations. */
-#ifdef CMAKE_BUILD
 #include <ppp_ipcp_config.h>
-#else
-#define PPP_LOCAL_IP_ADDRESS    {192, 168, 0, 1}
-#define PPP_REMOTE_IP_ADDRESS   {192, 168, 0, 2}
-#endif /* CMAKE_BUILD */
 
 /* IPCP option type definitions. */
 #define PPP_IPCP_OPT_IPS        1

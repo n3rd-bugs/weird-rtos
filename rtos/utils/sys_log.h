@@ -13,36 +13,7 @@
 #ifndef _SYS_LOG_H_
 #define _SYS_LOG_H_
 
-/* System log configuration. */
-#ifdef CMAKE_BUILD
 #include <sys_log_config.h>
-#else
-//#define SYS_LOG_ENABLE
-//#define SYS_LOG_RUNTIME_UPDATE
-
-/* Define static log levels for each component. */
-#define SYS_LOG_DEFAULT             ((SYS_LOG_INFO) | (SYS_LOG_WARN) | (SYS_LOG_ERROR))
-#define SYS_LOG_LEVEL_DEF           SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_MMC           SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_ENC28J60      SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_FATFS         SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_TFTPS         SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_ROUTE         SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_ARP           SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_BUFFER    SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_CONDITION SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_CSUM      SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_DEVICE    SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_DHCPC         SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_DHCP          SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_ICMP          SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_IPV4          SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_PROCESS   SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_TCP           SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_UDP           SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET_WORK      SYS_LOG_DEFAULT
-#define SYS_LOG_LEVEL_NET           SYS_LOG_DEFAULT
-#endif /* CMAKE_BUILD */
 
 /* System logging level definitions. */
 #define SYS_LOG_NONE            (0x00)

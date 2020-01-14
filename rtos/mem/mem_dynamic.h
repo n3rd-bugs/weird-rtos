@@ -18,15 +18,7 @@
 
 #ifdef MEMGR_DYNAMIC
 #include <semaphore.h>
-
-/* Dynamic memory configuration. */
-#ifdef CMAKE_BUILD
 #include <mem_dynamic_config.h>
-#else
-#define MEM_BNDRY_CHECK
-#define MEM_FREE_CHECK
-#define MEM_ID_CHECK
-#endif /* CMAKE_BUILD */
 
 /* Memory page configuration flags. */
 #define MEM_PAGE_DEC        0x0001

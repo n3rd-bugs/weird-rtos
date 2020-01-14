@@ -32,43 +32,10 @@
 #include <net_dhcp_client.h>
 #endif
 #include <idle.h>
+#include <enc28j60_config.h>
 
 /* Error code definitions. */
 #define ENC28J60_DISCONNECTED       -11000
-
-#ifdef CMAKE_BUILD
-#include <enc28j60_config.h>
-#else
-/* ENC28J60 watch dog configuration. */
-#define ENC28J60_WDT_TIMEOUT        (1000)
-
-/* ENC28J60 CLKRDY delay configuration. */
-#define ENC28J60_CLKRDY_TIMEOUT     (100)
-#define ENC28J60_CLKRDY_DELAY       (20)
-
-/* ENC28J60 configurations. */
-#define ENC28J60_CONTINUE_READ      TRUE
-#define ENC28J60_INT_POLL           FALSE
-
-/* ENC28J60 device configuration. */
-#define ENC28J60_REV_ID             (0x06)
-
-/* Buffer configuration for a enc28j60 device. */
-#define ENC28J60_MAX_BUFFER_SIZE    (32)
-#define ENC28J60_NUM_BUFFERS        (32)
-#define ENC28J60_NUM_BUFFER_LISTS   (16)
-#define ENC28J60_NUM_THR_BUFFER     (8)
-#define ENC28J60_NUM_THR_LIST       (4)
-#define ENC28J60_SOFT_MAX_RX_FRAME  (0)
-
-/* Networking configuration for a enc28j60 device. */
-#define ENC28J60_NUM_ARP            (4)
-#define ENC28J60_NUM_IPV4_FRAGS     (2)
-
-/* Default IP configuration. */
-#define ENC28J60_DEFAULT_IP         (0xC0A80032)
-#define ENC28J60_DEFAULT_SUBNET     (0xFFFFFF00)
-#endif /* CMAKE_BUILD */
 
 /* ENC28J60 device flag definitions. */
 #define ENC28J60_IN_TX              (0x01)

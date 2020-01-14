@@ -16,6 +16,7 @@
 
 #ifdef CONFIG_SPI
 #include <spi.h>
+#include <spi_stm32_config.h>
 
 /* STM32F407 SPI CR1 register definitions. */
 #define STM32F407_SPI_CR1_BIDI_SHIFT    (15)
@@ -55,11 +56,6 @@
 #define STM32F407_SPI_SR_OVR            (0x0040)
 #define STM32F407_SPI_SR_BSY            (0x0080)
 #define STM32F407_SPI_SR_FRE            (0x0100)
-
-#ifndef CMAKE_BUILD
-/* SPI Timeout configuration. */
-#define STM32F407_SPI_TIMEOUT           (1000)
-#endif /* CMAKE_BUILD */
 
 /* SPI device structure. */
 typedef struct _stm32f407_spi

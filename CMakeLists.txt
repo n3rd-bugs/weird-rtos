@@ -32,9 +32,6 @@ unset(RTOS_DEFS CACHE)
 unset(RTOS_DEFS_FILES CACHE)
 set(RTOS_LIB ${PROJECT_NAME} CACHE INTERNAL "RTOS_LIB" FORCE)
 
-# Add CMAKE_BUILD to disable manual configurations.
-add_definitions(-DCMAKE_BUILD)
-
 # Add RTOS folders.
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/3rdparty)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/api)

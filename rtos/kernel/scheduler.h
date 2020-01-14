@@ -14,14 +14,7 @@
 #define _SCHEDULER_H_
 
 #include <kernel.h>
-
-/* Scheduler lock configuration. */
-#ifdef CMAKE_BUILD
 #include <scheduler_config.h>
-#else
-#define SCHEDULER_MAX_LOCK          (5)
-#define SCHEDULER_MAX_PRI           (254)
-#endif /* CMAKE_BUILD */
 
 /* Defines the origin from which this task is being yielded.  */
 #define YIELD_SYSTEM                (0x00)

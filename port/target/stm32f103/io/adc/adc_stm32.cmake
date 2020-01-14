@@ -1,3 +1,3 @@
 # Setup configuration options.
 set(ADC_SMP_VALUES ADC_SampleTime_1Cycles5 ADC_SampleTime_7Cycles5 ADC_SampleTime_13Cycles5 ADC_SampleTime_28Cycles5 ADC_SampleTime_41Cycles5 ADC_SampleTime_55Cycles5 ADC_SampleTime_71Cycles5 ADC_SampleTime_239Cycles5)
-setup_option_def(ADC_SMP ADC_SampleTime_28Cycles5 MACRO "ADC sample time for STM32." VALUE_LIST ADC_SMP_VALUES)
+setup_option_def(ADC_SMP ADC_SampleTime_28Cycles5 MACRO "ADC sample time for STM32." VALUE_LIST ADC_SMP_VALUES CONFIG_FILE "adc_stm32_config")

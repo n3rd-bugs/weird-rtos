@@ -15,16 +15,7 @@
 #include <kernel.h>
 
 #ifdef CONFIG_PPP
-
-#ifndef CMAKE_BUILD
-/* PPP configurations. */
-#define PPP_BAUD_RATE                   (115200)
-#define PPP_MAX_BUFFER_SIZE             (32)
-#define PPP_NUM_BUFFERS                 (16)
-#define PPP_NUM_BUFFER_LIST             (8)
-#define PPP_THRESHOLD_BUFFER            (2)
-#define PPP_THRESHOLD_BUFFER_LIST       (2)
-#endif /* CMAKE_BUILD */
+#include <ppp_stm32_config.h>
 
 /* Function prototypes. */
 void ppp_stm32f103_init(void);

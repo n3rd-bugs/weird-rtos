@@ -14,14 +14,7 @@
 #define _ASSERT_H_
 
 #include <kernel.h>
-
-/* Assert configuration. */
-#ifdef CMAKE_BUILD
 #include <assert_config.h>
-#else
-//#define ASSERT_ENABLE
-#define ASSERT_FILE_INFO
-#endif /* CMAKE_BUILD */
 
 /* Error handling. */
 #ifdef ASSERT_ENABLE

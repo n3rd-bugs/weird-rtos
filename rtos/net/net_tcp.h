@@ -20,19 +20,7 @@
 
 #ifdef NET_TCP
 #include <console.h>
-
-/* TCP configuration. */
-#ifdef CMAKE_BUILD
 #include <net_tcp_config.h>
-#else
-#define TCP_WND_SIZE                (1024)
-#define TCP_WND_SCALE               (2)
-#define TCP_RTO                     (750)
-#define TCP_MAX_RTO                 (5000)
-#define TCP_MSL                     (60000)
-#define TCP_NUM_RTX                 (16)
-#define TCP_MAX_CONG_WINDOW         (0xFFFF)
-#endif /* CMAKE_BUILD */
 
 /* TCP header definitions. */
 #define TCP_HRD_SIZE                (20)

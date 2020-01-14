@@ -17,13 +17,7 @@
 #ifdef CONFIG_NET
 #include <net.h>
 #ifdef NET_IPV4
-
-/* Number of route entries to manage. */
-#ifdef CMAKE_BUILD
 #include <net_route_config.h>
-#else
-#define NET_NUM_ROUTES          (4)
-#endif /* CMAKE_BUILD */
 
 /* Error definitions. */
 #define ROUTE_EXIST             -1400

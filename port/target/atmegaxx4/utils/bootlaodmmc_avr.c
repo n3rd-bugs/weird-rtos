@@ -62,21 +62,6 @@
 #define INIT_PORT()                 init_port()         /* Initialize MMC control port (CS=H, CLK=L, DI=H, DO=pu) */
 #define DLY_US(n)                   _delay_us(n)        /* Delay n microseconds */
 
-#ifndef CMAKE_BUILD
-#define BOOTLOAD_MMC_CS_PIN_NUM     (3)
-#define BOOTLOAD_MMC_CS_DDR         (DDRA)
-#define BOOTLOAD_MMC_CS_PORT        (PORTA)
-#define BOOTLOAD_MMC_CLK_PIN_NUM    (2)
-#define BOOTLOAD_MMC_CLK_DDR        (DDRA)
-#define BOOTLOAD_MMC_CLK_PORT       (PORTA)
-#define BOOTLOAD_MMC_DI_PIN_NUM     (5)
-#define BOOTLOAD_MMC_DI_DDR         (DDRA)
-#define BOOTLOAD_MMC_DI_PORT        (PORTA)
-#define BOOTLOAD_MMC_DO_PIN_NUM     (0)
-#define BOOTLOAD_MMC_DO_DDR         (DDRA)
-#define BOOTLOAD_MMC_DO_PIN         (PINA)
-#endif /* CMAKE_BUILD */
-
 #define CS_H()                      (BOOTLOAD_MMC_CS_PORT |= (1 << BOOTLOAD_MMC_CS_PIN_NUM))                /* Set MMC_CS "high" */
 #define CS_L()                      (BOOTLOAD_MMC_CS_PORT &= (uint8_t)~(1 << BOOTLOAD_MMC_CS_PIN_NUM))      /* Set MMC_CS "low" */
 #define CK_H()                      (BOOTLOAD_MMC_CLK_PORT |= (1 << BOOTLOAD_MMC_CLK_PIN_NUM))              /* Set MMC_SCLK "high" */

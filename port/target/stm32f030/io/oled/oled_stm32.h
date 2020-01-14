@@ -16,11 +16,7 @@
 
 #ifdef CONFIG_OLED
 #include <oled_target.h>
-
-#ifndef CMAKE_BUILD
-/* OLED configuration for STM32. */
-#define OLED_STM32_I2C_ADDRESS      (0x3C)
-#endif /* CMAKE_BUILD */
+#include <oled_stm32_config.h>
 
 /* Function prototypes. */
 void oled_stm32_init(void);

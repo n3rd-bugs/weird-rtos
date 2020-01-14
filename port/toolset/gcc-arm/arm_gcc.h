@@ -16,10 +16,6 @@
 #ifndef _ARM_GCC_H_
 #define _ARM_GCC_H_
 
-#ifndef CMAKE_BUILD
-#define TARGET_HEAP_SIZE    2048
-#endif /* CMAKE_BUILD */
-
 #define STACK_LESS          __attribute__ ((naked))
 #define NOINLINE            __attribute__ ((noinline))
 

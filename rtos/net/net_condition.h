@@ -16,15 +16,9 @@
 
 #ifdef CONFIG_NET
 #include <condition.h>
-
-#ifdef CMAKE_BUILD
 #include <net_condition_config.h>
-#else
-/* Networking condition definitions. */
-#define NET_COND_NUM_DEVICES    (2)
-#define NET_COND_NUM_INTERNAL   (7)
-#define NET_COND_STACK_SIZE     (1024)
-#endif /* CMAKE_BUILD */
+
+/* Macro to calculate total number of NET conditions required. */
 #define NET_COND_NUM_TOTAL      (NET_COND_NUM_DEVICES + NET_COND_NUM_INTERNAL)
 
 /* Networking condition process function. */

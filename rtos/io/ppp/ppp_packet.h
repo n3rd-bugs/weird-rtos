@@ -16,13 +16,7 @@
 #include <kernel.h>
 
 #ifdef CONFIG_PPP
-
-#ifndef CMAKE_BUILD
 #include <ppp_packet_config.h>
-#else
-/* Maximum option value length for an option in PPP packet. */
-#define PPP_MAX_OPTION_SIZE     16
-#endif /* CMAKE_BUILD */
 
 /* PPP configuration option structure. */
 typedef struct _ppp_conf_opt

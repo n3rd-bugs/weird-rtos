@@ -15,29 +15,8 @@
 #include <kernel.h>
 
 #ifdef CONFIG_FS
-
 #if (defined(FS_FAT) && defined(CONFIG_MMC))
-#ifdef CMAKE_BUILD
 #include <fs_avr_config.h>
-#else
-/* Bit-bang SPI interface configuration for MMC card. */
-#define MMC_AVR_SPI_SS_BB               (3)
-#define MMC_AVR_SPI_PIN_SS_BB           (0x0)
-#define MMC_AVR_SPI_DDR_SS_BB           (0x1)
-#define MMC_AVR_SPI_PORT_SS_BB          (0x2)
-#define MMC_AVR_SPI_MOSI_BB             (5)
-#define MMC_AVR_SPI_PIN_MOSI_BB         (0x0)
-#define MMC_AVR_SPI_DDR_MOSI_BB         (0x1)
-#define MMC_AVR_SPI_PORT_MOSI_BB        (0x2)
-#define MMC_AVR_SPI_MISO_BB             (0)
-#define MMC_AVR_SPI_PIN_MISO_BB         (0x0)
-#define MMC_AVR_SPI_DDR_MISO_BB         (0x1)
-#define MMC_AVR_SPI_PORT_MISO_BB        (0x2)
-#define MMC_AVR_SPI_SCLK_BB             (2)
-#define MMC_AVR_SPI_PIN_SCLK_BB         (0x0)
-#define MMC_AVR_SPI_DDR_SCLK_BB         (0x1)
-#define MMC_AVR_SPI_PORT_SCLK_BB        (0x2)
-#endif /* CMAKE_BUILD */
 #endif /* (defined(FS_FAT) && defined(CONFIG_MMC)) */
 
 /* Function prototypes. */

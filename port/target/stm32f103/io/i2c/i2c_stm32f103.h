@@ -17,16 +17,10 @@
 
 #ifdef CONFIG_I2C
 #include <i2c.h>
+#include <i2c_stm32_config.h>
 #ifdef STM_I2C_INT_MODE
 #include <condition.h>
 #endif /* STM_I2C_INT_MODE */
-
-/* I2C configuration. */
-#ifndef CMAKE_BUILD
-//#define STM_I2C_BUSY_YIELD
-#define STM_I2C_INT_TIMEOUT         50
-//#define STM_I2C_INT_MODE
-#endif /* CMAKE_BUILD */
 
 /* I2C error flags. */
 #define I2C_STM32_NACK              0x01

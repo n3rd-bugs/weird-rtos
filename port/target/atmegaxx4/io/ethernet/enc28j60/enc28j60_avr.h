@@ -17,46 +17,7 @@
 
 #ifdef ETHERNET_ENC28J60
 #include <enc28j60.h>
-
-#ifdef CMAKE_BUILD
 #include <enc28j60_avr_config.h>
-#else
-/* ENC28J60 device configuration. */
-#define ENC28J60_AVR_RESET_DELAY            (100)
-#define ENC28J60_USE_SPI_BB                 (FALSE)
-#define ENC28J60_AVR_BAUDRATE               (21000000)
-
-/* Bit-bang SPI interface configuration for ENC28J60 controller. */
-#define ENC28J60_AVR_SPI_SS_BB              (4)
-#define ENC28J60_AVR_SPI_PIN_SS_BB          (0x3)
-#define ENC28J60_AVR_SPI_DDR_SS_BB          (0x4)
-#define ENC28J60_AVR_SPI_PORT_SS_BB         (0x5)
-#define ENC28J60_AVR_SPI_MOSI_BB            (5)
-#define ENC28J60_AVR_SPI_PIN_MOSI_BB        (0x3)
-#define ENC28J60_AVR_SPI_DDR_MOSI_BB        (0x4)
-#define ENC28J60_AVR_SPI_PORT_MOSI_BB       (0x5)
-#define ENC28J60_AVR_SPI_MISO_BB            (6)
-#define ENC28J60_AVR_SPI_PIN_MISO_BB        (0x3)
-#define ENC28J60_AVR_SPI_DDR_MISO_BB        (0x4)
-#define ENC28J60_AVR_SPI_PORT_MISO_BB       (0x5)
-#define ENC28J60_AVR_SPI_SCLK_BB            (7)
-#define ENC28J60_AVR_SPI_PIN_SCLK_BB        (0x3)
-#define ENC28J60_AVR_SPI_DDR_SCLK_BB        (0x4)
-#define ENC28J60_AVR_SPI_PORT_SCLK_BB       (0x5)
-
-/* Reset PIN configurations. */
-#define ENC28J60_RST                        (4)
-#define ENC28J60_RST_PORT                   (PORTD)
-#define ENC28J60_RST_DDR                    (DDRD)
-#define ENC28J60_RST_PIN                    (PIND)
-
-/* Interrupt PIN configurations. */
-#define ENC28J60_INT_SOURCE                 (INT0)
-#define ENC28J60_INT                        (2)
-#define ENC28J60_INT_PORT                   (PORTD)
-#define ENC28J60_INT_DDR                    (DDRD)
-#define ENC28J60_INT_PIN                    (PIND)
-#endif /* CMAKE_BUILD */
 
 /* Function prototypes. */
 void enc28j60_avr_init(void);

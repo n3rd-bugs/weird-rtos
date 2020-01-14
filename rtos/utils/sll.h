@@ -15,14 +15,7 @@
 
 #include <stdint.h>
 #include <assert.h>
-
-/* SLL configuration. */
-#ifdef CMAKE_BUILD
 #include <sll_config.h>
-#else
-//#define SLL_INLINE
-//#define SLL_DEBUG
-#endif /* CMAKE_BUILD */
 
 /* Single SLL node definition. */
 typedef struct _sll_node
