@@ -16,8 +16,8 @@ This is an educational RTOS that can be used with medium ended micro-controllers
 ## Supported MCUs and Platforms
 | MCU/Platform | Core | RTOS Features |
 | ------------ | ---- | -------- |
-| atmega644 | AVR 8-bit | USART, ADC, SPI, Ethernet, MMC, File system, Alpha Numeric LCD |
-| atmega1284 | AVR 8-bit | USART, ADC, SPI, Ethernet, MMC, File system, Alpha Numeric LCD |
+| atmega644 | AVR 8-bit | USART, ADC, SPI, Ethernet, MMC, File system, Alphanumeric LCD |
+| atmega1284 | AVR 8-bit | USART, ADC, SPI, Ethernet, MMC, File system, Alphanumeric LCD |
 | STM32F407vgt6 | Cortex-M4 | USART, SPI, Ethernet |
 | STM32F103-stamp | Cortex-M3 | USART, ADC, SPI, Ethernet, MMC, File system, Alpha Numeric LCD |
 

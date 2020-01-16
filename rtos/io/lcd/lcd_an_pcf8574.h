@@ -23,11 +23,11 @@
 #include <lcd_an.h>
 #include <pcf8574.h>
 
-/* This defines alphanumeric LCD over PCF8574 device. */
+/* This defines Alphanumeric LCD over PCF8574 device. */
 typedef struct lcd_an_pcf8574
 {
-    /* LCD device. */
-    LCD_AN      lcd;
+    /* Alphanumeric LCD device. */
+    LCD_AN      lcd_an;
 
     /* PCF8574 device. */
     PCF8574     gpio;

@@ -17,7 +17,7 @@
 #ifdef CONFIG_LCD_AN
 #include <lcd_an_stm32.h>
 
-/* Hook-up LCD OS stack. */
+/* Hook-up Alphanumeric LCD OS stack. */
 #define LCD_AN_TGT_INIT()           lcd_an_stm32_init()
 
 #endif /* CONFIG_LCD_AN */

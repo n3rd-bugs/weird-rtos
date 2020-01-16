@@ -27,24 +27,24 @@
 #endif /* CONFIG_LCD_AN */
 #include <lcd_an_config.h>
 
-/* LCD error code definitions. */
+/* Alphanumeric LCD error code definitions. */
 #define LCD_AN_TIME_OUT         -1300
 #define LCD_AN_COLUMN_FULL      -1301
 #define LCD_AN_ROW_FULL         -1302
 #define LCD_AN_INTERNAL_ERROR   -1303
 
-/* LCD register flags. */
+/* Alphanumeric LCD register flags. */
 #define LCD_DATA_REG            (0x01)
 #define LCD_IGNORE_WAIT         (0x02)
 
-/* LCD device flags. */
+/* Alphanumeric LCD device flags. */
 #define LCD_FLAG_DEBUG          (0x01)
 
-/* LCD IOCTL commands. */
+/* Alphanumeric LCD IOCTL commands. */
 #define LCD_AN_CUSTOM_CHAR     (1)
 #define LCD_AN_RESET           (2)
 
-/* LCD structure. */
+/* Alphanumeric LCD structure. */
 typedef struct _lcd_an LCD_AN;
 
 /* Target APIs. */
@@ -76,7 +76,7 @@ struct _lcd_an
     LCD_PUT_DATA    *put_data;
     LCD_READ_DATA   *read_data;
 
-    /* Number of rows and column on the LCD. */
+    /* Number of rows and column on the Alphanumeric LCD. */
     uint16_t    row;
     uint16_t    column;
 

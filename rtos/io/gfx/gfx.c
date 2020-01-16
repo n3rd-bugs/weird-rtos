@@ -86,7 +86,7 @@ static int32_t gfx_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
     /* While we have some data to be printed. */
     while ((status == SUCCESS) && (nbytes > 0))
     {
-        /* Put this character on the LCD. */
+        /* Put this character on the display. */
         switch (*buf)
         {
 
@@ -124,7 +124,7 @@ static int32_t gfx_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
             }
             else
             {
-                /* No more rows on the LCD. */
+                /* No more rows on the display. */
                 status = GFX_ROW_FULL;
             }
 
@@ -167,7 +167,7 @@ static int32_t gfx_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
                 }
                 else
                 {
-                    /* No more rows on the LCD. */
+                    /* No more rows on the display. */
                     status = GFX_ROW_FULL;
                 }
             }

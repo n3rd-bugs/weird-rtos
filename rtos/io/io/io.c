@@ -41,7 +41,7 @@ int io_puts(const char *s, int32_t n)
 #ifdef CONFIG_LCD_AN
     if (lcd_an_fd != NULL)
     {
-        /* Print this string on the LCD-AN. */
+        /* Print this string on the Alphanumeric LCD. */
         fs_puts(lcd_an_fd, (const uint8_t *)s, n);
     }
 #endif /* CONFIG_LCD_AN */
