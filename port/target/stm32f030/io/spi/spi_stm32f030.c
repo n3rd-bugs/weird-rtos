@@ -14,7 +14,7 @@
 
 #ifdef CONFIG_SPI
 #include <spi.h>
-#include "spi_stm32f030.h"
+#include <spi_stm32f030.h>
 
 /*
  * spi_stm32f030_init

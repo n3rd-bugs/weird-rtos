@@ -20,13 +20,26 @@
 #endif /* CONFIG_SPI */
 #include <spi.h>
 
-/* This defines a PCF8574 device. */
+/* This defines a MAX7219 device. */
 typedef struct _max7219
 {
     /* Associated SPI device. */
     SPI_DEVICE  spi;
 
 } MAX7219;
+
+/* This defines LED segment display over MAX7219. */
+typedef struct _led_max7219
+{
+    /* Associated MAX7219 device. */
+    MAX7219     max;
+
+} LED_MAX7219;
+
+/* Function prototypes. */
+void max7219_init(void);
+int32_t max7219_register(MAX7219 *);
+int32_t led_max7219_register(LED_MAX7219 *);
 
 #endif /* CONFIG_MAX7219 */
 #endif /* _MAX7219_H_ */
