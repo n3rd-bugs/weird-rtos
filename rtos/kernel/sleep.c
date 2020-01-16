@@ -183,10 +183,9 @@ void sleep_ticks(uint32_t ticks)
  */
 void sleep_hw_ticks(uint64_t ticks)
 {
-    uint64_t hw_tick;
+    uint64_t hw_tick = current_hardware_tick();
 
-    /* Wait before reading back from the LCD. */
-    hw_tick = current_hardware_tick();
+    /* Busy wait until we have slept the requested amount of ticks. */
     while ((current_hardware_tick() - hw_tick) < ticks) ;
 
 } /* sleep_hw_ticks */

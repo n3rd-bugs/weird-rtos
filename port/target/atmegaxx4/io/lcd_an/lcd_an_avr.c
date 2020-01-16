@@ -34,8 +34,8 @@ static I2C_BB_AVR avr_lcd_i2c =
 };
 static LCD_AN_PCF8574 avr_lcd_an =
 {
-    /* LCD configuration. */
-    .lcd =
+    /* Alphanumeric LCD configuration. */
+    .lcd_an =
     {
         .console =
         {
@@ -118,15 +118,15 @@ static LCD_AN avr_lcd_an =
 
 /*
  * lcd_an_avr_init
- * This function is responsible for initializing LCD subsystem for AVR.
+ * This function is responsible for initializing Alphanumeric LCD subsystem for AVR.
  */
 void lcd_an_avr_init(void)
 {
 #ifdef CONFIG_LCD_PCF8574
-    /* Register PCF8574 LCD device. */
+    /* Register PCF8574 Alphanumeric LCD device. */
     lcd_an_pcf8574_init(&avr_lcd_an);
 #else
-    /* Configure GPIO for LCD. */
+    /* Configure GPIO for Alphanumeric LCD. */
     /* Configure D7 as output. */
     LCD_AN_AVR_D7_DDR |= (1 << LCD_AN_AVR_D7);
 
@@ -148,7 +148,7 @@ void lcd_an_avr_init(void)
     /* Configure RS as output. */
     LCD_AN_AVR_RS_DDR |= (1 << LCD_AN_AVR_RS);
 
-    /* Register LCD device. */
+    /* Register Alphanumeric LCD device. */
     lcd_an_register(&avr_lcd_an);
 #endif
 
@@ -157,14 +157,14 @@ void lcd_an_avr_init(void)
 
 /*
  * lcd_an_avr_reset
- * This function will reset the LCD interface.
+ * This function will reset the Alphanumeric LCD interface.
  */
 int32_t lcd_an_avr_reset(void)
 {
     int32_t status = SUCCESS;
 
 #ifdef CONFIG_LCD_PCF8574
-    /* Reset the PCF8574 LCD device. */
+    /* Reset the PCF8574 Alphanumeric LCD device. */
     status = lcd_an_pcf8574_reset(&avr_lcd_an);
 #endif
 
@@ -176,12 +176,12 @@ int32_t lcd_an_avr_reset(void)
 #ifndef CONFIG_LCD_PCF8574
 /*
  * lcd_an_avr_set_en
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output high on enable pin.
  */
-static void lcd_an_avr_set_en(LCD_AN *lcd)
+static void lcd_an_avr_set_en(LCD_AN *lcd_an)
 {
-    UNUSED_PARAM(lcd);
+    UNUSED_PARAM(lcd_an);
 
     /* Set enable PIN. */
     LCD_AN_AVR_EN_PORT |= (1 << LCD_AN_AVR_EN);
@@ -190,12 +190,12 @@ static void lcd_an_avr_set_en(LCD_AN *lcd)
 
 /*
  * lcd_an_avr_clr_en
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output low on enable pin.
  */
-static void lcd_an_avr_clr_en(LCD_AN *lcd)
+static void lcd_an_avr_clr_en(LCD_AN *lcd_an)
 {
-    UNUSED_PARAM(lcd);
+    UNUSED_PARAM(lcd_an);
 
     /* Clear enable PIN. */
     LCD_AN_AVR_EN_PORT &= (uint8_t)(~(1 << LCD_AN_AVR_EN));
@@ -204,12 +204,12 @@ static void lcd_an_avr_clr_en(LCD_AN *lcd)
 
 /*
  * lcd_an_avr_set_rs
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output high on RS pin.
  */
-static void lcd_an_avr_set_rs(LCD_AN *lcd)
+static void lcd_an_avr_set_rs(LCD_AN *lcd_an)
 {
-    UNUSED_PARAM(lcd);
+    UNUSED_PARAM(lcd_an);
 
     /* Set R/S PIN. */
     LCD_AN_AVR_RS_PORT |= (1 << LCD_AN_AVR_RS);
@@ -218,12 +218,12 @@ static void lcd_an_avr_set_rs(LCD_AN *lcd)
 
 /*
  * lcd_an_avr_clr_rs
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output low on RS pin.
  */
-static void lcd_an_avr_clr_rs(LCD_AN *lcd)
+static void lcd_an_avr_clr_rs(LCD_AN *lcd_an)
 {
-    UNUSED_PARAM(lcd);
+    UNUSED_PARAM(lcd_an);
 
     /* Clear R/S PIN. */
     LCD_AN_AVR_RS_PORT &= (uint8_t)(~(1 << LCD_AN_AVR_RS));
@@ -232,12 +232,12 @@ static void lcd_an_avr_clr_rs(LCD_AN *lcd)
 
 /*
  * lcd_an_avr_set_rw
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output high on R/W pin.
  */
-static void lcd_an_avr_set_rw(LCD_AN *lcd)
+static void lcd_an_avr_set_rw(LCD_AN *lcd_an)
 {
-    UNUSED_PARAM(lcd);
+    UNUSED_PARAM(lcd_an);
 
     /* Set R/W PIN. */
     LCD_AN_AVR_RW_PORT |= (1 << LCD_AN_AVR_RW);
@@ -258,12 +258,12 @@ static void lcd_an_avr_set_rw(LCD_AN *lcd)
 
 /*
  * lcd_an_avr_clr_rw
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output low on R/W pin.
  */
-static void lcd_an_avr_clr_rw(LCD_AN *lcd)
+static void lcd_an_avr_clr_rw(LCD_AN *lcd_an)
 {
-    UNUSED_PARAM(lcd);
+    UNUSED_PARAM(lcd_an);
 
     /* Clear R/W PIN. */
     LCD_AN_AVR_RW_PORT &= (uint8_t)(~(1 << LCD_AN_AVR_RW));
@@ -284,13 +284,13 @@ static void lcd_an_avr_clr_rw(LCD_AN *lcd)
 
 /*
  * lcd_an_avr_put_data
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * @nibble: Nibble to be put on the DAT pins.
  * This function is responsible for output a nibble on the DAT pins.
  */
-static void lcd_an_avr_put_data(LCD_AN *lcd, uint8_t nibble)
+static void lcd_an_avr_put_data(LCD_AN *lcd_an, uint8_t nibble)
 {
-    UNUSED_PARAM(lcd);
+    UNUSED_PARAM(lcd_an);
 
     if (nibble & (1 << 0))
     {
@@ -340,14 +340,14 @@ static void lcd_an_avr_put_data(LCD_AN *lcd, uint8_t nibble)
 
 /*
  * lcd_an_avr_read_data
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * @return: Nibble read from the DAT pins.
  * This function is responsible for input a nibble from the DAT pins.
  */
-static uint8_t lcd_an_avr_read_data(LCD_AN *lcd)
+static uint8_t lcd_an_avr_read_data(LCD_AN *lcd_an)
 {
     uint8_t nibble = 0;
-    UNUSED_PARAM(lcd);
+    UNUSED_PARAM(lcd_an);
 
     /* Check if D4 is high. */
     if (LCD_AN_AVR_D4_PIN & (1 << LCD_AN_AVR_D4))

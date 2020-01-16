@@ -101,7 +101,7 @@ uint8_t control_stack[CONTROL_TASK_STACK_SIZE];
 TASK control_cb;
 void control_entry(void *argv);
 
-/* LCD task definitions. */
+/* Log task definitions. */
 #define LOG_TASK_STACK_SIZE             320
 uint8_t log_stack[LOG_TASK_STACK_SIZE];
 TASK log_cb;
@@ -1234,7 +1234,7 @@ void log_entry(void *argv)
     UNUSED_PARAM(argv);
 
 #ifdef CONFIG_LCD_AN
-    /* Initialize LCD. */
+    /* Initialize LCD AN. */
     lcd_an_init();
 #endif
 
@@ -1254,7 +1254,7 @@ void log_entry(void *argv)
         /* If we should update display. */
         systick = current_system_tick();
 
-        /* Reset LCD interface. */
+        /* Reset LCD AN interface. */
         fs_ioctl(lcd_an_fd, LCD_AN_RESET, NULL);
 
         /* Try to get the assigned IP address to the ethernet controller. */

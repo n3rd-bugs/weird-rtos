@@ -1,7 +1,7 @@
 /*
  * lcd_an_stm32.c
  *
- * Copyright (c) 2020 Usama Masood <mirzaon@gmail.com> All rights reserved.
+ * Copyright (c) 2017 Usama Masood <mirzaon@gmail.com> All rights reserved.
  *
  * This file is part of a non-commercial software. For more details please
  * refer to the license agreement that comes with this software.
@@ -17,19 +17,19 @@
 #include <lcd_an_stm32.h>
 
 #ifdef CONFIG_LCD_PCF8574
-#include <i2c_stm32f030.h>
+#include <i2c_stm32f103.h>
 #include <lcd_an_pcf8574.h>
 
 static I2C_STM32 stm32_lcd_i2c =
 {
     /* Initialize I2C configuration. */
-    .timing         = 0x20303E5D,
+    .speed          = 400000,
     .device_num     = 1,
 };
 static LCD_AN_PCF8574 stm32_lcd_an =
 {
-    /* LCD configuration. */
-    .lcd =
+    /* Alphanumeric LCD configuration. */
+    .lcd_an =
     {
         .console =
         {
@@ -51,8 +51,8 @@ static LCD_AN_PCF8574 stm32_lcd_an =
         .i2c =
         {
             .data       = &stm32_lcd_i2c,
-            .init       = &i2c_stm32f030_init,
-            .msg        = &i2c_stm32f030_message,
+            .init       = &i2c_stm32f103_init,
+            .msg        = &i2c_stm32f103_message,
             .address    = LCD_AN_STM32_I2C_ADDRESS,
         },
     },
@@ -71,12 +71,12 @@ static LCD_AN_PCF8574 stm32_lcd_an =
 
 /*
  * lcd_an_stm32_init
- * This function is responsible for initializing LCD subsystem for STM32.
+ * This function is responsible for initializing Alphanumeric LCD subsystem for STM32.
  */
 void lcd_an_stm32_init(void)
 {
 #ifdef CONFIG_LCD_PCF8574
-    /* Register PCF8574 LCD device. */
+    /* Register PCF8574 Alphanumeric LCD device. */
     lcd_an_pcf8574_init(&stm32_lcd_an);
 #endif
 

@@ -28,8 +28,8 @@ static uint8_t lcd_an_pcf8574_read_data(LCD_AN *);
 
 /*
  * lcd_an_pcf8574_init
- * @lcd_an: PCF8574 LCD device.
- * This function is responsible for initializing alphanumeric LCD over
+ * @lcd_an: PCF8574 Alphanumeric LCD device.
+ * This function is responsible for initializing alphanumeric Alphanumeric LCD over
  * PCF8574 device.
  */
 void lcd_an_pcf8574_init(LCD_AN_PCF8574 *lcd_an)
@@ -38,28 +38,28 @@ void lcd_an_pcf8574_init(LCD_AN_PCF8574 *lcd_an)
     if (pcf8574_init(&lcd_an->gpio) == SUCCESS)
     {
         /* Set driver hooks. */
-        lcd_an->lcd.set_en     = &lcd_an_pcf8574_set_en;
-        lcd_an->lcd.clr_en     = &lcd_an_pcf8574_clr_en;
-        lcd_an->lcd.set_rs     = &lcd_an_pcf8574_set_rs;
-        lcd_an->lcd.clr_rs     = &lcd_an_pcf8574_clr_rs;
-        lcd_an->lcd.set_rw     = &lcd_an_pcf8574_set_rw;
-        lcd_an->lcd.clr_rw     = &lcd_an_pcf8574_clr_rw;
-        lcd_an->lcd.put_data   = &lcd_an_pcf8574_put_data;
-        lcd_an->lcd.read_data  = &lcd_an_pcf8574_read_data;
+        lcd_an->lcd_an.set_en = &lcd_an_pcf8574_set_en;
+        lcd_an->lcd_an.clr_en = &lcd_an_pcf8574_clr_en;
+        lcd_an->lcd_an.set_rs = &lcd_an_pcf8574_set_rs;
+        lcd_an->lcd_an.clr_rs = &lcd_an_pcf8574_clr_rs;
+        lcd_an->lcd_an.set_rw = &lcd_an_pcf8574_set_rw;
+        lcd_an->lcd_an.clr_rw = &lcd_an_pcf8574_clr_rw;
+        lcd_an->lcd_an.put_data = &lcd_an_pcf8574_put_data;
+        lcd_an->lcd_an.read_data = &lcd_an_pcf8574_read_data;
 
         /* Configure all pins as output and high. */
         lcd_an->gpio.out_mask = lcd_an->gpio.out_data = 0xFF;
 
-        /* Register PCF8574 LCD device. */
-        lcd_an_register(&lcd_an->lcd);
+        /* Register PCF8574 Alphanumeric LCD device. */
+        lcd_an_register(&lcd_an->lcd_an);
     }
 
 } /* lcd_pcf8574_init */
 
 /*
  * lcd_an_pcf8574_reset
- * @lcd_an: PCF8574 LCD device.
- * This function is responsible for resetting the alphanumeric LCD over
+ * @lcd_an: PCF8574 Alphanumeric LCD device.
+ * This function is responsible for resetting the alphanumeric Alphanumeric LCD over
  * PCF8574 device.
  */
 int32_t lcd_an_pcf8574_reset(LCD_AN_PCF8574 *lcd_an)
@@ -74,8 +74,8 @@ int32_t lcd_an_pcf8574_reset(LCD_AN_PCF8574 *lcd_an)
         /* Configure all pins as output and high. */
         lcd_an->gpio.out_mask = lcd_an->gpio.out_data = 0xFF;
 
-        /* Reset LCD interface. */
-        status = lcd_an_reset(&lcd_an->lcd);
+        /* Reset Alphanumeric LCD interface. */
+        status = lcd_an_reset(&lcd_an->lcd_an);
     }
 
     /* Return status to the caller. */
@@ -85,12 +85,12 @@ int32_t lcd_an_pcf8574_reset(LCD_AN_PCF8574 *lcd_an)
 
 /*
  * lcd_an_pcf8574_set_en
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output high on enable pin.
  */
-static void lcd_an_pcf8574_set_en(LCD_AN *lcd)
+static void lcd_an_pcf8574_set_en(LCD_AN *lcd_an)
 {
-    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
+    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd_an;
 
     /* Set the EN pin. */
     lcd_pcf->gpio.out_data |= (uint8_t)(1 << lcd_pcf->en_pin);
@@ -102,12 +102,12 @@ static void lcd_an_pcf8574_set_en(LCD_AN *lcd)
 
 /*
  * lcd_an_pcf8574_clr_en
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output low on enable pin.
  */
-static void lcd_an_pcf8574_clr_en(LCD_AN *lcd)
+static void lcd_an_pcf8574_clr_en(LCD_AN *lcd_an)
 {
-    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
+    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd_an;
 
     /* Clear the EN pin. */
     lcd_pcf->gpio.out_data &= (uint8_t)(~(1 << lcd_pcf->en_pin));
@@ -119,12 +119,12 @@ static void lcd_an_pcf8574_clr_en(LCD_AN *lcd)
 
 /*
  * lcd_an_pcf8574_set_rs
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output high on RS pin.
  */
-static void lcd_an_pcf8574_set_rs(LCD_AN *lcd)
+static void lcd_an_pcf8574_set_rs(LCD_AN *lcd_an)
 {
-    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
+    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd_an;
 
     /* Set the RS pin. */
     lcd_pcf->gpio.out_data |= (uint8_t)(1 << lcd_pcf->rs_pin);
@@ -136,12 +136,12 @@ static void lcd_an_pcf8574_set_rs(LCD_AN *lcd)
 
 /*
  * lcd_an_pcf8574_clr_rs
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output low on RS pin.
  */
-static void lcd_an_pcf8574_clr_rs(LCD_AN *lcd)
+static void lcd_an_pcf8574_clr_rs(LCD_AN *lcd_an)
 {
-    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
+    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd_an;
 
     /* Clear the RS pin. */
     lcd_pcf->gpio.out_data &= (uint8_t)(~(1 << lcd_pcf->rs_pin));
@@ -153,12 +153,12 @@ static void lcd_an_pcf8574_clr_rs(LCD_AN *lcd)
 
 /*
  * lcd_an_pcf8574_set_rw
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output high on R/W pin.
  */
-static void lcd_an_pcf8574_set_rw(LCD_AN *lcd)
+static void lcd_an_pcf8574_set_rw(LCD_AN *lcd_an)
 {
-    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
+    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd_an;
 
     /* Set the RW pin. */
     lcd_pcf->gpio.out_data |= (uint8_t)(1 << lcd_pcf->rw_pin);
@@ -173,12 +173,12 @@ static void lcd_an_pcf8574_set_rw(LCD_AN *lcd)
 
 /*
  * lcd_an_pcf8574_clr_rw
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * This function is responsible for output low on R/W pin.
  */
-static void lcd_an_pcf8574_clr_rw(LCD_AN *lcd)
+static void lcd_an_pcf8574_clr_rw(LCD_AN *lcd_an)
 {
-    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
+    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd_an;
 
     /* Clear the RW pin. */
     lcd_pcf->gpio.out_data &= (uint8_t)(~(1 << lcd_pcf->rw_pin));
@@ -193,13 +193,13 @@ static void lcd_an_pcf8574_clr_rw(LCD_AN *lcd)
 
 /*
  * lcd_an_pcf8574_put_data
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * @nibble: Nibble to be put on the DAT pins.
  * This function is responsible for output a nibble on the DAT pins.
  */
-static void lcd_an_pcf8574_put_data(LCD_AN *lcd, uint8_t nibble)
+static void lcd_an_pcf8574_put_data(LCD_AN *lcd_an, uint8_t nibble)
 {
-    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
+    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd_an;
 
     if (nibble & (1 << 0))
     {
@@ -252,14 +252,14 @@ static void lcd_an_pcf8574_put_data(LCD_AN *lcd, uint8_t nibble)
 
 /*
  * lcd_an_pcf8574_read_data
- * @lcd: LCD driver for which this function was called.
+ * @lcd_an: Alphanumeric LCD driver for which this function was called.
  * @return: Nibble read from the DAT pins.
  * This function is responsible for input a nibble from the DAT pins.
  */
-static uint8_t lcd_an_pcf8574_read_data(LCD_AN *lcd)
+static uint8_t lcd_an_pcf8574_read_data(LCD_AN *lcd_an)
 {
     uint8_t nibble = 0;
-    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd;
+    LCD_AN_PCF8574 *lcd_pcf = (LCD_AN_PCF8574 *)lcd_an;
     uint8_t port = pcf8574_read(&lcd_pcf->gpio);
 
     /* Check if D4 is high. */

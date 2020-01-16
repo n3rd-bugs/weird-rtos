@@ -20,7 +20,7 @@
 #include <lcd_an.h>
 #include <serial.h>
 
-/* LCD Demo task definitions. */
+/* LCD AN Demo task definitions. */
 #define LCD_DEMO_TASK_STACK_SIZE        384
 uint8_t lcd_demo_stack[LCD_DEMO_TASK_STACK_SIZE];
 TASK    lcd_demo_cb;
@@ -29,7 +29,7 @@ void lcd_demo_entry(void *argv);
 /*
  * lcd_demo_entry
  * @argv: Task argument.
- * This is main entry function for LCD demo task.
+ * This is main entry function for LCD AN demo task.
  */
 void lcd_demo_entry(void *argv)
 {
@@ -37,7 +37,7 @@ void lcd_demo_entry(void *argv)
     extern FD lcd_an_fd;
     LCD_AN_IOCTL_DATA ioctl_data;
 
-    /* Initialize alphanumeric LCD. */
+    /* Initialize alphanumeric LCD AN. */
     lcd_an_init();
 
     /* Create custom characters. */
@@ -91,8 +91,8 @@ int main(void)
     /* Initialize serial. */
     serial_init();
 
-    /* Initialize LCD demo task. */
-    task_create(&lcd_demo_cb, P_STR("LCD"), lcd_demo_stack, LCD_DEMO_TASK_STACK_SIZE, &lcd_demo_entry, (void *)0, TASK_NO_RETURN);
+    /* Initialize LCD AN demo task. */
+    task_create(&lcd_demo_cb, P_STR("LCD_AN"), lcd_demo_stack, LCD_DEMO_TASK_STACK_SIZE, &lcd_demo_entry, (void *)0, TASK_NO_RETURN);
     scheduler_task_add(&lcd_demo_cb, 0);
 
     /* Run scheduler. */
