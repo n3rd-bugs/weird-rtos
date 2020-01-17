@@ -43,7 +43,7 @@ static LED_MAX7219_STM32 stm32_led_max7219 =
                 .data = &stm32_led_max7219_spi,
 
                 /* SPI configuration. */
-                .baudrate = 8000000,
+                .baudrate = 10000000,
                 .cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA),
             },
         },
