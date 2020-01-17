@@ -14,14 +14,14 @@
 
 #ifdef CONFIG_MAX7219
 #ifdef CONFIG_SPI
-#include <spi_stm32f030.h>
+#include <spi_stm32f103.h>
 #else
 #error "SPI is required for MAX7219."
 #endif /* CONFIG_SPI */
 #include <led_max7219_stm32.h>
 
 /* Local variable definition. */
-static STM32F030_SPI stm32_led_max7219_spi =
+static STM32F103_SPI stm32_led_max7219_spi =
 {
     /* Use the SPI1. */
     .device_num = 1,
@@ -36,14 +36,14 @@ static LED_MAX7219_STM32 stm32_led_max7219 =
             .spi =
             {
                  /* Assign function callback. */
-                .init = &spi_stm32f030_init,
-                .slave_select = &spi_stm32f030_slave_select,
-                .slave_unselect = &spi_stm32f030_slave_unselect,
-                .msg = &spi_stm32f030_message,
+                .init = &spi_stm32f103_init,
+                .slave_select = &spi_stm32f103_slave_select,
+                .slave_unselect = &spi_stm32f103_slave_unselect,
+                .msg = &spi_stm32f103_message,
                 .data = &stm32_led_max7219_spi,
 
                 /* SPI configuration. */
-                .baudrate = 10000000,
+                .baudrate = 8000000,
                 .cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA),
             },
         },

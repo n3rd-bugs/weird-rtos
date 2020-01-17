@@ -1,5 +1,5 @@
 /*
- * max7219_target.h
+ * led_max7219_stm32.h
  *
  * Copyright (c) 2020 Usama Masood <mirzaon@gmail.com> All rights reserved.
  *
@@ -10,15 +10,23 @@
  *  Usama Masood <mirzaon@gmail.com>
  *
  */
-#ifndef _LED_MAX7219_TARGET_H_
-#define _LED_MAX7219_TARGET_H_
+#ifndef _LED_MAX7219_STM32_H_
+#define _LED_MAX7219_STM32_H_
 #include <kernel.h>
 
 #ifdef CONFIG_MAX7219
-#include <led_max7219_stm32.h>
+#include <max7219.h>
 
-/* Hook-up LED MAX7219 OS stack. */
-#define LED_MAX7219_TGT_INIT()      led_max7219_stm32_init()
+/* LED MAX7219 structure for STM32. */
+typedef struct _led_max7219_stm32
+{
+    /* MAX7219 instance. */
+    LED_MAX7219     led_max;
+
+} LED_MAX7219_STM32;
+
+/* Function prototypes. */
+void led_max7219_stm32_init(void);
 
 #endif /* CONFIG_MAX7219 */
-#endif /* _LED_MAX7219_TARGET_H_ */
+#endif /* _LED_MAX7219_STM32_H_ */

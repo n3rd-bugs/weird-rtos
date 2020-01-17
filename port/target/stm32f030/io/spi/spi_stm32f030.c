@@ -49,25 +49,37 @@ void spi_stm32f030_init(SPI_DEVICE *device)
 
         /* Select high speed for PA4 (CS), PA5 (SCK), PA6 (MISO) and PA7 (MOSI). */
         GPIOA->OSPEEDR &= (uint32_t)~(GPIO_OSPEEDER_OSPEEDR4 | GPIO_OSPEEDER_OSPEEDR5 | GPIO_OSPEEDER_OSPEEDR6 | GPIO_OSPEEDER_OSPEEDR7);
-        GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR4_1 | GPIO_OSPEEDER_OSPEEDR4_0) |
-                          (GPIO_OSPEEDER_OSPEEDR5_1 | GPIO_OSPEEDER_OSPEEDR5_0) |
-                          (GPIO_OSPEEDER_OSPEEDR6_1 | GPIO_OSPEEDER_OSPEEDR6_0) |
-                          (GPIO_OSPEEDER_OSPEEDR7_1 | GPIO_OSPEEDER_OSPEEDR7_0);
+        GPIOA->OSPEEDR |= (GPIO_OSPEEDER_OSPEEDR4_1 | GPIO_OSPEEDER_OSPEEDR4_0) | (GPIO_OSPEEDER_OSPEEDR5_1 | GPIO_OSPEEDER_OSPEEDR5_0) | (GPIO_OSPEEDER_OSPEEDR6_1 | GPIO_OSPEEDER_OSPEEDR6_0) | (GPIO_OSPEEDER_OSPEEDR7_1 | GPIO_OSPEEDER_OSPEEDR7_0);
 
         /* Select SPI1 AF for PA5 (SCK), PA6 (MISO) and PA7 (MOSI). */
         GPIOA->AFR[0] &= (uint32_t)~((0xF << ((5 % 8) << 2)) | (0xF << ((6 % 8) << 2)) | (0xF << ((7 % 8) << 2)));
         GPIOA->AFR[0] |= (0x0 << ((5 % 8) << 2)) | (0x0 << ((6 % 8) << 2)) | (0x0 << ((7 % 8) << 2));
 
-        /* Select output mode for PA4 (CS). */
-        GPIOA->MODER &= (uint32_t)~(GPIO_MODER_MODER4);
-        GPIOA->MODER |= (GPIO_MODER_MODER4_0);
+        /* If hardware SS signal is required. */
+        if (device->cfg_flags & SPI_CFG_ENABLE_HARD_SS)
+        {
+            /* Set alternate function for PA4 (SS). */
+            GPIOA->MODER &= (uint32_t)~(GPIO_MODER_MODER4);
+            GPIOA->MODER |= (GPIO_MODER_MODER4_1);
 
-        /* Select pull-down mode for for the PA4 (CS) lines. */
-        GPIOA->PUPDR &= (uint32_t)~(GPIO_PUPDR_PUPDR4);
-        GPIOA->PUPDR |= GPIO_PUPDR_PUPDR4_1;
+            /* Select SPI1 AF for PA4 (SS). */
+            GPIOA->AFR[0] &= (uint32_t)~(0xF << ((4 % 8) << 2));
+            GPIOA->AFR[0] |= (0x0 << ((5 % 8) << 2));
+        }
+        else
+        {
+            /* Select output mode for PA4 (CS). */
+            GPIOA->MODER &= (uint32_t)~(GPIO_MODER_MODER4);
+            GPIOA->MODER |= (GPIO_MODER_MODER4_0);
 
-        /* Set the PA4 (CS). */
-        GPIOA->BSRR |= (1 << 4);
+            /* Select pull-up mode for for the PA4 (CS) lines. */
+            GPIOA->PUPDR &= (uint32_t)~(GPIO_PUPDR_PUPDR4);
+            GPIOA->PUPDR |= GPIO_PUPDR_PUPDR4_0;
+            GPIOA->OTYPER |= GPIO_OTYPER_OT_4;
+
+            /* Set the PA4 (CS). */
+            GPIOA->BSRR |= (1 << 4);
+        }
 
         /* Calculate the required baudrate prescaler. */
         baud_scale = CEIL_DIV(PCLK_FREQ, device->baudrate);
@@ -108,7 +120,6 @@ void spi_stm32f030_init(SPI_DEVICE *device)
     ((STM32F030_SPI *)device->data)->reg->CR1 = (uint16_t)(((uint16_t)(((device->cfg_flags & SPI_CFG_1_WIRE) != 0) << STM32F030_SPI_CR1_BIDI_SHIFT)) |
                                                            ((uint16_t)(((device->cfg_flags & SPI_CFG_1_WIRE) != 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F030_SPI_CR1_BIDIOE_SHIFT) |
                                                            ((uint16_t)((device->cfg_flags & SPI_CFG_ENABLE_CRC) != 0) << STM32F030_SPI_CR1_CRCEN_SHIFT) |
-                                                           ((uint16_t)((device->cfg_flags & SPI_CFG_MODE_16BIT) != 0) << STM32F030_SPI_CR1_DFF_SHIFT) |
                                                            ((uint16_t)(((device->cfg_flags & SPI_CFG_1_WIRE) == 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F030_SPI_CR1_RXONLY_SHIFT) |
                                                            ((uint16_t)((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) << STM32F030_SPI_CR1_SMM_SHIFT) |
                                                            ((uint16_t)(((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) && ((device->cfg_flags & SPI_CFG_MASTER) != 0)) << STM32F030_SPI_CR1_SSI_SHIFT) |
@@ -119,7 +130,10 @@ void spi_stm32f030_init(SPI_DEVICE *device)
                                                            ((uint16_t)((device->cfg_flags & SPI_CFG_CLK_FIRST_DATA) == 0) << STM32F030_SPI_CR1_CPHA_SHIFT));
 
     /* Put the CR2 register value. */
-    ((STM32F030_SPI *)device->data)->reg->CR2 = (((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) != 0) << STM32F030_SPI_CR1_SSOE_SHIFT);
+    ((STM32F030_SPI *)device->data)->reg->CR2 = (uint16_t)((((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) != 0) << STM32F030_SPI_CR2_SSOE_SHIFT) |
+                                                           (((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) != 0) << STM32F030_SPI_CR2_NSSP_SHIFT) |
+                                                           ((uint16_t)((device->cfg_flags & SPI_CFG_MODE_16BIT) != 0 ? 0xF : 0x7) << STM32F030_SPI_CR2_DS_SHIFT) |
+                                                           ((uint16_t)((device->cfg_flags & SPI_CFG_MODE_16BIT) != 0 ? 0x0 : 0x1) << STM32F030_SPI_CR2_FRXTH_SHIFT));
 
     /* Disable the I2S mode. */
     ((STM32F030_SPI *)device->data)->reg->I2SCFGR &= (uint16_t)(~(1 << STM32F030_SPI_I2SCFG_MOD_SHIFT));
@@ -196,7 +210,7 @@ int32_t spi_stm32f030_message(SPI_DEVICE *device, SPI_MSG *message)
             if (timeout < STM32F030_SPI_TIMEOUT)
             {
                 /* Send a byte. */
-                ((STM32F030_SPI *)device->data)->reg->DR = 0xFF;
+                *(__IO uint8_t *)(&((STM32F030_SPI *)device->data)->reg->DR) = 0xFF;
             }
             else
             {
@@ -249,7 +263,7 @@ int32_t spi_stm32f030_message(SPI_DEVICE *device, SPI_MSG *message)
             if (timeout < STM32F030_SPI_TIMEOUT)
             {
                 /* Send a byte. */
-                ((STM32F030_SPI *)device->data)->reg->DR = message->buffer[bytes];
+                *(__IO uint8_t *)(&((STM32F030_SPI *)device->data)->reg->DR) = message->buffer[bytes];
             }
             else
             {
