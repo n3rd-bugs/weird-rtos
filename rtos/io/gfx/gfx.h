@@ -76,6 +76,7 @@ struct _gfx
 
 /* Function prototype. */
 void graphics_register(GFX *);
+int32_t gfx_display(void *, const uint8_t *, uint32_t, uint32_t, uint32_t, uint32_t);
 
 #endif /* CONFIG_GFX */
 #endif /* _GFX_H_ */

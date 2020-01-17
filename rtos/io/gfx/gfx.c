@@ -65,6 +65,30 @@ void graphics_register(GFX *gfx)
 } /* graphics_register */
 
 /*
+ * gfx_display
+ * @priv_data: Graphics data.
+ * @buffer: Buffer to display.
+ * @col: Starting column.
+ * @num_col: Number of columns.
+ * @row: Starting row.
+ * @num_row: Number of rows.
+ * @return: Success will be returned if the given data was successfully displayed.
+ * This function will display a buffer on the display.
+ */
+int32_t gfx_display(void *priv_data, const uint8_t *buffer, uint32_t col, uint32_t num_col, uint32_t row, uint32_t num_row)
+{
+    int32_t status;
+    GFX *gfx = (GFX *)priv_data;
+
+    /* Display the given buffer. */
+    status = gfx->display(gfx, buffer, col, num_col, row, num_row);
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* gfx_display */
+
+/*
  * gfx_write
  * @priv_data: GFX device data for which this was called.
  * @buf: String needed to be printed.
@@ -160,7 +184,7 @@ static int32_t gfx_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
                 if ((gfx->cur_column + ((uint32_t)gfx->font_width * 2)) <= gfx->width)
                 {
                     /* Display the given character. */
-                    gfx->display(gfx, &gfx->font[(*buf - gfx->font_char_start) * gfx->font_width * (gfx->font_height / 8)], gfx->cur_column, gfx->font_width, gfx->cur_row, gfx->font_height);
+                    status = gfx->display(gfx, &gfx->font[(*buf - gfx->font_char_start) * gfx->font_width * (gfx->font_height / 8)], gfx->cur_column, gfx->font_width, gfx->cur_row, gfx->font_height);
 
                     /* Move the cursor. */
                     gfx->cur_column += gfx->font_width;

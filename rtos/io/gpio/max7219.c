@@ -220,7 +220,7 @@ static int32_t led_max_ssd1306_display(GFX *gfx, const uint8_t *buffer, uint32_t
         for (i = (uint8_t)col; (status == SUCCESS) && (i < (uint8_t)(col + num_col)); i++)
         {
             /* Populate the SPI buffer. */
-            buf[0] = i;
+            buf[0] = (uint8_t)(i + 1);
             buf[1] = buffer[i];
 
             /* Send SPI message. */
