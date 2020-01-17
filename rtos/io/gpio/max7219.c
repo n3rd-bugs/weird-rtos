@@ -14,6 +14,12 @@
 #include <max7219_target.h>
 
 #ifdef CONFIG_MAX7219
+/* Local function definition. */
+static int32_t led_max_ssd1306_display(GFX *, const uint8_t *, uint32_t, uint32_t, uint32_t, uint32_t);
+static int32_t led_max_ssd1306_power(GFX *, uint8_t);
+static int32_t led_max_ssd1306_clear_display(GFX *);
+static int32_t led_max_ssd1306_invert(GFX *, uint8_t);
+
 /*
  * max7219_init
  * This will initialize MAX7219 device subsystem.
@@ -40,7 +46,7 @@ int32_t max7219_register(MAX7219 *max)
 {
     int32_t status;
     SPI_MSG spi_msg;
-    uint8_t i, buf[2];
+    uint8_t buf[2];
 
     /* Initialize SPI device. */
     spi_init(&max->spi);
@@ -81,18 +87,6 @@ int32_t max7219_register(MAX7219 *max)
         buf[0] = MAX7219_ADDR_DISPLAY_TEST;
         buf[1] = 0xF0;
         status = spi_message(&max->spi, &spi_msg, 1);
-    }
-
-
-    if (status == SUCCESS)
-    {
-        /* Initialize with all zeros. */
-        buf[1] = 0x00;
-        for (i = 0; (status == SUCCESS) && (i < 8); i++)
-        {
-            buf[0] = (uint8_t)(i + 1);
-            status = spi_message(&max->spi, &spi_msg, 1);
-        }
     }
 
     /* Return status to the caller. */
@@ -170,9 +164,138 @@ int32_t led_max7219_register(LED_MAX7219 *led_max)
         status = max7219_set_power(&led_max->max, TRUE);
     }
 
+    if (status == SUCCESS)
+    {
+        /* Hook up graphics for this OLED. */
+        led_max->gfx.display = &led_max_ssd1306_display;
+        led_max->gfx.power = &led_max_ssd1306_power;
+        led_max->gfx.clear = &led_max_ssd1306_clear_display;
+        led_max->gfx.invert = &led_max_ssd1306_invert;
+
+        /* Set the font information. */
+        led_max->gfx.font = NULL;
+
+        /* Register this with graphics driver. */
+        graphics_register(&led_max->gfx);
+    }
+
     /* Return status to the caller. */
     return (status);
 
 } /* led_max7219_register */
+
+/*
+ * led_max_ssd1306_display
+ * @gfx: Graphics data.
+ * @buffer: Buffer to display.
+ * @col: Starting column.
+ * @num_col: Number of columns.
+ * @row: Starting row.
+ * @num_row: Number of rows.
+ * @return: Success will be returned if the given data was successfully displayed,
+ *  MAX7219_OUT_OF_RANGE will be returned if column or row is out of range.
+ * This function will display a buffer on LED.
+ */
+static int32_t led_max_ssd1306_display(GFX *gfx, const uint8_t *buffer, uint32_t col, uint32_t num_col, uint32_t row, uint32_t num_row)
+{
+    LED_MAX7219 *led_max = (LED_MAX7219 *)gfx;
+    int32_t status = SUCCESS;
+    uint8_t i, buf[2];
+    SPI_MSG spi_msg;
+
+    /* Validate input parameters. */
+    if (((row + num_row) > gfx->height) || ((col + num_col) > gfx->width))
+    {
+        /* Return error. */
+        status = MAX7219_OUT_OF_RANGE;
+    }
+    else
+    {
+        /* Initialize MAX7219 message buffer. */
+        spi_msg.buffer = buf;
+        spi_msg.length = 2;
+        spi_msg.flags = SPI_MSG_WRITE;
+
+        /* Flush the buffer. */
+        for (i = (uint8_t)col; (status == SUCCESS) && (i < (uint8_t)(col + num_col)); i++)
+        {
+            /* Populate the SPI buffer. */
+            buf[0] = i;
+            buf[1] = buffer[i];
+
+            /* Send SPI message. */
+            status = spi_message(&led_max->max.spi, &spi_msg, 1);
+        }
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* led_max_ssd1306_display */
+
+/*
+ * oled_ssd1306_power
+ * @gfx: Graphics data.
+ * @turn_on: If we are needed to turn on the display.
+ * @return: Success will be returned if power state was successfully updated.
+ * This function will clear the display.
+ */
+static int32_t led_max_ssd1306_power(GFX *gfx, uint8_t turn_on)
+{
+    LED_MAX7219 *led_max = (LED_MAX7219 *)gfx;
+
+    /* Return status to the caller. */
+    return (max7219_set_power(&led_max->max, turn_on));
+
+} /* led_max_ssd1306_power */
+
+/*
+ * oled_ssd1306_clear_display
+ * @gfx: Graphics data.
+ * @return: Success will be returned if display was successfully cleared.
+ * This function will clear the display.
+ */
+static int32_t led_max_ssd1306_clear_display(GFX *gfx)
+{
+    LED_MAX7219 *led_max = (LED_MAX7219 *)gfx;
+    int32_t status = SUCCESS;
+    uint8_t i, buf[2];
+    SPI_MSG spi_msg;
+
+    /* Initialize MAX7219 message buffer. */
+    spi_msg.buffer = buf;
+    spi_msg.length = 2;
+    spi_msg.flags = SPI_MSG_WRITE;
+
+    /* Initialize with all zeros. */
+    buf[1] = 0x00;
+    for (i = 0; (status == SUCCESS) && (i < 8); i++)
+    {
+        buf[0] = (uint8_t)(i + 1);
+        status = spi_message(&led_max->max.spi, &spi_msg, 1);
+    }
+
+    /* Return status to the caller. */
+    return (status);
+
+} /* led_max_ssd1306_clear_display */
+
+/*
+ * oled_ssd1306_invert
+ * @gfx: Graphics data.
+ * @invert: Flag to specify if we need to invert the display.
+ * @return: Always return MAX7219_NOT_SUPPORTED.
+ * This function will invert the display.
+ */
+static int32_t led_max_ssd1306_invert(GFX *gfx, uint8_t invert)
+{
+    /* Remove some compiler warnings. */
+    UNUSED_PARAM(gfx);
+    UNUSED_PARAM(invert);
+
+    /* Invert not supported. */
+    return (MAX7219_NOT_SUPPORTED);
+
+} /* led_max_ssd1306_invert */
 
 #endif /* CONFIG_MAX7219 */

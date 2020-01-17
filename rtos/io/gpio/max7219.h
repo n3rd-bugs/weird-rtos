@@ -19,7 +19,12 @@
 #error "SPI is required for MAX7219."
 #endif /* CONFIG_SPI */
 #include <spi.h>
+#include <gfx.h>
 #include <max7219_config.h>
+
+/* Error code definitions. */
+#define MAX7219_NOT_SUPPORTED   -2200
+#define MAX7219_OUT_OF_RANGE    -2201
 
 /* MAX7219 address definitions. */
 #define MAX7219_ADDR_NOOP           0x00
@@ -48,6 +53,9 @@ typedef struct _max7219
 /* This defines LED segment display over MAX7219. */
 typedef struct _led_max7219
 {
+    /* Graphics data for this driver. */
+    GFX         gfx;
+
     /* Associated MAX7219 device. */
     MAX7219     max;
 

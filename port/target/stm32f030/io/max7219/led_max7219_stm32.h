@@ -21,7 +21,7 @@
 typedef struct _led_max7219_stm32
 {
     /* MAX7219 instance. */
-    LED_MAX7219     led_max;
+    LED_MAX7219 led_max;
 
 } LED_MAX7219_STM32;
 

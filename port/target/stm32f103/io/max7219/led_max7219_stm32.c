@@ -47,6 +47,24 @@ static LED_MAX7219_STM32 stm32_led_max7219 =
                 .cfg_flags = (SPI_CFG_MASTER | SPI_CFG_CLK_FIRST_DATA),
             },
         },
+
+        /* Graphics configurations. */
+        .gfx =
+        {
+            /* Console configurations. */
+            .console =
+            {
+                .fs =
+                {
+                    /* Name of this interface. */
+                    .name = "8x8led1",
+                },
+            },
+
+            /* Display dimensions. */
+            .width      = 8,
+            .height     = 8,
+        },
     },
 };
 
