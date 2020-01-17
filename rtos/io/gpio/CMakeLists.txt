@@ -23,6 +23,7 @@ endif()
 if (${CONFIG_MAX7219})
     FILE(GLOB SOURCES ./max7219.c)
     set(RTOS_SOURCES ${RTOS_SOURCES} ${SOURCES} CACHE INTERNAL "RTOS_SOURCES" FORCE)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/max7219.cmake)
 endif()
 
 # Add this directory to the include directory.
