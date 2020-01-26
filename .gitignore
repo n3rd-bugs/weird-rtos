@@ -4,3 +4,5 @@
 .pydevproject
 *.pyc
 pld/galasm
+*.kicad_pcb-bak
+*.sch-bak
