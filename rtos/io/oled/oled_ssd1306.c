@@ -359,6 +359,7 @@ int32_t oled_ssd1306_register(SSD1306 *oled)
  * @num_col: Number of columns.
  * @row: Starting row.
  * @num_row: Number of rows.
+ * @return: Success will be returned if the given data was successfully displayed.
  * This function will display a buffer on OLED.
  */
 static int32_t oled_ssd1306_display(GFX *gfx, const uint8_t *buffer, uint32_t col, uint32_t num_col, uint32_t row, uint32_t num_row)
@@ -460,6 +461,7 @@ static int32_t oled_ssd1306_display(GFX *gfx, const uint8_t *buffer, uint32_t co
  * oled_ssd1306_power
  * @gfx: Graphics data.
  * @turn_on: If we are needed to turn on the display.
+ * @return: Success will be returned if power state was successfully updated.
  * This function will clear the display.
  */
 static int32_t oled_ssd1306_power(GFX *gfx, uint8_t turn_on)
@@ -478,6 +480,7 @@ static int32_t oled_ssd1306_power(GFX *gfx, uint8_t turn_on)
 /*
  * oled_ssd1306_clear_display
  * @gfx: Graphics data.
+ * @return: Success will be returned if display was successfully cleared.
  * This function will clear the display.
  */
 static int32_t oled_ssd1306_clear_display(GFX *gfx)
@@ -497,6 +500,7 @@ static int32_t oled_ssd1306_clear_display(GFX *gfx)
  * oled_ssd1306_invert
  * @gfx: Graphics data.
  * @invert: Flag to specify if we need to invert the display.
+ * @return: Success will be returned if display was successfully inverted.
  * This function will invert SSD1306 display.
  */
 static int32_t oled_ssd1306_invert(GFX *gfx, uint8_t invert)
@@ -525,6 +529,7 @@ static int32_t oled_ssd1306_invert(GFX *gfx, uint8_t invert)
  * oled_ssd1306_command
  * @oled: SSD1306 device data.
  * @command: Command to be executed.
+ * @return: Success will be returned if command was successfully executed.
  * This function will execute a command on SSD1306.
  */
 static int32_t oled_ssd1306_command(SSD1306 *oled, uint8_t command)

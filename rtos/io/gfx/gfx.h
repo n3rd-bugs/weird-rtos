@@ -60,20 +60,23 @@ struct _gfx
 
     /* Font data. */
     const uint8_t   *font;
+
+    /* Font configuration. */
+    int16_t         font_char_start;
+    int16_t         font_char_end;
     uint8_t         font_width;
     uint8_t         font_height;
-    uint8_t         font_char_start;
-    uint8_t         font_char_end;
 
     /* Device flags. */
     uint8_t         flags;
 
     /* Structure padding. */
-    uint8_t         pad[3];
+    uint8_t         pad[1];
 };
 
 /* Function prototype. */
 void graphics_register(GFX *);
+int32_t gfx_display(void *, const uint8_t *, uint32_t, uint32_t, uint32_t, uint32_t);
 
 #endif /* CONFIG_GFX */
 #endif /* _GFX_H_ */
