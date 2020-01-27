@@ -119,7 +119,7 @@ U 1 1 5E2FE16C
 P 3500 5850
 F 0 "Q1" H 3588 5896 50  0000 L CNN
 F 1 "BTA20" H 3588 5805 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-92_Inline" H 3600 5775 50  0001 L CIN
+F 2 "Package_TO_SOT_THT:TO-220-3_Horizontal_TabDown" H 3600 5775 50  0001 L CIN
 F 3 "https://media.digikey.com/pdf/Data%20Sheets/NXP%20PDFs/BT169_Series.pdf" H 3500 5850 50  0001 L CNN
 	1    3500 5850
 	1    0    0    -1  
