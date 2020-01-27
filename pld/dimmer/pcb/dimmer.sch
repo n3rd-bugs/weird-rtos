@@ -770,4 +770,28 @@ Wire Wire Line
 	2250 5500 2250 5650
 Wire Wire Line
 	2250 5650 2450 5650
+$Comp
+L Connector:Conn_01x01_Female J3
+U 1 1 5E2EE2B9
+P 4250 6600
+F 0 "J3" H 4278 6626 50  0000 L CNN
+F 1 "H2" H 4278 6535 50  0000 L CNN
+F 2 "Connector_PinHeader_1.00mm:PinHeader_1x01_P1.00mm_Vertical" H 4250 6600 50  0001 C CNN
+F 3 "~" H 4250 6600 50  0001 C CNN
+	1    4250 6600
+	1    0    0    -1  
+$EndComp
+$Comp
+L Connector:Conn_01x01_Female J4
+U 1 1 5E2F4322
+P 4250 6400
+F 0 "J4" H 4278 6426 50  0000 L CNN
+F 1 "H1" H 4278 6335 50  0000 L CNN
+F 2 "Connector_PinHeader_1.00mm:PinHeader_1x01_P1.00mm_Vertical" H 4250 6400 50  0001 C CNN
+F 3 "~" H 4250 6400 50  0001 C CNN
+	1    4250 6400
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	4050 6400 4050 6600
 $EndSCHEMATC
