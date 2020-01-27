@@ -57,7 +57,7 @@ static LED_MAX7219_STM32 stm32_led_max7219 =
                 .fs =
                 {
                     /* Name of this interface. */
-                    .name = "8x8led1",
+                    .name = "led8x81",
                 },
             },
 
