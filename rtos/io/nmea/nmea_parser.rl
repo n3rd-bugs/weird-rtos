@@ -75,10 +75,40 @@
         /* Update Longitude */
         nmea_parser_set_value(&msg->longitude, &index, &have_dot, *p, 5);
     }
+    action speed_k_set
+    {
+        /* Update speed knots */
+        nmea_parser_set_value(&msg->speed_knots, &index, &have_dot, *p, 3);
+    }
+    action speed_mph_set
+    {
+        /* Update speed meter p/h */
+        nmea_parser_set_value(&msg->speed_mph, &index, &have_dot, *p, 3);
+    }
+    action course_set
+    {
+        /* Update course */
+        nmea_parser_set_value(&msg->course, &index, &have_dot, *p, 3);
+    }
+    action date_set
+    {
+        /* Update date */
+        nmea_parser_set_value(&msg->date, &index, &have_dot, *p, 0);
+    }
     action lon_ew_set
     {
         /* Save longitude E/W. */
         msg->longitude_ew = *p;
+    }
+    action status_set
+    {
+        /* Save the data status. */
+        msg->status = *p;
+    }
+    action mode_set
+    {
+        /* Save the data mode. */
+        msg->mode = *p;
     }
 
     # GGA definitions.
@@ -133,15 +163,33 @@
         /* Save the message ID. */
         msg->msg_id = NMEA_MSG_GLL;
     }
-    action status_set
+
+    # RMC definitions.
+    action got_rmc
     {
-        /* Save the data status. */
-        msg->data.gll.status = *p;
+        /* Save the message ID. */
+        msg->msg_id = NMEA_MSG_RMC;
     }
-    action mode_set
+
+    # VTG definitions.
+    action got_vtg
     {
-        /* Save the data mode. */
-        msg->data.gll.mode = *p;
+        /* Save the message ID. */
+        msg->msg_id = NMEA_MSG_VTG;
+    }
+
+    # GSA definitions.
+    action got_gsa
+    {
+        /* Save the message ID. */
+        msg->msg_id = NMEA_MSG_GSA;
+    }
+
+    # GSV definitions.
+    action got_gsv
+    {
+        /* Save the message ID. */
+        msg->msg_id = NMEA_MSG_GSV;
     }
 
     # Start of a message.
@@ -178,8 +226,43 @@
           ','(alpha@status_set){,1}                         # Data status
           ','(alpha@mode_set){,1};                          # Data mode
 
+    # Match RMC message.
+    rmc = ('R''M''C')@got_rmc
+          ','@index_reset(((digit|[.])@utc_set)+){,1}       # UTC
+          ','(alpha@status_set){,1}                         # Data status
+          ','@index_reset(((digit|[.])@lat_set)+){,1}       # Latitude
+          ','([NS]@lat_ns_set){,1}                          # N/S
+          ','@index_reset(((digit|[.])@lon_set)+){,1}       # Longitude
+          ',' ([EW]@lon_ew_set){,1}                         # E/W
+          ','@index_reset(((digit|[.])@speed_k_set)+){,1}   # Speed Knots
+          ','@index_reset(((digit|[.])@course_set)+){,1}    # Course
+          ','@index_reset((digit@date_set)+){,1}            # Date
+          ','((digit|[.])+){,1}                             # Magnetic Variation
+          ','((digit|[.])+){,1}                             # East/West Indicator
+          ','(alpha@mode_set){,1};                          # Data mode
+
+    # Match VTG message.
+    vtg = ('V''T''G')@got_vtg
+          ','@index_reset(((digit|[.])@course_set)+){,1}    # Course
+          ',' ('T'){,1}                                     # T
+          ','((digit|[.])+){,1}                             # Magnetic Course
+          ',' ('M'){,1}                                     # M
+          ','@index_reset(((digit|[.])@speed_k_set)+){,1}   # Speed knots
+          ',' ('N'){,1}                                     # N
+          ','@index_reset(((digit|[.])@speed_mph_set)+){,1} # Speed meter per hour
+          ',' ('K'){,1}                                     # K
+          ','(alpha@mode_set){,1};                          # Data mode
+
+    # Discard GSA.
+    gsa = ('G''S''A')@got_gsa
+          (','(alnum|[.])*)*;                               # Discard all the arguments
+
+    # Discard GSV.
+    gsv = ('G''S''V')@got_gsv
+          (','(alnum|[.])*)*;                               # Discard all the arguments
+
     # Machine entry.
-    main := start@index_reset talker (gga|gll) '*'@csum_computed ((digit|/[A-F]/)@csum_set){2}>index_reset'\r''\n';
+    main := start@index_reset talker (gga|gll|rmc|vtg|gsa|gsv) '*'@csum_computed ((digit|/[A-F]/)@csum_set){2}>index_reset'\r''\n';
 }%%
 
 /* Machine definitions. */

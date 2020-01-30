@@ -63,19 +63,6 @@ typedef struct _nmea_msg
             /* Structure padding. */
             uint8_t     pad[3];
         } gaa;
-
-        /* Data for GLL message. */
-        struct _nmea_gll
-        {
-            /* Data status. */
-            uint8_t     status;
-
-            /* Data mode. */
-            uint8_t     mode;
-
-            /* Structure padding. */
-            uint8_t     pad[2];
-        } gll;
     } data;
 
     /* Latitude as DDMMmmmmm. */
@@ -87,6 +74,18 @@ typedef struct _nmea_msg
     /* UTC time as HHMMSSmmm. */
     uint32_t    utc;
 
+    /* Date as DDMMYY. */
+    uint32_t    date;
+
+    /* Speed over ground in mili knots. */
+    uint32_t    speed_knots;
+
+    /* Speed over ground in meter p/h. */
+    uint32_t    speed_mph;
+
+    /* Course over ground in mili degrees. */
+    uint32_t    course;
+
     /* Latitude N/S, Longitude E/W. */
     uint8_t     latitude_ns;
     uint8_t     longitude_ew;
@@ -97,8 +96,14 @@ typedef struct _nmea_msg
     /* Message ID. */
     uint8_t     msg_id;
 
+    /* Data status. */
+    uint8_t     status;
+
+    /* Data mode. */
+    uint8_t     mode;
+
     /* Structure padding. */
-    uint8_t     pad[3];
+    uint8_t     pad[1];
 
 } NMEA_MSG;
 
