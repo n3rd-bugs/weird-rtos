@@ -23,34 +23,41 @@
 #include <fs_buffer.h>
 
 
-/* #line 139 "nmea_parser.rl" */
+/* #line 183 "nmea_parser.rl" */
 
 
 /* Machine definitions. */
 
 /* #line 32 "nmea_parser.c" */
 static const int nmea_start = 1;
-static const int nmea_first_final = 34;
+static const int nmea_first_final = 47;
 static const int nmea_error = 0;
 
 static const int nmea_en_main = 1;
 
 
-/* #line 143 "nmea_parser.rl" */
+/* #line 187 "nmea_parser.rl" */
 
 /*
  * nmea_parse_message
  * @nmea: NMEA instance.
  * @msg: Parsed message will be returned here.
+ * @return: Success will be returned if a message was successfully parsed,
+ *  NMEA_READ_ERROR will be returned if an error occurred while reading from
+ *      file descriptor,
+ *  NMEA_SEQUENCE_ERROR will be returned if an invalid sequence was detected,
+ *  NMEA_CSUM_ERROR will be returned if checksum was not valid.
  * This function will return a parsed reading from a NMEA bus/device.
  */
 int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
 {
     int32_t status = SUCCESS;
-    uint8_t chr[2];
-    uint8_t *p = &chr[0], *pe = &chr[1];
-    uint8_t index, have_dot;
-    uint8_t csum, csum_got = 0;
+    uint8_t chr[2], index, have_dot;
+    uint8_t *p = &chr[0];
+    uint8_t *pe = &chr[1];
+    uint8_t csum = 0;
+    uint8_t csum_got = 0;
+    uint8_t csum_computed = 0;
     char cs = nmea_start;
     FS *fs = (FS *)nmea->fd;
     FS_BUFFER_LIST *buffer = NULL;
@@ -125,14 +132,17 @@ int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
         p = chr;
 
         /* Update the checksum. */
-        csum ^= *p;
+        if (*p != '*')
+        {
+            csum ^= *p;
+        }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough="
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
         
-/* #line 136 "nmea_parser.c" */
+/* #line 146 "nmea_parser.c" */
     {
     if ( p == pe )
         goto _test_eof;
@@ -168,7 +178,7 @@ tr2:
         /* Reset message checksum. */
         csum = 0;
     }
-/* #line 39 "nmea_parser.rl" */
+/* #line 45 "nmea_parser.rl" */
     {
         /* Reset index. */
         index = 0;
@@ -179,12 +189,12 @@ st2:
     if ( ++p == pe )
         goto _test_eof2;
 case 2:
-/* #line 183 "nmea_parser.c" */
+/* #line 193 "nmea_parser.c" */
     if ( 65 <= (*p) && (*p) <= 90 )
         goto tr3;
     goto st0;
 tr3:
-/* #line 45 "nmea_parser.rl" */
+/* #line 51 "nmea_parser.rl" */
     {
         /* Save the talker ID. */
         msg->talker_id[index != 0] = *p;
@@ -195,12 +205,12 @@ st3:
     if ( ++p == pe )
         goto _test_eof3;
 case 3:
-/* #line 199 "nmea_parser.c" */
+/* #line 209 "nmea_parser.c" */
     if ( 65 <= (*p) && (*p) <= 90 )
         goto tr4;
     goto st0;
 tr4:
-/* #line 45 "nmea_parser.rl" */
+/* #line 51 "nmea_parser.rl" */
     {
         /* Save the talker ID. */
         msg->talker_id[index != 0] = *p;
@@ -211,7 +221,7 @@ st4:
     if ( ++p == pe )
         goto _test_eof4;
 case 4:
-/* #line 215 "nmea_parser.c" */
+/* #line 225 "nmea_parser.c" */
     if ( (*p) == 71 )
         goto st5;
     goto st0;
@@ -219,113 +229,123 @@ st5:
     if ( ++p == pe )
         goto _test_eof5;
 case 5:
-    if ( (*p) == 71 )
-        goto st6;
+    switch( (*p) ) {
+        case 71: goto st6;
+        case 76: goto st34;
+    }
     goto st0;
 st6:
     if ( ++p == pe )
         goto _test_eof6;
 case 6:
     if ( (*p) == 65 )
-        goto st7;
+        goto tr8;
     goto st0;
+tr8:
+/* #line 86 "nmea_parser.rl" */
+    {
+        /* Save the message ID. */
+        msg->msg_id = NMEA_MSG_GGA;
+    }
+    goto st7;
 st7:
     if ( ++p == pe )
         goto _test_eof7;
 case 7:
+/* #line 256 "nmea_parser.c" */
     if ( (*p) == 44 )
-        goto tr8;
+        goto tr9;
     goto st0;
-tr8:
-/* #line 39 "nmea_parser.rl" */
+tr9:
+/* #line 45 "nmea_parser.rl" */
     {
         /* Reset index. */
         index = 0;
         have_dot = FALSE;
     }
     goto st8;
-tr10:
-/* #line 51 "nmea_parser.rl" */
+tr11:
+/* #line 59 "nmea_parser.rl" */
     {
         /* Update UTC */
-        nmea_parser_set_value(&msg->data.gaa.utc, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&msg->utc, &index, &have_dot, *p, 3);
     }
     goto st8;
 st8:
     if ( ++p == pe )
         goto _test_eof8;
 case 8:
-/* #line 259 "nmea_parser.c" */
+/* #line 279 "nmea_parser.c" */
     switch( (*p) ) {
-        case 44: goto tr9;
-        case 46: goto tr10;
+        case 44: goto tr10;
+        case 46: goto tr11;
     }
     if ( 48 <= (*p) && (*p) <= 57 )
-        goto tr10;
+        goto tr11;
     goto st0;
-tr9:
-/* #line 39 "nmea_parser.rl" */
+tr10:
+/* #line 45 "nmea_parser.rl" */
     {
         /* Reset index. */
         index = 0;
         have_dot = FALSE;
     }
     goto st9;
-tr12:
-/* #line 56 "nmea_parser.rl" */
+tr13:
+/* #line 64 "nmea_parser.rl" */
     {
         /* Update Latitude */
-        nmea_parser_set_value(&msg->data.gaa.latitude, &index, &have_dot, *p, 5);
+        nmea_parser_set_value(&msg->latitude, &index, &have_dot, *p, 5);
     }
     goto st9;
 st9:
     if ( ++p == pe )
         goto _test_eof9;
 case 9:
-/* #line 286 "nmea_parser.c" */
+/* #line 306 "nmea_parser.c" */
     switch( (*p) ) {
         case 44: goto st10;
-        case 46: goto tr12;
+        case 46: goto tr13;
     }
     if ( 48 <= (*p) && (*p) <= 57 )
-        goto tr12;
+        goto tr13;
     goto st0;
 st10:
     if ( ++p == pe )
         goto _test_eof10;
 case 10:
     switch( (*p) ) {
-        case 44: goto tr13;
-        case 78: goto tr14;
-        case 83: goto tr14;
+        case 44: goto tr14;
+        case 78: goto tr15;
+        case 83: goto tr15;
     }
     goto st0;
-tr13:
-/* #line 39 "nmea_parser.rl" */
+tr14:
+/* #line 45 "nmea_parser.rl" */
     {
         /* Reset index. */
         index = 0;
         have_dot = FALSE;
     }
     goto st11;
-tr16:
-/* #line 65 "nmea_parser.rl" */
+tr17:
+/* #line 74 "nmea_parser.rl" */
     {
         /* Update Longitude */
-        nmea_parser_set_value(&msg->data.gaa.longitude, &index, &have_dot, *p, 5);
+        nmea_parser_set_value(&msg->longitude, &index, &have_dot, *p, 5);
     }
     goto st11;
 st11:
     if ( ++p == pe )
         goto _test_eof11;
 case 11:
-/* #line 323 "nmea_parser.c" */
+/* #line 343 "nmea_parser.c" */
     switch( (*p) ) {
         case 44: goto st12;
-        case 46: goto tr16;
+        case 46: goto tr17;
     }
     if ( 48 <= (*p) && (*p) <= 57 )
-        goto tr16;
+        goto tr17;
     goto st0;
 st12:
     if ( ++p == pe )
@@ -333,8 +353,8 @@ st12:
 case 12:
     switch( (*p) ) {
         case 44: goto st13;
-        case 69: goto tr18;
-        case 87: goto tr18;
+        case 69: goto tr19;
+        case 87: goto tr19;
     }
     goto st0;
 st13:
@@ -342,12 +362,12 @@ st13:
         goto _test_eof13;
 case 13:
     if ( (*p) == 44 )
-        goto tr19;
-    if ( 48 <= (*p) && (*p) <= 57 )
         goto tr20;
+    if ( 48 <= (*p) && (*p) <= 57 )
+        goto tr21;
     goto st0;
-tr19:
-/* #line 39 "nmea_parser.rl" */
+tr20:
+/* #line 45 "nmea_parser.rl" */
     {
         /* Reset index. */
         index = 0;
@@ -358,22 +378,22 @@ st14:
     if ( ++p == pe )
         goto _test_eof14;
 case 14:
-/* #line 362 "nmea_parser.c" */
+/* #line 382 "nmea_parser.c" */
     if ( (*p) == 44 )
-        goto tr21;
-    if ( 48 <= (*p) && (*p) <= 57 )
         goto tr22;
+    if ( 48 <= (*p) && (*p) <= 57 )
+        goto tr23;
     goto st0;
-tr21:
-/* #line 39 "nmea_parser.rl" */
+tr22:
+/* #line 45 "nmea_parser.rl" */
     {
         /* Reset index. */
         index = 0;
         have_dot = FALSE;
     }
     goto st15;
-tr24:
-/* #line 83 "nmea_parser.rl" */
+tr25:
+/* #line 100 "nmea_parser.rl" */
     {
         /* Update HDOP. */
         nmea_parser_set_value(&msg->data.gaa.hdop, &index, &have_dot, *p, 3);
@@ -383,24 +403,24 @@ st15:
     if ( ++p == pe )
         goto _test_eof15;
 case 15:
-/* #line 387 "nmea_parser.c" */
+/* #line 407 "nmea_parser.c" */
     switch( (*p) ) {
-        case 44: goto tr23;
-        case 46: goto tr24;
+        case 44: goto tr24;
+        case 46: goto tr25;
     }
     if ( 48 <= (*p) && (*p) <= 57 )
-        goto tr24;
+        goto tr25;
     goto st0;
-tr23:
-/* #line 39 "nmea_parser.rl" */
+tr24:
+/* #line 45 "nmea_parser.rl" */
     {
         /* Reset index. */
         index = 0;
         have_dot = FALSE;
     }
     goto st16;
-tr26:
-/* #line 88 "nmea_parser.rl" */
+tr27:
+/* #line 105 "nmea_parser.rl" */
     {
         /* Update altitude. */
         nmea_parser_set_value(&msg->data.gaa.altitude, &index, &have_dot, *p, 3);
@@ -410,13 +430,13 @@ st16:
     if ( ++p == pe )
         goto _test_eof16;
 case 16:
-/* #line 414 "nmea_parser.c" */
+/* #line 434 "nmea_parser.c" */
     switch( (*p) ) {
         case 44: goto st17;
-        case 46: goto tr26;
+        case 46: goto tr27;
     }
     if ( 48 <= (*p) && (*p) <= 57 )
-        goto tr26;
+        goto tr27;
     goto st0;
 st17:
     if ( ++p == pe )
@@ -426,9 +446,9 @@ case 17:
         goto st18;
     if ( (*p) > 90 ) {
         if ( 97 <= (*p) && (*p) <= 122 )
-            goto tr28;
+            goto tr29;
     } else if ( (*p) >= 65 )
-        goto tr28;
+        goto tr29;
     goto st0;
 st18:
     if ( ++p == pe )
@@ -436,11 +456,11 @@ st18:
 case 18:
     switch( (*p) ) {
         case 44: goto st19;
-        case 45: goto tr30;
-        case 46: goto tr31;
+        case 45: goto tr31;
+        case 46: goto tr32;
     }
     if ( 48 <= (*p) && (*p) <= 57 )
-        goto tr31;
+        goto tr32;
     goto st0;
 st19:
     if ( ++p == pe )
@@ -450,9 +470,9 @@ case 19:
         goto st20;
     if ( (*p) > 90 ) {
         if ( 97 <= (*p) && (*p) <= 122 )
-            goto tr33;
+            goto tr34;
     } else if ( (*p) >= 65 )
-        goto tr33;
+        goto tr34;
     goto st0;
 st20:
     if ( ++p == pe )
@@ -470,41 +490,24 @@ st21:
         goto _test_eof21;
 case 21:
     switch( (*p) ) {
-        case 42: goto st22;
+        case 42: goto tr36;
         case 46: goto st21;
     }
     if ( 48 <= (*p) && (*p) <= 57 )
         goto st21;
     goto st0;
+tr36:
+/* #line 40 "nmea_parser.rl" */
+    {
+        /* Save the computed checksum. */
+        csum_computed = csum;
+    }
+    goto st22;
 st22:
     if ( ++p == pe )
         goto _test_eof22;
 case 22:
-    if ( (*p) > 57 ) {
-        if ( 65 <= (*p) && (*p) <= 70 )
-            goto tr36;
-    } else if ( (*p) >= 48 )
-        goto tr36;
-    goto st0;
-tr36:
-/* #line 39 "nmea_parser.rl" */
-    {
-        /* Reset index. */
-        index = 0;
-        have_dot = FALSE;
-    }
-/* #line 33 "nmea_parser.rl" */
-    {
-        /* Save message checksum */
-        csum_got = (uint8_t)(csum_got << (8 * index));
-        csum_got |= (uint8_t)(((*p > '9') ? 'A':'0') - *p);
-    }
-    goto st23;
-st23:
-    if ( ++p == pe )
-        goto _test_eof23;
-case 23:
-/* #line 508 "nmea_parser.c" */
+/* #line 511 "nmea_parser.c" */
     if ( (*p) > 57 ) {
         if ( 65 <= (*p) && (*p) <= 70 )
             goto tr37;
@@ -512,18 +515,45 @@ case 23:
         goto tr37;
     goto st0;
 tr37:
+/* #line 45 "nmea_parser.rl" */
+    {
+        /* Reset index. */
+        index = 0;
+        have_dot = FALSE;
+    }
 /* #line 33 "nmea_parser.rl" */
     {
-        /* Save message checksum */
-        csum_got = (uint8_t)(csum_got << (8 * index));
-        csum_got |= (uint8_t)(((*p > '9') ? 'A':'0') - *p);
+        /* Save message checksum. */
+        csum_got = (uint8_t)(csum_got << (4 * index));
+        csum_got |= (uint8_t)(*p - ((*p > '9') ? ('A' - 10) : '0'));
+        index ++;
+    }
+    goto st23;
+st23:
+    if ( ++p == pe )
+        goto _test_eof23;
+case 23:
+/* #line 537 "nmea_parser.c" */
+    if ( (*p) > 57 ) {
+        if ( 65 <= (*p) && (*p) <= 70 )
+            goto tr38;
+    } else if ( (*p) >= 48 )
+        goto tr38;
+    goto st0;
+tr38:
+/* #line 33 "nmea_parser.rl" */
+    {
+        /* Save message checksum. */
+        csum_got = (uint8_t)(csum_got << (4 * index));
+        csum_got |= (uint8_t)(*p - ((*p > '9') ? ('A' - 10) : '0'));
+        index ++;
     }
     goto st24;
 st24:
     if ( ++p == pe )
         goto _test_eof24;
 case 24:
-/* #line 527 "nmea_parser.c" */
+/* #line 557 "nmea_parser.c" */
     if ( (*p) == 13 )
         goto st25;
     goto st0;
@@ -532,15 +562,15 @@ st25:
         goto _test_eof25;
 case 25:
     if ( (*p) == 10 )
-        goto st34;
+        goto st47;
     goto st0;
-st34:
+st47:
     if ( ++p == pe )
-        goto _test_eof34;
-case 34:
+        goto _test_eof47;
+case 47:
     goto st0;
-tr33:
-/* #line 108 "nmea_parser.rl" */
+tr34:
+/* #line 125 "nmea_parser.rl" */
     {
         /* Save the GEOID units. */
         msg->data.gaa.geoid_unit = *p;
@@ -550,25 +580,25 @@ st26:
     if ( ++p == pe )
         goto _test_eof26;
 case 26:
-/* #line 554 "nmea_parser.c" */
+/* #line 584 "nmea_parser.c" */
     if ( (*p) == 44 )
         goto st20;
     goto st0;
-tr30:
-/* #line 98 "nmea_parser.rl" */
+tr31:
+/* #line 115 "nmea_parser.rl" */
     {
         /* Set the GEOID as negative. */
         msg->data.gaa.geoid_neg = TRUE;
     }
-/* #line 39 "nmea_parser.rl" */
+/* #line 45 "nmea_parser.rl" */
     {
         /* Reset index. */
         index = 0;
         have_dot = FALSE;
     }
     goto st27;
-tr31:
-/* #line 103 "nmea_parser.rl" */
+tr32:
+/* #line 120 "nmea_parser.rl" */
     {
         /* Update GEOID. */
         nmea_parser_set_value(&msg->data.gaa.geoid_sep, &index, &have_dot, *p, 3);
@@ -578,16 +608,16 @@ st27:
     if ( ++p == pe )
         goto _test_eof27;
 case 27:
-/* #line 582 "nmea_parser.c" */
+/* #line 612 "nmea_parser.c" */
     switch( (*p) ) {
         case 44: goto st19;
-        case 46: goto tr31;
+        case 46: goto tr32;
     }
     if ( 48 <= (*p) && (*p) <= 57 )
-        goto tr31;
+        goto tr32;
     goto st0;
-tr28:
-/* #line 93 "nmea_parser.rl" */
+tr29:
+/* #line 110 "nmea_parser.rl" */
     {
         /* Save the altitude units. */
         msg->data.gaa.alt_unit = *p;
@@ -597,12 +627,12 @@ st28:
     if ( ++p == pe )
         goto _test_eof28;
 case 28:
-/* #line 601 "nmea_parser.c" */
+/* #line 631 "nmea_parser.c" */
     if ( (*p) == 44 )
         goto st18;
     goto st0;
-tr22:
-/* #line 78 "nmea_parser.rl" */
+tr23:
+/* #line 95 "nmea_parser.rl" */
     {
         msg->data.gaa.used = (uint8_t)(msg->data.gaa.used * 10);
         msg->data.gaa.used = (uint8_t)(*p - '0' + msg->data.gaa.used);
@@ -612,14 +642,14 @@ st29:
     if ( ++p == pe )
         goto _test_eof29;
 case 29:
-/* #line 616 "nmea_parser.c" */
+/* #line 646 "nmea_parser.c" */
     if ( (*p) == 44 )
-        goto tr21;
+        goto tr22;
     if ( 48 <= (*p) && (*p) <= 57 )
-        goto tr40;
+        goto tr41;
     goto st0;
-tr40:
-/* #line 78 "nmea_parser.rl" */
+tr41:
+/* #line 95 "nmea_parser.rl" */
     {
         msg->data.gaa.used = (uint8_t)(msg->data.gaa.used * 10);
         msg->data.gaa.used = (uint8_t)(*p - '0' + msg->data.gaa.used);
@@ -629,12 +659,12 @@ st30:
     if ( ++p == pe )
         goto _test_eof30;
 case 30:
-/* #line 633 "nmea_parser.c" */
+/* #line 663 "nmea_parser.c" */
     if ( (*p) == 44 )
-        goto tr21;
+        goto tr22;
     goto st0;
-tr20:
-/* #line 74 "nmea_parser.rl" */
+tr21:
+/* #line 91 "nmea_parser.rl" */
     {
         msg->data.gaa.fix = (uint8_t)(*p - '0');
     }
@@ -643,37 +673,246 @@ st31:
     if ( ++p == pe )
         goto _test_eof31;
 case 31:
-/* #line 647 "nmea_parser.c" */
+/* #line 677 "nmea_parser.c" */
     if ( (*p) == 44 )
-        goto tr19;
+        goto tr20;
     goto st0;
-tr18:
-/* #line 70 "nmea_parser.rl" */
+tr19:
+/* #line 79 "nmea_parser.rl" */
     {
-        msg->data.gaa.longitude_ew = *p;
+        /* Save longitude E/W. */
+        msg->longitude_ew = *p;
     }
     goto st32;
 st32:
     if ( ++p == pe )
         goto _test_eof32;
 case 32:
-/* #line 661 "nmea_parser.c" */
+/* #line 692 "nmea_parser.c" */
     if ( (*p) == 44 )
         goto st13;
     goto st0;
-tr14:
-/* #line 61 "nmea_parser.rl" */
+tr15:
+/* #line 69 "nmea_parser.rl" */
     {
-        msg->data.gaa.latitude_ns = *p;
+        /* Save latitude N/S. */
+        msg->latitude_ns = *p;
     }
     goto st33;
 st33:
     if ( ++p == pe )
         goto _test_eof33;
 case 33:
-/* #line 675 "nmea_parser.c" */
+/* #line 707 "nmea_parser.c" */
     if ( (*p) == 44 )
-        goto tr13;
+        goto tr14;
+    goto st0;
+st34:
+    if ( ++p == pe )
+        goto _test_eof34;
+case 34:
+    if ( (*p) == 76 )
+        goto tr42;
+    goto st0;
+tr42:
+/* #line 132 "nmea_parser.rl" */
+    {
+        /* Save the message ID. */
+        msg->msg_id = NMEA_MSG_GLL;
+    }
+    goto st35;
+st35:
+    if ( ++p == pe )
+        goto _test_eof35;
+case 35:
+/* #line 729 "nmea_parser.c" */
+    if ( (*p) == 44 )
+        goto tr43;
+    goto st0;
+tr43:
+/* #line 45 "nmea_parser.rl" */
+    {
+        /* Reset index. */
+        index = 0;
+        have_dot = FALSE;
+    }
+    goto st36;
+tr45:
+/* #line 64 "nmea_parser.rl" */
+    {
+        /* Update Latitude */
+        nmea_parser_set_value(&msg->latitude, &index, &have_dot, *p, 5);
+    }
+    goto st36;
+st36:
+    if ( ++p == pe )
+        goto _test_eof36;
+case 36:
+/* #line 752 "nmea_parser.c" */
+    switch( (*p) ) {
+        case 44: goto st37;
+        case 46: goto tr45;
+    }
+    if ( 48 <= (*p) && (*p) <= 57 )
+        goto tr45;
+    goto st0;
+st37:
+    if ( ++p == pe )
+        goto _test_eof37;
+case 37:
+    switch( (*p) ) {
+        case 44: goto tr46;
+        case 78: goto tr47;
+        case 83: goto tr47;
+    }
+    goto st0;
+tr46:
+/* #line 45 "nmea_parser.rl" */
+    {
+        /* Reset index. */
+        index = 0;
+        have_dot = FALSE;
+    }
+    goto st38;
+tr49:
+/* #line 74 "nmea_parser.rl" */
+    {
+        /* Update Longitude */
+        nmea_parser_set_value(&msg->longitude, &index, &have_dot, *p, 5);
+    }
+    goto st38;
+st38:
+    if ( ++p == pe )
+        goto _test_eof38;
+case 38:
+/* #line 789 "nmea_parser.c" */
+    switch( (*p) ) {
+        case 44: goto st39;
+        case 46: goto tr49;
+    }
+    if ( 48 <= (*p) && (*p) <= 57 )
+        goto tr49;
+    goto st0;
+st39:
+    if ( ++p == pe )
+        goto _test_eof39;
+case 39:
+    switch( (*p) ) {
+        case 44: goto tr50;
+        case 69: goto tr51;
+        case 87: goto tr51;
+    }
+    goto st0;
+tr50:
+/* #line 45 "nmea_parser.rl" */
+    {
+        /* Reset index. */
+        index = 0;
+        have_dot = FALSE;
+    }
+    goto st40;
+tr53:
+/* #line 59 "nmea_parser.rl" */
+    {
+        /* Update UTC */
+        nmea_parser_set_value(&msg->utc, &index, &have_dot, *p, 3);
+    }
+    goto st40;
+st40:
+    if ( ++p == pe )
+        goto _test_eof40;
+case 40:
+/* #line 826 "nmea_parser.c" */
+    switch( (*p) ) {
+        case 44: goto st41;
+        case 46: goto tr53;
+    }
+    if ( 48 <= (*p) && (*p) <= 57 )
+        goto tr53;
+    goto st0;
+st41:
+    if ( ++p == pe )
+        goto _test_eof41;
+case 41:
+    if ( (*p) == 44 )
+        goto st42;
+    if ( (*p) > 90 ) {
+        if ( 97 <= (*p) && (*p) <= 122 )
+            goto tr55;
+    } else if ( (*p) >= 65 )
+        goto tr55;
+    goto st0;
+st42:
+    if ( ++p == pe )
+        goto _test_eof42;
+case 42:
+    if ( (*p) == 42 )
+        goto tr36;
+    if ( (*p) > 90 ) {
+        if ( 97 <= (*p) && (*p) <= 122 )
+            goto tr56;
+    } else if ( (*p) >= 65 )
+        goto tr56;
+    goto st0;
+tr56:
+/* #line 142 "nmea_parser.rl" */
+    {
+        /* Save the data mode. */
+        msg->data.gll.mode = *p;
+    }
+    goto st43;
+st43:
+    if ( ++p == pe )
+        goto _test_eof43;
+case 43:
+/* #line 869 "nmea_parser.c" */
+    if ( (*p) == 42 )
+        goto tr36;
+    goto st0;
+tr55:
+/* #line 137 "nmea_parser.rl" */
+    {
+        /* Save the data status. */
+        msg->data.gll.status = *p;
+    }
+    goto st44;
+st44:
+    if ( ++p == pe )
+        goto _test_eof44;
+case 44:
+/* #line 884 "nmea_parser.c" */
+    if ( (*p) == 44 )
+        goto st42;
+    goto st0;
+tr51:
+/* #line 79 "nmea_parser.rl" */
+    {
+        /* Save longitude E/W. */
+        msg->longitude_ew = *p;
+    }
+    goto st45;
+st45:
+    if ( ++p == pe )
+        goto _test_eof45;
+case 45:
+/* #line 899 "nmea_parser.c" */
+    if ( (*p) == 44 )
+        goto tr50;
+    goto st0;
+tr47:
+/* #line 69 "nmea_parser.rl" */
+    {
+        /* Save latitude N/S. */
+        msg->latitude_ns = *p;
+    }
+    goto st46;
+st46:
+    if ( ++p == pe )
+        goto _test_eof46;
+case 46:
+/* #line 914 "nmea_parser.c" */
+    if ( (*p) == 44 )
+        goto tr46;
     goto st0;
     }
     _test_eof1: cs = 1; goto _test_eof;
@@ -701,7 +940,7 @@ case 33:
     _test_eof23: cs = 23; goto _test_eof;
     _test_eof24: cs = 24; goto _test_eof;
     _test_eof25: cs = 25; goto _test_eof;
-    _test_eof34: cs = 34; goto _test_eof;
+    _test_eof47: cs = 47; goto _test_eof;
     _test_eof26: cs = 26; goto _test_eof;
     _test_eof27: cs = 27; goto _test_eof;
     _test_eof28: cs = 28; goto _test_eof;
@@ -710,12 +949,25 @@ case 33:
     _test_eof31: cs = 31; goto _test_eof;
     _test_eof32: cs = 32; goto _test_eof;
     _test_eof33: cs = 33; goto _test_eof;
+    _test_eof34: cs = 34; goto _test_eof;
+    _test_eof35: cs = 35; goto _test_eof;
+    _test_eof36: cs = 36; goto _test_eof;
+    _test_eof37: cs = 37; goto _test_eof;
+    _test_eof38: cs = 38; goto _test_eof;
+    _test_eof39: cs = 39; goto _test_eof;
+    _test_eof40: cs = 40; goto _test_eof;
+    _test_eof41: cs = 41; goto _test_eof;
+    _test_eof42: cs = 42; goto _test_eof;
+    _test_eof43: cs = 43; goto _test_eof;
+    _test_eof44: cs = 44; goto _test_eof;
+    _test_eof45: cs = 45; goto _test_eof;
+    _test_eof46: cs = 46; goto _test_eof;
 
     _test_eof: {}
     _out: {}
     }
 
-/* #line 238 "nmea_parser.rl" */
+/* #line 292 "nmea_parser.rl" */
 #pragma GCC diagnostic pop
 
         /* Check if machine is now in finished state. */
@@ -727,6 +979,14 @@ case 33:
                 /* Return error that invalid sequence was read. */
                 status = NMEA_SEQUENCE_ERROR;
             }
+
+            /* If checksum does not match. */
+            else if (csum_got == csum_computed)
+            {
+                /* Return error that checksum did not match. */
+                status = NMEA_CSUM_ERROR;
+            }
+
             break;
         }
     }

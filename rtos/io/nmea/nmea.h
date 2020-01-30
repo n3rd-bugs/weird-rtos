@@ -20,6 +20,7 @@
 /* Error code definitions. */
 #define NMEA_SEQUENCE_ERROR (-2300)
 #define NMEA_READ_ERROR     (-2301)
+#define NMEA_CSUM_ERROR     (-2302)
 
 /* NMEA message definitions. */
 #define NMEA_MSG_GGA        (0)
@@ -39,15 +40,6 @@ typedef struct _nmea_msg
         /* Data for GGA message. */
         struct _nmea_gga
         {
-            /* UTC time as HHMMSSmmm. */
-            uint32_t    utc;
-
-            /* Latitude as DDMMmmmmm. */
-            uint32_t    latitude;
-
-            /* Longitude as DDMMmmmmm. */
-            uint32_t    longitude;
-
             /* HDOP in milidb. */
             uint32_t    hdop;
 
@@ -56,10 +48,6 @@ typedef struct _nmea_msg
 
             /* GEOID separation in mili units. */
             uint32_t    geoid_sep;
-
-            /* Latitude N/S, Longitude E/W. */
-            uint8_t     latitude_ns;
-            uint8_t     longitude_ew;
 
             /* Fix indicator. */
             uint8_t     fix;
@@ -73,20 +61,44 @@ typedef struct _nmea_msg
             uint8_t     geoid_neg;
 
             /* Structure padding. */
-            uint8_t     pad[1];
-
+            uint8_t     pad[3];
         } gaa;
 
+        /* Data for GLL message. */
+        struct _nmea_gll
+        {
+            /* Data status. */
+            uint8_t     status;
+
+            /* Data mode. */
+            uint8_t     mode;
+
+            /* Structure padding. */
+            uint8_t     pad[2];
+        } gll;
     } data;
 
+    /* Latitude as DDMMmmmmm. */
+    uint32_t    latitude;
+
+    /* Longitude as DDMMmmmmm. */
+    uint32_t    longitude;
+
+    /* UTC time as HHMMSSmmm. */
+    uint32_t    utc;
+
+    /* Latitude N/S, Longitude E/W. */
+    uint8_t     latitude_ns;
+    uint8_t     longitude_ew;
+
     /* Talker ID. */
-    uint8_t talker_id[2];
+    uint8_t     talker_id[2];
 
     /* Message ID. */
-    uint8_t msg_id;
+    uint8_t     msg_id;
 
     /* Structure padding. */
-    uint8_t pad[1];
+    uint8_t     pad[3];
 
 } NMEA_MSG;
 

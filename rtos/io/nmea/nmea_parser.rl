@@ -31,9 +31,15 @@
     }
     action csum_set
     {
-        /* Save message checksum */
-        csum_got = (uint8_t)(csum_got << (8 * index));
-        csum_got |= (uint8_t)(((*p > '9') ? 'A':'0') - *p);
+        /* Save message checksum. */
+        csum_got = (uint8_t)(csum_got << (4 * index));
+        csum_got |= (uint8_t)(*p - ((*p > '9') ? ('A' - 10) : '0'));
+        index ++;
+    }
+    action csum_computed
+    {
+        /* Save the computed checksum. */
+        csum_computed = csum;
     }
     action index_reset
     {
@@ -47,28 +53,39 @@
         msg->talker_id[index != 0] = *p;
         index++;
     }
+    
+    # Common fields.
     action utc_set
     {
         /* Update UTC */
-        nmea_parser_set_value(&msg->data.gaa.utc, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&msg->utc, &index, &have_dot, *p, 3);
     }
     action lat_set
     {
         /* Update Latitude */
-        nmea_parser_set_value(&msg->data.gaa.latitude, &index, &have_dot, *p, 5);
+        nmea_parser_set_value(&msg->latitude, &index, &have_dot, *p, 5);
     }
     action lat_ns_set
     {
-        msg->data.gaa.latitude_ns = *p;
+        /* Save latitude N/S. */
+        msg->latitude_ns = *p;
     }
     action lon_set
     {
         /* Update Longitude */
-        nmea_parser_set_value(&msg->data.gaa.longitude, &index, &have_dot, *p, 5);
+        nmea_parser_set_value(&msg->longitude, &index, &have_dot, *p, 5);
     }
     action lon_ew_set
     {
-        msg->data.gaa.longitude_ew = *p;
+        /* Save longitude E/W. */
+        msg->longitude_ew = *p;
+    }
+
+    # GGA definitions.
+    action got_gga
+    {
+        /* Save the message ID. */
+        msg->msg_id = NMEA_MSG_GGA;
     }
     action fix_set
     {
@@ -110,6 +127,23 @@
         msg->data.gaa.geoid_unit = *p;
     }
 
+    # GLL definitions.
+    action got_gll
+    {
+        /* Save the message ID. */
+        msg->msg_id = NMEA_MSG_GLL;
+    }
+    action status_set
+    {
+        /* Save the data status. */
+        msg->data.gll.status = *p;
+    }
+    action mode_set
+    {
+        /* Save the data mode. */
+        msg->data.gll.mode = *p;
+    }
+
     # Start of a message.
     start = (alnum|[,.*\r\n])* '$'{1} @csum_reset;
 
@@ -117,7 +151,7 @@
     talker = ((upper)@talker_set){2};
 
     # Match GGA message.
-    gga = 'G''G''A'
+    gga = ('G''G''A')@got_gga
           ','@index_reset(((digit|[.])@utc_set)+){,1}       # UTC
           ','@index_reset(((digit|[.])@lat_set)+){,1}       # Latitude
           ','([NS]@lat_ns_set){,1}                          # N/S
@@ -134,8 +168,18 @@
           ','((digit|[.])+){,1}                             # Age of Diff. Corr.
           ','((digit|[.])+){,1};                            # Diff. Ref. Station ID
 
+    # Match GLL message.
+    gll = ('G''L''L')@got_gll
+          ','@index_reset(((digit|[.])@lat_set)+){,1}       # Latitude
+          ','([NS]@lat_ns_set){,1}                          # N/S
+          ','@index_reset(((digit|[.])@lon_set)+){,1}       # Longitude
+          ',' ([EW]@lon_ew_set){,1}                         # E/W
+          ','@index_reset(((digit|[.])@utc_set)+){,1}       # UTC
+          ','(alpha@status_set){,1}                         # Data status
+          ','(alpha@mode_set){,1};                          # Data mode
+
     # Machine entry.
-    main := start@index_reset talker gga '*'((digit|/[A-F]/)@csum_set){2}>index_reset'\r''\n';
+    main := start@index_reset talker (gga|gll) '*'@csum_computed ((digit|/[A-F]/)@csum_set){2}>index_reset'\r''\n';
 }%%
 
 /* Machine definitions. */
@@ -145,15 +189,22 @@
  * nmea_parse_message
  * @nmea: NMEA instance.
  * @msg: Parsed message will be returned here.
+ * @return: Success will be returned if a message was successfully parsed,
+ *  NMEA_READ_ERROR will be returned if an error occurred while reading from
+ *      file descriptor,
+ *  NMEA_SEQUENCE_ERROR will be returned if an invalid sequence was detected,
+ *  NMEA_CSUM_ERROR will be returned if checksum was not valid.
  * This function will return a parsed reading from a NMEA bus/device.
  */
 int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
 {
     int32_t status = SUCCESS;
-    uint8_t chr[2];
-    uint8_t *p = &chr[0], *pe = &chr[1];
-    uint8_t index, have_dot;
-    uint8_t csum, csum_got = 0;
+    uint8_t chr[2], index, have_dot;
+    uint8_t *p = &chr[0];
+    uint8_t *pe = &chr[1];
+    uint8_t csum = 0;
+    uint8_t csum_got = 0;
+    uint8_t csum_computed = 0;
     char cs = nmea_start;
     FS *fs = (FS *)nmea->fd;
     FS_BUFFER_LIST *buffer = NULL;
@@ -228,7 +279,10 @@ int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
         p = chr;
 
         /* Update the checksum. */
-        csum ^= *p;
+        if (*p != '*')
+        {
+            csum ^= *p;
+        }
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough="
@@ -246,6 +300,14 @@ int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
                 /* Return error that invalid sequence was read. */
                 status = NMEA_SEQUENCE_ERROR;
             }
+
+            /* If checksum does not match. */
+            else if (csum_got == csum_computed)
+            {
+                /* Return error that checksum did not match. */
+                status = NMEA_CSUM_ERROR;
+            }
+
             break;
         }
     }
