@@ -53,7 +53,7 @@
         msg->talker_id[index != 0] = *p;
         index++;
     }
-    
+
     # Common fields.
     action utc_set
     {
