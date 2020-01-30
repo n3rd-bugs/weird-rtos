@@ -115,7 +115,7 @@
     action got_gga
     {
         /* Save the message ID. */
-        msg->msg_id = NMEA_MSG_GGA;
+        msg->id = NMEA_MSG_GGA;
     }
     action fix_set
     {
@@ -161,35 +161,35 @@
     action got_gll
     {
         /* Save the message ID. */
-        msg->msg_id = NMEA_MSG_GLL;
+        msg->id = NMEA_MSG_GLL;
     }
 
     # RMC definitions.
     action got_rmc
     {
         /* Save the message ID. */
-        msg->msg_id = NMEA_MSG_RMC;
+        msg->id = NMEA_MSG_RMC;
     }
 
     # VTG definitions.
     action got_vtg
     {
         /* Save the message ID. */
-        msg->msg_id = NMEA_MSG_VTG;
+        msg->id = NMEA_MSG_VTG;
     }
 
     # GSA definitions.
     action got_gsa
     {
         /* Save the message ID. */
-        msg->msg_id = NMEA_MSG_GSA;
+        msg->id = NMEA_MSG_GSA;
     }
 
     # GSV definitions.
     action got_gsv
     {
         /* Save the message ID. */
-        msg->msg_id = NMEA_MSG_GSV;
+        msg->id = NMEA_MSG_GSV;
     }
 
     # Start of a message.
@@ -385,14 +385,34 @@ int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
             }
 
             /* If checksum does not match. */
-            else if (csum_got == csum_computed)
+            else if (csum_got != csum_computed)
             {
                 /* Return error that checksum did not match. */
                 status = NMEA_CSUM_ERROR;
             }
+            
+            /* Everything is okay. */
+            else
+            {
+                /* Return success. */
+                status = SUCCESS;
+            }
 
             break;
         }
+    }
+
+    /* If we allocated a buffer. */
+    if (buffer != NULL)
+    {
+        /* Lock the file descriptor. */
+        fd_get_lock(nmea->fd);
+
+        /* Free the last buffer. */
+        fs_buffer_add(nmea->fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+
+        /* Release file descriptor lock. */
+        fd_release_lock(nmea->fd);
     }
 
     /* Return status to the caller. */

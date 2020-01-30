@@ -94,7 +94,7 @@ typedef struct _nmea_msg
     uint8_t     talker_id[2];
 
     /* Message ID. */
-    uint8_t     msg_id;
+    uint8_t     id;
 
     /* Data status. */
     uint8_t     status;
@@ -116,6 +116,7 @@ typedef struct _nmea
 
 /* Function prototypes. */
 int32_t nmea_parse_message(NMEA *, NMEA_MSG *);
+void nmea_ublox_set_msg_rate(NMEA *, uint8_t *, uint8_t);
 void nmea_parser_set_value(uint32_t *, uint8_t *, uint8_t *, uint8_t, uint8_t);
 
 #endif /* CONFIG_NMEA */
