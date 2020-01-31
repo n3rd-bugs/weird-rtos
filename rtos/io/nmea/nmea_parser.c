@@ -215,73 +215,26 @@ int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
     uint8_t csum_got = 0;
     uint8_t csum_computed = 0;
     char cs = nmea_start;
-    FS *fs = (FS *)nmea->fd;
-    FS_BUFFER_LIST *buffer = NULL;
 
     /* Remove some compiler warning. */
     UNUSED_PARAM(nmea_en_main);
 
     for (;;)
     {
-        /* If this is a buffer file descriptor. */
-        if (fs->flags & FS_BUFFERED)
+        /* Read a byte from the file descriptor. */
+        status = fs_gets(nmea->fd, chr, 1);
+
+        /* If we did not read expected number of bytes. */
+        if ((status > 0) && (status != 1))
         {
-            /* If we don't have any data to process. */
-            if ((buffer == NULL) || (buffer->total_length == 0))
-            {
-                /* If we have a last buffer. */
-                if (buffer != NULL)
-                {
-                    /* Lock the file descriptor. */
-                    fd_get_lock(nmea->fd);
-
-                    /* Free the last buffer. */
-                    fs_buffer_add(nmea->fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
-
-                    /* Release file descriptor lock. */
-                    fd_release_lock(nmea->fd);
-                }
-
-                /* Read a byte from the stream. */
-                status = fs_read(nmea->fd, (void *)&buffer, sizeof(buffer));
-            }
-
-            /* If we do have a valid buffer. */
-            if ((status == sizeof(buffer)) && (buffer != NULL) && (buffer->total_length > 0))
-            {
-                /* Lock the file descriptor. */
-                fd_get_lock(nmea->fd);
-
-                /* Pull a byte from the buffer. */
-                (void)fs_buffer_list_pull(buffer, chr, 1, FS_BUFFER_HEAD);
-
-                /* Release file descriptor lock. */
-                fd_release_lock(nmea->fd);
-            }
-            else
-            {
-                /* If we did not read expected data. */
-                if (status >= 0)
-                {
-                    /* Return error to the caller. */
-                    status = NMEA_READ_ERROR;
-                }
-
-                break;
-            }
+            /* Return error to the caller. */
+            status = NMEA_READ_ERROR;
         }
-        else
+
+        /* If we did not read expected data. */
+        if (status != 1)
         {
-            /* Read a byte from the stream. */
-            status = fs_read(nmea->fd, chr, 1);
-
-            if (status != 1)
-            {
-                /* Return error to the caller. */
-                status = NMEA_READ_ERROR;
-
-                break;
-            }
+            break;
         }
 
         /* Reset the read pointer. */
@@ -298,7 +251,7 @@ int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
         
-/* #line 302 "nmea_parser.c" */
+/* #line 255 "nmea_parser.c" */
     {
     int _klen;
     const char *_keys;
@@ -605,7 +558,7 @@ _match:
         have_dot = FALSE;
     }
     break;
-/* #line 609 "nmea_parser.c" */
+/* #line 562 "nmea_parser.c" */
     }
 
 _again:
@@ -617,7 +570,7 @@ _again:
     _out: {}
     }
 
-/* #line 375 "nmea_parser.rl" */
+/* #line 328 "nmea_parser.rl" */
 #pragma GCC diagnostic pop
 
         /* Check if machine is now in finished state. */
@@ -636,7 +589,7 @@ _again:
                 /* Return error that checksum did not match. */
                 status = NMEA_CSUM_ERROR;
             }
-            
+
             /* Everything is okay. */
             else
             {
@@ -646,19 +599,6 @@ _again:
 
             break;
         }
-    }
-
-    /* If we allocated a buffer. */
-    if (buffer != NULL)
-    {
-        /* Lock the file descriptor. */
-        fd_get_lock(nmea->fd);
-
-        /* Free the last buffer. */
-        fs_buffer_add(nmea->fd, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
-
-        /* Release file descriptor lock. */
-        fd_release_lock(nmea->fd);
     }
 
     /* Return status to the caller. */

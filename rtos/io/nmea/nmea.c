@@ -31,6 +31,9 @@ void nmea_ublox_set_msg_rate(NMEA *nmea, uint8_t *msg, uint8_t rate)
     uint8_t csum_tx = 0^'P'^'U'^'B'^'X'^','^'4'^'0'^','^','^','^'0'^','^'0'^','^'0'^','^'0'^','^'0';
     uint8_t buffer[5];
 
+    /* Flush any RX data on this descriptor. */
+    fs_flush_rx(nmea->fd);
+
     /* Send start of the message. */
     fs_puts(nmea->fd, (const uint8_t *)"$PUBX,40,", -1);
 
