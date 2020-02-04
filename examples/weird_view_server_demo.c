@@ -48,7 +48,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 {
         /* Switch plugin. */
         {
-                .id         = 0x01,
+                .id         = 0x1,
                 .name       = plgn_name_1,
                 .data       = (void *)&weird_view_demo_switch_data,
                 .request    = (void *)&weird_view_demo_switch_req,
@@ -57,7 +57,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 
         /* Analog plugin. */
         {
-                .id         = 0x02,
+                .id         = 0x2,
                 .name       = plgn_name_2,
                 .data       = (void *)&weird_view_demo_analog_data,
                 .request    = NULL,
@@ -66,7 +66,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 
         /* Analog plugin. */
         {
-                .id         = 0x03,
+                .id         = 0x3,
                 .name       = plgn_name_3,
                 .data       = (void *)&weird_view_demo_analog_data,
                 .request    = NULL,
@@ -75,7 +75,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 
         /* ADC sample plugin. */
         {
-                .id         = 0x04,
+                .id         = 0x4,
                 .name       = plgn_name_4,
                 .data       = (void *)&weird_view_demo_adc_sample,
                 .request    = NULL,
@@ -84,7 +84,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 
         /* Task statistics plugin. */
         {
-                .id         = 0x05,
+                .id         = 0x5,
                 .name       = plgn_name_5,
                 .data       = (void *)&weird_view_demo_task_stats,
                 .request    = NULL,
@@ -219,7 +219,7 @@ int32_t weird_view_demo_switch_data(uint16_t id, uint8_t *state)
 
 #if (TARGET_PLATFORM == PLAT_STM32F407VGT6)
     /* If switch is active. */
-    if (GPIOA->IDR & 0x01)
+    if (GPIOA->IDR & 0x1)
     {
         /* Switch is on. */
         *state = TRUE;
@@ -301,12 +301,12 @@ int32_t weird_view_demo_analog_data(uint16_t id, uint32_t *value, uint32_t *valu
 
     switch (id)
     {
-    case 0x02:
+    case 0x2:
         *value = (vavg[0] * 256);
         *value_div = ((uint32_t)vsamples[0] * 102400);
         break;
 
-    case 0x03:
+    case 0x3:
         *value = (vavg[1] * 256);
         *value_div = ((uint32_t)vsamples[1] * 102400);
         break;
@@ -512,14 +512,14 @@ int main(void)
 
 #if (TARGET_PLATFORM == PLAT_STM32F407VGT6)
     /* Enable GPIOA and GPIOD clock. */
-    RCC->AHB1ENR |= 0x00000009;
+    RCC->AHB1ENR |= 0x9;
 
     /* Configure GPIO mode input for GPIOA.0. */
     GPIOA->MODER &= ~((GPIO_MODER_MODER0 << (0 * 2)));
 
     /* Configure GPIO mode output for GPIOD.12. */
     GPIOD->MODER &= ~((GPIO_MODER_MODER0 << (12 * 2)));
-    GPIOD->MODER |= (0x01 << (12 * 2));
+    GPIOD->MODER |= (0x1 << (12 * 2));
 
     /* Configure output type (PP). */
     GPIOA->OTYPER &= (uint32_t)(~((GPIO_OTYPER_OT_0 << (0 * 2))));
@@ -529,19 +529,19 @@ int main(void)
 
     /* Enable pull-down on GPIOA.0. */
     GPIOA->PUPDR &= (uint32_t)(~(((GPIO_PUPDR_PUPDR0 << (0 * 2)))));
-    GPIOA->PUPDR |= (0x02 << (0 * 2));
+    GPIOA->PUPDR |= (0x2 << (0 * 2));
 
     /* Enable pull-up on GPIOD.12. */
     GPIOD->PUPDR &= (uint32_t)(~(((GPIO_PUPDR_PUPDR0 << (12 * 2)))));
-    GPIOD->PUPDR |= (0x01 << (12 * 2));
+    GPIOD->PUPDR |= (0x1 << (12 * 2));
 
     /* Configure GPIO speed (100MHz). */
     GPIOA->OSPEEDR &= (uint32_t)(~((GPIO_OSPEEDER_OSPEEDR0 << (0 * 2))));
-    GPIOA->OSPEEDR |= ((0x03 << (0 * 2)));
+    GPIOA->OSPEEDR |= ((0x3 << (0 * 2)));
 
     /* Configure GPIO speed (50MHz). */
     GPIOD->OSPEEDR &= (uint32_t)(~((GPIO_OSPEEDER_OSPEEDR0 << (12 * 2))));
-    GPIOD->OSPEEDR |= ((0x02 << (12 * 2)));
+    GPIOD->OSPEEDR |= ((0x2 << (12 * 2)));
 
     /* By default Turn ON the LED. */
     GPIOD->ODR |= (1 << 12);

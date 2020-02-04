@@ -28,16 +28,16 @@ void adc_stm32_init(void)
     RCC->APB2RSTR &= (uint32_t)~(RCC_APB2Periph_ADC1);
 
     /* Select ADC pre-scaler (72 / 6 = 12MHz). */
-    RCC->CFGR &= (uint32_t)~(0x0000C000);
+    RCC->CFGR &= (uint32_t)~(0xC000);
     RCC->CFGR |= RCC_PCLK2_Div6;
 
     /* Enable clock for ADC1. */
     RCC->APB2ENR |= RCC_APB2Periph_ADC1;
 
     /* Initialize ADC. */
-    ADC1->CR1 = 0x00;
+    ADC1->CR1 = 0x0;
     ADC1->CR2 = ADC_ExternalTrigConv_None;
-    ADC1->SQR1 = 0x00;
+    ADC1->SQR1 = 0x0;
 
     /* Enable ADC for calibration. */
     ADC1->CR2 |= ADC_CR2_ADON;
@@ -82,8 +82,8 @@ void adc_stm32_channel_select(uint32_t channel)
         RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 
         /* Configure GPIO mode AIN for PB0. */
-        GPIOB->CRL &= (uint32_t)~(0x0F << (0 << 2));
-        GPIOB->CRL |= (((GPIO_Mode_AIN) & 0x0F) << (0 << 2));
+        GPIOB->CRL &= (uint32_t)~(0xF << (0 << 2));
+        GPIOB->CRL |= (((GPIO_Mode_AIN) & 0xF) << (0 << 2));
 
         /* Configure ADC sample time. */
         ADC1->SMPR2 &= (uint32_t)~(0x7 << (3 * ADC_STM32_CHN_PB0));
@@ -98,8 +98,8 @@ void adc_stm32_channel_select(uint32_t channel)
         RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 
         /* Configure GPIO mode AIN for PB1. */
-        GPIOB->CRL &= (uint32_t)(~(0x0F << (1<< 2)));
-        GPIOB->CRL |= (((GPIO_Mode_AIN) & 0x0F) << (1 << 2));
+        GPIOB->CRL &= (uint32_t)(~(0xF << (1<< 2)));
+        GPIOB->CRL |= (((GPIO_Mode_AIN) & 0xF) << (1 << 2));
 
         /* Configure ADC sample time. */
         ADC1->SMPR2 &= (uint32_t)~(0x7 << (3 * ADC_STM32_CHN_PB1));

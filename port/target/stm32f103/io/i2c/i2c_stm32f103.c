@@ -45,8 +45,8 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
         RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 
         /* Set alternate function for PB6 (SCL) and PB7 (SDA). */
-        GPIOB->CRL &= (uint32_t)(~((0x0F << (6 << 2)) | (0x0F << (7 << 2))));
-        GPIOB->CRL |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_OD) & 0x0F) << (6 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_OD) & 0x0F) << (7 << 2)));
+        GPIOB->CRL &= (uint32_t)(~((0xF << (6 << 2)) | (0xF << (7 << 2))));
+        GPIOB->CRL |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_OD) & 0xF) << (6 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_OD) & 0xF) << (7 << 2)));
 
         /* Reset I2C1. */
         RCC->APB1RSTR |= RCC_APB1Periph_I2C1;
@@ -121,7 +121,7 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
     i2c_stm->i2c_reg->TRISE = (PCLK1_FREQ / 1000000) + 1;
 
     /* Enable 7-bit addressing. */
-    i2c_stm->i2c_reg->OAR1 = 0x00;
+    i2c_stm->i2c_reg->OAR1 = 0x0;
 
     /* Enable device. */
     i2c_stm->i2c_reg->CR1 |= I2C_CR1_PE;
@@ -139,7 +139,7 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
         /* This is I2C1. */
         case 1:
             /* Set SCL/SDA as output, open-drain with 50Mhz. */
-            GPIOB->CRL &= (uint32_t)(~((0x0F << (6 << 2)) | (0x0F << (7 << 2))));
+            GPIOB->CRL &= (uint32_t)(~((0xF << (6 << 2)) | (0xF << (7 << 2))));
             GPIOB->CRL |= ((0x7 << (6 * 4)) | (0x7 << (7 * 4)));
 
             /* Toggle both pins. */
@@ -150,7 +150,7 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
             GPIOB->ODR |= ((1 << 6) | (1 << 7));
 
             /* Configure back to alternate function. */
-            GPIOB->CRL |= (uint32_t)((0x0F << (6 << 2)) | (0x0F << (7 << 2)));
+            GPIOB->CRL |= (uint32_t)((0xF << (6 << 2)) | (0xF << (7 << 2)));
 
             break;
 
@@ -178,7 +178,7 @@ void i2c_stm32f103_init(I2C_DEVICE *device)
         i2c_stm->i2c_reg->TRISE = (PCLK1_FREQ / 1000000) + 1;
 
         /* Enable 7-bit addressing. */
-        i2c_stm->i2c_reg->OAR1 = 0x00;
+        i2c_stm->i2c_reg->OAR1 = 0x0;
 
         /* Enable device. */
         i2c_stm->i2c_reg->CR1 |= I2C_CR1_PE;
@@ -870,16 +870,16 @@ static void i2c1_stm32f103_enable_interrupt(void *data)
     /* This is I2C1 device. */
     case 1:
         /* Enable the I2C1 event and error channels. */
-        NVIC->ISER[I2C1_EV_IRQn >> 0x05] = (uint32_t)0x01 << (I2C1_EV_IRQn & (uint8_t)0x1F);
-        NVIC->ISER[I2C1_ER_IRQn >> 0x05] = (uint32_t)0x01 << (I2C1_ER_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[I2C1_EV_IRQn >> 0x5] = (uint32_t)0x1 << (I2C1_EV_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[I2C1_ER_IRQn >> 0x5] = (uint32_t)0x1 << (I2C1_ER_IRQn & (uint8_t)0x1F);
 
         break;
 
     /* This is I2C2 device. */
     case 2:
         /* Enable the I2C2 event and error channels. */
-        NVIC->ISER[I2C2_EV_IRQn >> 0x05] = (uint32_t)0x01 << (I2C2_EV_IRQn & (uint8_t)0x1F);
-        NVIC->ISER[I2C2_ER_IRQn >> 0x05] = (uint32_t)0x01 << (I2C2_ER_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[I2C2_EV_IRQn >> 0x5] = (uint32_t)0x1 << (I2C2_EV_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[I2C2_ER_IRQn >> 0x5] = (uint32_t)0x1 << (I2C2_ER_IRQn & (uint8_t)0x1F);
 
         break;
 
@@ -907,16 +907,16 @@ static void i2c2_stm32f103_disable_interrupt(void *data)
     /* This is I2C1 device. */
     case 1:
         /* Disable the I2C1 event and error channels. */
-        NVIC->ICER[I2C1_EV_IRQn >> 0x05] = (uint32_t)0x01 << (I2C1_EV_IRQn & (uint8_t)0x1F);
-        NVIC->ICER[I2C1_ER_IRQn >> 0x05] = (uint32_t)0x01 << (I2C1_ER_IRQn & (uint8_t)0x1F);
+        NVIC->ICER[I2C1_EV_IRQn >> 0x5] = (uint32_t)0x1 << (I2C1_EV_IRQn & (uint8_t)0x1F);
+        NVIC->ICER[I2C1_ER_IRQn >> 0x5] = (uint32_t)0x1 << (I2C1_ER_IRQn & (uint8_t)0x1F);
 
         break;
 
     /* This is I2C2 device. */
     case 2:
         /* Disable the I2C2 event and error channels. */
-        NVIC->ICER[I2C2_EV_IRQn >> 0x05] = (uint32_t)0x01 << (I2C2_EV_IRQn & (uint8_t)0x1F);
-        NVIC->ICER[I2C2_ER_IRQn >> 0x05] = (uint32_t)0x01 << (I2C2_ER_IRQn & (uint8_t)0x1F);
+        NVIC->ICER[I2C2_EV_IRQn >> 0x5] = (uint32_t)0x1 << (I2C2_EV_IRQn & (uint8_t)0x1F);
+        NVIC->ICER[I2C2_ER_IRQn >> 0x5] = (uint32_t)0x1 << (I2C2_ER_IRQn & (uint8_t)0x1F);
 
         break;
 

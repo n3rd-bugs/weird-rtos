@@ -34,16 +34,16 @@
 #define TCP_HRD_URG_OFFSET          (18)
 
 /* TCP flag definitions. */
-#define TCP_HDR_FLAG_MSK            (0x0FFF)
-#define TCP_HDR_FLAG_FIN            (0x0001)
-#define TCP_HDR_FLAG_SYN            (0x0002)
-#define TCP_HDR_FLAG_RST            (0x0004)
-#define TCP_HDR_FLAG_PSH            (0x0008)
-#define TCP_HDR_FLAG_ACK            (0x0010)
-#define TCP_HDR_FLAG_URG            (0x0020)
-#define TCP_HDR_FLAG_ECE            (0x0040)
-#define TCP_HDR_FLAG_CWR            (0x0080)
-#define TCP_HDR_FLAG_NS             (0x0100)
+#define TCP_HDR_FLAG_MSK            (0xFFF)
+#define TCP_HDR_FLAG_FIN            (0x1)
+#define TCP_HDR_FLAG_SYN            (0x2)
+#define TCP_HDR_FLAG_RST            (0x4)
+#define TCP_HDR_FLAG_PSH            (0x8)
+#define TCP_HDR_FLAG_ACK            (0x10)
+#define TCP_HDR_FLAG_URG            (0x20)
+#define TCP_HDR_FLAG_ECE            (0x40)
+#define TCP_HDR_FLAG_CWR            (0x80)
+#define TCP_HDR_FLAG_NS             (0x100)
 #define TCP_HDR_HDR_LEN_MSK         (0xF000)
 #define TCP_HDR_HDR_LEN_SHIFT       (12)
 
@@ -69,15 +69,15 @@
 #define TCP_SOCK_CLOSING            (10)
 
 /* TCP socket flags. */
-#define TCP_FLAG_WND_SCALE          (0x01)
-#define TCP_FLAG_MSS                (0x02)
+#define TCP_FLAG_WND_SCALE          (0x1)
+#define TCP_FLAG_MSS                (0x2)
 
 /* TCP out-of-order parameter flags. */
-#define TCP_FLAG_SEG_CONFLICT       (0x01)
+#define TCP_FLAG_SEG_CONFLICT       (0x1)
 
 /* TCP RTX data flags. */
-#define TCP_RTX_IN_USE              (0x01)
-#define TCP_RTX_BUFFER_RETURNED     (0x04)
+#define TCP_RTX_IN_USE              (0x1)
+#define TCP_RTX_BUFFER_RETURNED     (0x4)
 
 /* Parameter that will be used to process the out-of-order buffer list. */
 typedef struct _tcp_oo_param

@@ -63,7 +63,7 @@ void adc_avr_init(void)
 
     /* Initialize ADC control register. */
     ADCSRA = (ADC_AVR_PRESCALE);
-    ADCSRB = 0x00;
+    ADCSRB = 0x0;
 
     /* Enable ADC. */
     ADCSRA |= (ADC_AVR_ENABLE);
@@ -126,15 +126,15 @@ void adc_avr_periodic_read_start(ADC_DATA_CALLBACK *callback, uint32_t period)
 {
     /* Configure ADC to start a conversion on timer 0 compare interrupt. */
     ADCSRA |= (1 << ADATE);
-    ADCSRB |= 0x03;
+    ADCSRB |= 0x3;
 
     /* Configure the timer 0 for required period. */
-    TCCR0A = 0x02;
+    TCCR0A = 0x2;
     TCCR0B = ADC_AVR_TIMER_PRESCALE;
     OCR0A = (uint8_t)period;
 
     /* Enable timer interrupt. */
-    TIMSK0 = 0x02;
+    TIMSK0 = 0x2;
 
     /* Set the ADC conversion callback. */
     adc_callback = callback;
@@ -156,7 +156,7 @@ void adc_avr_periodic_read_stop(void)
     ADCSRA &= (uint8_t) ~(1 << ADATE);
 
     /* Disable timer 0 interrupt. */
-    TIMSK0 &= (uint8_t)~0x02;
+    TIMSK0 &= (uint8_t)~0x2;
 
 } /* adc_avr_periodic_read_stop */
 #endif /* CONFIG_ADC */

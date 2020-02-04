@@ -20,7 +20,7 @@
 #include <usart_stm32_config.h>
 
 /* USART flags. */
-#define STM32_USART_HW_FCTRL            0x01
+#define STM32_USART_HW_FCTRL            0x1
 
 /* STM32 USRAT device. */
 typedef struct _stm32_usart

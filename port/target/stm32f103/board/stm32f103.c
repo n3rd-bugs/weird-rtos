@@ -29,7 +29,7 @@ void system_tick_Init(void)
     /* Configure TIMER2 for 64-bit timer. */
 
     /* Enable clock for TIMER1 */
-    RCC->APB1ENR |= 0x01;
+    RCC->APB1ENR |= 0x1;
 
     /* Count up, and count with the frequency of PCLK/2. */
     TIM2->CR1 &= (uint16_t)~(TIM_CR1_DIR | TIM_CR1_CMS | TIM_CR1_CKD);

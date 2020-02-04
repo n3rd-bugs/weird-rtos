@@ -46,16 +46,16 @@ void enc28j60_stm32f103_init(void)
     RCC->APB2ENR |= RCC_APB2Periph_GPIOC;
 
     /* Configure GPIO mode input for PC14 (INT) and output for PC15 (RST). */
-    GPIOC->CRH &= (uint32_t)(~((0x0F << ((14 - 8) << 2)) | (0x0F << ((15 - 8) << 2))));
-    GPIOC->CRH |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((14 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0x0F) << ((15 - 8) << 2));
+    GPIOC->CRH &= (uint32_t)(~((0xF << ((14 - 8) << 2)) | (0xF << ((15 - 8) << 2))));
+    GPIOC->CRH |= (((GPIO_Mode_IN_FLOATING) & 0xF) << ((14 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0xF) << ((15 - 8) << 2));
 
 #if (ENC28J60_INT_POLL == FALSE)
     /* Enable clock for AFIO. */
     RCC->APB2ENR |= RCC_APB2Periph_AFIO;
 
     /* Set EXTI line for processing interrupts on PC14 (INT). */
-    AFIO->EXTICR[(14 >> 0x02)] &= (uint32_t)(~(0x0F << (0x04 * (14 & 0x03))));
-    AFIO->EXTICR[(14 >> 0x02)] |= (0x02 << (0x04 * (14 & 0x03)));
+    AFIO->EXTICR[(14 >> 0x2)] &= (uint32_t)(~(0xF << (0x4 * (14 & 0x3))));
+    AFIO->EXTICR[(14 >> 0x2)] |= (0x2 << (0x4 * (14 & 0x3)));
 
     /* Clear EXTI line configuration. */
     EXTI->IMR &= (uint32_t)~(1 << 14);
@@ -125,7 +125,7 @@ void enc28j60_stm32f103_enable_interrupt(ENC28J60 *device)
     if (device->flags & ENC28J60_INT_ENABLE)
     {
         /* Enable the EXT15_10 IRQ channel. */
-        NVIC->ISER[EXTI15_10_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI15_10_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[EXTI15_10_IRQn >> 0x5] = (uint32_t)0x1 << (EXTI15_10_IRQn & (uint8_t)0x1F);
     }
 
 } /* enc28j60_stm32f103_enable_interrupt */
@@ -142,7 +142,7 @@ void enc28j60_stm32f103_disable_interrupt(ENC28J60 *device)
     UNUSED_PARAM(device);
 
     /* Disable the EXT15_10 IRQ channel. */
-    NVIC->ICER[EXTI15_10_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI15_10_IRQn & (uint8_t)0x1F);
+    NVIC->ICER[EXTI15_10_IRQn >> 0x5] = (uint32_t)0x1 << (EXTI15_10_IRQn & (uint8_t)0x1F);
 
 } /* enc28j60_stm32f103_disable_interrupt */
 #endif

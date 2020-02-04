@@ -51,7 +51,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 {
         /* Analog plugin. */
         {
-                .id         = 0x01,
+                .id         = 0x1,
                 .name       = plgn_name_1,
                 .data       = (void *)&weird_view_demo_analog_data,
                 .request    = NULL,
@@ -60,7 +60,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 
         /* Analog plugin. */
         {
-                .id         = 0x02,
+                .id         = 0x2,
                 .name       = plgn_name_2,
                 .data       = (void *)&weird_view_demo_analog_data,
                 .request    = NULL,
@@ -69,7 +69,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 
         /* Task statistics plugin. */
         {
-                .id         = 0x03,
+                .id         = 0x3,
                 .name       = plgn_name_3,
                 .data       = (void *)&weird_view_demo_task_stats,
                 .request    = NULL,
@@ -78,7 +78,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 
         /* ADC sample plugin. */
         {
-                .id         = 0x04,
+                .id         = 0x4,
                 .name       = plgn_name_4,
                 .data       = (void *)&weird_view_demo_adc_sample,
                 .request    = NULL,
@@ -87,7 +87,7 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 
         /* ADC sample plugin. */
         {
-                .id         = 0x05,
+                .id         = 0x5,
                 .name       = plgn_name_5,
                 .data       = (void *)&weird_view_demo_adc_sample,
                 .request    = NULL,
@@ -368,7 +368,7 @@ void toggle_auto_start(uint8_t *auto_start, uint8_t force_off)
     else
     {
         /* Toggle the auto start. */
-        (*auto_start) ^= 0x01;
+        (*auto_start) ^= 0x1;
     }
 
     /* If we need to auto start the generator. */
@@ -746,14 +746,14 @@ int32_t weird_view_demo_analog_data(uint16_t id, uint32_t *value, uint32_t *valu
 {
     switch (id)
     {
-    case 0x01:
+    case 0x1:
         /* (x * 2 * ((10k + 100k) / 10k)) */
         *value = main_volt;
         *value_div = 1;
         *max_value = 1024;
         break;
 
-    case 0x02:
+    case 0x2:
         *value = generator_volt;
         *value_div = 1;
         *max_value = 1024;
@@ -778,7 +778,7 @@ static int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER_LIST *buffer)
 #if (COMPUTE_APPROX == TRUE)
     switch (id)
     {
-    case 0x04:
+    case 0x4:
         /* If we have a sample for main line. */
         if (last_sample_channel == ADC_CHN_MAIN)
         {
@@ -787,7 +787,7 @@ static int32_t weird_view_demo_adc_sample(uint16_t id, FS_BUFFER_LIST *buffer)
         }
         break;
 
-    case 0x05:
+    case 0x5:
         /* If we have a sample for generator. */
         if (last_sample_channel == ADC_CHN_GENERATOR)
         {

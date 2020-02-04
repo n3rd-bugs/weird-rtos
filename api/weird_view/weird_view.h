@@ -29,17 +29,17 @@
 #define WV_REQ                  0x81c4b463
 
 /* Weird view plugin definitions. */
-#define WV_PLUGIN_LOG           0x00
-#define WV_PLUGIN_SWITCH        0x01
-#define WV_PLUGIN_ANALOG        0x02
-#define WV_PLUGIN_WAVE          0x03
+#define WV_PLUGIN_LOG           0x0
+#define WV_PLUGIN_SWITCH        0x1
+#define WV_PLUGIN_ANALOG        0x2
+#define WV_PLUGIN_WAVE          0x3
 
 /* Weird view log plugin definitions. */
-#define WV_PLUGIN_LOG_UPDATE    0x00
-#define WV_PLUGIN_LOG_APPEND    0x01
+#define WV_PLUGIN_LOG_UPDATE    0x0
+#define WV_PLUGIN_LOG_APPEND    0x1
 
 /* Weird view switch plugin definitions. */
-#define WV_PLUGIN_SWITCH_OFF    0x00
-#define WV_PLUGIN_SWITCH_ON     0x01
+#define WV_PLUGIN_SWITCH_OFF    0x0
+#define WV_PLUGIN_SWITCH_ON     0x1
 
 #endif /* _WEIRD_VIEW_SERVER_H_ */

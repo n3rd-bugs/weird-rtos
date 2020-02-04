@@ -117,7 +117,7 @@ int32_t enc28j60_read_phy(ENC28J60 *device, uint8_t address, uint16_t *value)
     if (status == SUCCESS)
     {
         /* Stop the PHY read operation. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MICMD, 0x00, NULL, 0);
+        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_MICMD, 0x0, NULL, 0);
     }
 
     if (status == SUCCESS)

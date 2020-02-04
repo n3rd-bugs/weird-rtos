@@ -30,10 +30,10 @@ void wdt_disbale(void)
 void sysclock_init(void)
 {
     /* Set HSION bit. */
-    RCC->CR |= (uint32_t)0x00000001;
+    RCC->CR |= (uint32_t)0x1;
 
     /* Reset CFGR register. */
-    RCC->CFGR = 0x08FFB80C;
+    RCC->CFGR = 0x8FFB80C;
 
     /* Reset HSEON, CSSON and PLLON bits. */
     RCC->CR &= (uint32_t)0xFEF6FFFF;
@@ -54,7 +54,7 @@ void sysclock_init(void)
     RCC->CR2 &= (uint32_t)0xFFFFFFFE;
 
     /* Disable all interrupts. */
-    RCC->CIR = 0x00000000;
+    RCC->CIR = 0x0;
 
     /* Configure Flash prefetch, Instruction cache, Data cache and wait state. */
     FLASH->ACR = FLASH_ACR_PRFTBE | FLASH_ACR_LATENCY;

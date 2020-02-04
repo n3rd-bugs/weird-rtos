@@ -26,10 +26,10 @@
 #include <net_dhcp_client_config.h>
 
 /* DHCP client states. */
-#define DHCP_CLI_DISCOVER       (0x00)
-#define DHCP_CLI_REQUEST        (0x01)
-#define DHCP_CLI_RENEW          (0x02)
-#define DHCP_CLI_REBIND         (0x03)
+#define DHCP_CLI_DISCOVER       (0x0)
+#define DHCP_CLI_REQUEST        (0x1)
+#define DHCP_CLI_RENEW          (0x2)
+#define DHCP_CLI_REBIND         (0x3)
 #define DHCP_CLI_STOPPED        (0xFF)
 
 /* DHCP client data. */

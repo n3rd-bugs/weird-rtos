@@ -27,20 +27,20 @@
 #define MAX7219_OUT_OF_RANGE    -2201
 
 /* MAX7219 address definitions. */
-#define MAX7219_ADDR_NOOP           0x00
-#define MAX7219_ADDR_DIGIT_0        0x01
-#define MAX7219_ADDR_DIGIT_1        0x02
-#define MAX7219_ADDR_DIGIT_2        0x03
-#define MAX7219_ADDR_DIGIT_3        0x04
-#define MAX7219_ADDR_DIGIT_4        0x05
-#define MAX7219_ADDR_DIGIT_5        0x06
-#define MAX7219_ADDR_DIGIT_6        0x07
-#define MAX7219_ADDR_DIGIT_7        0x08
-#define MAX7219_ADDR_DECODE_MODE    0x09
-#define MAX7219_ADDR_INTENSITY      0x0A
-#define MAX7219_ADDR_SCAN_LIMIT     0x0B
-#define MAX7219_ADDR_SHUTDOWN       0x0C
-#define MAX7219_ADDR_DISPLAY_TEST   0x0F
+#define MAX7219_ADDR_NOOP           0x0
+#define MAX7219_ADDR_DIGIT_0        0x1
+#define MAX7219_ADDR_DIGIT_1        0x2
+#define MAX7219_ADDR_DIGIT_2        0x3
+#define MAX7219_ADDR_DIGIT_3        0x4
+#define MAX7219_ADDR_DIGIT_4        0x5
+#define MAX7219_ADDR_DIGIT_5        0x6
+#define MAX7219_ADDR_DIGIT_6        0x7
+#define MAX7219_ADDR_DIGIT_7        0x8
+#define MAX7219_ADDR_DECODE_MODE    0x9
+#define MAX7219_ADDR_INTENSITY      0xA
+#define MAX7219_ADDR_SCAN_LIMIT     0xB
+#define MAX7219_ADDR_SHUTDOWN       0xC
+#define MAX7219_ADDR_DISPLAY_TEST   0xF
 
 /* This defines a MAX7219 device. */
 typedef struct _max7219

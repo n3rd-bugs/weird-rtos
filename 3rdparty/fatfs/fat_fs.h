@@ -25,7 +25,7 @@
 #define FAT_NUM_FILES   2
 
 /* FAT file definitions. */
-#define FAT_FILE_OPEN   (0x01)
+#define FAT_FILE_OPEN   (0x1)
 
 /* FAT file structure. */
 typedef struct _fat_file

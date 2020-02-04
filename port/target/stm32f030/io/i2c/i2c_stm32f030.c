@@ -593,7 +593,7 @@ static void i2c1_stm32f030_enable_interrupt(void *data)
     /* This is I2C1 device. */
     case 1:
         /* Enable the I2C1 event channels. */
-        NVIC->ISER[I2C1_IRQn >> 0x05] = (uint32_t)0x01 << (I2C1_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[I2C1_IRQn >> 0x5] = (uint32_t)0x1 << (I2C1_IRQn & (uint8_t)0x1F);
 
         break;
 
@@ -621,7 +621,7 @@ static void i2c2_stm32f030_disable_interrupt(void *data)
     /* This is I2C1 device. */
     case 1:
         /* Disable the I2C1 event channels. */
-        NVIC->ICER[I2C1_IRQn >> 0x05] = (uint32_t)0x01 << (I2C1_IRQn & (uint8_t)0x1F);
+        NVIC->ICER[I2C1_IRQn >> 0x5] = (uint32_t)0x1 << (I2C1_IRQn & (uint8_t)0x1F);
 
         break;
 

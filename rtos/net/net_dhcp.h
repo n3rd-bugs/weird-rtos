@@ -35,15 +35,15 @@
 /* DHCP operation definition. */
 /* By default we will be using ethernet type/address length and hop limit will
  * be 1. */
-#define DHCP_OP_REQUEST     (0x01)
-#define DHCP_OP_REPLY       (0x02)
-#define DHCP_OP_HEADER      (0x00010601)
+#define DHCP_OP_REQUEST     (0x1)
+#define DHCP_OP_REPLY       (0x2)
+#define DHCP_OP_HEADER      (0x10601)
 #define DHCP_MAGIC_COKIE    (0x63825363)
 
 /* DHCP option definitions. */
-#define DHCP_OPT_NETWORK    (0x01)
-#define DHCP_OPT_GATEWAY    (0x03)
-#define DHCP_OPT_HOST_NAME  (0x0C)
+#define DHCP_OPT_NETWORK    (0x1)
+#define DHCP_OPT_GATEWAY    (0x3)
+#define DHCP_OPT_HOST_NAME  (0xC)
 #define DHCP_OPT_REQ_IP     (0x32)
 #define DHCP_OPT_LEASE_TIME (0x33)
 #define DHCP_OPT_MSG_TYPE   (0x35)
@@ -51,11 +51,11 @@
 #define DHCP_OPT_END        (0xFF)
 
 /* DHCP message type definitions. */
-#define DHCP_MSG_DICOVER    (0x01)
-#define DHCP_MSG_OFFER      (0x02)
-#define DHCP_MSG_REQUEST    (0x03)
-#define DHCP_MSG_ACK        (0x05)
-#define DHCP_MSG_NACK       (0x06)
+#define DHCP_MSG_DICOVER    (0x1)
+#define DHCP_MSG_OFFER      (0x2)
+#define DHCP_MSG_REQUEST    (0x3)
+#define DHCP_MSG_ACK        (0x5)
+#define DHCP_MSG_NACK       (0x6)
 
 /* Function prototypes. */
 int32_t dhcp_add_header(FS_BUFFER_LIST *, uint8_t, uint32_t, uint16_t, uint8_t, uint32_t, uint32_t, uint32_t, uint8_t *);

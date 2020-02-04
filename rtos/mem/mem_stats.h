@@ -18,8 +18,8 @@
 #ifdef MEMGR_STATIC
 
 /* Information level flags. */
-#define STAT_MEM_GENERAL        0x01
-#define STAT_MEM_PAGE_INFO      0x02
+#define STAT_MEM_GENERAL        0x1
+#define STAT_MEM_PAGE_INFO      0x2
 
 /* Function prototypes. */
 #ifdef MEMGR_DYNAMIC

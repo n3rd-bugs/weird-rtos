@@ -32,7 +32,7 @@
 #define GFX_COLUMN_FULL         (-1802)
 
 /* Graphics device flags. */
-#define GFX_FLAG_DEBUG          (0x01)
+#define GFX_FLAG_DEBUG          (0x1)
 
 /* Debug graphics descriptor. */
 extern FD gfx_fd;

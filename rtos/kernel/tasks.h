@@ -18,8 +18,8 @@
 #include <tasks_config.h>
 
 /* These defines different task flags. */
-#define TASK_NO_RETURN      0x01        /* This task will never return. */
-#define TASK_SCHED_DRIFT    0x02        /* This task has caused scheduler to miss a tick. */
+#define TASK_NO_RETURN              0x1     /* This task will never return. */
+#define TASK_SCHED_DRIFT            0x2     /* This task has caused scheduler to miss a tick. */
 
 /* Some task resume status. */
 #define TASK_TO_BE_SUSPENDED        (0)     /* Task is being suspended indefinitely. */

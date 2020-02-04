@@ -29,7 +29,7 @@
 #define UDP_HRD_CSUM_OFFSET         (6)
 
 /* UDP port flags. */
-#define UDP_FLAG_THR_BUFFERS        (0x01)
+#define UDP_FLAG_THR_BUFFERS        (0x1)
 
 /* UDP port structure. */
 typedef struct _udp_port UDP_PORT;

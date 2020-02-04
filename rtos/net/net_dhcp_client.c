@@ -145,7 +145,7 @@ static int32_t net_dhcp_client_build(FD *fd, FS_BUFFER_LIST *buffer, DHCP_CLIENT
     SYS_LOG_FUNCTION_ENTRY(DHCPC);
 
     /* Add DHCP header on the buffer. */
-    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)((uint32_t)(INT32CMP(current_system_tick(), client_data->start_time)) / SOFT_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_RENEW) ? client_data->client_ip : 0x00), 0x00, 0x00, ethernet_get_mac_address(fd));
+    status = dhcp_add_header(buffer, DHCP_OP_REQUEST, client_data->xid, (uint16_t)((uint32_t)(INT32CMP(current_system_tick(), client_data->start_time)) / SOFT_TICKS_PER_SEC), TRUE, ((client_data->state == DHCP_CLI_RENEW) ? client_data->client_ip : 0x0), 0x0, 0x0, ethernet_get_mac_address(fd));
 
     if (status == SUCCESS)
     {

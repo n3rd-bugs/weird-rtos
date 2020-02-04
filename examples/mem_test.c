@@ -92,7 +92,7 @@ void ctx_sample_task(void *argv)
         last_tick = current_hardware_tick();
         task_yield();
 
-        if (com > 0x0FFFFFFF)
+        if (com > 0xFFFFFFF)
         {
             com = 0;
             n = 1;

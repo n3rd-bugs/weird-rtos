@@ -21,9 +21,9 @@ WV_PLUGIN_ANALOG        = '2'
 WV_PLUGIN_WAVE          = '3'
 
 # Wierd view log plugin definitions.
-WV_PLUGIN_LOG_UPDATE    = 0x00
-WV_PLUGIN_LOG_APPEND    = 0x01
+WV_PLUGIN_LOG_UPDATE    = 0x0
+WV_PLUGIN_LOG_APPEND    = 0x1
 
 # Wierd view switch plugin definitions.
-WV_PLUGIN_SWITCH_OFF    = 0x00
-WV_PLUGIN_SWITCH_ON     = 0x01
+WV_PLUGIN_SWITCH_OFF    = 0x0
+WV_PLUGIN_SWITCH_ON     = 0x1

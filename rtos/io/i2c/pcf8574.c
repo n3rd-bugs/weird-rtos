@@ -29,7 +29,7 @@ int32_t pcf8574_init(PCF8574 *device)
     i2c_init(&device->i2c);
 
     /* Mark all the pins as input. */
-    device->out_mask = 0x00;
+    device->out_mask = 0x0;
 
     /* Initialize I2C transaction. */
     i2c_msg.buffer = &port;

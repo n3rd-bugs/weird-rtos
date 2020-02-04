@@ -32,10 +32,10 @@ void sysclock_init(void)
     /* Reset the RCC clock configuration to the default reset state. */
 
     /* Set HSION bit. */
-    RCC->CR |= (uint32_t)0x00000001;
+    RCC->CR |= (uint32_t)0x1;
 
     /* Reset CFGR register. */
-    RCC->CFGR = 0x00000000;
+    RCC->CFGR = 0x0;
 
     /* Reset HSEON, CSSON and PLLON bits. */
     RCC->CR &= (uint32_t)0xFEF6FFFF;
@@ -47,7 +47,7 @@ void sysclock_init(void)
     RCC->CR &= (uint32_t)0xFFFBFFFF;
 
     /* Disable all interrupts. */
-    RCC->CIR = 0x00000000;
+    RCC->CIR = 0x0;
 
     /* Enable HSE. */
     RCC->CR |= ((uint32_t)RCC_CR_HSEON);

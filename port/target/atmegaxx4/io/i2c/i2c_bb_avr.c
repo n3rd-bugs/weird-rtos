@@ -303,7 +303,7 @@ int32_t i2c_bb_avr_message(I2C_DEVICE *device, I2C_MSG *message)
                 for (k = 0; k < this_len; k++)
                 {
                     /* Initialize the RX byte. */
-                    byte_rx = 0x00;
+                    byte_rx = 0x0;
 
                     /* Transfer a byte bit by bit. */
                     for (i = 0; i < 8; i++)
@@ -332,7 +332,7 @@ int32_t i2c_bb_avr_message(I2C_DEVICE *device, I2C_MSG *message)
                         if ((_SFR_IO8(pin_sda) & pin_map_sda) != 0)
                         {
                             /* Set this bit in RX register. */
-                            byte_rx |= 0x01;
+                            byte_rx |= 0x1;
                         }
 
                         /* Toggle SCL. */

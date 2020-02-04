@@ -24,8 +24,8 @@
 /* I2C configuration flags. */
 
 /* I2C message flags. */
-#define I2C_MSG_READ            0x01
-#define I2C_MSG_WRITE           0x02
+#define I2C_MSG_READ            0x1
+#define I2C_MSG_WRITE           0x2
 
 /* I2C structure definitions. */
 typedef struct _i2c_device I2C_DEVICE;

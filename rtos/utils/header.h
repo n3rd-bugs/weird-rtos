@@ -16,8 +16,8 @@
 #include <kernel.h>
 
 /* Header type flags. */
-#define HEADER_BIT          0x0001
-#define HEADER_PROCESS      0x0002
+#define HEADER_BIT          0x1
+#define HEADER_PROCESS      0x2
 #define HEADER_END          0x8000
 
 /* This function will be used to pull/push data from/to the provided buffer. */

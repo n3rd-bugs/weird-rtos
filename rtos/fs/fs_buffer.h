@@ -24,11 +24,11 @@
 #define FS_BUFFER_TX        4
 
 /* Buffer management flags. */
-#define FS_BUFFER_ACTIVE    0x01
-#define FS_BUFFER_INPLACE   0x02
+#define FS_BUFFER_ACTIVE    0x1
+#define FS_BUFFER_INPLACE   0x2
 #define FS_BUFFER_UPDATE    FS_BUFFER_INPLACE
-#define FS_BUFFER_PACKED    0x04
-#define FS_BUFFER_TAIL      0x08
+#define FS_BUFFER_PACKED    0x4
+#define FS_BUFFER_TAIL      0x8
 #define FS_BUFFER_HEAD      0x10
 #define FS_BUFFER_SUSPEND   0x20
 #define FS_BUFFER_TH        0x40

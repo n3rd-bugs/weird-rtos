@@ -45,9 +45,9 @@
 #define PPP_STATE_NETWORK           4
 
 /* PPP configuration flags. */
-#define PPP_FLAG_ACFC               0x01
-#define PPP_FLAG_PFC                0x02
-#define PPP_DEDICATED_FD            0x04
+#define PPP_FLAG_ACFC               0x1
+#define PPP_FLAG_PFC                0x2
+#define PPP_DEDICATED_FD            0x4
 
 /* ACFC and PFC helper macros. */
 #define PPP_IS_ACFC_VALID(ppp)      (((ppp)->flags & PPP_FLAG_ACFC) != 0)
@@ -69,10 +69,10 @@
 
 /* PPP protocol definitions. */
 #define PPP_ADDRESS                 (0xFF)
-#define PPP_CONTROL                 (0x03)
+#define PPP_CONTROL                 (0x3)
 
 /* PPP protocol definitions. */
-#define PPP_PROTO_IPV4              (0x0021)
+#define PPP_PROTO_IPV4              (0x21)
 #define PPP_PROTO_IPCP              (0x8021)
 #define PPP_PROTO_LCP               (0xC021)
 #define PPP_AUTH_PAP                (0xC023)

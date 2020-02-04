@@ -68,12 +68,12 @@ void lcd_an_register(LCD_AN *lcd_an)
 
     if (status == SUCCESS)
     {
-        status = lcd_an_write_register(lcd_an, 0, 0x08);
+        status = lcd_an_write_register(lcd_an, 0, 0x8);
     }
 
     if (status == SUCCESS)
     {
-        status = lcd_an_write_register(lcd_an, 0, 0x01);
+        status = lcd_an_write_register(lcd_an, 0, 0x1);
 
 #if (LCD_AN_CLEAR_DELAY > 0)
         /* Wait for sometime before writing any more data. */
@@ -83,12 +83,12 @@ void lcd_an_register(LCD_AN *lcd_an)
 
     if (status == SUCCESS)
     {
-        status = lcd_an_write_register(lcd_an, 0, 0x06);
+        status = lcd_an_write_register(lcd_an, 0, 0x6);
     }
 
     if (status == SUCCESS)
     {
-        status = lcd_an_write_register(lcd_an, 0, 0x0C);
+        status = lcd_an_write_register(lcd_an, 0, 0xC);
     }
 
     if (status == SUCCESS)
@@ -140,12 +140,12 @@ int32_t lcd_an_reset(LCD_AN *lcd_an)
 
     if (status == SUCCESS)
     {
-        status = lcd_an_write_register(lcd_an, 0, 0x08);
+        status = lcd_an_write_register(lcd_an, 0, 0x8);
     }
 
     if (status == SUCCESS)
     {
-        status = lcd_an_write_register(lcd_an, 0, 0x01);
+        status = lcd_an_write_register(lcd_an, 0, 0x1);
 
 #if (LCD_AN_CLEAR_DELAY > 0)
         /* Wait for sometime before writing any more data. */
@@ -155,12 +155,12 @@ int32_t lcd_an_reset(LCD_AN *lcd_an)
 
     if (status == SUCCESS)
     {
-        status = lcd_an_write_register(lcd_an, 0, 0x06);
+        status = lcd_an_write_register(lcd_an, 0, 0x6);
     }
 
     if (status == SUCCESS)
     {
-        status = lcd_an_write_register(lcd_an, 0, 0x0C);
+        status = lcd_an_write_register(lcd_an, 0, 0xC);
     }
 
     if (status == SUCCESS)
@@ -254,8 +254,8 @@ static int32_t lcd_an_write_register(LCD_AN *lcd_an, uint8_t rs, uint8_t byte)
         lcd_an->clr_en(lcd_an);
 
         /* Put byte on the Alphanumeric LCD. */
-        lcd_an_send_nibble(lcd_an, ((byte >> 4) & 0x0F));
-        lcd_an_send_nibble(lcd_an, (byte & 0x0F));
+        lcd_an_send_nibble(lcd_an, ((byte >> 4) & 0xF));
+        lcd_an_send_nibble(lcd_an, (byte & 0xF));
 
 #ifdef LCD_AN_NO_BUSY_WAIT
         /* Yield the task to put delay in transaction.. */
@@ -404,7 +404,7 @@ static int32_t lcd_an_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
         case '\f':
 
             /* Clear display. */
-            status = lcd_an_write_register(lcd_an, 0, 0x01);
+            status = lcd_an_write_register(lcd_an, 0, 0x1);
 
             /* If display was successfully cleared. */
             if (status == SUCCESS)

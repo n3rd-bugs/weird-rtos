@@ -104,9 +104,9 @@ int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t d
         RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
 
         /* Set alternate function for PA9 (TX) and PA10 (RX). */
-        GPIOA->CRH &= (uint32_t)(~((0x0F << ((9 - 8) << 2)) | (0x0F << ((10 - 8) << 2))));
-        GPIOA->CRH |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((9 - 8) << 2));
-        GPIOA->CRH |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((10 - 8) << 2));
+        GPIOA->CRH &= (uint32_t)(~((0xF << ((9 - 8) << 2)) | (0xF << ((10 - 8) << 2))));
+        GPIOA->CRH |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0xF) << ((9 - 8) << 2));
+        GPIOA->CRH |= (((GPIO_Mode_IN_FLOATING) & 0xF) << ((10 - 8) << 2));
 
         /* Save the USART register. */
         usart->reg = USART1;
@@ -130,17 +130,17 @@ int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t d
         RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
 
         /* Set alternate function for PA2 (TX) and PA3 (RX). */
-        GPIOA->CRL &= (uint32_t)(~((0x0F << ((2 - 0) << 2)) | (0x0F << ((3 - 0) << 2))));
-        GPIOA->CRL |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((2 - 0) << 2));
-        GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((3 - 0) << 2));
+        GPIOA->CRL &= (uint32_t)(~((0xF << ((2 - 0) << 2)) | (0xF << ((3 - 0) << 2))));
+        GPIOA->CRL |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0xF) << ((2 - 0) << 2));
+        GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0xF) << ((3 - 0) << 2));
 
         /* If we need to enable hardware flow control for this USART. */
         if (hw_flow)
         {
             /* Set alternate function for PA0 (CTS) and PA1 (RTS). */
-            GPIOA->CRL &= (uint32_t)(~((0x0F << ((0 - 0) << 2)) | (0x0F << ((1 - 0) << 2))));
-            GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((0 - 0) << 2));
-            GPIOA->CRL |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((1 - 0) << 2));
+            GPIOA->CRL &= (uint32_t)(~((0xF << ((0 - 0) << 2)) | (0xF << ((1 - 0) << 2))));
+            GPIOA->CRL |= (((GPIO_Mode_IN_FLOATING) & 0xF) << ((0 - 0) << 2));
+            GPIOA->CRL |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0xF) << ((1 - 0) << 2));
 
             /* We will be using HW flow control for this USART. */
             usart->flags |= STM32_USART_HW_FCTRL;
@@ -168,9 +168,9 @@ int32_t usart_stm32f103_register(STM32_USART *usart, const char *name, uint8_t d
         RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 
         /* Set alternate function for PB10 (TX) and PB11 (RX). */
-        GPIOB->CRH &= (uint32_t)(~((0x0F << ((10 - 8) << 2)) | (0x0F << ((11 - 8) << 2))));
-        GPIOB->CRH |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((10 - 8) << 2));
-        GPIOB->CRH |= (((GPIO_Mode_IN_FLOATING) & 0x0F) << ((11 - 8) << 2));
+        GPIOB->CRH &= (uint32_t)(~((0xF << ((10 - 8) << 2)) | (0xF << ((11 - 8) << 2))));
+        GPIOB->CRH |= (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0xF) << ((10 - 8) << 2));
+        GPIOB->CRH |= (((GPIO_Mode_IN_FLOATING) & 0xF) << ((11 - 8) << 2));
 
         /* Save the USART register. */
         usart->reg = USART3;
@@ -252,7 +252,7 @@ static int32_t usart_stm32f103_init(void *data)
     }
     temp = (integral / 100) << 4;
     fractional = integral - (100 * (temp >> 4));
-    temp |= ((((fractional * 16) + 50) / 100)) & (0x0F);
+    temp |= ((((fractional * 16) + 50) / 100)) & (0xF);
     usart->reg->BRR = (uint16_t)temp;
 
     /* Enable USART. */
@@ -461,7 +461,7 @@ static void usart_stm32f103_enable_interrupt(void *data)
     case 1:
 
         /* Enable the USART1 IRQ channel. */
-        NVIC->ISER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[USART1_IRQn >> 0x5] = (uint32_t)0x1 << (USART1_IRQn & (uint8_t)0x1F);
 
         break;
 
@@ -469,7 +469,7 @@ static void usart_stm32f103_enable_interrupt(void *data)
     case 2:
 
         /* Enable the USART2 IRQ channel. */
-        NVIC->ISER[USART2_IRQn >> 0x05] = (uint32_t)0x01 << (USART2_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[USART2_IRQn >> 0x5] = (uint32_t)0x1 << (USART2_IRQn & (uint8_t)0x1F);
 
         break;
 
@@ -477,7 +477,7 @@ static void usart_stm32f103_enable_interrupt(void *data)
     case 3:
 
         /* Enable the USART3 IRQ channel. */
-        NVIC->ISER[USART3_IRQn >> 0x05] = (uint32_t)0x01 << (USART3_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[USART3_IRQn >> 0x5] = (uint32_t)0x1 << (USART3_IRQn & (uint8_t)0x1F);
 
         break;
     }
@@ -500,7 +500,7 @@ static void usart_stm32f103_disable_interrupt(void *data)
     case 1:
 
         /* Disable the USART1 IRQ channel. */
-        NVIC->ICER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+        NVIC->ICER[USART1_IRQn >> 0x5] = (uint32_t)0x1 << (USART1_IRQn & (uint8_t)0x1F);
 
         break;
 
@@ -508,7 +508,7 @@ static void usart_stm32f103_disable_interrupt(void *data)
     case 2:
 
         /* Disable the USART2 IRQ channel. */
-        NVIC->ICER[USART2_IRQn >> 0x05] = (uint32_t)0x01 << (USART2_IRQn & (uint8_t)0x1F);
+        NVIC->ICER[USART2_IRQn >> 0x5] = (uint32_t)0x1 << (USART2_IRQn & (uint8_t)0x1F);
 
         break;
 
@@ -516,7 +516,7 @@ static void usart_stm32f103_disable_interrupt(void *data)
     case 3:
 
         /* Disable the USART3 IRQ channel. */
-        NVIC->ICER[USART3_IRQn >> 0x05] = (uint32_t)0x01 << (USART3_IRQn & (uint8_t)0x1F);
+        NVIC->ICER[USART3_IRQn >> 0x5] = (uint32_t)0x1 << (USART3_IRQn & (uint8_t)0x1F);
 
         break;
     }

@@ -28,9 +28,9 @@
 #include <condition.h>
 
 /* ARP entry flags. */
-#define ARP_FLAG_VALID          0x01
-#define ARP_FLAG_UP             0x02
-#define ARP_FLAG_IN_USE         0x04
+#define ARP_FLAG_VALID          0x1
+#define ARP_FLAG_UP             0x2
+#define ARP_FLAG_IN_USE         0x4
 
 /* ARP configuration. */
 #define ARP_TIMEOUT             (1 * SOFT_TICKS_PER_SEC)

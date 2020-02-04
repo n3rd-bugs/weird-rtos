@@ -29,16 +29,16 @@ MEM_DYNAMIC mem_dynamic_pool;
 /* Dynamic memory allocation configuration. */
 MEM_DYN_CFG mem_dyn_cfg [NUM_PAGES] =
 {
-        { 0x000000FE, 0x00000000, MEM_PAGE_ASC },
-        { 0x000000FE, 0x00000000, MEM_PAGE_ASC },
-        { 0x00000100, 0x00000000, MEM_PAGE_DEC },
-        { 0x000001FF, 0x00000000, 0 },
-        { 0x000001FF, 0x00000000, MEM_PAGE_ASC },
-        { 0x00000200, 0x00000000, MEM_PAGE_DEC },
-        { 0x00000200, 0x00000000, MEM_PAGE_DEC },
-        { 0x000002FF, 0x00000000, MEM_PAGE_ASC },
-        { 0x00000300, 0x00000000, MEM_PAGE_ASC },
-        { 0x00000400, 0x00000820, 0 },
+        { 0xFE,     0x0,    MEM_PAGE_ASC },
+        { 0xFE,     0x0,    MEM_PAGE_ASC },
+        { 0x100,    0x0,    MEM_PAGE_DEC },
+        { 0x1FF,    0x0,    0 },
+        { 0x1FF,    0x0,    MEM_PAGE_ASC },
+        { 0x200,    0x0,    MEM_PAGE_DEC },
+        { 0x200,    0x0,    MEM_PAGE_DEC },
+        { 0x2FF,    0x0,    MEM_PAGE_ASC },
+        { 0x300,    0x0,    MEM_PAGE_ASC },
+        { 0x400,    0x820,  0 },
 };
 #endif
 

@@ -2,9 +2,9 @@ ENTRY(system_entry)
 
 MEMORY
 {
-    m_text          (RX): ORIGIN = 0x08000000, LENGTH = 0x00100000
-    m_data          (RW): ORIGIN = 0x20000000, LENGTH = 0x00020000
-    m_cram          (RX): ORIGIN = 0x10000000, LENGTH = 0x00010000
+    m_text          (RX): ORIGIN = 0x8000000,   LENGTH = 0x100000
+    m_data          (RW): ORIGIN = 0x20000000,  LENGTH = 0x20000
+    m_cram          (RX): ORIGIN = 0x10000000,  LENGTH = 0x10000
 }
 
 heap_size = 512;

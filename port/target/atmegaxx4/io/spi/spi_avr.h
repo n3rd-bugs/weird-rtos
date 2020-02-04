@@ -31,7 +31,7 @@
 /* SPSR register definitions. */
 #define AVR_SPI_SPSR_SPIF           (0x80)
 #define AVR_SPI_SPSR_WCOL           (0x40)
-#define AVR_SPI_SPSR_SPI2X          (0x01)
+#define AVR_SPI_SPSR_SPI2X          (0x1)
 
 /* Function prototypes. */
 void spi_avr_init(SPI_DEVICE *device);

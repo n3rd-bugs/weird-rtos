@@ -25,8 +25,8 @@
 #include <i2c_stm32_config.h>
 
 /* I2C error flags. */
-#define I2C_STM32_NACK              0x01
-#define I2C_STM32_ERROR             0x02
+#define I2C_STM32_NACK              0x1
+#define I2C_STM32_ERROR             0x2
 
 /* Helper macros. */
 #ifdef STM_I2C_BUSY_YIELD

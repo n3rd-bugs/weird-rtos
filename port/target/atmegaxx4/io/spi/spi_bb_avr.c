@@ -156,7 +156,7 @@ int32_t spi_bb_avr_message(SPI_DEVICE *device, SPI_MSG *message)
             {
                 /* Save the byte we need to send. */
                 byte_tx = *ptr;
-                byte_rx = 0x00;
+                byte_rx = 0x0;
 
                 /* Transfer a byte bit by bit. */
                 for (i = 0; i < 8; i++)
@@ -186,7 +186,7 @@ int32_t spi_bb_avr_message(SPI_DEVICE *device, SPI_MSG *message)
                     if ((_SFR_IO8(pin_miso) & pin_map_miso) != 0)
                     {
                         /* Set this bit in RX register. */
-                        byte_rx |= 0x01;
+                        byte_rx |= 0x1;
                     }
 
                     /* Toggle SCLK. */
@@ -302,7 +302,7 @@ int32_t spi_bb_avr_message(SPI_DEVICE *device, SPI_MSG *message)
             for (k = 0; k < this_len; k++)
             {
                 /* Initialize the RX byte. */
-                byte_rx = 0x00;
+                byte_rx = 0x0;
 
                 /* Transfer a byte bit by bit. */
                 for (i = 0; i < 8; i++)
@@ -320,7 +320,7 @@ int32_t spi_bb_avr_message(SPI_DEVICE *device, SPI_MSG *message)
                     if ((_SFR_IO8(pin_miso) & pin_map_miso) != 0)
                     {
                         /* Set this bit in RX register. */
-                        byte_rx |= 0x01;
+                        byte_rx |= 0x1;
                     }
 
                     /* Toggle SCLK. */

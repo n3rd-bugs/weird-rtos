@@ -16,11 +16,11 @@
 #include <sys_log_config.h>
 
 /* System logging level definitions. */
-#define SYS_LOG_NONE            (0x00)
-#define SYS_LOG_FUNCTION_CALL   (0x01)
-#define SYS_LOG_DEBUG           (0x02)
-#define SYS_LOG_INFO            (0x04)
-#define SYS_LOG_WARN            (0x08)
+#define SYS_LOG_NONE            (0x0)
+#define SYS_LOG_FUNCTION_CALL   (0x1)
+#define SYS_LOG_DEBUG           (0x2)
+#define SYS_LOG_INFO            (0x4)
+#define SYS_LOG_WARN            (0x8)
 #define SYS_LOG_ERROR           (0x10)
 #define SYS_LOG_ALL             (0xFF)
 

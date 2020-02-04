@@ -37,34 +37,34 @@ void spi_stm32f407_init(SPI_DEVICE *device)
         RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
 
         /* Enable GPIO A clock. */
-        RCC->AHB1ENR |= 0x00000001;
+        RCC->AHB1ENR |= 0x1;
 
         /* Configure GPIO mode output for GPIOA.4 and alternate function for GPIOA.5, GPIOA.6, GPIOA.7. */
         GPIOA->MODER &= ~((GPIO_MODER_MODER0 << (4 * 2)) | (GPIO_MODER_MODER0 << (5 * 2)) | (GPIO_MODER_MODER0 << (6 * 2)) | (GPIO_MODER_MODER0 << (7 * 2)));
-        GPIOA->MODER |= ((0x01 << (4 * 2)) | (0x02 << (5 * 2)) | (0x02 << (6 * 2)) | (0x02 << (7 * 2)));
+        GPIOA->MODER |= ((0x1 << (4 * 2)) | (0x2 << (5 * 2)) | (0x2 << (6 * 2)) | (0x2 << (7 * 2)));
 
         /* Configure output type (PP) for GPIOA.4, GPIOA.5, GPIOA.6, GPIOA.7. */
         GPIOA->OTYPER &= ~((GPIO_OTYPER_OT_0 << (4 * 2)) | (GPIO_OTYPER_OT_0 << (5 * 2)) | (GPIO_OTYPER_OT_0 << (6 * 2)) | (GPIO_OTYPER_OT_0 << (7 * 2)));
 
         /* Enable pull-down on GPIOA.5, GPIOA.6, GPIOA.7. */
         GPIOA->PUPDR &= ~((GPIO_PUPDR_PUPDR0 << (4 * 2)) | (GPIO_PUPDR_PUPDR0 << (5 * 2)) | (GPIO_PUPDR_PUPDR0 << (6 * 2)) | (GPIO_PUPDR_PUPDR0 << (7 * 2)));
-        GPIOA->PUPDR |= ((0x02 << (5 * 2)) | (0x02 << (6 * 2)) | (0x02 << (7 * 2)));
+        GPIOA->PUPDR |= ((0x2 << (5 * 2)) | (0x2 << (6 * 2)) | (0x2 << (7 * 2)));
 
         /* Configure GPIO speed (100MHz). */
         GPIOA->OSPEEDR &= ~((GPIO_OSPEEDER_OSPEEDR0 << (4 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (5 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (6 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (7 * 2)));
-        GPIOA->OSPEEDR |= ((0x03 << (4 * 2)) | (0x03 << (5 * 2)) | (0x03 << (6 * 2)) | (0x03 << (7 * 2)));
+        GPIOA->OSPEEDR |= ((0x3 << (4 * 2)) | (0x3 << (5 * 2)) | (0x3 << (6 * 2)) | (0x3 << (7 * 2)));
 
         /* Enable SPI mode on GPIOA.5. */
-        GPIOA->AFR[0x05 >> 0x03] &= (uint32_t)(~(0xF << ((0x05 & 0x07) * 4)));
-        GPIOA->AFR[0x05 >> 0x03] |= 0x5 << ((0x05 & 0x07) * 4);
+        GPIOA->AFR[0x5 >> 0x3] &= (uint32_t)(~(0xF << ((0x5 & 0x7) * 4)));
+        GPIOA->AFR[0x5 >> 0x3] |= 0x5 << ((0x5 & 0x7) * 4);
 
         /* Enable SPI mode on GPIOA.6. */
-        GPIOA->AFR[0x06 >> 0x03] &= (uint32_t)(~(0xF << ((0x06 & 0x07) * 4)));
-        GPIOA->AFR[0x06 >> 0x03] |= 0x5 << ((0x06 & 0x07) * 4);
+        GPIOA->AFR[0x6 >> 0x3] &= (uint32_t)(~(0xF << ((0x6 & 0x7) * 4)));
+        GPIOA->AFR[0x6 >> 0x3] |= 0x5 << ((0x6 & 0x7) * 4);
 
         /* Enable SPI mode on GPIOA.7. */
-        GPIOA->AFR[0x07 >> 0x03] &= (uint32_t)(~(0xF << ((0x07 & 0x07) * 4)));
-        GPIOA->AFR[0x07 >> 0x03] |= 0x5 << ((0x07 & 0x07) * 4);
+        GPIOA->AFR[0x7 >> 0x3] &= (uint32_t)(~(0xF << ((0x7 & 0x7) * 4)));
+        GPIOA->AFR[0x7 >> 0x3] |= 0x5 << ((0x7 & 0x7) * 4);
 
         /* Set the CS. */
         GPIOA->BSRR |= (1 << 4);

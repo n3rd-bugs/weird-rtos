@@ -35,7 +35,7 @@ ISR_FUN exti2_interrupt(void)
 #endif
 
     /* Clear the interrupt pending bit or EXTI2 channel. */
-    EXTI->PR = 0x04;
+    EXTI->PR = 0x4;
 
     ISR_EXIT();
 

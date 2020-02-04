@@ -20,19 +20,19 @@
 #define SPI_TIMEOUT             -1200
 
 /* SPI configuration flags. */
-#define SPI_CFG_1_WIRE          0x0001
-#define SPI_CFG_RX_ONLY         0x0002
-#define SPI_CFG_MODE_16BIT      0x0004
-#define SPI_CFG_ENABLE_CRC      0x0008
-#define SPI_CFG_LSB_FIRST       0x0010
-#define SPI_CFG_MASTER          0x0020
-#define SPI_CFG_CLK_IDLE_HIGH   0x0040
-#define SPI_CFG_CLK_FIRST_DATA  0x0080
-#define SPI_CFG_ENABLE_HARD_SS  0x0100
+#define SPI_CFG_1_WIRE          0x1
+#define SPI_CFG_RX_ONLY         0x2
+#define SPI_CFG_MODE_16BIT      0x4
+#define SPI_CFG_ENABLE_CRC      0x8
+#define SPI_CFG_LSB_FIRST       0x10
+#define SPI_CFG_MASTER          0x20
+#define SPI_CFG_CLK_IDLE_HIGH   0x40
+#define SPI_CFG_CLK_FIRST_DATA  0x80
+#define SPI_CFG_ENABLE_HARD_SS  0x100
 
 /* SPI message flags. */
-#define SPI_MSG_READ            0x01
-#define SPI_MSG_WRITE           0x02
+#define SPI_MSG_READ            0x1
+#define SPI_MSG_WRITE           0x2
 
 /* SPI structure definitions. */
 typedef struct _spi_device SPI_DEVICE;

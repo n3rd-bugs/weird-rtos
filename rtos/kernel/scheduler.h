@@ -17,8 +17,8 @@
 #include <scheduler_config.h>
 
 /* Defines the origin from which this task is being yielded.  */
-#define YIELD_SYSTEM                (0x00)
-#define YIELD_SLEEP                 (0x01)
+#define YIELD_SYSTEM    (0x0)
+#define YIELD_SLEEP     (0x1)
 
 /* Global task list. */
 #ifdef TASK_STATS

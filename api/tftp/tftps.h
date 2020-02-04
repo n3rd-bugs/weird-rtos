@@ -34,14 +34,14 @@
 #define TFTP_FRAME_DROP         -22006
 
 /* TFTP definitions. */
-#define TFTP_OP_READ_REQ        (0x0001)
-#define TFTP_OP_WRITE_REQ       (0x0002)
-#define TFTP_OP_DATA            (0x0003)
-#define TFTP_OP_ACK             (0x0004)
-#define TFTP_OP_ERR             (0x0005)
+#define TFTP_OP_READ_REQ        (0x1)
+#define TFTP_OP_WRITE_REQ       (0x2)
+#define TFTP_OP_DATA            (0x3)
+#define TFTP_OP_ACK             (0x4)
+#define TFTP_OP_ERR             (0x5)
 
-#define TFTP_ERROR_GEN          (0x0000)
-#define TFTP_ERROR_TID          (0x0005)
+#define TFTP_ERROR_GEN          (0x0)
+#define TFTP_ERROR_TID          (0x5)
 
 #define TFTP_ERRMSG_NOT_SUPPORTED   "opcode not supported"
 #define TFTP_ERRMSG_FILENAME        "filename too long"

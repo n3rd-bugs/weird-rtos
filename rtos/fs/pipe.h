@@ -18,7 +18,7 @@
 #ifdef FS_PIPE
 
 /* Message flags. */
-#define PIPE_MSG_VALID      0x0001
+#define PIPE_MSG_VALID      0x1
 
 /* Message data structure. */
 typedef struct _msg_data MSG_DATA;

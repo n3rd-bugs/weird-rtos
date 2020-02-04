@@ -29,9 +29,9 @@
 #define BOOTLOAD_SECTION    __attribute__ ((section (".boot")))
 #define BOOTVECTOR_SECTION  __attribute__ ((section (".boot_vector")))
 #if defined(AVR_MCU_atmega644p)
-#define BOOTLOAD_RESET      0x0000F000
+#define BOOTLOAD_RESET      0xF000
 #elif defined(AVR_MCU_atmega1284p)
-#define BOOTLOAD_RESET      0x0001F000
+#define BOOTLOAD_RESET      0x1F000
 #else
 #error "Bootloader is not supported on sepecified AVR target"
 #endif

@@ -30,7 +30,7 @@ PPP_PROTO ppp_proto_lcp =
 
 /* PPP LCP option database. */
 /* To be negotiated ACCM value. */
-const uint32_t ppp_lcp_accm = 0x00000000;
+const uint32_t ppp_lcp_accm = 0x0;
 
 /* PPP option index look-up table. */
 const int8_t ppp_lcp_opt_index[LCP_OPT_DB_NUM_OPTIONS] =
@@ -59,11 +59,11 @@ const uint8_t *ppp_lcp_option_values[LCP_OPT_DB_NUM_OPTIONS_VALID] =
 /* Option valid length look-up table. */
 const uint8_t ppp_lcp_option_valid_lengths[LCP_OPT_DB_NUM_OPTIONS_VALID] =
 {
-    0x04,   /* 1: MRU. */
-    0x06,   /* 2: ACCM. */
-    0x06,   /* 5: MAGIC. */
-    0x02,   /* 8: ACFC. */
-    0x02,   /* 7: PFC. */
+    0x4,    /* 1: MRU. */
+    0x6,    /* 2: ACCM. */
+    0x6,    /* 5: MAGIC. */
+    0x2,    /* 8: ACFC. */
+    0x2,    /* 7: PFC. */
 };
 
 /*

@@ -24,14 +24,14 @@
 void system_tick_Init(void)
 {
     /* Using 16bit timer 1 to generate the system tick. */
-    TCNT1 = 0x00;
+    TCNT1 = 0x0;
     OCR1A = (((SYS_FREQ / SOFT_TICKS_PER_SEC / 64) - 1) & 0xFFFF);
 
     /* Setup clock source and compare match behavior. */
-    TCCR1B =  0x03 | 0x08;
+    TCCR1B =  0x3 | 0x8;
 
     /* Enable the compare A match interrupt. */
-    TIMSK1 |= 0x02;
+    TIMSK1 |= 0x2;
 
 } /* system_tick_Init */
 

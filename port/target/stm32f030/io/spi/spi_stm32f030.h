@@ -49,14 +49,14 @@
 #define STM32F030_SPI_I2SCFG_MOD_SHIFT  (11)
 
 /* STM32F030 status register definitions. */
-#define STM32F030_SPI_SR_RXNE           (0x0001)
-#define STM32F030_SPI_SR_TXE            (0x0002)
-#define STM32F030_SPI_SR_CHSIDE         (0x0004)
-#define STM32F030_SPI_SR_UDR            (0x0008)
-#define STM32F030_SPI_SR_CRCERR         (0x0010)
-#define STM32F030_SPI_SR_MODF           (0x0020)
-#define STM32F030_SPI_SR_OVR            (0x0040)
-#define STM32F030_SPI_SR_BSY            (0x0080)
+#define STM32F030_SPI_SR_RXNE           (0x1)
+#define STM32F030_SPI_SR_TXE            (0x2)
+#define STM32F030_SPI_SR_CHSIDE         (0x4)
+#define STM32F030_SPI_SR_UDR            (0x8)
+#define STM32F030_SPI_SR_CRCERR         (0x10)
+#define STM32F030_SPI_SR_MODF           (0x20)
+#define STM32F030_SPI_SR_OVR            (0x40)
+#define STM32F030_SPI_SR_BSY            (0x80)
 
 /* SPI device structure. */
 typedef struct _stm32f030_spi

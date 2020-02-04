@@ -2,9 +2,9 @@ ENTRY(system_entry)
 
 MEMORY
 {
-    m_text          (RX): ORIGIN = 0x08000000, LENGTH = 0x00004000
-    m_data          (RW): ORIGIN = 0x20000000, LENGTH = 0x00001000
-    m_cram          (RX): ORIGIN = 0x10000000, LENGTH = 0x00001000
+    m_text          (RX): ORIGIN = 0x8000000,   LENGTH = 0x4000
+    m_data          (RW): ORIGIN = 0x20000000,  LENGTH = 0x1000
+    m_cram          (RX): ORIGIN = 0x10000000,  LENGTH = 0x1000
 }
 
 SECTIONS

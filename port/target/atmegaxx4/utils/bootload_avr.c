@@ -606,7 +606,7 @@ static int32_t bootload_stk(void)
             }
 
             /* Send a zero byte in response. */
-            stk500_reply(0x00);
+            stk500_reply(0x0);
 
             break;
 
@@ -745,9 +745,9 @@ static int32_t bootload_stk(void)
                 bootload_avr_putc(STK_INSYNC);
 
                 /* Send device signature bytes. */
-                bootload_avr_putc(boot_signature_byte_get(0x00));
-                bootload_avr_putc(boot_signature_byte_get(0x02));
-                bootload_avr_putc(boot_signature_byte_get(0x04));
+                bootload_avr_putc(boot_signature_byte_get(0x0));
+                bootload_avr_putc(boot_signature_byte_get(0x2));
+                bootload_avr_putc(boot_signature_byte_get(0x4));
 
                 /* Send okay response. */
                 bootload_avr_putc(STK_OK);

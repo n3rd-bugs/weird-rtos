@@ -34,15 +34,15 @@
 #define LCD_AN_INTERNAL_ERROR   -1303
 
 /* Alphanumeric LCD register flags. */
-#define LCD_DATA_REG            (0x01)
-#define LCD_IGNORE_WAIT         (0x02)
+#define LCD_DATA_REG            (0x1)
+#define LCD_IGNORE_WAIT         (0x2)
 
 /* Alphanumeric LCD device flags. */
-#define LCD_FLAG_DEBUG          (0x01)
+#define LCD_FLAG_DEBUG          (0x1)
 
 /* Alphanumeric LCD IOCTL commands. */
-#define LCD_AN_CUSTOM_CHAR     (1)
-#define LCD_AN_RESET           (2)
+#define LCD_AN_CUSTOM_CHAR      (1)
+#define LCD_AN_RESET            (2)
 
 /* Alphanumeric LCD structure. */
 typedef struct _lcd_an LCD_AN;

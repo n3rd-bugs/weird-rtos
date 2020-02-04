@@ -17,7 +17,7 @@
 #define CONDITION_TIMEOUT           -600
 
 /* Condition flags. */
-#define CONDITION_PING              0x01
+#define CONDITION_PING              0x1
 
 /* Suspend definitions. */
 #define SUSPEND_INVALID_PRIORITY    (255)

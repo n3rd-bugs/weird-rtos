@@ -490,7 +490,7 @@ int32_t mmc_spi_init(void *device)
             if (status == SUCCESS)
             {
                 /* Check if we are SDv2. */
-                if ((resp[3] == 0x01) && (resp[4] == 0xAA))
+                if ((resp[3] == 0x1) && (resp[4] == 0xAA))
                 {
                     /* Lets get the card out of idle. */
                     for (retries = 0; ((status == SUCCESS) && (retries < MMC_SPI_RESUME_RETRIES)); retries++)
@@ -703,7 +703,7 @@ int32_t mmc_spi_read(void *device, uint32_t sector, uint64_t *offset, uint8_t *b
     int32_t this_size = 0, status = SUCCESS;
     uint32_t sector_offset;
     SPI_MSG msg;
-    uint8_t retries, line = 0x00;
+    uint8_t retries, line = 0x0;
 
     SYS_LOG_FUNCTION_ENTRY(MMC);
 
@@ -897,7 +897,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
     int32_t this_size = 0, status = SUCCESS;
     uint32_t sector_offset;
     SPI_MSG msg;
-    uint8_t retries, line = 0x00;
+    uint8_t retries, line = 0x0;
 
     SYS_LOG_FUNCTION_ENTRY(MMC);
 
@@ -1061,7 +1061,7 @@ int32_t mmc_spi_write(void *device, uint32_t sector, uint64_t *offset, uint8_t *
                     if (status == SUCCESS)
                     {
                         /* If we encountered an error. */
-                        if ((line & 0x1F) != 0x05)
+                        if ((line & 0x1F) != 0x5)
                         {
                             SYS_LOG_FUNCTION_MSG(MMC, SYS_LOG_ERROR, "DATARSP 0x%02X", line);
 
@@ -1290,7 +1290,7 @@ int32_t mmc_spi_get_sectors_per_block(MMC_SPI *mmc, uint64_t *num_sectors)
             else
             {
                 /* Calculate and return number of sectors per block. */
-                *num_sectors = ((uint64_t)((csd[10] & 0x7C) >> 2) + 1) * (uint64_t)(((csd[11] & 0x03) << 3) + ((csd[11] & 0xE0) >> 5) + 1);
+                *num_sectors = ((uint64_t)((csd[10] & 0x7C) >> 2) + 1) * (uint64_t)(((csd[11] & 0x3) << 3) + ((csd[11] & 0xE0) >> 5) + 1);
             }
         }
     }
@@ -1473,11 +1473,11 @@ static int32_t mmc_spi_cmd(MMC_SPI *mmc, uint8_t cmd, uint8_t flags, uint32_t ar
 
             break;
 
-        /* Put 0x00 as CRC with end bit as high. */
+        /* Put 0x0 as CRC with end bit as high. */
         default:
 
             /* Add dummy CRC. */
-            cmd_buff[5] = 0x01;
+            cmd_buff[5] = 0x1;
 
             break;
         }

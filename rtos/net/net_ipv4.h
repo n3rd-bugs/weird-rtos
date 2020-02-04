@@ -29,8 +29,8 @@ typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 
 
 /* Protocol definitions. */
-#define IP_PROTO_ICMP               (0x01)
-#define IP_PROTO_TCP                (0x06)
+#define IP_PROTO_ICMP               (0x1)
+#define IP_PROTO_TCP                (0x6)
 #define IP_PROTO_UDP                (0x11)
 
 /* IPv4 header definitions. */
@@ -41,7 +41,7 @@ typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 /* IPv4 header manipulation macros. */
 #define IPV4_HDR_VER_IHL_OFFSET     0
 #define IPV4_HDR_VER_MASK           (0xF0)
-#define IPV4_HDR_IHL_MASK           (0x0F)
+#define IPV4_HDR_IHL_MASK           (0xF)
 #define IPV4_HDR_DSCP_OFFSET        1
 #define IPV4_HDR_LENGTH_OFFSET      2
 #define IPV4_HDR_ID_OFFSET          4
@@ -57,10 +57,10 @@ typedef struct _dhcp_client_device DHCP_CLIENT_DEVICE;
 #define IPV4_HDR_OPT_OFFSET         20
 
 /* IPv4 fragment flag definitions. */
-#define IPV4_FRAG_IN_USE            0x01
-#define IPV4_FRAG_HAVE_FIRST        0x02
-#define IPV4_FRAG_LAST_RCVD         0x04
-#define IPV4_FRAG_DROP              0x08
+#define IPV4_FRAG_IN_USE            0x1
+#define IPV4_FRAG_HAVE_FIRST        0x2
+#define IPV4_FRAG_LAST_RCVD         0x4
+#define IPV4_FRAG_DROP              0x8
 
 /* IPv4 address definitions. */
 #define IPV4_ADDR_UNSPEC                (0)

@@ -3,13 +3,13 @@ OUTPUT_FORMAT("elf32-avr","elf32-avr","elf32-avr")
 OUTPUT_ARCH(avr:51)
 MEMORY
 {
-    text          (rx)   :  ORIGIN = 0x00000000,  LENGTH = 0x0001F000
-    boot          (rx)   :  ORIGIN = 0x0001F000,  LENGTH = 0x00001000
-    data          (rw!x) :  ORIGIN = 0x00800060,  LENGTH = 0x00004000
-    eeprom        (rw!x) :  ORIGIN = 0x00810000,  LENGTH = 0x00001000
-    fuse          (rw!x) :  ORIGIN = 0x00820000,  LENGTH = 0x00000400
-    lock          (rw!x) :  ORIGIN = 0x00830000,  LENGTH = 0x00000400
-    signature     (rw!x) :  ORIGIN = 0x00840000,  LENGTH = 0x00000400
+    text          (rx)   :  ORIGIN = 0x0,       LENGTH = 0x1F000
+    boot          (rx)   :  ORIGIN = 0x1F000,   LENGTH = 0x1000
+    data          (rw!x) :  ORIGIN = 0x800060,  LENGTH = 0x4000
+    eeprom        (rw!x) :  ORIGIN = 0x810000,  LENGTH = 0x1000
+    fuse          (rw!x) :  ORIGIN = 0x820000,  LENGTH = 0x400
+    lock          (rw!x) :  ORIGIN = 0x830000,  LENGTH = 0x400
+    signature     (rw!x) :  ORIGIN = 0x840000,  LENGTH = 0x400
 }
 
 SECTIONS

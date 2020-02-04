@@ -356,9 +356,9 @@ void route_print(void)
             {
                 /* Print this routes information. */
                 SYS_LOG_MSG(ROUTE, SYS_LOG_INFO, "%s ", ((FS*)routes[i].device)->name);
-                SYS_LOG_MSG(ROUTE, SYS_LOG_INFO, "@ 0x%08lX", routes[i].gateway);
-                SYS_LOG_MSG(ROUTE, SYS_LOG_INFO, " 0x%08lX/", routes[i].destination);
-                SYS_LOG_MSG(ROUTE, SYS_LOG_INFO, "0x%08lX\r\n", routes[i].subnet);
+                SYS_LOG_MSG(ROUTE, SYS_LOG_INFO, "@ 0x0%08lX", routes[i].gateway);
+                SYS_LOG_MSG(ROUTE, SYS_LOG_INFO, " 0x0%08lX/", routes[i].destination);
+                SYS_LOG_MSG(ROUTE, SYS_LOG_INFO, "0x0%08lX\r\n", routes[i].subnet);
             }
         }
 

@@ -44,12 +44,12 @@ void spi_stm32f103_init(SPI_DEVICE *device)
         RCC->APB2ENR |= RCC_APB2Periph_GPIOA;
 
         /* Set alternate function for PA5 (SCLK), PA6 (MISO) and PA7 (MOSI). */
-        GPIOA->CRL &= (uint32_t)(~((0x0F << (5 << 2)) | (0x0F << (6 << 2)) | (0x0F << (7 << 2))));
-        GPIOA->CRL |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << (5 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << (6 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << (7 << 2)));
+        GPIOA->CRL &= (uint32_t)(~((0xF << (5 << 2)) | (0xF << (6 << 2)) | (0xF << (7 << 2))));
+        GPIOA->CRL |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0xF) << (5 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0xF) << (6 << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0xF) << (7 << 2)));
 
         /* Set PA4 (NSS) as output. */
-        GPIOA->CRL &= (uint32_t)(~(0x0F << (4 << 2)));
-        GPIOA->CRL |= (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0x0F) << (4 << 2));
+        GPIOA->CRL &= (uint32_t)(~(0xF << (4 << 2)));
+        GPIOA->CRL |= (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0xF) << (4 << 2));
 
         /* Set the CS. */
         GPIOA->BSRR |= (1 << 4);
@@ -74,12 +74,12 @@ void spi_stm32f103_init(SPI_DEVICE *device)
         RCC->APB2ENR |= RCC_APB2Periph_GPIOB;
 
         /* Set alternate function for PB13 (SCLK), PB14 (MISO) and PB15 (MOSI). */
-        GPIOB->CRH &= (uint32_t)(~((0x0F << ((13 - 8) << 2)) | (0x0F << ((14 - 8) << 2)) | (0x0F << ((15 - 8) << 2))));
-        GPIOB->CRH |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((13 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((14 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0x0F) << ((15 - 8) << 2)));
+        GPIOB->CRH &= (uint32_t)(~((0xF << ((13 - 8) << 2)) | (0xF << ((14 - 8) << 2)) | (0xF << ((15 - 8) << 2))));
+        GPIOB->CRH |= (uint32_t)((((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0xF) << ((13 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0xF) << ((14 - 8) << 2)) | (((GPIO_Speed_50MHz | GPIO_Mode_AF_PP) & 0xF) << ((15 - 8) << 2)));
 
         /* Set PB12 (NSS) as output. */
-        GPIOB->CRH &= (uint32_t)(~(0x0F << ((12 - 8) << 2)));
-        GPIOB->CRH |= (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0x0F) << ((12 - 8) << 2));
+        GPIOB->CRH &= (uint32_t)(~(0xF << ((12 - 8) << 2)));
+        GPIOB->CRH |= (((GPIO_Speed_50MHz | GPIO_Mode_Out_PP) & 0xF) << ((12 - 8) << 2));
 
         /* Set the PB12 (CS). */
         GPIOB->BSRR |= (1 << 12);

@@ -194,7 +194,7 @@ static int32_t usart_stm32f030_init(void *data)
     integral = ((25 * PCLK_FREQ) / (4 * usart->baud_rate));
     temp = (integral / 100) << 4;
     fractional = integral - (100 * (temp >> 4));
-    temp |= ((((fractional * 16) + 50) / 100)) & (0x0F);
+    temp |= ((((fractional * 16) + 50) / 100)) & (0xF);
     usart->reg->BRR = (uint16_t)temp;
 
     /* Enable USART. */
@@ -364,7 +364,7 @@ static void usart_stm32f030_enable_interrupt(void *data)
     case 1:
 
         /* Enable the USART1 IRQ channel. */
-        NVIC->ISER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[USART1_IRQn >> 0x5] = (uint32_t)0x1 << (USART1_IRQn & (uint8_t)0x1F);
 
         break;
     }
@@ -387,7 +387,7 @@ static void usart_stm32f030_disable_interrupt(void *data)
     case 1:
 
         /* Disable the USART1 IRQ channel. */
-        NVIC->ICER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+        NVIC->ICER[USART1_IRQn >> 0x5] = (uint32_t)0x1 << (USART1_IRQn & (uint8_t)0x1F);
 
         break;
     }

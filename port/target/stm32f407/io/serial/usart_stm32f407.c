@@ -93,7 +93,7 @@ static int32_t usart_stm32f407_init(void *data)
     RCC->APB2ENR |= 0x10;
 
     /* Enable clock for GPIOB. */
-    RCC->AHB1ENR |= 0x02;
+    RCC->AHB1ENR |= 0x2;
 
     /* Set alternate function for the PB6 (TX) and PB7 (RX). */
     GPIOB->MODER &= ~((GPIO_MODER_MODER0 << (6 * 2)) | (GPIO_MODER_MODER0 << (7 * 2)));
@@ -108,13 +108,13 @@ static int32_t usart_stm32f407_init(void *data)
 
     /* Enable pull-ups on USART pins. */
     GPIOB->PUPDR &= ~((GPIO_PUPDR_PUPDR0 << (6 * 2)) | (GPIO_PUPDR_PUPDR0 << (7 * 2)));
-    GPIOB->PUPDR |= ((0x01 << (6 * 2)) | (0x01 << (7 * 2)));
+    GPIOB->PUPDR |= ((0x1 << (6 * 2)) | (0x1 << (7 * 2)));
 
     /* Select USART1 as Alternate function for these pins. */
-    GPIOB->AFR[(0x6 >> 0x03)] &= ~((uint32_t)(0xF << (0x6 * 4))) ;
-    GPIOB->AFR[(0x7 >> 0x03)] &= ~((uint32_t)(0xF << (0x7 * 4))) ;
-    GPIOB->AFR[(0x6 >> 0x03)] |= (uint32_t)(0x7 << (0x6 * 4));
-    GPIOB->AFR[(0x7 >> 0x03)] |= (uint32_t)(0x7 << (0x7 * 4));
+    GPIOB->AFR[(0x6 >> 0x3)] &= ~((uint32_t)(0xF << (0x6 * 4))) ;
+    GPIOB->AFR[(0x7 >> 0x3)] &= ~((uint32_t)(0xF << (0x7 * 4))) ;
+    GPIOB->AFR[(0x6 >> 0x3)] |= (uint32_t)(0x7 << (0x6 * 4));
+    GPIOB->AFR[(0x7 >> 0x3)] |= (uint32_t)(0x7 << (0x7 * 4));
 
     /* Enable RX and TX for this USART, also use 8-bit word length and
      * disable parity bit. */
@@ -131,7 +131,7 @@ static int32_t usart_stm32f407_init(void *data)
     integral = ((25 * PCLK_FREQ) / (4 * SERIAL_BAUD_RATE));
     temp = (integral / 100) << 4;
     fractional = integral - (100 * (temp >> 4));
-    temp |= ((((fractional * 16) + 50) / 100)) & (0x0F);
+    temp |= ((((fractional * 16) + 50) / 100)) & (0xF);
     USART1->BRR = temp;
 
     /* Enable USART1. */
@@ -281,7 +281,7 @@ static void usart_stm32f407_enable_interrupt(void *data)
     UNUSED_PARAM(data);
 
     /* Enable the USART1 IRQ channel. */
-    NVIC->ISER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+    NVIC->ISER[USART1_IRQn >> 0x5] = (uint32_t)0x1 << (USART1_IRQn & (uint8_t)0x1F);
 
 } /* usart_stm32f407_enable_interrupt */
 #endif /* SERIAL_INTERRUPT_MODE */
@@ -296,7 +296,7 @@ static void usart_stm32f407_disable_interrupt(void *data)
     UNUSED_PARAM(data);
 
     /* Disable the USART1 IRQ channel. */
-    NVIC->ICER[USART1_IRQn >> 0x05] = (uint32_t)0x01 << (USART1_IRQn & (uint8_t)0x1F);
+    NVIC->ICER[USART1_IRQn >> 0x5] = (uint32_t)0x1 << (USART1_IRQn & (uint8_t)0x1F);
 
 } /* usart_stm32f407_disable_interrupt */
 

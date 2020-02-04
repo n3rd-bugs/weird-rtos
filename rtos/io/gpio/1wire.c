@@ -458,7 +458,7 @@ uint8_t onewire_crc(const uint8_t *buffer, uint8_t num_bytes)
         for (j = 0; j < 8; j++)
         {
             /* Update the mix. */
-            mix = (crc ^ byte) & 0x01;
+            mix = (crc ^ byte) & 0x1;
 
             /* Update the CRC. */
             crc >>= 1;

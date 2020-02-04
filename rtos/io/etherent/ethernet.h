@@ -44,17 +44,17 @@
 #define ETH_MTU_SIZE        (1500)
 
 /* Ethernet MAC address definitions. */
-#define ETH_MAC_OUI         (0x02)
-#define ETH_MAC_MULTICAST   (0x01)
+#define ETH_MAC_OUI         (0x2)
+#define ETH_MAC_MULTICAST   (0x1)
 
 /* Ethernet protocol definitions. */
-#define ETH_PROTO_IP        (0x0800)
-#define ETH_PROTO_ARP       (0x0806)
+#define ETH_PROTO_IP        (0x800)
+#define ETH_PROTO_ARP       (0x806)
 
 /* Ethernet device flags. */
-#define ETH_FLAG_INIT       0x01
-#define ETH_FLAG_INT        0x02
-#define ETH_FLAG_TX         0x04
+#define ETH_FLAG_INIT       0x1
+#define ETH_FLAG_INT        0x2
+#define ETH_FLAG_TX         0x4
 
 /* Ethernet address definitions. */
 #define ETH_UNSPEC_ADDR     ((uint8_t []){0, 0, 0, 0, 0, 0})

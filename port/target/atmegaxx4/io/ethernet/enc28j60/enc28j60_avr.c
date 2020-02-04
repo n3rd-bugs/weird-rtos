@@ -49,8 +49,8 @@ void enc28j60_avr_init(void)
     EIMSK &= (uint8_t)~(1 << ENC28J60_INT_SOURCE);
 
     /* Setup INT0 to raise an interrupt on falling edge. */
-    EICRA &= (uint8_t)~(0x03 << (ENC28J60_INT_SOURCE * 2));
-    EICRA |= (0x02 << (ENC28J60_INT_SOURCE * 2));
+    EICRA &= (uint8_t)~(0x3 << (ENC28J60_INT_SOURCE * 2));
+    EICRA |= (0x2 << (ENC28J60_INT_SOURCE * 2));
 #endif
 
     /* Initialize device APIs. */
@@ -220,9 +220,9 @@ uint8_t *enc28j60_avr_get_mac(ETH_DEVICE *device)
     device->mac[2] = ENC28J60_OUI_B2;
 
     /* Assign remaining MAC address using the device serial. */
-    device->mac[3] = NET_CSUM_BYTE(NET_CSUM_BYTE(boot_signature_byte_get(0x000E), boot_signature_byte_get(0x000F)), boot_signature_byte_get(0x0010));
-    device->mac[4] = NET_CSUM_BYTE(NET_CSUM_BYTE(boot_signature_byte_get(0x0011), boot_signature_byte_get(0x0012)), boot_signature_byte_get(0x0013));
-    device->mac[5] = NET_CSUM_BYTE(NET_CSUM_BYTE(boot_signature_byte_get(0x0015), boot_signature_byte_get(0x0016)), boot_signature_byte_get(0x0017));
+    device->mac[3] = NET_CSUM_BYTE(NET_CSUM_BYTE(boot_signature_byte_get(0xE), boot_signature_byte_get(0xF)), boot_signature_byte_get(0x10));
+    device->mac[4] = NET_CSUM_BYTE(NET_CSUM_BYTE(boot_signature_byte_get(0x11), boot_signature_byte_get(0x12)), boot_signature_byte_get(0x13));
+    device->mac[5] = NET_CSUM_BYTE(NET_CSUM_BYTE(boot_signature_byte_get(0x15), boot_signature_byte_get(0x16)), boot_signature_byte_get(0x17));
 
     /* Return the generated MAC address. */
     return (device->mac);

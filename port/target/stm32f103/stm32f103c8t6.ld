@@ -2,8 +2,8 @@ ENTRY(system_entry)
 
 MEMORY
 {
-    m_text          (RX): ORIGIN = 0x08000000, LENGTH = 0x00010000
-    m_data          (RW): ORIGIN = 0x20000000, LENGTH = 0x00005000
+    m_text          (RX): ORIGIN = 0x8000000,   LENGTH = 0x10000
+    m_data          (RW): ORIGIN = 0x20000000,  LENGTH = 0x5000
 }
 
 SECTIONS

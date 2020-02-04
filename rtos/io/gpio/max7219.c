@@ -60,7 +60,7 @@ int32_t max7219_register(MAX7219 *max)
 
     /* Turn off display. */
     buf[0] = MAX7219_ADDR_SHUTDOWN;
-    buf[1] = 0x00;
+    buf[1] = 0x0;
     status = spi_message(&max->spi, &spi_msg, 1);
 
     if (status == SUCCESS)
@@ -76,7 +76,7 @@ int32_t max7219_register(MAX7219 *max)
     {
         /* Configure scan limit [0-7 digits]. */
         buf[0] = MAX7219_ADDR_SCAN_LIMIT;
-        buf[1] = 0x07;
+        buf[1] = 0x7;
         status = spi_message(&max->spi, &spi_msg, 1);
     }
 
@@ -155,7 +155,7 @@ int32_t led_max7219_register(LED_MAX7219 *led_max)
     if (status == SUCCESS)
     {
         /* Disable the decode mode. */
-        status = max7219_set_decode(&led_max->max, 0x00);
+        status = max7219_set_decode(&led_max->max, 0x0);
     }
 
     if (status == SUCCESS)
@@ -268,7 +268,7 @@ static int32_t led_max_ssd1306_clear_display(GFX *gfx)
     spi_msg.flags = SPI_MSG_WRITE;
 
     /* Initialize with all zeros. */
-    buf[1] = 0x00;
+    buf[1] = 0x0;
     for (i = 0; (status == SUCCESS) && (i < 8); i++)
     {
         buf[0] = (uint8_t)(i + 1);

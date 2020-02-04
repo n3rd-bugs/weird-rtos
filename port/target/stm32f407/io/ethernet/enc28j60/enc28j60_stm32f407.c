@@ -43,39 +43,39 @@ void enc28j60_stm32f407_init(void)
     enc28j60.spi.data = &enc28j60_spi;
 
     /* Enable GPIO A clock. */
-    RCC->AHB1ENR |= 0x00000001;
+    RCC->AHB1ENR |= 0x1;
 
     /* Configure GPIO mode output for GPIOA.2 and output for GPIOA.3. */
     GPIOA->MODER &= ~((GPIO_MODER_MODER0 << (2 * 2)) | (GPIO_MODER_MODER0 << (3 * 2)));
-    GPIOA->MODER |= (0x01 << (3 * 2));
+    GPIOA->MODER |= (0x1 << (3 * 2));
 
     /* Configure output type (PP). */
     GPIOA->OTYPER &= (uint32_t)(~((GPIO_OTYPER_OT_0 << (2 * 2)) | (GPIO_OTYPER_OT_0 << (3 * 2))));
 
     /* Enable pull-up on GPIOA.2 and GPIOA.3. */
     GPIOA->PUPDR &= (uint32_t)(~(((GPIO_PUPDR_PUPDR0 << (2 * 2)) | (GPIO_PUPDR_PUPDR0 << (3 * 2)))));
-    GPIOA->PUPDR |= (0x01 << (2 * 2));
+    GPIOA->PUPDR |= (0x1 << (2 * 2));
 
     /* Configure GPIO speed (100MHz). */
     GPIOA->OSPEEDR &= (uint32_t)(~((GPIO_OSPEEDER_OSPEEDR0 << (2 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (3 * 2))));
-    GPIOA->OSPEEDR |= ((0x03 << (2 * 2)) | (0x03 << (3 * 2)));
+    GPIOA->OSPEEDR |= ((0x3 << (2 * 2)) | (0x3 << (3 * 2)));
 
 #if (ENC28J60_INT_POLL == FALSE)
     /* Set EXTI line for processing interrupts on GPIOA.2. */
-    SYSCFG->EXTICR[(0x02 >> 0x02)] &= (uint32_t)(~(0x0F << (0x04 * (0x02 & 0x03))));
-    SYSCFG->EXTICR[(0x02 >> 0x02)] |= (0x00 << (0x04 * (0x02 & 0x03)));
+    SYSCFG->EXTICR[(0x2 >> 0x2)] &= (uint32_t)(~(0xF << (0x4 * (0x2 & 0x3))));
+    SYSCFG->EXTICR[(0x2 >> 0x2)] |= (0x0 << (0x4 * (0x2 & 0x3)));
 
     /* Clear EXTI line configuration. */
-    EXTI->IMR &= (uint32_t)~(0x04);
-    EXTI->EMR &= (uint32_t)~(0x04);
-    EXTI->RTSR &= (uint32_t)~(0x04);
-    EXTI->FTSR &= (uint32_t)~(0x04);
+    EXTI->IMR &= (uint32_t)~(0x4);
+    EXTI->EMR &= (uint32_t)~(0x4);
+    EXTI->RTSR &= (uint32_t)~(0x4);
+    EXTI->FTSR &= (uint32_t)~(0x4);
 
     /* Enable interrupt mode. */
-    *(uint32_t *) (EXTI_BASE + 0x00) |= (0x04);
+    *(uint32_t *) (EXTI_BASE + 0x0) |= (0x4);
 
     /* Enable interrupt for falling edge. */
-    *(uint32_t *) (EXTI_BASE + 0x0C) |= (0x04);
+    *(uint32_t *) (EXTI_BASE + 0xC) |= (0x4);
 
     /* Set EXT2 IRQ channel priority. */
     NVIC->IP[EXTI2_IRQn] = 2;
@@ -133,7 +133,7 @@ void enc28j60_stm32f407_enable_interrupt(ENC28J60 *device)
     if (device->flags & ENC28J60_INT_ENABLE)
     {
         /* Enable the EXT2 IRQ channel. */
-        NVIC->ISER[EXTI2_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI2_IRQn & (uint8_t)0x1F);
+        NVIC->ISER[EXTI2_IRQn >> 0x5] = (uint32_t)0x1 << (EXTI2_IRQn & (uint8_t)0x1F);
     }
 
 } /* enc28j60_stm32f407_enable_interrupt */
@@ -150,7 +150,7 @@ void enc28j60_stm32f407_disable_interrupt(ENC28J60 *device)
     UNUSED_PARAM(device);
 
     /* Disable the EXT2 IRQ channel. */
-    NVIC->ICER[EXTI2_IRQn >> 0x05] = (uint32_t)0x01 << (EXTI2_IRQn & (uint8_t)0x1F);
+    NVIC->ICER[EXTI2_IRQn >> 0x5] = (uint32_t)0x1 << (EXTI2_IRQn & (uint8_t)0x1F);
 
 } /* enc28j60_stm32f407_disable_interrupt */
 #endif

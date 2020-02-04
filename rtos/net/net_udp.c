@@ -583,7 +583,7 @@ static int32_t udp_write_buffer(void *fd, const uint8_t *buffer, int32_t size)
             if (status == SUCCESS)
             {
                 /* If calculated checksum is 0. */
-                if (csum == 0x00)
+                if (csum == 0x0)
                 {
                     /* Update checksum to all ones. */
                     csum = 0xFFFF;

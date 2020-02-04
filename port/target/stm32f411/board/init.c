@@ -35,10 +35,10 @@ void sysclock_init(void)
 #endif /* (CORTEX_M4_FPU == TRUE) */
 
     /* Set HSION bit. */
-    RCC->CR |= (uint32_t)0x00000001;
+    RCC->CR |= (uint32_t)0x1;
 
     /* Reset CFGR register. */
-    RCC->CFGR = 0x00000000;
+    RCC->CFGR = 0x0;
 
     /* Reset HSEON, CSSON and PLLON bits. */
     RCC->CR &= (uint32_t)0xFEF6FFFF;
@@ -50,7 +50,7 @@ void sysclock_init(void)
     RCC->CR &= (uint32_t)0xFFFBFFFF;
 
     /* Disable all interrupts. */
-    RCC->CIR = 0x00000000;
+    RCC->CIR = 0x0;
 
     /* Configure Flash prefetch, Instruction cache, Data cache and wait state. */
     FLASH->ACR = FLASH_ACR_ICEN | FLASH_ACR_DCEN | FLASH_ACR_PRFTEN;

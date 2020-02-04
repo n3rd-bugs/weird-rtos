@@ -37,7 +37,7 @@ void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
 {
     /* The start of the task entry will be popped off the stack last, so place
      * it on first. */
-    *(tcb->tos) = ((uint16_t)entry & 0x00FF);
+    *(tcb->tos) = ((uint16_t)entry & 0xFF);
     (tcb->tos)--;
 
     *(tcb->tos) = ((uint16_t)entry & 0xFF00) >> 8;
@@ -51,17 +51,17 @@ void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
     (tcb->tos)--;
 
     /* Push RAMPZ on the stack. */
-    *(tcb->tos) = 0x00;
+    *(tcb->tos) = 0x0;
     (tcb->tos)--;
 
     /* The compiler expects R1 to be 0. */
-    *(tcb->tos) = 0x00;
+    *(tcb->tos) = 0x0;
 
     /* Push R1-R15, R0, R17-R23 on the stack. */
     (tcb->tos) -= 0x17;
 
     /* Push R24 on the stack. */
-    *(tcb->tos) = ((uint16_t)argv & 0x00FF);
+    *(tcb->tos) = ((uint16_t)argv & 0xFF);
     (tcb->tos)--;
 
     /* Push R25 on the stack. */
@@ -69,7 +69,7 @@ void stack_init(TASK *tcb, TASK_ENTRY *entry, void *argv)
     (tcb->tos)--;
 
     /* Push R26-R31 on the stack. */
-    (tcb->tos) -= 0x06;
+    (tcb->tos) -= 0x6;
 
     /* Push system interrupt level for this task. */
     *(tcb->tos) = TRUE;

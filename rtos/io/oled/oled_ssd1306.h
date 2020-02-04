@@ -52,7 +52,7 @@
 #define SSD1306_SETVCOMDESELECT     (0xDB)
 
 /* OLED configuration flags. */
-#define SSD1306_EXTERNAL_VCC        (0x01)
+#define SSD1306_EXTERNAL_VCC        (0x1)
 
 /* OLED driver data. */
 typedef struct _ssd1306

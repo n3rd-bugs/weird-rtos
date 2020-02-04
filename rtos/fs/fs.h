@@ -37,22 +37,22 @@ typedef void *FD;
 #define FS_PRINTF_BUFFER_SIZE   64
 
 /* File system specific flags. */
-#define FS_DATA_AVAILABLE   0x0001
-#define FS_SPACE_AVAILABLE  0x0002
-#define FS_BLOCK            0x0100
-#define FS_BUFFERED         0x0200
-#define FS_FLUSH_WRITE      0x0400
-#define FS_WRITE_NO_BLOCK   0x0800
+#define FS_DATA_AVAILABLE   0x1
+#define FS_SPACE_AVAILABLE  0x2
+#define FS_BLOCK            0x100
+#define FS_BUFFERED         0x200
+#define FS_FLUSH_WRITE      0x400
+#define FS_WRITE_NO_BLOCK   0x800
 
 /* Suspend flags. */
-#define FS_BLOCK_READ       0x00000001
-#define FS_BLOCK_WRITE      0x00000002
+#define FS_BLOCK_READ       0x1
+#define FS_BLOCK_WRITE      0x2
 
 /* File open flags. */
-#define FS_READ             0x01
-#define FS_WRITE            0x02
-#define FS_CREATE           0x04
-#define FS_APPEND           0x08
+#define FS_READ             0x1
+#define FS_WRITE            0x2
+#define FS_CREATE           0x4
+#define FS_APPEND           0x8
 
 /* File system descriptor. */
 typedef struct _fs FS;

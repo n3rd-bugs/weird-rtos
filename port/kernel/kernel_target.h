@@ -20,15 +20,15 @@
 #define TARGET_CORTEX_M4    0x4
 
 /* Target platform definitions. */
-#define PLAT_ATMEGAXX4      0x01
-#define PLAT_STM32F030F4P6  0x02
-#define PLAT_STM32F103C8T6  0x03
-#define PLAT_STM32F407VGT6  0x04
-#define PLAT_STM32F411CEU6  0x05
+#define PLAT_ATMEGAXX4      0x1
+#define PLAT_STM32F030F4P6  0x2
+#define PLAT_STM32F103C8T6  0x3
+#define PLAT_STM32F407VGT6  0x4
+#define PLAT_STM32F411CEU6  0x5
 
 /* Target toolset configuration. */
-#define TOOL_AVR_GCC        0x01
-#define TOOL_ARM_GCC        0x02
+#define TOOL_AVR_GCC        0x1
+#define TOOL_ARM_GCC        0x2
 
 /* Toolset includes. */
 #if (TARGET_TOOLS == TOOL_AVR_GCC)

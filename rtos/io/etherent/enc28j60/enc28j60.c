@@ -141,7 +141,7 @@ static void enc28j60_initialize(void *data)
     if (status == SUCCESS)
     {
         /* Clear ECON1. */
-        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON1, 0x00, NULL, 0);
+        status = enc28j60_write_read_op(device, ENC28J60_OP_WRITE_CTRL, ENC28J60_ADDR_ECON1, 0x0, NULL, 0);
     }
 
     if (status == SUCCESS)
@@ -694,7 +694,7 @@ static void enc28j60_receive_packet(ENC28J60 *device)
             next_ptr = (uint16_t)((receive_header[1] << 8) | receive_header[0]);
 
             /* If we don't have an anticipated RX pointer. */
-            if ((next_ptr & 0x01) || (next_ptr > ENC28J60_RX_END))
+            if ((next_ptr & 0x1) || (next_ptr > ENC28J60_RX_END))
             {
                 /* Handle RX error. */
                 enc28j60_handle_rx_error(device);
@@ -844,7 +844,7 @@ static int32_t enc28j60_transmit_packet(void *data, FS_BUFFER_LIST *buffer)
     if ((device->flags & ENC28J60_IN_TX) == 0)
     {
         /* Write the packet control register. */
-        value = 0x00;
+        value = 0x0;
         enc28j60_write_buffer(device, tx_ptr++, &value, 1);
 
         /* Write the given buffer. */

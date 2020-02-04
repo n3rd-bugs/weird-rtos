@@ -38,21 +38,21 @@
 #define ENC28J60_DISCONNECTED       -11000
 
 /* ENC28J60 device flag definitions. */
-#define ENC28J60_IN_TX              (0x01)
-#define ENC28J60_INT_ENABLE         (0x02)
+#define ENC28J60_IN_TX              (0x1)
+#define ENC28J60_INT_ENABLE         (0x2)
 
 /* ENC28J60 receive packet definitions. */
 #define ENC28J60_RX_HEAD_SIZE       (6)
-#define ENC28J60_RX_RXLONGEVDROPEV  (0x0001)
-#define ENC28J60_RX_CARRIEREV       (0x0004)
-#define ENC28J60_RX_CRCERROR        (0x0010)
-#define ENC28J60_RX_LENCHECKERR     (0x0020)
-#define ENC28J60_RX_LENOUTOFRANGE   (0x0040)
-#define ENC28J60_RX_RXOK            (0x0080)
-#define ENC28J60_RX_RXMULTICAST     (0x0100)
-#define ENC28J60_RX_RXBROADCAST     (0x0200)
-#define ENC28J60_RX_DRIBBLENIBBLE   (0x0400)
-#define ENC28J60_RX_RXCONTROLFRAME  (0x0800)
+#define ENC28J60_RX_RXLONGEVDROPEV  (0x1)
+#define ENC28J60_RX_CARRIEREV       (0x4)
+#define ENC28J60_RX_CRCERROR        (0x10)
+#define ENC28J60_RX_LENCHECKERR     (0x20)
+#define ENC28J60_RX_LENOUTOFRANGE   (0x40)
+#define ENC28J60_RX_RXOK            (0x80)
+#define ENC28J60_RX_RXMULTICAST     (0x100)
+#define ENC28J60_RX_RXBROADCAST     (0x200)
+#define ENC28J60_RX_DRIBBLENIBBLE   (0x400)
+#define ENC28J60_RX_RXCONTROLFRAME  (0x800)
 #define ENC28J60_RX_RXPAUSEFRAME    (0x1000)
 #define ENC28J60_RX_RXUNKNOWNOPCODE (0x2000)
 #define ENC28J60_RX_RXTYPEVLAN      (0x4000)
@@ -74,8 +74,8 @@
 #define ENC28J60_RX_START_PTR(p)    (((p + ENC28J60_RX_HEAD_SIZE) > ENC28J60_RX_END) ? ((p + ENC28J60_RX_HEAD_SIZE) - (ENC28J60_RX_END - (ENC28J60_RX_START - 1))) : (p + ENC28J60_RX_HEAD_SIZE))
 
 /* MAC address definitions. */
-#define ENC28J60_OUI_B0             0x00
-#define ENC28J60_OUI_B1             0x04
+#define ENC28J60_OUI_B0             0x0
+#define ENC28J60_OUI_B1             0x4
 #define ENC28J60_OUI_B2             0xA3
 
 #if (ENC28J60_INT_POLL == TRUE)

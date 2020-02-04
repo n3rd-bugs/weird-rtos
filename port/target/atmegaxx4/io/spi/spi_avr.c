@@ -68,10 +68,10 @@ void spi_avr_init(SPI_DEVICE *device)
            (((device->cfg_flags & SPI_CFG_MASTER) != 0) << AVR_SPI_SPCR_MSTR_SHIFT) |
            ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_IDLE_HIGH) != 0) << AVR_SPI_SPCR_CPOL_SHIFT) |
            ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_FIRST_DATA) == 0) << AVR_SPI_SPCR_CPHA_SHIFT) |
-           ((baud_scale & 0x06) << 1);
+           ((baud_scale & 0x6) << 1);
 
     /* Update SPCR. */
-    SPSR = (((baud_scale & 0x01) == 0) << AVR_SPI_SPSR_SPI2X);
+    SPSR = (((baud_scale & 0x1) == 0) << AVR_SPI_SPSR_SPI2X);
 
     /* PIN configurations for SPI is
      *  SS - PB4

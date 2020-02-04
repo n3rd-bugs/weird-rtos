@@ -30,37 +30,37 @@ void __attribute__ ((weak, alias("cpu_interrupt"))) usart1_interrupt(void);
 __attribute__ ((section (".interrupts"), used)) ISR system_isr_table[] =
 {
     (ISR)STM32F030_STACK_END,           /* -0x10  Top of Stack                              */
-    (ISR)&system_entry,                 /* -0x0F  Reset Handler                             */
-    (ISR)&nmi_interrupt,                /* -0x0E  NMI Handler                               */
-    (ISR)&hard_fault_interrupt,         /* -0x0D                                            */
-    (ISR)&cpu_interrupt,                /* -0x0C                                            */
-    (ISR)&cpu_interrupt,                /* -0x0B                                            */
-    (ISR)&cpu_interrupt,                /* -0x0A                                            */
-    (ISR)&cpu_interrupt,                /* -0x09                                            */
-    (ISR)&cpu_interrupt,                /* -0x08                                            */
-    (ISR)&cpu_interrupt,                /* -0x07                                            */
-    (ISR)&cpu_interrupt,                /* -0x06                                            */
-    (ISR)&isr_sv_handle,                /* -0x05  SVCall Handler                            */
-    (ISR)&cpu_interrupt,                /* -0x04                                            */
-    (ISR)&cpu_interrupt,                /* -0x03                                            */
-    (ISR)&isr_pendsv_handle,            /* -0x02  PendSV Handler                            */
-    (ISR)&isr_sysclock_handle,          /* -0x01  SysTick_Handler                           */
-    (ISR)&cpu_interrupt,                /*  0x00  Window WatchDog                           */
-    (ISR)&cpu_interrupt,                /*  0x01                                            */
-    (ISR)&cpu_interrupt,                /*  0x02  RTC Wakeup through the EXTI line          */
-    (ISR)&cpu_interrupt,                /*  0x03  FLASH                                     */
-    (ISR)&cpu_interrupt,                /*  0x04  RCC                                       */
-    (ISR)&cpu_interrupt,                /*  0x05  EXTI Line 0 - 1                           */
-    (ISR)&cpu_interrupt,                /*  0x06  EXTI Line 2 - 3                           */
-    (ISR)&cpu_interrupt,                /*  0x07  EXTI Line 4 - 15                          */
-    (ISR)&cpu_interrupt,                /*  0x08                                            */
-    (ISR)&cpu_interrupt,                /*  0x09  DMA1 Stream 1                             */
-    (ISR)&cpu_interrupt,                /*  0x0a  DMA1 Stream 2 - 3                         */
-    (ISR)&cpu_interrupt,                /*  0x0b  DMA1 Stream 4 - 5                         */
-    (ISR)&cpu_interrupt,                /*  0x0c  ADC1                                      */
-    (ISR)&cpu_interrupt,                /*  0x0d  TIM1 Break Update Trigger and Commutation */
-    (ISR)&cpu_interrupt,                /*  0x0e  TIM1 Capture Compare                      */
-    (ISR)&cpu_interrupt,                /*  0x0f                                            */
+    (ISR)&system_entry,                 /* -0xF  Reset Handler                              */
+    (ISR)&nmi_interrupt,                /* -0xE  NMI Handler                                */
+    (ISR)&hard_fault_interrupt,         /* -0xD                                             */
+    (ISR)&cpu_interrupt,                /* -0xC                                             */
+    (ISR)&cpu_interrupt,                /* -0xB                                             */
+    (ISR)&cpu_interrupt,                /* -0xA                                             */
+    (ISR)&cpu_interrupt,                /* -0x9                                             */
+    (ISR)&cpu_interrupt,                /* -0x8                                             */
+    (ISR)&cpu_interrupt,                /* -0x7                                             */
+    (ISR)&cpu_interrupt,                /* -0x6                                             */
+    (ISR)&isr_sv_handle,                /* -0x5  SVCall Handler                             */
+    (ISR)&cpu_interrupt,                /* -0x4                                             */
+    (ISR)&cpu_interrupt,                /* -0x3                                             */
+    (ISR)&isr_pendsv_handle,            /* -0x2  PendSV Handler                             */
+    (ISR)&isr_sysclock_handle,          /* -0x1  SysTick_Handler                            */
+    (ISR)&cpu_interrupt,                /*  0x0  Window WatchDog                            */
+    (ISR)&cpu_interrupt,                /*  0x1                                             */
+    (ISR)&cpu_interrupt,                /*  0x2  RTC Wakeup through the EXTI line           */
+    (ISR)&cpu_interrupt,                /*  0x3  FLASH                                      */
+    (ISR)&cpu_interrupt,                /*  0x4  RCC                                        */
+    (ISR)&cpu_interrupt,                /*  0x5  EXTI Line 0 - 1                            */
+    (ISR)&cpu_interrupt,                /*  0x6  EXTI Line 2 - 3                            */
+    (ISR)&cpu_interrupt,                /*  0x7  EXTI Line 4 - 15                           */
+    (ISR)&cpu_interrupt,                /*  0x8                                             */
+    (ISR)&cpu_interrupt,                /*  0x9  DMA1 Stream 1                              */
+    (ISR)&cpu_interrupt,                /*  0xa  DMA1 Stream 2 - 3                          */
+    (ISR)&cpu_interrupt,                /*  0xb  DMA1 Stream 4 - 5                          */
+    (ISR)&cpu_interrupt,                /*  0xc  ADC1                                       */
+    (ISR)&cpu_interrupt,                /*  0xd  TIM1 Break Update Trigger and Commutation  */
+    (ISR)&cpu_interrupt,                /*  0xe  TIM1 Capture Compare                       */
+    (ISR)&cpu_interrupt,                /*  0xf                                             */
     (ISR)&isr_clock64_tick,             /*  0x10  TIM3                                      */
     (ISR)&cpu_interrupt,                /*  0x11                                            */
     (ISR)&cpu_interrupt,                /*  0x12                                            */

@@ -49,15 +49,15 @@
 #ifdef BOOTLOAD_MMC
 
 /* Status code definitions. */
-#define STA_NOINIT                  0x01                /* Drive not initialized */
-#define STA_NODISK                  0x02                /* No medium in the drive */
-#define STA_PROTECT                 0x04                /* Write protected */
+#define STA_NOINIT                  0x1                 /* Drive not initialized */
+#define STA_NODISK                  0x2                 /* No medium in the drive */
+#define STA_PROTECT                 0x4                 /* Write protected */
 /* MMC card type flags (MMC_GET_TYPE) */
-#define CT_MMC                      0x01                /* MMC ver 3 */
-#define CT_SD1                      0x02                /* SD ver 1 */
-#define CT_SD2                      0x04                /* SD ver 2 */
+#define CT_MMC                      0x1                 /* MMC ver 3 */
+#define CT_SD1                      0x2                 /* SD ver 1 */
+#define CT_SD2                      0x4                 /* SD ver 2 */
 #define CT_SDC                      (CT_SD1|CT_SD2)     /* SD */
-#define CT_BLOCK                    0x08                /* Block addressing */
+#define CT_BLOCK                    0x8                 /* Block addressing */
 
 #define INIT_PORT()                 init_port()         /* Initialize MMC control port (CS=H, CLK=L, DI=H, DO=pu) */
 #define DLY_US(n)                   _delay_us(n)        /* Delay n microseconds */
@@ -155,13 +155,13 @@ void xmit_mmc (
         CK_H(); CK_L();
         if (d & 0x10) DI_H(); else DI_L();  /* bit4 */
         CK_H(); CK_L();
-        if (d & 0x08) DI_H(); else DI_L();  /* bit3 */
+        if (d & 0x8) DI_H(); else DI_L();   /* bit3 */
         CK_H(); CK_L();
-        if (d & 0x04) DI_H(); else DI_L();  /* bit2 */
+        if (d & 0x4) DI_H(); else DI_L();   /* bit2 */
         CK_H(); CK_L();
-        if (d & 0x02) DI_H(); else DI_L();  /* bit1 */
+        if (d & 0x2) DI_H(); else DI_L();   /* bit1 */
         CK_H(); CK_L();
-        if (d & 0x01) DI_H(); else DI_L();  /* bit0 */
+        if (d & 0x1) DI_H(); else DI_L();   /* bit0 */
         CK_H(); CK_L();
     } while (--bc);
 }
@@ -307,7 +307,7 @@ int xmit_datablock (    /* 1:OK, 0:Failed */
         xmit_mmc(buff, 512);    /* Xmit the 512 byte data block to MMC */
         rcvr_mmc(d, 2);         /* Xmit dummy CRC (0xFF,0xFF) */
         rcvr_mmc(d, 1);         /* Receive data response */
-        if ((d[0] & 0x1F) != 0x05)  /* If not accepted, return with error */
+        if ((d[0] & 0x1F) != 0x5)   /* If not accepted, return with error */
             return 0;
     }
 
@@ -345,7 +345,7 @@ uint8_t send_cmd (     /* Returns command response (bit7==1:Send failed)*/
     buf[2] = (uint8_t)(arg >> 16);     /* Argument[23..16] */
     buf[3] = (uint8_t)(arg >> 8);      /* Argument[15..8] */
     buf[4] = (uint8_t)arg;             /* Argument[7..0] */
-    n = 0x01;                       /* Dummy CRC + Stop */
+    n = 0x1;                        /* Dummy CRC + Stop */
     if (cmd == CMD0) n = 0x95;      /* (valid CRC for CMD0(0)) */
     if (cmd == CMD8) n = 0x87;      /* (valid CRC for CMD8(0x1AA)) */
     buf[5] = n;
@@ -393,7 +393,7 @@ int32_t bootload_disk_initialize (uint8_t *card_type)
     if (send_cmd(CMD0, 0) == 1) {           /* Put the card SPI mode */
         if (send_cmd(CMD8, 0x1AA) == 1) {   /* Is the card SDv2? */
             rcvr_mmc(buf, 4);                           /* Get trailing return value of R7 resp */
-            if (buf[2] == 0x01 && buf[3] == 0xAA) {     /* The card can work at vdd range of 2.7-3.6V */
+            if (buf[2] == 0x1 && buf[3] == 0xAA) {      /* The card can work at vdd range of 2.7-3.6V */
                 for (tmr = 1000; tmr; tmr--) {          /* Wait for leaving idle state (ACMD41 with HCS bit) */
                     if (send_cmd(ACMD41, 1UL << 30) == 0) break;
                     DLY_US(1000);

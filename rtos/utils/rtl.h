@@ -20,7 +20,7 @@
 #define RTL_ULTOA_FIRST_DIV         1000000000
 
 /* ULTOA flag definitions. */
-#define RTL_ULTOA_LEADING_ZEROS     0x01
+#define RTL_ULTOA_LEADING_ZEROS     0x1
 
 /* Function overrides. */
 #define rtl_ultoa_b10(a, b)         rtl_ultoa(a, b, 0, 0)

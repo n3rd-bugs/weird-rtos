@@ -24,7 +24,7 @@
 #define ROUTE_NO_MEM            -1401
 
 /* Route flag definitions. */
-#define ROUTE_VALID             (0x01)
+#define ROUTE_VALID             (0x1)
 
 /* A single route entry. */
 typedef struct _net_route

@@ -28,10 +28,10 @@ typedef struct _net_dev NET_DEV;
 #endif
 
 /* Networking device flags. */
-#define NET_DEVICE_UP       0x01
+#define NET_DEVICE_UP       0x1
 
 /* Buffer flags. */
-#define ETH_FRAME_BCAST     (0x01)
+#define ETH_FRAME_BCAST     (0x1)
 
 /* Networking device transmit/receive functions. */
 typedef int32_t NET_TX (FS_BUFFER_LIST *, uint8_t);

@@ -42,7 +42,7 @@ void stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
     init_stack_frame->r12   = 0;
     init_stack_frame->pc    = (uint32_t)task_entry;
     init_stack_frame->lr    = (uint32_t)0x0;
-    init_stack_frame->psr   = (uint32_t)0x01000000;
+    init_stack_frame->psr   = (uint32_t)0x1000000;
 
     /* Push a dummy software stack frame. */
     tcb->tos -= sizeof(software_stack_farme);
@@ -53,7 +53,7 @@ void stack_init(TASK *tcb, TASK_ENTRY *task_entry, void *argv)
 
 #ifdef TASK_STATS
     /* Break the task stack pattern. */
-    *(tcb->tos - 1) = 0x00;
+    *(tcb->tos - 1) = 0x0;
 #endif /* TASK_STATS */
 
 } /* stack_init */
@@ -189,7 +189,7 @@ NAKED_ISR_FUN isr_sv_handle(void)
 #endif
     "   MSR         PSP, R0                 \r\n"   /* Save stack pointer (program). */
     "   ISB                                 \r\n"   /* Memory barrier. */
-    "   ORR         LR, #0x04               \r\n"   /* Return in program mode. */
+    "   ORR         LR, #0x4                \r\n"   /* Return in program mode. */
     "   BX          LR                      \r\n"
     :: [tos_offset] "I" (OFFSETOF(TASK, tos))
     );
@@ -228,7 +228,7 @@ NAKED_ISR_FUN isr_pendsv_handle(void)
 
 #ifdef TASK_STATS
     /* Break the task stack pattern. */
-    *(current_task->tos - 1) = 0x00;
+    *(current_task->tos - 1) = 0x0;
 #endif /* TASK_STATS */
 
     /* If current task is in running state. */

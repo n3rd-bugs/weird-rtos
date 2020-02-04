@@ -21,11 +21,11 @@
 #include <mem_dynamic_config.h>
 
 /* Memory page configuration flags. */
-#define MEM_PAGE_DEC        0x0001
-#define MEM_PAGE_ASC        0x0002
+#define MEM_PAGE_DEC        0x1
+#define MEM_PAGE_ASC        0x2
 
 /* Memory region allocation configuration flags. */
-#define MEM_STRICT_ALLOC    0x0001
+#define MEM_STRICT_ALLOC    0x1
 
 #ifdef MEM_BNDRY_CHECK
 #define MEM_BNDRY_PATTERN   "MMMM"

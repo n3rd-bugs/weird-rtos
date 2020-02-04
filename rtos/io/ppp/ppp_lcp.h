@@ -34,8 +34,8 @@
 
 /* Supported option definition. */
 /* Each bit specifies one option type starting from 0 at LSb-0. */
-#define PPP_LCP_OPTION_NEG_MASK     (0x000001A6)
-#define PPP_LCP_OPTION_SEND_MASK    (0x000001A4)
+#define PPP_LCP_OPTION_NEG_MASK         (0x1A6)
+#define PPP_LCP_OPTION_SEND_MASK        (0x1A4)
 
 /* Exported variables. */
 extern PPP_PROTO ppp_proto_lcp;

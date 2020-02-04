@@ -62,7 +62,7 @@ class SwitchRefreshThread(QThread):
                     print("Sending an update request for", self.plugin_id, "to", self.address)
                 
                 # Send a request update for this plugin.
-                self.udp_socket.sendto(bytes.fromhex(WV_UPDATE) + bytes([((self.plugin_id & 0xFF00) >> 8), (self.plugin_id & 0x00FF)]), self.address)
+                self.udp_socket.sendto(bytes.fromhex(WV_UPDATE) + bytes([((self.plugin_id & 0xFF00) >> 8), (self.plugin_id & 0xFF)]), self.address)
                 
                 # Receive data form the UDP port.
                 rx_data = self.udp_socket.recv(65535)
@@ -196,7 +196,7 @@ class PluginSwitch(QWidget):
             print("Turned on requested for switch at", self.plugin_id)
                 
         # Send an on request for this swicth.
-        self.udp_socket.sendto(bytes.fromhex(WV_REQ) + bytes([((self.plugin_id & 0xFF00) >> 8), (self.plugin_id & 0x00FF)]) + bytes([WV_PLUGIN_SWITCH_ON]), self.address)
+        self.udp_socket.sendto(bytes.fromhex(WV_REQ) + bytes([((self.plugin_id & 0xFF00) >> 8), (self.plugin_id & 0xFF)]) + bytes([WV_PLUGIN_SWITCH_ON]), self.address)
     
     """
     This is callback function for turn off button.
@@ -206,7 +206,7 @@ class PluginSwitch(QWidget):
             print("Turned off requested for switch at", self.plugin_id)
                 
         # Send an off request for this swicth.
-        self.udp_socket.sendto(bytes.fromhex(WV_REQ) + bytes([((self.plugin_id & 0xFF00) >> 8), (self.plugin_id & 0x00FF)]) + bytes([WV_PLUGIN_SWITCH_OFF]), self.address)
+        self.udp_socket.sendto(bytes.fromhex(WV_REQ) + bytes([((self.plugin_id & 0xFF00) >> 8), (self.plugin_id & 0xFF)]) + bytes([WV_PLUGIN_SWITCH_OFF]), self.address)
     
     """
     This function is responsible for updating plugin display data.

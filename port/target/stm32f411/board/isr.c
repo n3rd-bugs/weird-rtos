@@ -30,37 +30,37 @@ void __attribute__ ((weak, alias("cpu_interrupt"))) usart2_interrupt(void);
 __attribute__ ((section (".interrupts"), used)) ISR system_isr_table[] =
 {
     (ISR)STM32F411_STACK_END,   /* -0x10  Top of Stack                                  */
-    (ISR)&system_entry,         /* -0x0F  Reset Handler                                 */
-    (ISR)&nmi_interrupt,        /* -0x0E  NMI Handler                                   */
-    (ISR)&hard_fault_interrupt, /* -0x0D  Hard Fault Handler                            */
-    (ISR)&cpu_interrupt,        /* -0x0C  MPU Fault Handler                             */
-    (ISR)&cpu_interrupt,        /* -0x0B  Bus Fault Handler                             */
-    (ISR)&cpu_interrupt,        /* -0x0A  Usage Fault Handler                           */
-    (ISR)&cpu_interrupt,        /* -0x09                                                */
-    (ISR)&cpu_interrupt,        /* -0x08                                                */
-    (ISR)&cpu_interrupt,        /* -0x07                                                */
-    (ISR)&cpu_interrupt,        /* -0x06                                                */
-    (ISR)&isr_sv_handle,        /* -0x05  SVCall Handler                                */
-    (ISR)&cpu_interrupt,        /* -0x04  Debug Monitor Handler                         */
-    (ISR)&cpu_interrupt,        /* -0x03                                                */
-    (ISR)&isr_pendsv_handle,    /* -0x02  PendSV Handler                                */
-    (ISR)&isr_sysclock_handle,  /* -0x01  SysTick_Handler                               */
-    (ISR)&cpu_interrupt,        /*  0x00  Window WatchDog                               */
-    (ISR)&cpu_interrupt,        /*  0x01  PVD through EXTI Line detection               */
-    (ISR)&cpu_interrupt,        /*  0x02  Tamper and TimeStamps through the EXTI line   */
-    (ISR)&cpu_interrupt,        /*  0x03  RTC Wakeup through the EXTI line              */
-    (ISR)&cpu_interrupt,        /*  0x04  FLASH                                         */
-    (ISR)&cpu_interrupt,        /*  0x05  RCC                                           */
-    (ISR)&cpu_interrupt,        /*  0x06  EXTI Line0                                    */
-    (ISR)&cpu_interrupt,        /*  0x07  EXTI Line1                                    */
-    (ISR)&cpu_interrupt,        /*  0x08  EXTI Line2                                    */
-    (ISR)&cpu_interrupt,        /*  0x09  EXTI Line3                                    */
-    (ISR)&cpu_interrupt,        /*  0x0a  EXTI Line4                                    */
-    (ISR)&cpu_interrupt,        /*  0x0b  DMA1 Stream 0                                 */
-    (ISR)&cpu_interrupt,        /*  0x0c  DMA1 Stream 1                                 */
-    (ISR)&cpu_interrupt,        /*  0x0d  DMA1 Stream 2                                 */
-    (ISR)&cpu_interrupt,        /*  0x0e  DMA1 Stream 3                                 */
-    (ISR)&cpu_interrupt,        /*  0x0f  DMA1 Stream 4                                 */
+    (ISR)&system_entry,         /* -0xF  Reset Handler                                  */
+    (ISR)&nmi_interrupt,        /* -0xE  NMI Handler                                    */
+    (ISR)&hard_fault_interrupt, /* -0xD  Hard Fault Handler                             */
+    (ISR)&cpu_interrupt,        /* -0xC  MPU Fault Handler                              */
+    (ISR)&cpu_interrupt,        /* -0xB  Bus Fault Handler                              */
+    (ISR)&cpu_interrupt,        /* -0xA  Usage Fault Handler                            */
+    (ISR)&cpu_interrupt,        /* -0x9                                                 */
+    (ISR)&cpu_interrupt,        /* -0x8                                                 */
+    (ISR)&cpu_interrupt,        /* -0x7                                                 */
+    (ISR)&cpu_interrupt,        /* -0x6                                                 */
+    (ISR)&isr_sv_handle,        /* -0x5  SVCall Handler                                 */
+    (ISR)&cpu_interrupt,        /* -0x4  Debug Monitor Handler                          */
+    (ISR)&cpu_interrupt,        /* -0x3                                                 */
+    (ISR)&isr_pendsv_handle,    /* -0x2  PendSV Handler                                 */
+    (ISR)&isr_sysclock_handle,  /* -0x1  SysTick_Handler                                */
+    (ISR)&cpu_interrupt,        /*  0x0  Window WatchDog                                */
+    (ISR)&cpu_interrupt,        /*  0x1  PVD through EXTI Line detection                */
+    (ISR)&cpu_interrupt,        /*  0x2  Tamper and TimeStamps through the EXTI line    */
+    (ISR)&cpu_interrupt,        /*  0x3  RTC Wakeup through the EXTI line               */
+    (ISR)&cpu_interrupt,        /*  0x4  FLASH                                          */
+    (ISR)&cpu_interrupt,        /*  0x5  RCC                                            */
+    (ISR)&cpu_interrupt,        /*  0x6  EXTI Line0                                     */
+    (ISR)&cpu_interrupt,        /*  0x7  EXTI Line1                                     */
+    (ISR)&cpu_interrupt,        /*  0x8  EXTI Line2                                     */
+    (ISR)&cpu_interrupt,        /*  0x9  EXTI Line3                                     */
+    (ISR)&cpu_interrupt,        /*  0xa  EXTI Line4                                     */
+    (ISR)&cpu_interrupt,        /*  0xb  DMA1 Stream 0                                  */
+    (ISR)&cpu_interrupt,        /*  0xc  DMA1 Stream 1                                  */
+    (ISR)&cpu_interrupt,        /*  0xd  DMA1 Stream 2                                  */
+    (ISR)&cpu_interrupt,        /*  0xe  DMA1 Stream 3                                  */
+    (ISR)&cpu_interrupt,        /*  0xf  DMA1 Stream 4                                  */
     (ISR)&cpu_interrupt,        /*  0x10  DMA1 Stream 5                                 */
     (ISR)&cpu_interrupt,        /*  0x11  DMA1 Stream 6                                 */
     (ISR)&cpu_interrupt,        /*  0x12  ADC1, ADC2 and ADC3s                          */

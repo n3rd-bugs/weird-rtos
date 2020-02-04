@@ -4,7 +4,7 @@ setup_option_def(ENC28J60_CLKRDY_TIMEOUT 100 INT "Maximum number of milliseconds
 setup_option_def(ENC28J60_CLKRDY_DELAY 20 INT "Delay between each pool for CLKRDY signal." CONFIG_FILE "enc28j60_config")
 setup_option_def(ENC28J60_CONTINUE_READ ON BOOL "Enables read of consegative frames if available." CONFIG_FILE "enc28j60_config")
 setup_option_def(ENC28J60_INT_POLL OFF BOOL "Enables usage of interrupt polling." CONFIG_FILE "enc28j60_config")
-setup_option_def(ENC28J60_REV_ID 0x06 INT "ENC28J60 device revision number." CONFIG_FILE "enc28j60_config")
+setup_option_def(ENC28J60_REV_ID 0x6 INT "ENC28J60 device revision number." CONFIG_FILE "enc28j60_config")
 setup_option_def(ENC28J60_MAX_BUFFER_SIZE 32 INT "Size of each buffer for ENC28J60 device." CONFIG_FILE "enc28j60_config")
 setup_option_def(ENC28J60_NUM_BUFFERS 32 INT "Number of buffers for ENC28J60 device." CONFIG_FILE "enc28j60_config")
 setup_option_def(ENC28J60_NUM_BUFFER_LISTS 16 INT "Number of buffer lists for ENC28J60 device." CONFIG_FILE "enc28j60_config")

@@ -37,11 +37,11 @@
 #define ADC_AVR_DIV_128             (0x7)
 
 /* TIMER0 prescale configurations. */
-#define TIMER0_AVR_DIV_1            (0x01)
-#define TIMER0_AVR_DIV_8            (0x02)
-#define TIMER0_AVR_DIV_64           (0x03)
-#define TIMER0_AVR_DIV_256          (0x04)
-#define TIMER0_AVR_DIV_1024         (0x05)
+#define TIMER0_AVR_DIV_1            (0x1)
+#define TIMER0_AVR_DIV_8            (0x2)
+#define TIMER0_AVR_DIV_64           (0x3)
+#define TIMER0_AVR_DIV_256          (0x4)
+#define TIMER0_AVR_DIV_1024         (0x5)
 
 /* This is callback function when ADC data is available to read. */
 typedef void ADC_DATA_CALLBACK (uint32_t);
