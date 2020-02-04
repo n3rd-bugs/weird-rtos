@@ -936,6 +936,53 @@ int32_t fs_gets(FD fd, const uint8_t *buf, int32_t n)
 } /* fs_gets */
 
 /*
+ * fs_flush_rx
+ * @fd: File descriptor for which we need to flush the RX data.
+ * @return: Returns the number of bytes flushed from RX.
+ * This function will flush any data available to be read from the given file
+ * descriptor.
+ */
+int32_t fs_flush_rx(FD fd)
+{
+    int32_t n_bytes = 0;
+    FS_BUFFER_LIST *buffer;
+    FS *fs = (FS *)fd;
+
+    /* If this is a buffered descriptor. */
+    if (fs->flags & FS_BUFFERED)
+    {
+        /* Get lock for this file descriptor. */
+        ASSERT(fd_get_lock(fs) != SUCCESS);
+
+        /* Free all the RX buffers on this file descriptor. */
+        for (;;)
+        {
+            /* See if we have a buffer to read from. */
+            buffer = fs_buffer_get(fs, FS_BUFFER_RX, 0);
+
+            /* If we do have an RX buffer. */
+            if (buffer)
+            {
+                /* Free this buffer. */
+                fs_buffer_add(fs, buffer, FS_LIST_FREE, FS_BUFFER_ACTIVE);
+            }
+            else
+            {
+                /* No more RX buffer, exit the loop. */
+                break;
+            }
+        }
+
+        /* Release lock for this file descriptor. */
+        fd_release_lock(fs);
+    }
+
+    /* Return the number of bytes flushed from this file descriptor. */
+    return (n_bytes);
+
+} /* fs_flush_rx */
+
+/*
  * fd_data_available
  * @fd: File descriptor on which some data is available to read.
  * This function will be called be underlying file system to tell that there

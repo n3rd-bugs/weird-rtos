@@ -163,6 +163,7 @@ int32_t fs_printf(FD, char *, ...);
 int32_t fs_vprintf(FD, const char *, va_list);
 int32_t fs_puts(FD, const uint8_t *, int32_t);
 int32_t fs_gets(FD, const uint8_t *, int32_t);
+int32_t fs_flush_rx(FD);
 
 void fs_condition_init(FD);
 void fs_condition_get(FD, CONDITION **, SUSPEND *, FS_PARAM *, uint32_t);

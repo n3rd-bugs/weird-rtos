@@ -56,9 +56,9 @@ void serial_stm32f030_init(void)
     usart1_buffer_data.num_buffer_lists = SERIAL_NUM_BUFFER_LIST;
     usart1_buffer_data.threshold_buffers = SERIAL_THRESHOLD_BUFFER;
     usart1_buffer_data.threshold_lists = SERIAL_THRESHOLD_BUFFER_LIST;
-    usart_stm32f030_register(&usart1, "usart1", 1, SERIAL_BAUD_RATE, &usart1_buffer_data, FALSE, TRUE);
+    usart_stm32f030_register(&usart1, "usart1", 1, SERIAL_BAUD_RATE, &usart1_buffer_data, FALSE, SERIAL_DEBUG_CONSOLE);
 #else
-    usart_stm32f030_register(&usart1, "usart1", 1, SERIAL_BAUD_RATE, NULL, FALSE, TRUE);
+    usart_stm32f030_register(&usart1, "usart1", 1, SERIAL_BAUD_RATE, NULL, FALSE, SERIAL_DEBUG_CONSOLE);
 #endif /* SERIAL_INTERRUPT_MODE */
 
 } /* serial_stm32f030_init */
@@ -316,21 +316,34 @@ static void usart_handle_rx_interrupt(STM32_USART *usart)
             /* Append received byte on the buffer. */
             fs_buffer_list_push(buffer, &chr, 1, 0);
         }
+
+        /* Enable idle interrupts. */
+        usart->reg->CR1 |= (USART_CR1_IDLEIE);
+    }
+
+    /* If data over run condition was detected. */
+    else if (usart->reg->ISR & USART_ISR_ORE)
+    {
+        /* Clear ORE interrupt. */
+        usart->reg->ICR |= USART_ICR_ORECF;
     }
 
     /* If line is idle. */
-    if (usart->reg->ISR & USART_ISR_IDLE)
+    else if (usart->reg->ISR & USART_ISR_IDLE)
     {
         /* Tell upper layers that some data is available to read. */
         fd_data_available(usart);
+
+        /* Clear IDLE interrupt. */
+        usart->reg->ICR |= USART_ICR_IDLECF;
 
         /* Disable idle interrupts. */
         usart->reg->CR1 &= (uint16_t)~(USART_CR1_IDLEIE);
     }
     else
     {
-        /* Enable idle interrupts. */
-        usart->reg->CR1 |= (USART_CR1_IDLEIE);
+        /* Should not happen. */
+        ASSERT(1);
     }
 
 } /* usart_handle_rx_interrupt */
