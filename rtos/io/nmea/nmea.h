@@ -22,49 +22,18 @@
 #define NMEA_READ_ERROR     (-2301)
 #define NMEA_CSUM_ERROR     (-2302)
 
-/* NMEA message definitions. */
-#define NMEA_MSG_GGA        (0)
-#define NMEA_MSG_GLL        (1)
-#define NMEA_MSG_GSA        (2)
-#define NMEA_MSG_GSV        (3)
-#define NMEA_MSG_RMC        (4)
-#define NMEA_MSG_VTG        (5)
-#define NMEA_MSG_UNKNOWN    (255)
+/* NMEA message definitions/flags. */
+#define NMEA_MSG_UNKNOWN    (0x0)
+#define NMEA_MSG_GGA        (0x1)
+#define NMEA_MSG_GLL        (0x2)
+#define NMEA_MSG_GSA        (0x4)
+#define NMEA_MSG_GSV        (0x8)
+#define NMEA_MSG_RMC        (0x10)
+#define NMEA_MSG_VTG        (0x20)
 
 /* NMEA message definition. */
-typedef struct _nmea_msg
+typedef struct _nmea_data
 {
-    /* Parsed message data. */
-    union
-    {
-        /* Data for GGA message. */
-        struct _nmea_gga
-        {
-            /* HDOP in milidb. */
-            uint32_t    hdop;
-
-            /* Altitude in mili units. */
-            uint32_t    altitude;
-
-            /* GEOID separation in mili units. */
-            uint32_t    geoid_sep;
-
-            /* Fix indicator. */
-            uint8_t     fix;
-
-            /* Satellites used. */
-            uint8_t     used;
-
-            /* Altitude and GEOID unit. */
-            uint8_t     alt_unit;
-            uint8_t     geoid_unit;
-            uint8_t     geoid_neg;
-
-            /* Structure padding. */
-            uint8_t     pad[3];
-        } gaa;
-    } data;
-
     /* Latitude as DDMMmmmmm. */
     uint32_t    latitude;
 
@@ -86,15 +55,29 @@ typedef struct _nmea_msg
     /* Course over ground in mili degrees. */
     uint32_t    course;
 
+    /* HDOP in milidb. */
+    uint32_t    hdop;
+
+    /* Altitude in mili units. */
+    uint32_t    altitude;
+
+    /* GEOID separation in mili units. */
+    uint32_t    geoid_sep;
+
     /* Latitude N/S, Longitude E/W. */
     uint8_t     latitude_ns;
     uint8_t     longitude_ew;
 
-    /* Talker ID. */
-    uint8_t     talker_id[2];
+    /* Altitude and GEOID unit. */
+    uint8_t     alt_unit;
+    uint8_t     geoid_unit;
+    uint8_t     geoid_neg;
 
-    /* Message ID. */
-    uint8_t     id;
+    /* Fix indicator. */
+    uint8_t     fix;
+
+    /* Satellites used. */
+    uint8_t     used;
 
     /* Data status. */
     uint8_t     status;
@@ -103,20 +86,23 @@ typedef struct _nmea_msg
     uint8_t     mode;
 
     /* Structure padding. */
-    uint8_t     pad[1];
+    uint8_t     pad[3];
 
-} NMEA_MSG;
+} NMEA_DATA;
 
 /* NMEA bus/device definition. */
 typedef struct _nmea
 {
     /* File descriptor associated with this NMEA bus/device. */
-    FD  fd;
+    FD          fd;
+
+    /* NMEA data buffer. */
+    NMEA_DATA   data;
 } NMEA;
 
 /* Function prototypes. */
-int32_t nmea_parse_message(NMEA *, NMEA_MSG *);
-void nmea_ublox_set_msg_rate(NMEA *, uint8_t *, uint8_t);
+int32_t nmea_fetch_data(NMEA *, uint8_t);
+int32_t nmea_parse_message(NMEA *, uint8_t *, uint8_t *);
 void nmea_parser_set_value(uint32_t *, uint8_t *, uint8_t *, uint8_t, uint8_t);
 
 #endif /* CONFIG_NMEA */

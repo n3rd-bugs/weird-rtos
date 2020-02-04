@@ -14,47 +14,41 @@
 
 #ifdef CONFIG_NMEA
 #include <nmea.h>
-#include <rtl.h>
 
 /* Helper definitions. */
 static uint32_t nmea_pow10_lookup[] = {1, 10, 100, 1000, 10000, 100000};
 
 /*
- * nmea_ublox_set_msg_rate
+ * nmea_fetch_data
  * @nmea: NMEA instance.
- * @msg: Message for which rate is needed to be set.
- * @rate: Rate needed to be set.
- * This will set rate for the given message on UART for a u-blox device.
+ * @req_msg: Bit field to specify the messages to receive.
+ * This will receive the requested messages and populate the data in the provided
+ * NMEA instance. Caller is responsible for not reading the stale data from the
+ * NMEA instance.
  */
-void nmea_ublox_set_msg_rate(NMEA *nmea, uint8_t *msg, uint8_t rate)
+int32_t nmea_fetch_data(NMEA *nmea, uint8_t req_msg)
 {
-    uint8_t csum_tx = 0^'P'^'U'^'B'^'X'^','^'4'^'0'^','^','^','^'0'^','^'0'^','^'0'^','^'0'^','^'0';
-    uint8_t buffer[5];
+    int32_t status = SUCCESS;
+    uint8_t this_msg;
+    uint8_t msg_received = 0;
 
-    /* Flush any RX data on this descriptor. */
-    fs_flush_rx(nmea->fd);
+    /* Loop until we have received all the messages. */
+    for ( ;((status == SUCCESS) && ((req_msg & msg_received) != req_msg)); )
+    {
+        /* Parse a message from the bus. */
+        status = nmea_parse_message(nmea, NULL, &this_msg);
 
-    /* Send start of the message. */
-    fs_puts(nmea->fd, (const uint8_t *)"$PUBX,40,", -1);
+        if (status == SUCCESS)
+        {
+            /* Update bit field for this message. */
+            msg_received |= this_msg;
+        }
+    }
 
-    /* Set message ID. */
-    csum_tx ^= msg[0] ^ msg[1] ^ msg[2];
-    fs_puts(nmea->fd, msg, 3);
-    fs_puts(nmea->fd, (const uint8_t *)",0,", -1);
+    /* Return status to the caller. */
+    return (status);
 
-    /* Set rate. */
-    rtl_ultoa(rate, buffer, 1, RTL_ULTOA_LEADING_ZEROS);
-    csum_tx ^= buffer[0];
-    fs_puts(nmea->fd, buffer, 1);
-    fs_puts(nmea->fd, (const uint8_t *)",0,0,0,0*", -1);
-
-    /* Populate csum. */
-    buffer[0] = (uint8_t)(((csum_tx & 0xF0) >> 4) + ((((csum_tx & 0xF0) >> 4) > 9) ? ('A' - 10) : ('0')));
-    buffer[1] = (uint8_t)((csum_tx & 0x0F) + (((csum_tx & 0x0F) > 9) ? ('A' - 10) : ('0')));
-    fs_puts(nmea->fd, buffer, 2);
-    fs_puts(nmea->fd, (const uint8_t *)"\r\n", -1);
-
-} /* nmea_ublox_set_msg_rate */
+} /* nmea_fetch_data */
 
 /*
  * nmea_parser_set_value
@@ -73,7 +67,7 @@ void nmea_parser_set_value(uint32_t *value, uint8_t *index, uint8_t *have_dot, u
         /* If we are adding fractions. */
         if (*have_dot)
         {
-            /* While we have an expected deimal place. */
+            /* While we have an expected decimal place. */
             if ((*index) > 0)
             {
                 /* Update the value. */
@@ -97,12 +91,11 @@ void nmea_parser_set_value(uint32_t *value, uint8_t *index, uint8_t *have_dot, u
     }
     else
     {
-        /* See the flag that we have a dot. */
+        /* Set the flag that we have a dot. */
         (*have_dot) = TRUE;
 
         /* Reset the index. */
         (*index) = num_decimal;
     }
 } /* nmea_parser_set_value */
-
 #endif /* CONFIG_NMEA */

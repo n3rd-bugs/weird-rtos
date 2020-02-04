@@ -23,7 +23,7 @@
 #include <fs_buffer.h>
 
 
-/* #line 266 "nmea_parser.rl" */
+/* #line 269 "nmea_parser.rl" */
 
 
 /* Machine definitions. */
@@ -192,12 +192,13 @@ static const int nmea_error = 0;
 static const int nmea_en_main = 1;
 
 
-/* #line 270 "nmea_parser.rl" */
+/* #line 273 "nmea_parser.rl" */
 
 /*
  * nmea_parse_message
  * @nmea: NMEA instance.
- * @msg: Parsed message will be returned here.
+ * @talker_id: Talker ID will be returned here.
+ * @msg_id: Received message ID will be returned here.
  * @return: Success will be returned if a message was successfully parsed,
  *  NMEA_READ_ERROR will be returned if an error occurred while reading from
  *      file descriptor,
@@ -205,7 +206,7 @@ static const int nmea_en_main = 1;
  *  NMEA_CSUM_ERROR will be returned if checksum was not valid.
  * This function will return a parsed reading from a NMEA bus/device.
  */
-int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
+int32_t nmea_parse_message(NMEA *nmea, uint8_t *talker_id, uint8_t *msg_id)
 {
     int32_t status = SUCCESS;
     uint8_t chr[2], index, have_dot;
@@ -250,8 +251,8 @@ int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough="
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
-        
-/* #line 255 "nmea_parser.c" */
+
+/* #line 256 "nmea_parser.c" */
     {
     int _klen;
     const char *_keys;
@@ -346,175 +347,178 @@ _match:
 /* #line 51 "nmea_parser.rl" */
     {
         /* Save the talker ID. */
-        msg->talker_id[index != 0] = *p;
+        if (talker_id)
+        {
+            talker_id[index != 0] = *p;
+        }
         index++;
     }
     break;
     case 5:
-/* #line 59 "nmea_parser.rl" */
+/* #line 62 "nmea_parser.rl" */
     {
         /* Update UTC */
-        nmea_parser_set_value(&msg->utc, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.utc, &index, &have_dot, *p, 3);
     }
     break;
     case 6:
-/* #line 64 "nmea_parser.rl" */
+/* #line 67 "nmea_parser.rl" */
     {
         /* Update Latitude */
-        nmea_parser_set_value(&msg->latitude, &index, &have_dot, *p, 5);
+        nmea_parser_set_value(&nmea->data.latitude, &index, &have_dot, *p, 5);
     }
     break;
     case 7:
-/* #line 69 "nmea_parser.rl" */
+/* #line 72 "nmea_parser.rl" */
     {
         /* Save latitude N/S. */
-        msg->latitude_ns = *p;
+        nmea->data.latitude_ns = *p;
     }
     break;
     case 8:
-/* #line 74 "nmea_parser.rl" */
+/* #line 77 "nmea_parser.rl" */
     {
         /* Update Longitude */
-        nmea_parser_set_value(&msg->longitude, &index, &have_dot, *p, 5);
+        nmea_parser_set_value(&nmea->data.longitude, &index, &have_dot, *p, 5);
     }
     break;
     case 27:
-/* #line 79 "nmea_parser.rl" */
+/* #line 82 "nmea_parser.rl" */
     {
         /* Update speed knots */
-        nmea_parser_set_value(&msg->speed_knots, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.speed_knots, &index, &have_dot, *p, 3);
     }
     break;
     case 31:
-/* #line 84 "nmea_parser.rl" */
+/* #line 87 "nmea_parser.rl" */
     {
         /* Update speed meter p/h */
-        nmea_parser_set_value(&msg->speed_mph, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.speed_mph, &index, &have_dot, *p, 3);
     }
     break;
     case 28:
-/* #line 89 "nmea_parser.rl" */
+/* #line 92 "nmea_parser.rl" */
     {
         /* Update course */
-        nmea_parser_set_value(&msg->course, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.course, &index, &have_dot, *p, 3);
     }
     break;
     case 29:
-/* #line 94 "nmea_parser.rl" */
+/* #line 97 "nmea_parser.rl" */
     {
         /* Update date */
-        nmea_parser_set_value(&msg->date, &index, &have_dot, *p, 0);
+        nmea_parser_set_value(&nmea->data.date, &index, &have_dot, *p, 0);
     }
     break;
     case 9:
-/* #line 99 "nmea_parser.rl" */
+/* #line 102 "nmea_parser.rl" */
     {
         /* Save longitude E/W. */
-        msg->longitude_ew = *p;
+        nmea->data.longitude_ew = *p;
     }
     break;
     case 22:
-/* #line 104 "nmea_parser.rl" */
+/* #line 107 "nmea_parser.rl" */
     {
         /* Save the data status. */
-        msg->status = *p;
+        nmea->data.status = *p;
     }
     break;
     case 23:
-/* #line 109 "nmea_parser.rl" */
+/* #line 112 "nmea_parser.rl" */
     {
         /* Save the data mode. */
-        msg->mode = *p;
-    }
-    break;
-    case 3:
-/* #line 116 "nmea_parser.rl" */
-    {
-        /* Save the message ID. */
-        msg->id = NMEA_MSG_GGA;
+        nmea->data.mode = *p;
     }
     break;
     case 10:
-/* #line 121 "nmea_parser.rl" */
+/* #line 117 "nmea_parser.rl" */
     {
-        msg->data.gaa.fix = (uint8_t)(*p - '0');
+        nmea->data.fix = (uint8_t)(*p - '0');
     }
     break;
     case 11:
-/* #line 125 "nmea_parser.rl" */
+/* #line 121 "nmea_parser.rl" */
     {
-        msg->data.gaa.used = (uint8_t)(msg->data.gaa.used * 10);
-        msg->data.gaa.used = (uint8_t)(*p - '0' + msg->data.gaa.used);
+        nmea->data.used = (uint8_t)(nmea->data.used * 10);
+        nmea->data.used = (uint8_t)(*p - '0' + nmea->data.used);
     }
     break;
     case 12:
-/* #line 130 "nmea_parser.rl" */
+/* #line 126 "nmea_parser.rl" */
     {
         /* Update HDOP. */
-        nmea_parser_set_value(&msg->data.gaa.hdop, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.hdop, &index, &have_dot, *p, 3);
     }
     break;
     case 13:
-/* #line 135 "nmea_parser.rl" */
+/* #line 131 "nmea_parser.rl" */
     {
         /* Update altitude. */
-        nmea_parser_set_value(&msg->data.gaa.altitude, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.altitude, &index, &have_dot, *p, 3);
     }
     break;
     case 14:
-/* #line 140 "nmea_parser.rl" */
+/* #line 136 "nmea_parser.rl" */
     {
         /* Save the altitude units. */
-        msg->data.gaa.alt_unit = *p;
+        nmea->data.alt_unit = *p;
     }
     break;
     case 16:
-/* #line 150 "nmea_parser.rl" */
+/* #line 146 "nmea_parser.rl" */
     {
         /* Update GEOID. */
-        nmea_parser_set_value(&msg->data.gaa.geoid_sep, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.geoid_sep, &index, &have_dot, *p, 3);
     }
     break;
     case 17:
-/* #line 155 "nmea_parser.rl" */
+/* #line 151 "nmea_parser.rl" */
     {
         /* Save the GEOID units. */
-        msg->data.gaa.geoid_unit = *p;
+        nmea->data.geoid_unit = *p;
+    }
+    break;
+    case 3:
+/* #line 158 "nmea_parser.rl" */
+    {
+        /* Save the message ID. */
+        *msg_id = NMEA_MSG_GGA;
     }
     break;
     case 21:
-/* #line 162 "nmea_parser.rl" */
+/* #line 165 "nmea_parser.rl" */
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_GLL;
+        *msg_id = NMEA_MSG_GLL;
     }
     break;
     case 26:
-/* #line 169 "nmea_parser.rl" */
+/* #line 172 "nmea_parser.rl" */
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_RMC;
+        *msg_id = NMEA_MSG_RMC;
     }
     break;
     case 30:
-/* #line 176 "nmea_parser.rl" */
+/* #line 179 "nmea_parser.rl" */
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_VTG;
+        *msg_id = NMEA_MSG_VTG;
     }
     break;
     case 24:
-/* #line 183 "nmea_parser.rl" */
+/* #line 186 "nmea_parser.rl" */
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_GSA;
+        *msg_id = NMEA_MSG_GSA;
     }
     break;
     case 25:
-/* #line 190 "nmea_parser.rl" */
+/* #line 193 "nmea_parser.rl" */
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_GSV;
+        *msg_id = NMEA_MSG_GSV;
     }
     break;
     case 1:
@@ -546,10 +550,10 @@ _match:
     }
     break;
     case 15:
-/* #line 145 "nmea_parser.rl" */
+/* #line 141 "nmea_parser.rl" */
     {
         /* Set the GEOID as negative. */
-        msg->data.gaa.geoid_neg = TRUE;
+        nmea->data.geoid_neg = TRUE;
     }
 /* #line 45 "nmea_parser.rl" */
     {
@@ -558,7 +562,7 @@ _match:
         have_dot = FALSE;
     }
     break;
-/* #line 562 "nmea_parser.c" */
+/* #line 566 "nmea_parser.c" */
     }
 
 _again:
@@ -570,7 +574,7 @@ _again:
     _out: {}
     }
 
-/* #line 328 "nmea_parser.rl" */
+/* #line 332 "nmea_parser.rl" */
 #pragma GCC diagnostic pop
 
         /* Check if machine is now in finished state. */

@@ -50,7 +50,10 @@
     action talker_set
     {
         /* Save the talker ID. */
-        msg->talker_id[index != 0] = *p;
+        if (talker_id)
+        {
+            talker_id[index != 0] = *p;
+        }
         index++;
     }
 
@@ -58,138 +61,138 @@
     action utc_set
     {
         /* Update UTC */
-        nmea_parser_set_value(&msg->utc, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.utc, &index, &have_dot, *p, 3);
     }
     action lat_set
     {
         /* Update Latitude */
-        nmea_parser_set_value(&msg->latitude, &index, &have_dot, *p, 5);
+        nmea_parser_set_value(&nmea->data.latitude, &index, &have_dot, *p, 5);
     }
     action lat_ns_set
     {
         /* Save latitude N/S. */
-        msg->latitude_ns = *p;
+        nmea->data.latitude_ns = *p;
     }
     action lon_set
     {
         /* Update Longitude */
-        nmea_parser_set_value(&msg->longitude, &index, &have_dot, *p, 5);
+        nmea_parser_set_value(&nmea->data.longitude, &index, &have_dot, *p, 5);
     }
     action speed_k_set
     {
         /* Update speed knots */
-        nmea_parser_set_value(&msg->speed_knots, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.speed_knots, &index, &have_dot, *p, 3);
     }
     action speed_mph_set
     {
         /* Update speed meter p/h */
-        nmea_parser_set_value(&msg->speed_mph, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.speed_mph, &index, &have_dot, *p, 3);
     }
     action course_set
     {
         /* Update course */
-        nmea_parser_set_value(&msg->course, &index, &have_dot, *p, 3);
+        nmea_parser_set_value(&nmea->data.course, &index, &have_dot, *p, 3);
     }
     action date_set
     {
         /* Update date */
-        nmea_parser_set_value(&msg->date, &index, &have_dot, *p, 0);
+        nmea_parser_set_value(&nmea->data.date, &index, &have_dot, *p, 0);
     }
     action lon_ew_set
     {
         /* Save longitude E/W. */
-        msg->longitude_ew = *p;
+        nmea->data.longitude_ew = *p;
     }
     action status_set
     {
         /* Save the data status. */
-        msg->status = *p;
+        nmea->data.status = *p;
     }
     action mode_set
     {
         /* Save the data mode. */
-        msg->mode = *p;
+        nmea->data.mode = *p;
+    }
+    action fix_set
+    {
+        nmea->data.fix = (uint8_t)(*p - '0');
+    }
+    action sat_used_set
+    {
+        nmea->data.used = (uint8_t)(nmea->data.used * 10);
+        nmea->data.used = (uint8_t)(*p - '0' + nmea->data.used);
+    }
+    action hdop_set
+    {
+        /* Update HDOP. */
+        nmea_parser_set_value(&nmea->data.hdop, &index, &have_dot, *p, 3);
+    }
+    action alt_set
+    {
+        /* Update altitude. */
+        nmea_parser_set_value(&nmea->data.altitude, &index, &have_dot, *p, 3);
+    }
+    action alt_unit_set
+    {
+        /* Save the altitude units. */
+        nmea->data.alt_unit = *p;
+    }
+    action geoid_neg_set
+    {
+        /* Set the GEOID as negative. */
+        nmea->data.geoid_neg = TRUE;
+    }
+    action geoid_set
+    {
+        /* Update GEOID. */
+        nmea_parser_set_value(&nmea->data.geoid_sep, &index, &have_dot, *p, 3);
+    }
+    action geoid_unit_set
+    {
+        /* Save the GEOID units. */
+        nmea->data.geoid_unit = *p;
     }
 
     # GGA definitions.
     action got_gga
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_GGA;
-    }
-    action fix_set
-    {
-        msg->data.gaa.fix = (uint8_t)(*p - '0');
-    }
-    action sat_used_set
-    {
-        msg->data.gaa.used = (uint8_t)(msg->data.gaa.used * 10);
-        msg->data.gaa.used = (uint8_t)(*p - '0' + msg->data.gaa.used);
-    }
-    action hdop_set
-    {
-        /* Update HDOP. */
-        nmea_parser_set_value(&msg->data.gaa.hdop, &index, &have_dot, *p, 3);
-    }
-    action alt_set
-    {
-        /* Update altitude. */
-        nmea_parser_set_value(&msg->data.gaa.altitude, &index, &have_dot, *p, 3);
-    }
-    action alt_unit_set
-    {
-        /* Save the altitude units. */
-        msg->data.gaa.alt_unit = *p;
-    }
-    action geoid_neg_set
-    {
-        /* Set the GEOID as negative. */
-        msg->data.gaa.geoid_neg = TRUE;
-    }
-    action geoid_set
-    {
-        /* Update GEOID. */
-        nmea_parser_set_value(&msg->data.gaa.geoid_sep, &index, &have_dot, *p, 3);
-    }
-    action geoid_unit_set
-    {
-        /* Save the GEOID units. */
-        msg->data.gaa.geoid_unit = *p;
+        *msg_id = NMEA_MSG_GGA;
     }
 
     # GLL definitions.
     action got_gll
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_GLL;
+        *msg_id = NMEA_MSG_GLL;
     }
 
     # RMC definitions.
     action got_rmc
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_RMC;
+        *msg_id = NMEA_MSG_RMC;
     }
 
     # VTG definitions.
     action got_vtg
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_VTG;
+        *msg_id = NMEA_MSG_VTG;
     }
 
     # GSA definitions.
     action got_gsa
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_GSA;
+        *msg_id = NMEA_MSG_GSA;
     }
 
     # GSV definitions.
     action got_gsv
     {
         /* Save the message ID. */
-        msg->id = NMEA_MSG_GSV;
+        *msg_id = NMEA_MSG_GSV;
     }
 
     # Start of a message.
@@ -271,7 +274,8 @@
 /*
  * nmea_parse_message
  * @nmea: NMEA instance.
- * @msg: Parsed message will be returned here.
+ * @talker_id: Talker ID will be returned here.
+ * @msg_id: Received message ID will be returned here.
  * @return: Success will be returned if a message was successfully parsed,
  *  NMEA_READ_ERROR will be returned if an error occurred while reading from
  *      file descriptor,
@@ -279,7 +283,7 @@
  *  NMEA_CSUM_ERROR will be returned if checksum was not valid.
  * This function will return a parsed reading from a NMEA bus/device.
  */
-int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
+int32_t nmea_parse_message(NMEA *nmea, uint8_t *talker_id, uint8_t *msg_id)
 {
     int32_t status = SUCCESS;
     uint8_t chr[2], index, have_dot;
@@ -324,7 +328,7 @@ int32_t nmea_parse_message(NMEA *nmea, NMEA_MSG *msg)
 #pragma GCC diagnostic ignored "-Wimplicit-fallthrough="
 #pragma GCC diagnostic ignored "-Wchar-subscripts"
 #pragma GCC diagnostic ignored "-Wsign-conversion"
-        %% write exec;
+%% write exec;
 #pragma GCC diagnostic pop
 
         /* Check if machine is now in finished state. */
