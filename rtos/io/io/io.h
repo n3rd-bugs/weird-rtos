@@ -15,7 +15,7 @@
 #include <kernel.h>
 
 /* Function prototypes. */
-int io_puts(const char *s, int32_t n);
-int io_gets(char *s, int32_t n);
+int io_puts(const void *, int32_t);
+int io_gets(void *s, int32_t);
 
 #endif /* _IO_H_ */

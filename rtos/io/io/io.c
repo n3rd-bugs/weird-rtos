@@ -23,13 +23,14 @@
 
 /*
  * io_puts
- * @s: String to be printed on IO.
+ * @ptr: String to be printed on IO.
  * @n: Number of bytes to be printed.
  * @return: Number of bytes printed.
  * This is a RTL function to provide IO hooks for STDIO.
  */
-int io_puts(const char *s, int32_t n)
+int io_puts(const void *ptr, int32_t n)
 {
+    const char *s = (const char *)ptr;
 #ifdef CONFIG_SERIAL
 #ifdef FS_CONSOLE
     SERIAL *serial = (SERIAL *)debug_fd;
@@ -84,13 +85,14 @@ int io_puts(const char *s, int32_t n)
 
 /*
  * io_gets
- * @s: Buffer in which data is needed to be received.
+ * @ptr: Buffer in which data is needed to be received.
  * @n: Number of bytes to be received.
  * @return: Number of bytes read.
  * This is a RTL function to provide IO hooks for STDIO.
  */
-int io_gets(char *s, int32_t n)
+int io_gets(void *ptr, int32_t n)
 {
+    char *s = (char*)ptr;
 #ifdef CONFIG_SERIAL
 #ifdef FS_CONSOLE
     SERIAL *serial = (SERIAL *)debug_fd;
