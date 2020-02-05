@@ -79,8 +79,17 @@ void nmea_parser_set_value(uint32_t *value, uint8_t *index, uint8_t *have_dot, u
         }
         else
         {
-            /* Left shift the value in decimal. */
-            (*value) *= (uint32_t)10;
+            /* If not a start of new value. */
+            if (*index != 0)
+            {
+                /* Left shift the value in decimal. */
+                (*value) *= (uint32_t)10;
+            }
+            else
+            {
+                /* Reset the value. */
+                (*value) = 0;
+            }
 
             /* Add the new value. */
             (*value) += ((uint32_t)(chr - '0') * nmea_pow10_lookup[num_decimal]);
@@ -93,6 +102,13 @@ void nmea_parser_set_value(uint32_t *value, uint8_t *index, uint8_t *have_dot, u
     {
         /* Set the flag that we have a dot. */
         (*have_dot) = TRUE;
+
+        /* If there was no integral part. */
+        if ((*index) == 0)
+        {
+            /* Reset the value. */
+            (*value) = 0;
+        }
 
         /* Reset the index. */
         (*index) = num_decimal;
