@@ -1,0 +1,299 @@
+/*
+ * spi_stm32f411.c
+ *
+ * Copyright (c) 2020 Usama Masood <mirzaon@gmail.com> All rights reserved.
+ *
+ * This file is part of a non-commercial software. For more details please
+ * refer to the license agreement that comes with this software.
+ *
+ * If you have not received a license file please contact:
+ *  Usama Masood <mirzaon@gmail.com>
+ *
+ */
+#include <kernel.h>
+
+#ifdef CONFIG_SPI
+#include <spi.h>
+#include <spi_stm32f411.h>
+
+/*
+ * spi_stm32f411_init
+ * @device: SPI device needed to be initialized.
+ * This function will initialize a STM32F411 SPI device instance.
+ */
+void spi_stm32f411_init(SPI_DEVICE *device)
+{
+    uint32_t baud_scale;
+    uint8_t bit_count = 0;
+
+    /* Select the required SPI register and initialize GPIO. */
+    switch (((STM32F411_SPI *)device->data)->device_num)
+    {
+    case 1:
+        /* SPI1 device. */
+        ((STM32F411_SPI *)device->data)->reg = SPI1;
+
+        /* Enable AHB clock for SPI1. */
+        RCC->APB2ENR |= RCC_APB2ENR_SPI1EN;
+
+        /* Enable GPIO A clock. */
+        RCC->AHB1ENR |= 0x1;
+
+        /* Configure GPIO mode output for GPIOA.4 (NSS) and alternate function for GPIOA.5 (SCK), GPIOA.6 (MISO), GPIOA.7 (MOSI). */
+        GPIOA->MODER &= ~((GPIO_MODER_MODER0 << (4 * 2)) | (GPIO_MODER_MODER0 << (5 * 2)) | (GPIO_MODER_MODER0 << (6 * 2)) | (GPIO_MODER_MODER0 << (7 * 2)));
+        GPIOA->MODER |= ((0x1 << (4 * 2)) | (0x2 << (5 * 2)) | (0x2 << (6 * 2)) | (0x2 << (7 * 2)));
+
+        /* Configure output type (PP) for GPIOA.4, GPIOA.5, GPIOA.6, GPIOA.7. */
+        GPIOA->OTYPER &= ~((GPIO_OTYPER_OT_0 << (4 * 2)) | (GPIO_OTYPER_OT_0 << (5 * 2)) | (GPIO_OTYPER_OT_0 << (6 * 2)) | (GPIO_OTYPER_OT_0 << (7 * 2)));
+
+        /* Enable pull-down on GPIOA.5, GPIOA.6, GPIOA.7. */
+        GPIOA->PUPDR &= ~((GPIO_PUPDR_PUPDR0 << (4 * 2)) | (GPIO_PUPDR_PUPDR0 << (5 * 2)) | (GPIO_PUPDR_PUPDR0 << (6 * 2)) | (GPIO_PUPDR_PUPDR0 << (7 * 2)));
+        GPIOA->PUPDR |= ((0x2 << (5 * 2)) | (0x2 << (6 * 2)) | (0x2 << (7 * 2)));
+
+        /* Configure GPIO speed (100MHz). */
+        GPIOA->OSPEEDR &= ~((GPIO_OSPEEDER_OSPEEDR0 << (4 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (5 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (6 * 2)) | (GPIO_OSPEEDER_OSPEEDR0 << (7 * 2)));
+        GPIOA->OSPEEDR |= ((0x3 << (4 * 2)) | (0x3 << (5 * 2)) | (0x3 << (6 * 2)) | (0x3 << (7 * 2)));
+
+        /* Enable SPI mode on GPIOA.5. */
+        GPIOA->AFR[0x5 >> 0x3] &= (uint32_t)(~(0xF << ((0x5 & 0x7) * 4)));
+        GPIOA->AFR[0x5 >> 0x3] |= 0x5 << ((0x5 & 0x7) * 4);
+
+        /* Enable SPI mode on GPIOA.6. */
+        GPIOA->AFR[0x6 >> 0x3] &= (uint32_t)(~(0xF << ((0x6 & 0x7) * 4)));
+        GPIOA->AFR[0x6 >> 0x3] |= 0x5 << ((0x6 & 0x7) * 4);
+
+        /* Enable SPI mode on GPIOA.7. */
+        GPIOA->AFR[0x7 >> 0x3] &= (uint32_t)(~(0xF << ((0x7 & 0x7) * 4)));
+        GPIOA->AFR[0x7 >> 0x3] |= 0x5 << ((0x7 & 0x7) * 4);
+
+        /* Set the CS. */
+        GPIOA->BSRR |= (1 << 4);
+
+        break;
+
+    default:
+        /* Invalid SPI device. */
+        ASSERT(TRUE);
+
+        break;
+    }
+
+    /* Calculate the required baudrate prescaler. */
+    baud_scale = CEIL_DIV(PCLK1_FREQ, device->baudrate);
+    if (baud_scale >= 256)
+    {
+        /* Use baud scale 7. */
+        baud_scale = 7;
+    }
+    else if (baud_scale <= 2)
+    {
+        /* Use baud scale 0. */
+        baud_scale = 0;
+    }
+    else
+    {
+        /* Calculate the number of bits in the scale. */
+        while (baud_scale)
+        {
+            baud_scale = baud_scale >> 1;
+            bit_count++;
+        }
+
+        /* Calculate the required baud scale. */
+        baud_scale = (uint32_t)(bit_count - 2);
+    }
+
+    /* Put the CR1 register value. */
+    ((STM32F411_SPI *)device->data)->reg->CR1 = ((uint32_t)((device->cfg_flags & SPI_CFG_1_WIRE) != 0) << STM32F411_SPI_CR1_BIDI_SHIFT) |
+                                                ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) != 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F411_SPI_CR1_BIDIOE_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_CRC) != 0) << STM32F411_SPI_CR1_CRCEN_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_MODE_16BIT) != 0) << STM32F411_SPI_CR1_DFF_SHIFT) |
+                                                ((uint32_t)(((device->cfg_flags & SPI_CFG_1_WIRE) == 0) && ((device->cfg_flags & SPI_CFG_RX_ONLY) != 0)) << STM32F411_SPI_CR1_RXONLY_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) << STM32F411_SPI_CR1_SMM_SHIFT) |
+                                                ((uint32_t)(((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) == 0) && ((device->cfg_flags & SPI_CFG_MASTER) != 0)) << STM32F411_SPI_CR1_SSI_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_LSB_FIRST) != 0) << STM32F411_SPI_CR1_LSB_SHIFT) |
+                                                (baud_scale << STM32F411_SPI_CR1_BR_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_MASTER) != 0) << STM32F411_SPI_CR1_MSTR_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_IDLE_HIGH) != 0) << STM32F411_SPI_CR1_CPOL_SHIFT) |
+                                                ((uint32_t)((device->cfg_flags & SPI_CFG_CLK_FIRST_DATA) == 0) << STM32F411_SPI_CR1_CPHA_SHIFT);
+
+    /* Put the CR2 register value. */
+    ((STM32F411_SPI *)device->data)->reg->CR2 = (((device->cfg_flags & SPI_CFG_ENABLE_HARD_SS) != 0) << STM32F411_SPI_CR1_SSOE_SHIFT);
+
+    /* Disable the I2S mode. */
+    ((STM32F411_SPI *)device->data)->reg->I2SCFGR &= (uint32_t)(~(1 << STM32F411_SPI_I2SCFG_MOD_SHIFT));
+
+    /* Enable SPI device. */
+    ((STM32F411_SPI *)device->data)->reg->CR1 |= (1 << STM32F411_SPI_CR1_SPE_SHIFT);
+
+} /* spi_stm32f411_init */
+
+/*
+ * spi_stm32f411_slave_select
+ * This function will enable the slave so it can receive data.
+ */
+void spi_stm32f411_slave_select(SPI_DEVICE *device)
+{
+    switch (((STM32F411_SPI *)device->data)->device_num)
+    {
+    case 1:
+        /* Reset the CS i.e. GPIOA.4. */
+        GPIOA->BSRR |= (1 << (4 + 16));
+    }
+
+} /* spi_stm32f411_slave_select */
+
+/*
+ * spi_stm32f411_slave_unselect
+ * This function will disable the slave.
+ */
+void spi_stm32f411_slave_unselect(SPI_DEVICE *device)
+{
+    switch (((STM32F411_SPI *)device->data)->device_num)
+    {
+    case 1:
+        /* Set the CS i.e. GPIOA.4. */
+        GPIOA->BSRR |= (1 << 4);
+    }
+
+} /* spi_stm32f411_slave_unselect */
+
+/*
+ * spi_stm32f411_message
+ * @device: SPI device for which messages are needed to be processed.
+ * @message: SPI message needed to be sent.
+ * @return: Success will be returned if SPI message was successfully processed.
+ * This function will process a SPI message.
+ */
+int32_t spi_stm32f411_message(SPI_DEVICE *device, SPI_MSG *message)
+{
+    int32_t bytes = 0, timeout;
+    uint8_t byte;
+
+    /* Process the message request. */
+    switch (message->flags & (SPI_MSG_WRITE | SPI_MSG_READ))
+    {
+    /* If we are only reading. */
+    case SPI_MSG_READ:
+
+        /* While we have a byte to read. */
+        while (bytes < message->length)
+        {
+            /* Wait while TX buffer is not empty. */
+            timeout = 0;
+            while (((((STM32F411_SPI *)device->data)->reg->SR & STM32F411_SPI_SR_TXE) == 0) && (timeout++ < STM32F411_SPI_TIMEOUT));
+
+            /* If we did not timeout for this request. */
+            if (timeout < STM32F411_SPI_TIMEOUT)
+            {
+                /* Send a byte. */
+                ((STM32F411_SPI *)device->data)->reg->DR = message->buffer[bytes];
+            }
+            else
+            {
+                /* Return error to the caller. */
+                bytes = SPI_TIMEOUT;
+
+                /* Stop processing any more data for this message. */
+                break;
+            }
+
+            /* Wait while we don't have any data to read. */
+            timeout = 0;
+            while (((((STM32F411_SPI *)device->data)->reg->SR & STM32F411_SPI_SR_RXNE) == 0) && (timeout++ < STM32F411_SPI_TIMEOUT));
+
+            /* If we did not timeout for this request. */
+            if (timeout < STM32F411_SPI_TIMEOUT)
+            {
+                /* Save the data read from the device. */
+                byte = (uint8_t)((STM32F411_SPI *)device->data)->reg->DR;
+
+                /* Save the byte read from SPI. */
+                message->buffer[bytes] = byte;
+
+                /* Get next byte to send and update. */
+                bytes++;
+            }
+            else
+            {
+                /* Return error to the caller. */
+                bytes = SPI_TIMEOUT;
+
+                /* Stop processing any more data for this message. */
+                break;
+            }
+        }
+
+        break;
+
+    /* Either writing, or writing while reading. */
+    default:
+
+        /* While we have a byte to write and read. */
+        while (bytes < message->length)
+        {
+            /* Wait while TX buffer is not empty. */
+            timeout = 0;
+            while (((((STM32F411_SPI *)device->data)->reg->SR & STM32F411_SPI_SR_TXE) == 0) && (timeout++ < STM32F411_SPI_TIMEOUT));
+
+            /* If we did not timeout for this request. */
+            if (timeout < STM32F411_SPI_TIMEOUT)
+            {
+                /* Send a byte. */
+                ((STM32F411_SPI *)device->data)->reg->DR = message->buffer[bytes];
+            }
+            else
+            {
+                /* Return error to the caller. */
+                bytes = SPI_TIMEOUT;
+
+                /* Stop processing any more data for this message. */
+                break;
+            }
+
+            /* Wait while we don't have any data to read. */
+            timeout = 0;
+            while (((((STM32F411_SPI *)device->data)->reg->SR & STM32F411_SPI_SR_RXNE) == 0) && (timeout++ < STM32F411_SPI_TIMEOUT));
+
+            /* If we did not timeout for this request. */
+            if (timeout < STM32F411_SPI_TIMEOUT)
+            {
+                /* Save the data read from the device. */
+                byte = (uint8_t)((STM32F411_SPI *)device->data)->reg->DR;
+
+                /* Check if we are also reading. */
+                if (message->flags & SPI_MSG_READ)
+                {
+                    /* Save the byte read from SPI. */
+                    message->buffer[bytes] = byte;
+                }
+
+                /* Get next byte to send and update. */
+                bytes++;
+            }
+            else
+            {
+                /* Return error to the caller. */
+                bytes = SPI_TIMEOUT;
+
+                /* Stop processing any more data for this message. */
+                break;
+            }
+        }
+
+        break;
+    }
+
+    /* If we did not encounter any error. */
+    if (bytes > 0)
+    {
+        /* Return status to the caller. */
+        bytes = SUCCESS;
+    }
+
+    /* Return status to the caller. */
+    return (bytes);
+
+} /* spi_stm32f411_message */
+
+#endif /* CONFIG_SPI */
