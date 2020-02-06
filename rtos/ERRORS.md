@@ -74,6 +74,7 @@ This list is needed to be updated whenever a new error code is added.
     NMEA_SEQUENCE_ERROR     -2300
     NMEA_READ_ERROR         -2301
     NMEA_CSUM_ERROR         -2302
+    SSD1306_INIT_ERROR      -2400
     ENC28J60_DISCONNECTED   -11000
     WV_UNKNOWN_CMD          -20000
     WV_INAVLID_HRD          -20001
