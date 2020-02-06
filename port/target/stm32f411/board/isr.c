@@ -25,6 +25,7 @@ void __attribute__ ((weak, alias("cpu_interrupt"))) isr_sysclock_handle(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) isr_clock64_tick(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) usart1_interrupt(void);
 void __attribute__ ((weak, alias("cpu_interrupt"))) usart2_interrupt(void);
+void __attribute__ ((weak, alias("cpu_interrupt"))) exti2_interrupt(void);
 
 /* Initial vector table definition. */
 __attribute__ ((section (".interrupts"), used)) ISR system_isr_table[] =
@@ -53,7 +54,7 @@ __attribute__ ((section (".interrupts"), used)) ISR system_isr_table[] =
     (ISR)&cpu_interrupt,        /*  0x5  RCC                                            */
     (ISR)&cpu_interrupt,        /*  0x6  EXTI Line0                                     */
     (ISR)&cpu_interrupt,        /*  0x7  EXTI Line1                                     */
-    (ISR)&cpu_interrupt,        /*  0x8  EXTI Line2                                     */
+    (ISR)&exti2_interrupt,      /*  0x8  EXTI Line2                                     */
     (ISR)&cpu_interrupt,        /*  0x9  EXTI Line3                                     */
     (ISR)&cpu_interrupt,        /*  0xa  EXTI Line4                                     */
     (ISR)&cpu_interrupt,        /*  0xb  DMA1 Stream 0                                  */
