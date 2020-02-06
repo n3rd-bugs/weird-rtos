@@ -29,6 +29,9 @@
 #include <gfx.h>
 #include <oled_config.h>
 
+/* Error code definitions. */
+#define SSD1306_INIT_ERROR          -2400
+
 /* SSD1306 definitions. */
 #define SSD1306_MEMORYMODE          (0x20)
 #define SSD1306_COLUMNADDR          (0x21)

@@ -138,19 +138,22 @@ void oled_ssd1306_init(void)
 /*
  * oled_ssd1306_register
  * @oled: SSD1306 device data.
+ * @return: Success will be returned if OLED was successfully initialized,
+ *  OLED_
  * This function will register a OLED-SSD1306 driver.
  */
 int32_t oled_ssd1306_register(SSD1306 *oled)
 {
-    int32_t status;
+    int32_t status = SUCCESS;
 
     /* Initialize I2C device. */
     i2c_init(&oled->i2c);
 
     /* Initialize SSD1306. */
 
-    /* Turn off display. */
-    status = oled_ssd1306_command(oled, SSD1306_DISPLAYOFF);
+    /* Try to turn off the OLED, as this is first command we will poll for
+     * the command to complete successfully. */
+    POLL_SW_MS((oled_ssd1306_command(oled, SSD1306_DISPLAYOFF) != SUCCESS), OLED_SSD1306_INIT_DELAY, status, SSD1306_INIT_ERROR);
 
     /* Configure OLED clock. */
     if (status == SUCCESS)
