@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <fs.h>
 #include <ppp.h>
 #include <ppp_packet.h>
@@ -309,4 +309,4 @@ int32_t ppp_packet_configuration_option_add(FS_BUFFER_LIST *buffer, PPP_CONF_OPT
 
 } /* ppp_packet_configuration_option_add */
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */

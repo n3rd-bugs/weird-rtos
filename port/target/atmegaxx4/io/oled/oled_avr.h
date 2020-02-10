@@ -14,12 +14,12 @@
 #define _OLED_AVR_H_
 #include <kernel.h>
 
-#ifdef CONFIG_OLED
+#ifdef IO_OLED
 #include <oled_target.h>
 #include <oled_avr_config.h>
 
 /* Function prototypes. */
 void oled_avr_init(void);
 
-#endif /* CONFIG_OLED */
+#endif /* IO_OLED */
 #endif /* _OLED_AVR_H_ */

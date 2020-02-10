@@ -15,11 +15,11 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
 #include <ethernet_stm32f103.h>
 
 /* Hook-up ethernet OS stack. */
 #define ETHERENET_TGT_INIT  ethernet_stm32f103_init
 
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */
 #endif /* _ETHERNET_TARGET_H_ */

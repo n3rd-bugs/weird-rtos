@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <fs.h>
 #include <ppp_fcs.h>
 
@@ -102,4 +102,4 @@ uint16_t ppp_fcs16_buffer_calculate(FS_BUFFER_LIST *buffer, uint16_t fcs)
 
 } /* ppp_fcs16_buffer_calculate */
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */

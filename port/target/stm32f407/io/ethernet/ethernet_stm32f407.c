@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
 #include <ethernet.h>
 #include <ethernet_stm32f407.h>
 #ifdef ETHERNET_ENC28J60
@@ -55,4 +55,4 @@ void ethernet_stm32f407_init(void)
 
 } /* ethernet_stm32f407_init */
 
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */

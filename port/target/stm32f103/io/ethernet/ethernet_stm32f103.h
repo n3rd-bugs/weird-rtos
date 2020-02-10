@@ -14,11 +14,11 @@
 #define _ETHERNET_STM32F103_H_
 #include <kernel.h>
 
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
 
 /* Function prototypes. */
 void ethernet_stm32f103_init(void);
 ISR_FUN exti15_10_interrupt(void);
 
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */
 #endif /* _ETHERNET_STM32F103_H_ */

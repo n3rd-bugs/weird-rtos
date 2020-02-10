@@ -14,10 +14,10 @@
 #define _ETHERNET_STM32F407_H_
 #include <kernel.h>
 
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
 
 /* Function prototypes. */
 void ethernet_stm32f407_init(void);
 
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */
 #endif /* _ETHERNET_STM32F407_H_ */

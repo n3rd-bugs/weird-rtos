@@ -14,7 +14,7 @@
 #define _SPI_H_
 #include <kernel.h>
 
-#ifdef CONFIG_SPI
+#ifdef IO_SPI
 
 /* SPI error definitions. */
 #define SPI_TIMEOUT             -1200
@@ -84,6 +84,6 @@ struct _spi_msg
 void spi_init(SPI_DEVICE *);
 int32_t spi_message(SPI_DEVICE *, SPI_MSG *, uint32_t);
 
-#endif /* CONFIG_SPI */
+#endif /* IO_SPI */
 
 #endif /* _SPI_H_ */

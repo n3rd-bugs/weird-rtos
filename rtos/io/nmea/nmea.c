@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_NMEA
+#ifdef IO_NMEA
 #include <nmea.h>
 
 /* Helper definitions. */
@@ -114,4 +114,4 @@ void nmea_parser_set_value(uint32_t *value, uint8_t *index, uint8_t *have_dot, u
         (*index) = num_decimal;
     }
 } /* nmea_parser_set_value */
-#endif /* CONFIG_NMEA */
+#endif /* IO_NMEA */

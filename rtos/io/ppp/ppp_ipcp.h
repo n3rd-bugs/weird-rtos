@@ -15,7 +15,7 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <ppp_ipcp_config.h>
 
 /* IPCP option type definitions. */
@@ -32,6 +32,6 @@ int32_t ppp_ipcp_option_pocess(PPP *, PPP_CONF_OPT *, PPP_CONF_PKT *);
 uint8_t ppp_ipcp_option_length_valid(PPP *, PPP_CONF_OPT *);
 int32_t ppp_ipcp_update(void *, PPP *, PPP_CONF_PKT *, PPP_CONF_PKT *);
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */
 
 #endif /* _PPP_IPCP_H_ */

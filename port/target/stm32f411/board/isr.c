@@ -13,10 +13,10 @@
  */
 #include <kernel.h>
 #include <isr.h>
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <serial.h>
 #include <rtl.h>
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
 /* ISR definitions. */
 void __attribute__ ((weak, alias("cpu_interrupt"))) nmi_interrupt(void);

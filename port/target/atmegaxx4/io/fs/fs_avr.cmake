@@ -1,5 +1,5 @@
 # Setup configuration options.
-if (${FS_FAT} AND ${CONFIG_MMC})
+if (${FS_FAT} AND ${IO_MMC})
     setup_option_def(MMC_AVR_SPI_SS_BB 3 INT "SPI slave select pin number for MMC card (bit-bang)." VALUE_LIST atmega_pinnum_values CONFIG_FILE "fs_avr_config")
     setup_option_def(MMC_AVR_SPI_PIN_SS_BB PINA INT "SPI slave select PIN register for MMC card (bit-bang)." VALUE_FUN atmega_regmap VALUE_LIST atmega_pin_values CONFIG_FILE "fs_avr_config")
     setup_option_def(MMC_AVR_SPI_DDR_SS_BB DDRA INT "SPI slave select DDR register for MMC card (bit-bang)." VALUE_FUN atmega_regmap VALUE_LIST atmega_ddr_values CONFIG_FILE "fs_avr_config")

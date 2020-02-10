@@ -14,11 +14,11 @@
 #define _OLED_TARGET_H_
 #include <kernel.h>
 
-#ifdef CONFIG_OLED
+#ifdef IO_OLED
 #include <oled_stm32.h>
 
 /* Hook-up OLED OS stack. */
 #define OLED_TGT_INIT()             oled_stm32_init()
 
-#endif /* CONFIG_OLED */
+#endif /* IO_OLED */
 #endif /* _OLED_TARGET_H_ */

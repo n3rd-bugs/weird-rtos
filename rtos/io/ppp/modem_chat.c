@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <ppp.h>
 
 #ifdef PPP_MODEM_CHAT
@@ -79,4 +79,4 @@ int32_t modem_chat_process(FD fd, FS_BUFFER_LIST *rx_buffer)
 } /* modem_chat_process */
 
 #endif /* PPP_MODEM_CHAT */
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */

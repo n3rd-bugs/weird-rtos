@@ -14,8 +14,8 @@
 #define _PCF8574_H_
 #include <kernel.h>
 
-#ifdef CONFIG_PCF8574
-#ifndef CONFIG_I2C
+#ifdef I2C_PCF8574
+#ifndef IO_I2C
 #error "I2C is required for PCF8574."
 #endif
 #include <i2c.h>
@@ -42,5 +42,5 @@ int32_t pcf8574_init(PCF8574 *);
 uint8_t pcf8574_read(PCF8574 *);
 void pcf8574_write(PCF8574 *);
 
-#endif /* CONFIG_PCF8574 */
+#endif /* I2C_PCF8574 */
 #endif /* _PCF8574_H_ */

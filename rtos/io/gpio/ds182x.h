@@ -14,7 +14,7 @@
 #define _DS182X_H_
 #include <kernel.h>
 
-#ifdef CONFIG_DS182X
+#ifdef GPIO_DS182X
 #include <1wire.h>
 
 /* Error code definitions. */
@@ -65,5 +65,5 @@ int32_t ds182x_get_next(DS182X *, uint16_t *);
 /* Include DS182x target definitions. */
 #include <ds182x_target.h>
 
-#endif /* CONFIG_DS182X */
+#endif /* GPIO_DS182X */
 #endif /* _DS182X_H_ */

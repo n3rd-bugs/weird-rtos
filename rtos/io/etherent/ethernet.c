@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
 #include <net_route.h>
 #include <string.h>
 #include <ethernet.h>
@@ -574,4 +574,4 @@ static int32_t ethernet_buffer_transmit(FS_BUFFER_LIST *buffer, uint8_t flags)
 
 } /* ethernet_buffer_transmit */
 
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */

@@ -1,3 +1,6 @@
+# LCD configurations.
+setup_option_def(LCD_PCF8574 OFF DEFINE "Enable Alphanumeric LCD driver over PCF8574 GPIO controller.")
+
 # Make a list of all the files in this folder and append them to the ${RTOS_SOURCES}.
 FILE(GLOB SOURCES ./*.c)
 set(RTOS_SOURCES ${RTOS_SOURCES} ${SOURCES} CACHE INTERNAL "RTOS_SOURCES" FORCE)

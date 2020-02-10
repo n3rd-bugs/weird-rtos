@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_ADC
+#ifdef IO_ADC
 #include <adc_stm32.h>
 #include <adc.h>
 
@@ -152,4 +152,4 @@ uint32_t adc_stm32_read(void)
     return ((uint32_t)ADC1->DR);
 
 } /* adc_stm32_read */
-#endif /* CONFIG_ADC */
+#endif /* IO_ADC */

@@ -12,7 +12,7 @@
  */
 #include <1wire.h>
 
-#ifdef CONFIG_1WIRE
+#ifdef GPIO_1WIRE
 /*
  * onewire_init
  * @onewire: 1-wire bus needed to be initialized.
@@ -480,4 +480,4 @@ uint8_t onewire_crc(const uint8_t *buffer, uint8_t num_bytes)
 
 } /* onewire_crc */
 
-#endif /* CONFIG_1WIRE */
+#endif /* GPIO_1WIRE */

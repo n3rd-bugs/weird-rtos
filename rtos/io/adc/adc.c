@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_ADC
+#ifdef IO_ADC
 #include <adc.h>
 
 /*
@@ -85,4 +85,4 @@ uint32_t adc_read_average(uint32_t num_readings)
 
 } /* adc_read_average */
 
-#endif /* CONFIG_ADC */
+#endif /* IO_ADC */

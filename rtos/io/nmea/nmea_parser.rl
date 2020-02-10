@@ -15,7 +15,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_NMEA
+#ifdef IO_NMEA
 #include <nmea.h>
 #include <fs.h>
 #include <fs_buffer.h>
@@ -364,4 +364,4 @@ int32_t nmea_parse_message(NMEA *nmea, uint8_t *talker_id, uint8_t *msg_id)
 
 } /* nmea_parse_message */
 
-#endif /* CONFIG_NMEA */
+#endif /* IO_NMEA */

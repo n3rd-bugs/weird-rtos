@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
 #include <lcd_an.h>
 #include <lcd_an_target.h>
 #include <string.h>
@@ -593,4 +593,4 @@ static int32_t lcd_an_ioctl(void *priv_data, uint32_t cmd, void *param)
 
 } /* lcd_an_ioctl */
 
-#endif /* CONFIG_LCD_AN */
+#endif /* IO_LCD_AN */

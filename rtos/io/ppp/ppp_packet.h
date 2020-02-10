@@ -15,7 +15,7 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <ppp_packet_config.h>
 
 /* PPP configuration option structure. */
@@ -46,6 +46,6 @@ int32_t ppp_packet_configuration_option_parse(FS_BUFFER_LIST *, PPP_CONF_OPT *);
 int32_t ppp_packet_configuration_header_add(FS_BUFFER_LIST *, PPP_CONF_PKT *);
 int32_t ppp_packet_configuration_option_add(FS_BUFFER_LIST *, PPP_CONF_OPT *);
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */
 
 #endif /* _PPP_PACKET_H_ */

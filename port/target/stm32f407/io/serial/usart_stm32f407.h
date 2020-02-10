@@ -14,7 +14,7 @@
 #define _USART_STM32F407_H_
 
 #include <kernel.h>
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <stdarg.h>
 #include <usart_stm32_config.h>
 
@@ -24,5 +24,5 @@ void serial_stm32f407_init(void);
 ISR_FUN usart1_interrupt(void);
 #endif /* SERIAL_INTERRUPT_MODE */
 
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 #endif /* _USART_STM32F407_H_ */

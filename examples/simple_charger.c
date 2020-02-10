@@ -299,7 +299,7 @@ int main(void)
     /* Initialize file system. */
     fs_init();
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
     /* Initialize serial. */
     serial_init();
 #endif

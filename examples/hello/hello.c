@@ -15,9 +15,9 @@
 #ifdef CONFIG_FS
 #include <fs.h>
 #endif /* CONFIG_FS */
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <serial.h>
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 #include <stdio.h>
 
 /* Function prototypes. */
@@ -36,9 +36,9 @@ void hello_task(void *argv)
 
     while(1)
     {
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
         printf("Hello World\r\n");
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
         /* Sleep for some time. */
         sleep_ms(500);
@@ -50,7 +50,7 @@ int main(void)
     /* Initialize scheduler. */
     scheduler_init();
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #ifdef CONFIG_FS
     /* Initialize file system. */
     fs_init();
@@ -58,7 +58,7 @@ int main(void)
 
     /* Initialize serial. */
     serial_init();
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
     /* Create a task for hello demo. */
     task_create(&hello_task_cb, P_STR("HELLO"), hello_task_stack, DEMO_STACK_SIZE, &hello_task, (void *)(NULL), 0);

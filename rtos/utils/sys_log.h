@@ -31,12 +31,12 @@ typedef uint8_t SYS_LOG_LEVEL;
 enum
 {
     SYS_LOG_DEF = 0,
-#ifdef CONFIG_MMC
+#ifdef IO_MMC
     SYS_LOG_MMC,
-#endif /* CONFIG_MMC */
-#ifdef CONFIG_ETHERNET
+#endif /* IO_MMC */
+#ifdef IO_ETHERNET
     SYS_LOG_ENC28J60,
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */
 #ifdef CONFIG_FS
     SYS_LOG_FATFS,
 #endif /* CONFIG_FS */

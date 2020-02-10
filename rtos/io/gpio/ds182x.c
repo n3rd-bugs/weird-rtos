@@ -12,7 +12,7 @@
  */
 #include <ds182x.h>
 
-#ifdef CONFIG_DS182X
+#ifdef GPIO_DS182X
 #include <string.h>
 
 /*
@@ -159,4 +159,4 @@ int32_t ds182x_get_next(DS182X *bus, uint16_t *temp)
 
 } /* ds182x_get_next */
 
-#endif /* CONFIG_DS182X */
+#endif /* GPIO_DS182X */

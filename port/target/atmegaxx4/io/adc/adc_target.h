@@ -14,7 +14,7 @@
 #define _ADC_TARGET_H_
 #include <kernel.h>
 
-#ifdef CONFIG_ADC
+#ifdef IO_ADC
 #include <adc_avr.h>
 
 /* Hook-up ADC OS stack. */
@@ -23,5 +23,5 @@
 #define ADC_TGT_CHANNEL_UNSELECT    adc_avr_channel_unselect
 #define ADC_TGT_READ                adc_avr_read
 
-#endif /* CONFIG_ADC */
+#endif /* IO_ADC */
 #endif /* _ADC_TARGET_H_ */

@@ -12,7 +12,7 @@
  */
 #include <dhtxx.h>
 
-#ifdef CONFIG_DHT
+#ifdef GPIO_DHT
 
 /*
  * dhtxx_init
@@ -185,4 +185,4 @@ int32_t dhtxx_read(DHT_XX *dht, uint16_t *rh, uint16_t *temperature, uint8_t dis
 
 } /* dhtxx_read */
 
-#endif /* CONFIG_DHT */
+#endif /* GPIO_DHT */

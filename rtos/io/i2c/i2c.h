@@ -14,7 +14,7 @@
 #define _I2C_H_
 #include <kernel.h>
 
-#ifdef CONFIG_I2C
+#ifdef IO_I2C
 
 /* I2C error definitions. */
 #define I2C_MSG_NACKED          -1600
@@ -74,5 +74,5 @@ struct _i2c_msg
 void i2c_init(I2C_DEVICE *);
 int32_t i2c_message(I2C_DEVICE *, I2C_MSG *, uint32_t);
 
-#endif /* CONFIG_I2C */
+#endif /* IO_I2C */
 #endif /* _I2C_H_ */

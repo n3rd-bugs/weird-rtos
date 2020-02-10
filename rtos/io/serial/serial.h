@@ -14,7 +14,7 @@
 #define _SERIAL_H_
 #include <kernel.h>
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #ifdef CONFIG_FS
 #include <fs.h>
 #ifdef FS_CONSOLE
@@ -86,5 +86,5 @@ void serial_init(void);
 void serial_register(SERIAL *, const char *, void *, uint32_t);
 void serial_assert_puts(uint8_t *, int32_t);
 
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 #endif /* _SERIAL_H_ */

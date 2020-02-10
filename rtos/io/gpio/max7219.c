@@ -13,7 +13,7 @@
 #include <max7219.h>
 #include <max7219_target.h>
 
-#ifdef CONFIG_MAX7219
+#ifdef GPIO_MAX7219
 /* Local function definition. */
 static int32_t led_max_ssd1306_display(GFX *, const uint8_t *, uint32_t, uint32_t, uint32_t, uint32_t);
 static int32_t led_max_ssd1306_power(GFX *, uint8_t);
@@ -298,4 +298,4 @@ static int32_t led_max_ssd1306_invert(GFX *gfx, uint8_t invert)
 
 } /* led_max_ssd1306_invert */
 
-#endif /* CONFIG_MAX7219 */
+#endif /* GPIO_MAX7219 */

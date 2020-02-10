@@ -27,9 +27,9 @@ void util_print_sys_info(void);
 #ifdef SYS_STACK_SIZE
 uint32_t util_system_calc_free_stack(void);
 #endif /* SYS_STACK_SIZE */
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 void util_print_sys_info_assert(void);
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 #ifdef CONFIG_FS
 int32_t util_print_sys_info_buffer(FS_BUFFER_LIST *);
 #endif /* CONFIG_FS */

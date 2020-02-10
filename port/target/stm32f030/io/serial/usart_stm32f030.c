@@ -11,7 +11,7 @@
  *
  */
 #include <kernel.h>
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <usart_stm32f030.h>
 #ifdef SERIAL_INTERRUPT_MODE
 #ifndef FS_CONSOLE
@@ -514,4 +514,4 @@ static int32_t usart_stm32f030_gets(void *fd, void *priv_data, uint8_t *buf, int
     return (to_read - nbytes);
 
 } /* usart_stm32f030_gets */
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */

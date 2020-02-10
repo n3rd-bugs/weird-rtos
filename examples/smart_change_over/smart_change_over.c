@@ -23,10 +23,10 @@
 #include <math.h>
 #include <idle.h>
 #include <avr/wdt.h>
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
 #include <lcd_an.h>
-#endif /* CONFIG_LCD_AN */
-#ifdef CONFIG_SERIAL
+#endif /* IO_LCD_AN */
+#ifdef IO_SERIAL
 #include <serial.h>
 #endif
 #include <rtl.h>
@@ -1233,7 +1233,7 @@ void log_entry(void *argv)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(argv);
 
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
     /* Initialize LCD AN. */
     lcd_an_init();
 #endif
@@ -1412,7 +1412,7 @@ int main(void)
     /* Initialize networking stack. */
     net_init();
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
     /* Initialize serial. */
     serial_init();
 #endif

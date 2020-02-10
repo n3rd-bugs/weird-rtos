@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_GFX
+#ifdef IO_GFX
 #include <gfx.h>
 #include <string.h>
 
@@ -216,4 +216,4 @@ static int32_t gfx_write(void *priv_data, const uint8_t *buf, int32_t nbytes)
 
 } /* gfx_write */
 
-#endif /* CONFIG_GFX */
+#endif /* IO_GFX */

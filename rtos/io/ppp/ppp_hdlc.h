@@ -15,7 +15,7 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 
 /* Status code definitions. */
 #define HDLC_STREAM_ERROR       -920
@@ -31,6 +31,6 @@ void ppp_hdlc_unescape_one(FS_BUFFER *, uint8_t *);
 int32_t ppp_hdlc_header_add(FS_BUFFER_LIST *, uint32_t *, uint8_t, uint8_t, uint8_t);
 int32_t ppp_hdlc_escape(FS_BUFFER_LIST *, FS_BUFFER_LIST *, uint32_t *, uint8_t, uint8_t);
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */
 
 #endif /* _PPP_HDLC_H_ */

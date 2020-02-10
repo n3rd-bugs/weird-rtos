@@ -14,7 +14,7 @@
 #define _LCD_AN_AVR_H_
 #include <kernel.h>
 
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
 #include <lcd_an_target.h>
 #include <lcd_an_avr_config.h>
 
@@ -22,5 +22,5 @@
 void lcd_an_avr_init(void);
 int32_t lcd_an_avr_reset(void);
 
-#endif /* CONFIG_LCD_AN */
+#endif /* IO_LCD_AN */
 #endif /* _LCD_AN_AVR_H_ */

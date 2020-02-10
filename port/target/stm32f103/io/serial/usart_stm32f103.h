@@ -14,7 +14,7 @@
 #define _USART_STM32F103_H_
 
 #include <kernel.h>
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <serial.h>
 #include <stdarg.h>
 #include <usart_stm32_config.h>
@@ -49,5 +49,5 @@ ISR_FUN usart1_interrupt(void);
 ISR_FUN usart2_interrupt(void);
 ISR_FUN usart3_interrupt(void);
 
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 #endif /* _USART_STM32F103_H_ */

@@ -12,9 +12,9 @@
  */
 #include <kernel.h>
 #include <sys_info.h>
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <serial.h>
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
 #ifdef TASK_STATS
 #ifdef CONFIG_FS
@@ -39,15 +39,15 @@ static const char __sys_info_tab[] PROGMEM = "\t";
 static const char __sys_info_new_line[] PROGMEM = "\r\n";
 #ifdef CONFIG_SLEEP
 static const char __sys_info_nt_st[] PROGMEM = "n(T)\ts(T)\r\n";
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 static const char __sys_info_dash_dash_dash[] PROGMEM = "\t-\t-\t-\r\n";
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 static const char __sys_info_dash_dash[] PROGMEM = "\t-\t-\r\n";
 #else
 static const char __sys_info_nt_st[] PROGMEM = "n(T)\r\n";
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 static const char __sys_info_dash_dash_dash[] PROGMEM = "\t-\t-\r\n";
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 static const char __sys_info_dash_dash[] PROGMEM = "\t-\r\n";
 #endif /* CONFIG_SLEEP */
 
@@ -410,7 +410,7 @@ void util_print_sys_info(void)
 
 } /* util_print_sys_info */
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 /*
  * util_print_sys_info_assert
  * This function prints generalized information about the operating system
@@ -515,7 +515,7 @@ void util_print_sys_info_assert(void)
 #endif /* SYS_STACK_SIZE */
 
 } /* util_print_sys_info_assert */
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
 #ifdef CONFIG_FS
 /*

@@ -11,7 +11,7 @@
  *
  */
 #include <kernel.h>
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <usart_stm32f407.h>
 #include <serial.h>
 
@@ -427,4 +427,4 @@ static int32_t usart_stm32f407_gets(void *fd, void *priv_data, uint8_t *buf, int
     return (to_read - nbytes);
 
 } /* usart_stm32f407_gets */
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */

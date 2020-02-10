@@ -16,9 +16,9 @@
 #ifdef CONFIG_FS
 #include <fs.h>
 #endif /* CONFIG_FS */
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <serial.h>
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 #include <oled_ssd1306.h>
 
 /* Function prototypes. */
@@ -54,10 +54,10 @@ int main(void)
     fs_init();
 #endif /* CONFIG_FS */
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
     /* Initialize serial. */
     serial_init();
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
     /* Create a task for demo. */
     task_create(&demo_task_cb, P_STR("HELLO"), demo_task_stack, DEMO_STACK_SIZE, &demo_task, (void *)(NULL), 0);

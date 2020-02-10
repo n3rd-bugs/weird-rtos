@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <string.h>
 #include <fs.h>
 #include <ppp.h>
@@ -250,4 +250,4 @@ int32_t ppp_ipcp_update(void *fd, PPP *ppp, PPP_CONF_PKT *rx_packet, PPP_CONF_PK
 
 } /* ppp_ipcp_update */
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */

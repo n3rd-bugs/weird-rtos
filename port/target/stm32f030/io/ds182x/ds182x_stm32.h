@@ -14,7 +14,7 @@
 #define _DS182X_STM32_H_
 #include <kernel.h>
 
-#ifdef CONFIG_DS182X
+#ifdef GPIO_DS182X
 #include <ds182x.h>
 #include <ds182x_stm32_config.h>
 
@@ -38,5 +38,5 @@ extern DS182X_STM32 ds182x_stm32;
 /* Function prototypes. */
 void ds182x_stm32_init();
 
-#endif /* CONFIG_DS182X */
+#endif /* GPIO_DS182X */
 #endif /* _DS182X_STM32_H_ */

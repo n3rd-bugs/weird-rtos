@@ -14,7 +14,7 @@
 #define _1WIRE_H_
 #include <kernel.h>
 
-#ifdef CONFIG_1WIRE
+#ifdef GPIO_1WIRE
 /* Error code definitions. */
 #define ONEWIRE_TIMEOUT             (-2000)
 #define ONEWIRE_NO_DEVICE           (-2001)
@@ -64,5 +64,5 @@ int32_t onewire_write(ONE_WIRE *, const uint8_t *, int32_t);
 int32_t onewire_search(ONE_WIRE *, uint8_t, uint8_t *);
 uint8_t onewire_crc(const uint8_t *, uint8_t);
 
-#endif /* CONFIG_1WIRE */
+#endif /* GPIO_1WIRE */
 #endif /* _1WIRE_H_ */

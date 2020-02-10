@@ -14,11 +14,11 @@
 #define _ETHERNET_TARGET_H_
 #include <kernel.h>
 
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
 #include <ethernet_avr.h>
 
 /* Hook-up ethernet OS stack. */
 #define ETHERENET_TGT_INIT  ethernet_avr_init
 
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */
 #endif /* _ETHERNET_TARGET_H_ */

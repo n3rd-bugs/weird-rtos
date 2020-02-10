@@ -14,10 +14,10 @@
 #define _ETHERNET_AVR_H_
 #include <kernel.h>
 
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
 
 /* Function prototypes. */
 void ethernet_avr_init(void);
 
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */
 #endif /* _ETHERNET_AVR_H_ */

@@ -14,7 +14,7 @@
 #define _DHTXX_TARGET_H_
 #include <kernel.h>
 
-#ifdef CONFIG_DHT
+#ifdef GPIO_DHT
 #include <dhtxx_stm32.h>
 
 /* Export default DHT device. */
@@ -23,5 +23,5 @@
 /* Hook-up DHT driver. */
 #define DHT_TGT_INIT()      dhtxx_stm32_init()
 
-#endif /* CONFIG_DHT */
+#endif /* GPIO_DHT */
 #endif /* _DHTXX_TARGET_H_ */

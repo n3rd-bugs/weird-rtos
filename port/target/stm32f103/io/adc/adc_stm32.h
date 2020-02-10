@@ -14,7 +14,7 @@
 #define _ADC_STM32_H_
 #include <kernel.h>
 
-#ifdef CONFIG_ADC
+#ifdef IO_ADC
 #include <adc.h>
 #include <adc_stm32_config.h>
 
@@ -28,5 +28,5 @@ void adc_stm32_channel_select(uint32_t);
 void adc_stm32_channel_unselect(uint32_t);
 uint32_t adc_stm32_read(void);
 
-#endif /* CONFIG_ADC */
+#endif /* IO_ADC */
 #endif /* _ADC_STM32_H_ */

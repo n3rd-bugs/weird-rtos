@@ -11,15 +11,15 @@
  *
  */
 #include <io.h>
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
 #include <lcd_an.h>
-#endif /* CONFIG_LCD_AN */
-#ifdef CONFIG_GFX
+#endif /* IO_LCD_AN */
+#ifdef IO_GFX
 #include <gfx.h>
-#endif /* CONFIG_GFX */
-#ifdef CONFIG_SERIAL
+#endif /* IO_GFX */
+#ifdef IO_SERIAL
 #include <serial.h>
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
 /*
  * io_puts
@@ -31,31 +31,31 @@
 int io_puts(const void *ptr, int32_t n)
 {
     const char *s = (const char *)ptr;
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #ifdef FS_CONSOLE
     SERIAL *serial = (SERIAL *)debug_fd;
 #else
     SERIAL *serial = debug_serial;
 #endif /* FS_CONSOLE */
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
     if (lcd_an_fd != NULL)
     {
         /* Print this string on the Alphanumeric LCD. */
         fs_puts(lcd_an_fd, (const uint8_t *)s, n);
     }
-#endif /* CONFIG_LCD_AN */
+#endif /* IO_LCD_AN */
 
-#ifdef CONFIG_GFX
+#ifdef IO_GFX
     if (gfx_fd != NULL)
     {
         /* Print this string on the graphics driver. */
         fs_puts(gfx_fd, (const uint8_t *)s, n);
     }
-#endif /* CONFIG_GFX */
+#endif /* IO_GFX */
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
     /* If we do have a serial port. */
     if (serial != NULL)
     {
@@ -67,16 +67,16 @@ int io_puts(const void *ptr, int32_t n)
         n = debug_serial->device.puts(serial, serial->device.data, (const uint8_t *)s, n, 0);
 #endif /* FS_CONSOLE */
     }
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
-#ifndef CONFIG_GFX
-#ifndef CONFIG_SERIAL
-#ifndef CONFIG_LCD_AN
+#ifndef IO_GFX
+#ifndef IO_SERIAL
+#ifndef IO_LCD_AN
     /* Remove a compiler warning. */
     UNUSED_PARAM(s);
-#endif /* CONFIG_SERIAL */
-#endif /* CONFIG_LCD_AN */
-#endif /* CONFIG_GFX */
+#endif /* IO_SERIAL */
+#endif /* IO_LCD_AN */
+#endif /* IO_GFX */
 
     /* Return number of bytes printed. */
     return (n);
@@ -93,7 +93,7 @@ int io_puts(const void *ptr, int32_t n)
 int io_gets(void *ptr, int32_t n)
 {
     char *s = (char*)ptr;
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #ifdef FS_CONSOLE
     SERIAL *serial = (SERIAL *)debug_fd;
 #else
@@ -113,7 +113,7 @@ int io_gets(void *ptr, int32_t n)
 #else
     /* Remove a compiler warning. */
     UNUSED_PARAM(s);
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
     /* Return number of bytes read. */
     return (n);

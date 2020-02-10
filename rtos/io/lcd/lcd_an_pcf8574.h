@@ -15,9 +15,9 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_LCD_AN
-#ifdef CONFIG_LCD_PCF8574
-#ifndef CONFIG_PCF8574
+#ifdef IO_LCD_AN
+#ifdef LCD_PCF8574
+#ifndef I2C_PCF8574
 #error "PCF8574 driver is required for this driver."
 #endif
 #include <lcd_an.h>
@@ -48,6 +48,6 @@ typedef struct lcd_an_pcf8574
 void lcd_an_pcf8574_init(LCD_AN_PCF8574 *);
 int32_t lcd_an_pcf8574_reset(LCD_AN_PCF8574 *);
 
-#endif /* CONFIG_LCD_PCF8574 */
-#endif /* CONFIG_LCD_AN */
+#endif /* LCD_PCF8574 */
+#endif /* IO_LCD_AN */
 #endif /* _LCD_AN_PCF8574_H_ */

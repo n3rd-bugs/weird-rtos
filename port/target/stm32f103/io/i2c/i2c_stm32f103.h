@@ -15,7 +15,7 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_I2C
+#ifdef IO_I2C
 #include <i2c.h>
 #include <i2c_stm32_config.h>
 #ifdef STM_I2C_INT_MODE
@@ -80,5 +80,5 @@ ISR_FUN i2c1_event_interrupt(void);
 ISR_FUN i2c1_error_interrupt(void);
 #endif /* STM_I2C_INT_MODE */
 
-#endif /* CONFIG_I2C */
+#endif /* IO_I2C */
 #endif /* _I2C_STM32F103_H_ */

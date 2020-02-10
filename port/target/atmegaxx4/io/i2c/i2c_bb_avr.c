@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_I2C
+#ifdef IO_I2C
 #include <i2c_bb_avr.h>
 #include <util/delay.h>
 
@@ -419,4 +419,4 @@ int32_t i2c_bb_avr_message(I2C_DEVICE *device, I2C_MSG *message)
 
 } /* i2c_bb_avr_message */
 
-#endif /* CONFIG_I2C */
+#endif /* IO_I2C */

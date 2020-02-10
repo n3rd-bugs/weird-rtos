@@ -14,7 +14,7 @@
 #define _DS182X_TARGET_H_
 #include <kernel.h>
 
-#ifdef CONFIG_DS182X
+#ifdef GPIO_DS182X
 #include <ds182x_stm32.h>
 
 /* Export default DS182X bus. */
@@ -23,5 +23,5 @@
 /* Hook-up DS182X driver. */
 #define DS182X_TGT_INIT()       ds182x_stm32_init()
 
-#endif /* CONFIG_DS182X */
+#endif /* GPIO_DS182X */
 #endif /* _DS182X_TARGET_H_ */

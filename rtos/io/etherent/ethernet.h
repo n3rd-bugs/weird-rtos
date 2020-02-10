@@ -14,7 +14,7 @@
 #define _ETHERNET_H_
 #include <kernel.h>
 
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
 #ifndef CONFIG_NET
 #error "Networking stack is required for ethernet driver."
 #endif
@@ -121,6 +121,6 @@ void ethernet_wdt_disable(ETH_DEVICE *);
 int32_t ethernet_interrupt(ETH_DEVICE *);
 int32_t ethernet_buffer_receive(FS_BUFFER_LIST *);
 
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */
 
 #endif /* _ETHERNET_H_ */

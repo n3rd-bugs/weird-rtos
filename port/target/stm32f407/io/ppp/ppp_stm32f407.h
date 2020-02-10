@@ -14,10 +14,10 @@
 #define _PPP_STM32F407_H_
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 
 /* Function prototypes. */
 void ppp_stm32f407_init(void);
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */
 #endif /* _PPP_STM32F407_H_ */

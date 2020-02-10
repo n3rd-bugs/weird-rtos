@@ -18,7 +18,7 @@
 #include <net.h>
 
 #ifdef NET_ARP
-#ifndef CONFIG_ETHERNET
+#ifndef IO_ETHERNET
 #error "Ethernet driver is required for ARP"
 #endif
 #ifndef NET_IPV4

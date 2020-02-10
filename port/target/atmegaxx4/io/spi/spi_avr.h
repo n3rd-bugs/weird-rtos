@@ -14,7 +14,7 @@
 #define _SPI_AVR_H_
 #include <kernel.h>
 
-#ifdef CONFIG_SPI
+#ifdef IO_SPI
 #include <spi.h>
 #include <spi_avr_config.h>
 
@@ -39,5 +39,5 @@ void spi_avr_slave_select(SPI_DEVICE *);
 void spi_avr_slave_unselect(SPI_DEVICE *);
 int32_t spi_avr_message(SPI_DEVICE *, SPI_MSG *) SPEEDOPTIMIZATION;
 
-#endif /* CONFIG_SPI */
+#endif /* IO_SPI */
 #endif /* _SPI_AVR_H_ */

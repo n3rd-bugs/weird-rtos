@@ -19,7 +19,7 @@
 #ifndef CONFIG_NET
 #error "Networking stack required by ENC28j60."
 #endif
-#ifndef CONFIG_SPI
+#ifndef IO_SPI
 #error "SPI required by ENC28j60."
 #endif
 #include <spi.h>

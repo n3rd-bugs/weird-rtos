@@ -12,7 +12,7 @@
  */
 #include <ds182x_stm32.h>
 
-#ifdef CONFIG_DS182X
+#ifdef GPIO_DS182X
 /* Internal function prototypes. */
 void ds182x_stm32_pin_init(ONE_WIRE *);
 void ds182x_stm32_set_pin_mode(ONE_WIRE *, uint8_t);
@@ -161,4 +161,4 @@ void ds182x_stm32_set_pin_state(ONE_WIRE *bus, uint8_t state)
 
 } /* ds182x_stm32_set_pin_state */
 
-#endif /* CONFIG_DS182X */
+#endif /* GPIO_DS182X */

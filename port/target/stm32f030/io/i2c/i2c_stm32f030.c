@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_I2C
+#ifdef IO_I2C
 #include <i2c_stm32f030.h>
 
 #ifdef STM_I2C_INT_MODE
@@ -634,4 +634,4 @@ static void i2c2_stm32f030_disable_interrupt(void *data)
 
 } /* i2c2_stm32f030_disable_interrupt */
 #endif /* STM_I2C_INT_MODE */
-#endif /* CONFIG_I2C */
+#endif /* IO_I2C */

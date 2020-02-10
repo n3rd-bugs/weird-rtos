@@ -14,7 +14,7 @@
 #define _LED_MAX7219_STM32_H_
 #include <kernel.h>
 
-#ifdef CONFIG_MAX7219
+#ifdef GPIO_MAX7219
 #include <max7219.h>
 
 /* LED MAX7219 structure for STM32. */
@@ -28,5 +28,5 @@ typedef struct _led_max7219_stm32
 /* Function prototypes. */
 void led_max7219_stm32_init(void);
 
-#endif /* CONFIG_MAX7219 */
+#endif /* GPIO_MAX7219 */
 #endif /* _LED_MAX7219_STM32_H_ */

@@ -11,7 +11,7 @@
  *
  */
 #include <kernel.h>
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <usart_avr.h>
 #include <stdio.h>
 #include <avr/io.h>
@@ -982,4 +982,4 @@ static void usart_avr_toggle_delay(void)
 #endif /* (USART_HW_TOGGLE_DELAY > 0) */
 
 } /* usart_avr_toggle_delay */
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */

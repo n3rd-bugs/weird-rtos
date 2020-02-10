@@ -12,16 +12,16 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <stdio.h>
 #include <serial.h>
 #include <serial_target.h>
 #ifdef CONFIG_NET
 #include <net.h>
 #endif /* CONFIG_NET */
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
 #include <lcd_an.h>
-#endif /* CONFIG_LCD_AN */
+#endif /* IO_LCD_AN */
 #include <string.h>
 
 #ifdef FS_CONSOLE

@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <sll.h>
 #include <string.h>
 #include <fs.h>
@@ -835,4 +835,4 @@ int32_t ppp_transmit_buffer_instance(PPP *ppp, FS_BUFFER_LIST *buffer, uint16_t 
 
 } /* ppp_transmit_buffer_instance */
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */

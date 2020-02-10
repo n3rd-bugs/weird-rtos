@@ -14,7 +14,7 @@
 #define _NMEA_H_
 #include <kernel.h>
 
-#ifdef CONFIG_NMEA
+#ifdef IO_NMEA
 #include <fs.h>
 
 /* Error code definitions. */
@@ -105,5 +105,5 @@ int32_t nmea_fetch_data(NMEA *, uint8_t);
 int32_t nmea_parse_message(NMEA *, uint8_t *, uint8_t *);
 void nmea_parser_set_value(uint32_t *, uint8_t *, uint8_t *, uint8_t, uint8_t);
 
-#endif /* CONFIG_NMEA */
+#endif /* IO_NMEA */
 #endif /* _NMEA_H_ */
