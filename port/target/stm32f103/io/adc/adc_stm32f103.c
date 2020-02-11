@@ -1,5 +1,5 @@
 /*
- * adc_stm32.c
+ * adc_stm32f103.c
  *
  * Copyright (c) 2017 Usama Masood <mirzaon@gmail.com> All rights reserved.
  *
@@ -13,15 +13,15 @@
 #include <kernel.h>
 
 #ifdef IO_ADC
-#include <adc_stm32.h>
 #include <adc.h>
+#include <adc_stm32f103.h>
 
 /*
- * adc_stm32_init
+ * adc_stm32f103_init
  * This function is responsible for initializing ADC hardware for STM32
  * platform.
  */
-void adc_stm32_init(void)
+void adc_stm32f103_init(void)
 {
     /* Reset ADC1. */
     RCC->APB2RSTR |= (RCC_APB2Periph_ADC1);
@@ -63,14 +63,14 @@ void adc_stm32_init(void)
     /* Disable ADC. */
     ADC1->CR2 &= (uint32_t)~(ADC_CR2_ADON);
 
-} /* adc_stm32_init */
+} /* adc_stm32f103_init */
 
 /*
- * adc_stm32_channel_select
+ * adc_stm32f103_channel_select
  * @channel: Channel from which we will be taking readings.
  * This function will select an ADC channel.
  */
-void adc_stm32_channel_select(uint32_t channel)
+void adc_stm32f103_channel_select(uint32_t channel)
 {
     /* Initialize the required channel. */
     switch (channel)
@@ -115,14 +115,14 @@ void adc_stm32_channel_select(uint32_t channel)
     /* Enable ADC. */
     ADC1->CR2 |= ADC_CR2_ADON;
 
-} /* adc_stm32_channel_select */
+} /* adc_stm32f103_channel_select */
 
 /*
- * adc_stm32_channel_unselect
+ * adc_stm32f103_channel_unselect
  * @channel: Channel needed to be un-select.
  * This function will un-select an ADC channel.
  */
-void adc_stm32_channel_unselect(uint32_t channel)
+void adc_stm32f103_channel_unselect(uint32_t channel)
 {
     /* Remove some compiler warnings. */
     UNUSED_PARAM(channel);
@@ -130,26 +130,23 @@ void adc_stm32_channel_unselect(uint32_t channel)
     /* Disable ADC. */
     ADC1->CR2 &= (uint32_t)~(ADC_CR2_ADON);
 
-} /* adc_stm32_channel_unselect */
+} /* adc_stm32f103_channel_unselect */
 
 /*
- * adc_stm32_read
+ * adc_stm32f103_read
  * @return: Returns the ADC reading.
  * This function will take a reading from the given ADC channel.
  */
-uint32_t adc_stm32_read(void)
+ADC_SAMPLE adc_stm32f103_read(void)
 {
     /* Start ADC conversion. */
     ADC1->CR2 |= (ADC_CR2_EXTTRIG | ADC_CR2_SWSTART);
 
     /* Wait for ADC conversion to complete. */
-    while (!(ADC1->SR & ADC_SR_EOC))
-    {
-        ;
-    }
+    while (!(ADC1->SR & ADC_SR_EOC)) ;
 
     /* Return the ADC value. */
-    return ((uint32_t)ADC1->DR);
+    return ((ADC_SAMPLE)ADC1->DR);
 
-} /* adc_stm32_read */
+} /* adc_stm32f103_read */
 #endif /* IO_ADC */

@@ -29,14 +29,34 @@ void adc_init(void)
 } /* adc_init */
 
 /*
+ * adc_channel_init
+ * @channel: ADC channel from which we will be taking readings.
+ * This function will initialize an ADC channel.
+ */
+void adc_channel_init(uint32_t channel)
+{
+#ifdef ADC_TGT_CHANNEL_INIT
+    /* This function will initialize an ADC channel. */
+    ADC_TGT_CHANNEL_INIT(channel);
+#else
+    UNUSED_PARAM(channel);
+#endif /* ADC_TGT_CHANNEL_INIT */
+
+} /* adc_channel_init */
+
+/*
  * adc_channel_select
  * @channel: ADC channel from which we need to take readings.
  * This function will select a required ADC channel.
  */
 void adc_channel_select(uint32_t channel)
 {
+#ifdef ADC_TGT_CHANNEL_SELECT
     /* This function will select an ADC channel. */
     ADC_TGT_CHANNEL_SELECT(channel);
+#else
+    UNUSED_PARAM(channel);
+#endif /* ADC_TGT_CHANNEL_SELECT */
 
 } /* adc_channel_select */
 
@@ -47,21 +67,43 @@ void adc_channel_select(uint32_t channel)
  */
 void adc_channel_unselect(uint32_t channel)
 {
-    /* Uns-elect the required ADC channel. */
+#ifdef ADC_TGT_CHANNEL_UNSELECT
+    /* Un-select the required ADC channel. */
     ADC_TGT_CHANNEL_UNSELECT(channel);
+#else
+    UNUSED_PARAM(channel);
+#endif /* ADC_TGT_CHANNEL_UNSELECT */
 
-} /* adc_read */
+} /* adc_channel_unselect */
 
 /*
  * adc_read
  * This function will take a reading from the ADC.
  */
-uint32_t adc_read(void)
+ADC_SAMPLE adc_read(void)
 {
     /* Take an ADC reading and return it's value. */
     return (ADC_TGT_READ());
 
 } /* adc_read */
+
+/*
+ * adc_read_n
+ * @buffer: Buffer in which samples are needed to be read.
+ * @n: Number of samples to collect.
+ * This function will take the given number of samples from the ADC.
+ */
+void adc_read_n(ADC_SAMPLE *buffer, uint32_t n)
+{
+#ifdef ADC_TGT_READ_N
+    /* Take an ADC reading and return it's value. */
+    ADC_TGT_READ_N(buffer, n);
+#else
+    UNUSED_PARAM(buffer);
+    UNUSED_PARAM(n);
+#endif
+
+} /* adc_read_n */
 
 /*
  * adc_read_average

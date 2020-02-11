@@ -22,9 +22,11 @@
 
 /* Function prototypes. */
 void adc_init(void);
+void adc_channel_init(uint32_t);
 void adc_channel_select(uint32_t);
 void adc_channel_unselect(uint32_t);
-uint32_t adc_read(void);
+ADC_SAMPLE adc_read(void);
+void adc_read_n(ADC_SAMPLE *, uint32_t);
 uint32_t adc_read_average(uint32_t);
 
 #endif /* IO_ADC */
