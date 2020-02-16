@@ -12,7 +12,7 @@
  */
 #include <pcf8574.h>
 
-#ifdef CONFIG_PCF8574
+#ifdef I2C_PCF8574
 /*
  * pcf8574_init
  * @device: PCF8574 device needed to be initialized.
@@ -94,4 +94,4 @@ void pcf8574_write(PCF8574 *device)
 
 } /* pcf8574_write */
 
-#endif /* CONFIG_PCF8574 */
+#endif /* I2C_PCF8574 */

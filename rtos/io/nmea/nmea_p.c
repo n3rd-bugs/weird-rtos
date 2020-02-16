@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_NMEA
+#ifdef IO_NMEA
 #include <nmea.h>
 #include <nmea_p.h>
 #include <rtl.h>
@@ -71,4 +71,4 @@ void nmea_ublox_set_msg_rate(NMEA *nmea, uint8_t *msg, uint8_t rate)
     fs_puts(nmea->fd, (const uint8_t *)"\r\n", -1);
 
 } /* nmea_ublox_set_msg_rate */
-#endif /* CONFIG_NMEA */
+#endif /* IO_NMEA */

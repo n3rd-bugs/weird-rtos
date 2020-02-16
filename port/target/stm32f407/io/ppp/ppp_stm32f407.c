@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <ppp.h>
 #include <ppp_target.h>
 
@@ -35,4 +35,4 @@ void ppp_stm32f407_init(void)
 
 } /* ppp_stm32f407_init */
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */

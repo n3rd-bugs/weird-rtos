@@ -15,12 +15,12 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
 #include <lcd_an_target.h>
 #include <lcd_an_stm32_config.h>
 
 /* Function prototypes. */
 void lcd_an_stm32_init(void);
 
-#endif /* CONFIG_LCD_AN */
+#endif /* IO_LCD_AN */
 #endif /* _LCD_AN_STM32_H_ */

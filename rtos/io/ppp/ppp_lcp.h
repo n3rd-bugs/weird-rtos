@@ -15,7 +15,7 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 
 /* LCP option type definitions. */
 #define PPP_LCP_OPT_MRU                 1
@@ -48,6 +48,6 @@ int32_t ppp_lcp_option_pocess(PPP *, PPP_CONF_OPT *, PPP_CONF_PKT *);
 uint8_t ppp_lcp_option_length_valid(PPP *, PPP_CONF_OPT *);
 int32_t ppp_lcp_update(void *, PPP *, PPP_CONF_PKT *, PPP_CONF_PKT *);
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */
 
 #endif /* _PPP_LCP_H_ */

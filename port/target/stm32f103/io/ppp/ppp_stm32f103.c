@@ -12,10 +12,10 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <ppp.h>
 #include <ppp_target.h>
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <usart_stm32f103.h>
 
 /* PPP over serial device data. */
@@ -25,7 +25,7 @@ static FS_BUFFER_DATA usart2_buffer_data;
 static uint8_t usart2_buffer_space[PPP_MAX_BUFFER_SIZE * PPP_NUM_BUFFERS];
 static FS_BUFFER usart2_buffer_ones[PPP_NUM_BUFFERS];
 static FS_BUFFER_LIST usart2_buffer_lists[PPP_NUM_BUFFER_LIST];
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
 /*
  * ppp_stm32f103_init
@@ -33,7 +33,7 @@ static FS_BUFFER_LIST usart2_buffer_lists[PPP_NUM_BUFFER_LIST];
  */
 void ppp_stm32f103_init(void)
 {
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
     FD fd;
 
     /* Register this serial device. */
@@ -52,6 +52,6 @@ void ppp_stm32f103_init(void)
 
     /* Register this PPP device. */
     ppp_register_fd(&ppp_usart2, fd, TRUE);
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 } /* ppp_stm32f103_init */
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */

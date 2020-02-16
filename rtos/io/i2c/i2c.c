@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_I2C
+#ifdef IO_I2C
 #include <i2c.h>
 
 /*
@@ -63,4 +63,4 @@ int32_t i2c_message(I2C_DEVICE *device, I2C_MSG *messages, uint32_t num_messages
 
 } /* i2c_message */
 
-#endif /* CONFIG_I2C */
+#endif /* IO_I2C */

@@ -14,11 +14,11 @@
 #define _LCD_AN_TARGET_H_
 #include <kernel.h>
 
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
 #include <lcd_an_stm32.h>
 
 /* Hook-up Alphanumeric LCD OS stack. */
 #define LCD_AN_TGT_INIT()           lcd_an_stm32_init()
 
-#endif /* CONFIG_LCD_AN */
+#endif /* IO_LCD_AN */
 #endif /* _LCD_AN_TARGET_H_ */

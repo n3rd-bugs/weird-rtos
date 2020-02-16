@@ -12,7 +12,7 @@
  */
 #include <dhtxx_stm32.h>
 
-#ifdef CONFIG_DHT
+#ifdef GPIO_DHT
 /* Internal function prototypes. */
 void dhtxx_stm32_pin_init(DHT_XX *);
 void dhtxx_stm32_set_pin_mode(DHT_XX *, uint8_t);
@@ -159,4 +159,4 @@ void dhtxx_stm32_set_pin_state(DHT_XX *dht, uint8_t state)
 
 } /* dhtxx_stm32_set_pin_state */
 
-#endif /* CONFIG_DHT */
+#endif /* GPIO_DHT */

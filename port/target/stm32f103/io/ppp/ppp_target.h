@@ -14,11 +14,11 @@
 #define _PPP_TARGET_H_
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <ppp_stm32f103.h>
 
 /* Hook-up PPP OS stack. */
 #define PPP_TGT_INIT  ppp_stm32f103_init
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */
 #endif /* _PPP_TARGET_H_ */

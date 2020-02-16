@@ -89,7 +89,7 @@ int main(void)
     /* Initialize networking stack. */
     net_init();
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
     /* Initialize serial. */
     serial_init();
 #endif

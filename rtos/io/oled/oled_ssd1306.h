@@ -18,14 +18,14 @@
 #include <fs.h>
 #endif
 
-#ifdef CONFIG_OLED
-#ifndef CONFIG_I2C
+#ifdef IO_OLED
+#ifndef IO_I2C
 #error "I2C is required for OLED."
-#endif /* CONFIG_I2C */
+#endif /* IO_I2C */
 #include <i2c.h>
-#ifndef CONFIG_GFX
+#ifndef IO_GFX
 #error "Graphics is needed to be enabled for OLED."
-#endif /* CONFIG_GFX */
+#endif /* IO_GFX */
 #include <gfx.h>
 #include <oled_config.h>
 
@@ -78,5 +78,5 @@ typedef struct _ssd1306
 void oled_ssd1306_init(void);
 int32_t oled_ssd1306_register(SSD1306 *);
 
-#endif /* CONFIG_OLED */
+#endif /* IO_OLED */
 #endif /* _OLED_SSD1306_H_ */

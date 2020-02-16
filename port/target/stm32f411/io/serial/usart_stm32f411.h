@@ -14,7 +14,7 @@
 #define _USART_STM32F411_H_
 
 #include <kernel.h>
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <serial.h>
 #include <stdarg.h>
 #include <usart_stm32_config.h>
@@ -48,5 +48,5 @@ int32_t usart_stm32f411_register(STM32_USART *, const char *, uint8_t, uint32_t,
 ISR_FUN usart1_interrupt(void);
 ISR_FUN usart2_interrupt(void);
 
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 #endif /* _USART_STM32F411_H_ */

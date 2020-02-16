@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_OLED
+#ifdef IO_OLED
 #include <oled_ssd1306.h>
 #include <oled_target.h>
 #include <string.h>
@@ -558,4 +558,4 @@ static int32_t oled_ssd1306_command(SSD1306 *oled, uint8_t command)
 
 } /* oled_ssd1306_command */
 
-#endif /* CONFIG_OLED */
+#endif /* IO_OLED */

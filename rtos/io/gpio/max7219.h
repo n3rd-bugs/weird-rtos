@@ -14,10 +14,10 @@
 #define _MAX7219_H_
 #include <kernel.h>
 
-#ifdef CONFIG_MAX7219
-#ifndef CONFIG_SPI
+#ifdef GPIO_MAX7219
+#ifndef IO_SPI
 #error "SPI is required for MAX7219."
-#endif /* CONFIG_SPI */
+#endif /* IO_SPI */
 #include <spi.h>
 #include <gfx.h>
 #include <max7219_config.h>
@@ -68,5 +68,5 @@ int32_t max7219_set_power(MAX7219 *, uint8_t);
 int32_t max7219_set_decode(MAX7219 *, uint8_t);
 int32_t led_max7219_register(LED_MAX7219 *);
 
-#endif /* CONFIG_MAX7219 */
+#endif /* GPIO_MAX7219 */
 #endif /* _MAX7219_H_ */

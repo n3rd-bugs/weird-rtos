@@ -23,7 +23,7 @@
 #include <console.h>
 #endif /* FS_CONSOLE */
 
-#ifdef CONFIG_GFX
+#ifdef IO_GFX
 #include <gfx_config.h>
 
 /* Error code definitions. */
@@ -78,5 +78,5 @@ struct _gfx
 void graphics_register(GFX *);
 int32_t gfx_display(void *, const uint8_t *, uint32_t, uint32_t, uint32_t, uint32_t);
 
-#endif /* CONFIG_GFX */
+#endif /* IO_GFX */
 #endif /* _GFX_H_ */

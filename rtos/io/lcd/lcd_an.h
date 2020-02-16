@@ -19,12 +19,12 @@
 #include <fs.h>
 #endif /* CONFIG_FS */
 
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
 #ifdef FS_CONSOLE
 #include <console.h>
 #else
 #error "Console driver is required for LCD_AN driver."
-#endif /* CONFIG_LCD_AN */
+#endif /* IO_LCD_AN */
 #include <lcd_an_config.h>
 
 /* Alphanumeric LCD error code definitions. */
@@ -107,5 +107,5 @@ void lcd_an_init(void);
 void lcd_an_register(LCD_AN *);
 int32_t lcd_an_reset(LCD_AN *);
 
-#endif /* CONFIG_LCD_AN */
+#endif /* IO_LCD_AN */
 #endif /* _LCD_AN_H_ */

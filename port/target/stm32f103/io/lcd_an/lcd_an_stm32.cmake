@@ -5,7 +5,7 @@ setup_option_def(LCD_AN_STM32_COLS 20 INT "Number of columns in the Alphanumeric
 # Valid pin numbers for PCF8574.
 set(pcf8574_pinnum_values 0 1 2 3 4 5 6 7 CACHE INTERNAL "" FORCE)
 
-if (${CONFIG_LCD_PCF8574})
+if (${LCD_PCF8574})
     setup_option_def(LCD_AN_STM32_I2C_ADDRESS 0x3F INT "I2C address for Alphanumeric LCD GPIO controller." CONFIG_FILE "lcd_an_stm32_config")
     setup_option_def(LCD_AN_STM32_PIN_RW 1 INT "Read write (RW) pin for Alphanumeric LCD over I2C." VALUE_LIST pcf8574_pinnum_values CONFIG_FILE "lcd_an_stm32_config")
     setup_option_def(LCD_AN_STM32_PIN_RS 0 INT "Register select (RS) pin for Alphanumeric LCD over I2C." VALUE_LIST pcf8574_pinnum_values CONFIG_FILE "lcd_an_stm32_config")

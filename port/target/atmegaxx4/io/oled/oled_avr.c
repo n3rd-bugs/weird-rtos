@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_OLED
+#ifdef IO_OLED
 #include <oled_ssd1306.h>
 #include <oled_avr.h>
 #include <i2c_bb_avr.h>
@@ -57,4 +57,4 @@ void oled_avr_init(void)
     oled_ssd1306_register(&avr_ssd1306);
 
 } /* oled_avr_init */
-#endif /* CONFIG_OLED */
+#endif /* IO_OLED */

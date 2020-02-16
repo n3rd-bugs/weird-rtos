@@ -21,7 +21,7 @@
 #ifdef NET_UDP
 #include <net_udp.h>
 #endif
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
 #include <ethernet.h>
 #endif
 #ifdef NET_DHCP
@@ -63,7 +63,7 @@ void net_init(void)
     net_dhcp_client_initialize();
 #endif
 
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
     /* Initialize ethernet devices. */
     ethernet_init();
 #endif

@@ -15,7 +15,7 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_ADC
+#ifdef IO_ADC
 
 /* Include ADC target configuration. */
 #include <adc_target.h>
@@ -27,6 +27,6 @@ void adc_channel_unselect(uint32_t);
 uint32_t adc_read(void);
 uint32_t adc_read_average(uint32_t);
 
-#endif /* CONFIG_ADC */
+#endif /* IO_ADC */
 
 #endif /* _ADC_H_ */

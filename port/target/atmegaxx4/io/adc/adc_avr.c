@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_ADC
+#ifdef IO_ADC
 #include <avr/interrupt.h>
 #include <adc_avr.h>
 #include <adc.h>
@@ -159,4 +159,4 @@ void adc_avr_periodic_read_stop(void)
     TIMSK0 &= (uint8_t)~0x2;
 
 } /* adc_avr_periodic_read_stop */
-#endif /* CONFIG_ADC */
+#endif /* IO_ADC */

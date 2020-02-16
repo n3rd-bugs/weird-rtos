@@ -14,8 +14,8 @@
 #define _MMC_SPI_H_
 #include <kernel.h>
 
-#ifdef CONFIG_MMC
-#ifndef CONFIG_SPI
+#ifdef IO_MMC
+#ifndef IO_SPI
 #error "SPI is required for MMC SPI."
 #endif
 #include <spi.h>
@@ -135,5 +135,5 @@ int32_t mmc_spi_write(void *, uint32_t, uint64_t *, uint8_t *, int32_t);
 int32_t mmc_spi_get_num_sectors(MMC_SPI *, uint64_t *);
 int32_t mmc_spi_get_sectors_per_block(MMC_SPI *, uint64_t *);
 
-#endif /* CONFIG_MMC */
+#endif /* IO_MMC */
 #endif /* _MMC_SPI_H_ */

@@ -14,12 +14,12 @@
 #define _NMEA_P_H_
 #include <kernel.h>
 
-#ifdef CONFIG_NMEA
+#ifdef IO_NMEA
 #include <nmea.h>
 
 /* Function prototypes. */
 void nmea_ublox_configure(NMEA *, uint8_t);
 void nmea_ublox_set_msg_rate(NMEA *, uint8_t *, uint8_t);
 
-#endif /* CONFIG_NMEA */
+#endif /* IO_NMEA */
 #endif /* _NMEA_P_H_ */

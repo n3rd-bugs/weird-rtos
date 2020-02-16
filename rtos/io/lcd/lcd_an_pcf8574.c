@@ -12,8 +12,8 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_LCD_AN
-#ifdef CONFIG_LCD_PCF8574
+#ifdef IO_LCD_AN
+#ifdef LCD_PCF8574
 #include <lcd_an_pcf8574.h>
 
 /* Internal function prototypes. */
@@ -295,5 +295,5 @@ static uint8_t lcd_an_pcf8574_read_data(LCD_AN *lcd_an)
 
 } /* lcd_an_pcf8574_read_data */
 
-#endif /* CONFIG_LCD_PCF8574 */
-#endif /* CONFIG_LCD_AN */
+#endif /* LCD_PCF8574 */
+#endif /* IO_LCD_AN */

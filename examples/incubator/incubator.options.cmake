@@ -6,9 +6,9 @@ setup_option(TGT_PLATFORM atmega644p)
 setup_option(F_CPU 16000000UL)
 
 # Initialize RTOS configurations.
-setup_option(CONFIG_ADC ON)
+setup_option(IO_ADC ON)
 setup_option(CONFIG_FS ON)
-setup_option(CONFIG_SERIAL ON)
+setup_option(IO_SERIAL ON)
 
 # Update the number of ticks per second to 1000.
 setup_option(SOFT_TICKS_PER_SEC 1000)

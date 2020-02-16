@@ -15,9 +15,9 @@
 #include <kernel.h>
 
 #ifdef CONFIG_FS
-#if (defined(FS_FAT) && defined(CONFIG_MMC))
+#if (defined(FS_FAT) && defined(IO_MMC))
 #include <fs_avr_config.h>
-#endif /* (defined(FS_FAT) && defined(CONFIG_MMC)) */
+#endif /* (defined(FS_FAT) && defined(IO_MMC)) */
 
 /* Function prototypes. */
 void fs_avr_init(void);

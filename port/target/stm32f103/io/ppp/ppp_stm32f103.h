@@ -14,11 +14,11 @@
 #define _PPP_STM32F103_H_
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <ppp_stm32_config.h>
 
 /* Function prototypes. */
 void ppp_stm32f103_init(void);
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */
 #endif /* _PPP_STM32F103_H_ */

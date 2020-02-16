@@ -14,7 +14,7 @@
 #define _ADC_AVR_H_
 #include <kernel.h>
 
-#ifdef CONFIG_ADC
+#ifdef IO_ADC
 #include <adc.h>
 #include <adc_avr_config.h>
 
@@ -54,5 +54,5 @@ uint32_t adc_avr_read(void);
 void adc_avr_periodic_read_start(ADC_DATA_CALLBACK *, uint32_t);
 void adc_avr_periodic_read_stop(void);
 
-#endif /* CONFIG_ADC */
+#endif /* IO_ADC */
 #endif /* _ADC_AVR_H_ */

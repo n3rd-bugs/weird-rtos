@@ -19,7 +19,7 @@
 
 #ifdef NET_DHCP
 #include <net_dhcp_config.h>
-#ifndef CONFIG_ETHERNET
+#ifndef IO_ETHERNET
 #error "For now only devices using ethernet are supported."
 #endif
 

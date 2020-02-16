@@ -14,7 +14,7 @@
 #define _I2C_BB_AVR_H_
 #include <kernel.h>
 
-#ifdef CONFIG_I2C
+#ifdef IO_I2C
 #include <i2c.h>
 
 /* I2C configuration. */
@@ -45,5 +45,5 @@ typedef struct _i2c_bb_avr
 void i2c_bb_avr_init(I2C_DEVICE *);
 int32_t i2c_bb_avr_message(I2C_DEVICE *, I2C_MSG *) SPEEDOPTIMIZATION;
 
-#endif /* CONFIG_I2C */
+#endif /* IO_I2C */
 #endif /* _I2C_BB_AVR_H_ */

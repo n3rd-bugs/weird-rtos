@@ -14,7 +14,7 @@
 #define _DHTXX_H_
 #include <kernel.h>
 
-#ifdef CONFIG_DHT
+#ifdef GPIO_DHT
 /* DHT sensor type definitions. */
 #define DHTXX_TYPE_22           (0)
 
@@ -60,5 +60,5 @@ int32_t dhtxx_read(DHT_XX *, uint16_t *, uint16_t *, uint8_t);
 /* Include DHTXX target definitions. */
 #include <dhtxx_target.h>
 
-#endif /* CONFIG_DHT */
+#endif /* GPIO_DHT */
 #endif /* _DHTXX_H_ */

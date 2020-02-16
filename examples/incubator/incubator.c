@@ -223,7 +223,7 @@ int main(void)
     /* Initialize scheduler. */
     scheduler_init();
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #ifdef CONFIG_FS
     /* Initialize file system. */
     fs_init();
@@ -231,7 +231,7 @@ int main(void)
 
     /* Initialize serial. */
     serial_init();
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
     /* Configure indicator LEDs. */
     DDRC |= (1 << 2) | (1 << 3) | (1 << 4) | (1 << 5);

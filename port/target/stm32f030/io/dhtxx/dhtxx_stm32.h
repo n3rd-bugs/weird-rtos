@@ -14,7 +14,7 @@
 #define _DHTXX_STM32_H_
 #include <kernel.h>
 
-#ifdef CONFIG_DHT
+#ifdef GPIO_DHT
 #include <dhtxx.h>
 #include <dhtxx_stm32_config.h>
 
@@ -38,5 +38,5 @@ extern DHT_XX_STM32 sht_stm32;
 /* Function prototypes. */
 void dhtxx_stm32_init();
 
-#endif /* CONFIG_DHT */
+#endif /* GPIO_DHT */
 #endif /* _DHTXX_STM32_H_ */

@@ -14,11 +14,11 @@
 #define _PPP_AVR_H_
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <ppp_avr_config.h>
 
 /* Function prototypes. */
 void ppp_avr_init(void);
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */
 #endif /* _PPP_AVR_H_ */

@@ -12,11 +12,11 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
 #include <lcd_an.h>
 #include <lcd_an_stm32.h>
 
-#ifdef CONFIG_LCD_PCF8574
+#ifdef LCD_PCF8574
 #include <i2c_stm32f030.h>
 #include <lcd_an_pcf8574.h>
 
@@ -75,10 +75,10 @@ static LCD_AN_PCF8574 stm32_lcd_an =
  */
 void lcd_an_stm32_init(void)
 {
-#ifdef CONFIG_LCD_PCF8574
+#ifdef LCD_PCF8574
     /* Register PCF8574 Alphanumeric LCD device. */
     lcd_an_pcf8574_init(&stm32_lcd_an);
 #endif
 
 } /* lcd_an_stm32_init */
-#endif /* CONFIG_LCD_AN */
+#endif /* IO_LCD_AN */

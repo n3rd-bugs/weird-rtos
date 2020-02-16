@@ -12,11 +12,11 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_LCD_AN
+#ifdef IO_LCD_AN
 #include <lcd_an.h>
 #include <lcd_an_avr.h>
 
-#ifdef CONFIG_LCD_PCF8574
+#ifdef LCD_PCF8574
 #include <i2c_bb_avr.h>
 #include <lcd_an_pcf8574.h>
 
@@ -122,7 +122,7 @@ static LCD_AN avr_lcd_an =
  */
 void lcd_an_avr_init(void)
 {
-#ifdef CONFIG_LCD_PCF8574
+#ifdef LCD_PCF8574
     /* Register PCF8574 Alphanumeric LCD device. */
     lcd_an_pcf8574_init(&avr_lcd_an);
 #else
@@ -163,7 +163,7 @@ int32_t lcd_an_avr_reset(void)
 {
     int32_t status = SUCCESS;
 
-#ifdef CONFIG_LCD_PCF8574
+#ifdef LCD_PCF8574
     /* Reset the PCF8574 Alphanumeric LCD device. */
     status = lcd_an_pcf8574_reset(&avr_lcd_an);
 #endif
@@ -173,7 +173,7 @@ int32_t lcd_an_avr_reset(void)
 
 } /* lcd_an_avr_reset */
 
-#ifndef CONFIG_LCD_PCF8574
+#ifndef LCD_PCF8574
 /*
  * lcd_an_avr_set_en
  * @lcd_an: Alphanumeric LCD driver for which this function was called.
@@ -381,6 +381,6 @@ static uint8_t lcd_an_avr_read_data(LCD_AN *lcd_an)
     return (nibble);
 
 } /* lcd_an_avr_read_data */
-#endif /* CONFIG_LCD_PCF8574 */
+#endif /* LCD_PCF8574 */
 
-#endif /* CONFIG_LCD_AN */
+#endif /* IO_LCD_AN */

@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_MMC
+#ifdef IO_MMC
 #include <mmc_spi.h>
 #ifdef MMC_SPI_FS
 #include <string.h>
@@ -1658,4 +1658,4 @@ static int32_t mmc_slave_unselect(MMC_SPI *mmc)
 
 } /* mmc_slave_unselect */
 
-#endif /* CONFIG_MMC */
+#endif /* IO_MMC */

@@ -14,9 +14,9 @@
 #include <sys_info.h>
 #include <string.h>
 #include <stdlib.h>
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <serial.h>
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
 /*
  * system_assert
@@ -29,7 +29,7 @@
  */
 void system_assert(int32_t code, char *file, uint32_t line, TASK *task)
 {
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #ifdef ASSERT_FILE_INFO
     uint8_t line_buf[12];
 #endif /* ASSERT_FILE_INFO */
@@ -38,7 +38,7 @@ void system_assert(int32_t code, char *file, uint32_t line, TASK *task)
     /* Remove some compiler warnings. */
     UNUSED_PARAM(code);
     UNUSED_PARAM(task);
-#if (!defined(ASSERT_FILE_INFO) || !defined(CONFIG_SERIAL))
+#if (!defined(ASSERT_FILE_INFO) || !defined(IO_SERIAL))
     UNUSED_PARAM(file);
     UNUSED_PARAM(line);
 #endif
@@ -46,7 +46,7 @@ void system_assert(int32_t code, char *file, uint32_t line, TASK *task)
     /* Disable system interrupts. */
     DISABLE_INTERRUPTS();
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #ifdef ASSERT_FILE_INFO
     /* Put filename. */
     serial_assert_puts((uint8_t *)file, 0);
@@ -66,7 +66,7 @@ void system_assert(int32_t code, char *file, uint32_t line, TASK *task)
     /* Print current system information. */
     util_print_sys_info_assert();
 #endif /* TASK_STATS */
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
     /* For now there are no recovery mechanisms defined. */
     while (1)

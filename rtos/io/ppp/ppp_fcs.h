@@ -15,7 +15,7 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <fs.h>
 
 /* FCS magic and initial value definitions. */
@@ -28,6 +28,6 @@
 uint16_t ppp_fcs16_calculate(uint8_t *, uint32_t, uint16_t);
 uint16_t ppp_fcs16_buffer_calculate(FS_BUFFER_LIST *, uint16_t);
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */
 
 #endif /* _PPP_FCS_H_ */

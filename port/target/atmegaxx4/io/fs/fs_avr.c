@@ -16,7 +16,7 @@
 #include <fs_avr.h>
 #include <fs.h>
 
-#if (defined(FS_FAT) && defined(CONFIG_MMC))
+#if (defined(FS_FAT) && defined(IO_MMC))
 #include <mmc_spi.h>
 #include <spi_bb_avr.h>
 #include <ffdiskio.h>
@@ -34,7 +34,7 @@ static FATFS fat_fs;
  */
 void fs_avr_init(void)
 {
-#if (defined(FS_FAT) && defined(CONFIG_MMC))
+#if (defined(FS_FAT) && defined(IO_MMC))
     char mount_point[4] = "0:\\";
 
 #ifdef MMC_SPI_FS
@@ -73,7 +73,7 @@ void fs_avr_init(void)
 
     /* Mount this drive later. */
     f_mount(&fat_fs, mount_point, 0);
-#endif /* (defined(FS_FAT) && defined(CONFIG_MMC)) */
+#endif /* (defined(FS_FAT) && defined(IO_MMC)) */
 
 } /* fs_avr_init */
 #endif /* CONFIG_FS */

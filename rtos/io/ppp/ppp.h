@@ -15,7 +15,7 @@
 
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #ifndef CONFIG_NET
 #error "PPP requires networking stack."
 #endif
@@ -175,5 +175,5 @@ int32_t ppp_transmit_buffer_instance(PPP *, FS_BUFFER_LIST *, uint16_t, uint8_t)
 #include <modem_chat.h>
 #endif
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */
 #endif /* _PPP_H_ */

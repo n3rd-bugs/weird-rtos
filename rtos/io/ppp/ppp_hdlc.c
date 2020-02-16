@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_PPP
+#ifdef IO_PPP
 #include <string.h>
 #include <fs.h>
 #include <ppp.h>
@@ -392,4 +392,4 @@ int32_t ppp_hdlc_escape(FS_BUFFER_LIST *src, FS_BUFFER_LIST *dst, uint32_t *accm
 
 } /* ppp_hdlc_escape */
 
-#endif /* CONFIG_PPP */
+#endif /* IO_PPP */

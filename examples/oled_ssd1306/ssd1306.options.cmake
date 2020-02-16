@@ -2,8 +2,8 @@
 include(${RTOS_ROOT}/cmake/modules/helper.cmake)
 
 # Setup driver configurations.
-setup_option(CONFIG_I2C ON)
-setup_option(CONFIG_OLED ON)
+setup_option(IO_I2C ON)
+setup_option(IO_OLED ON)
 
 # Setup task options.
 setup_option(TASK_STATS ON)

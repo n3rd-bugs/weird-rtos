@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_SPI
+#ifdef IO_SPI
 #include <spi.h>
 #include <spi_stm32f407.h>
 
@@ -314,4 +314,4 @@ int32_t spi_stm32f407_message(SPI_DEVICE *device, SPI_MSG *message)
 
 } /* spi_stm32f407_message */
 
-#endif /* CONFIG_SPI */
+#endif /* IO_SPI */

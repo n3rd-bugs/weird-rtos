@@ -13,9 +13,9 @@
 #ifndef _ATMEGAXX4_H_
 #define _ATMEGAXX4_H_
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
 #include <usart_avr.h>
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
 #ifdef CONFIG_FS
 #include <fs_target.h>

@@ -14,7 +14,7 @@
 #define _SPI_BB_AVR_H_
 #include <kernel.h>
 
-#ifdef CONFIG_SPI
+#ifdef IO_SPI
 #include <spi.h>
 
 /* Bit-bang SPI configuration structure. */
@@ -51,5 +51,5 @@ void spi_bb_avr_slave_select(SPI_DEVICE *);
 void spi_bb_avr_slave_unselect(SPI_DEVICE *);
 int32_t spi_bb_avr_message(SPI_DEVICE *, SPI_MSG *) SPEEDOPTIMIZATION;
 
-#endif /* CONFIG_SPI */
+#endif /* IO_SPI */
 #endif /* _SPI_BB_AVR_H_ */

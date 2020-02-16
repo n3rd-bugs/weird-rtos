@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_ETHERNET
+#ifdef IO_ETHERNET
 #include <avr/interrupt.h>
 #include <ethernet.h>
 #include <ethernet_avr.h>
@@ -55,4 +55,4 @@ void ethernet_avr_init(void)
 
 } /* ethernet_avr_init */
 
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */

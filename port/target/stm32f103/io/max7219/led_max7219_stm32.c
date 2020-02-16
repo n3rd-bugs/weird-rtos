@@ -12,12 +12,12 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_MAX7219
-#ifdef CONFIG_SPI
+#ifdef GPIO_MAX7219
+#ifdef IO_SPI
 #include <spi_stm32f103.h>
 #else
 #error "SPI is required for MAX7219."
-#endif /* CONFIG_SPI */
+#endif /* IO_SPI */
 #include <led_max7219_stm32.h>
 
 /* Local variable definition. */
@@ -79,4 +79,4 @@ void led_max7219_stm32_init(void)
 
 } /* led_max7219_stm32_init */
 
-#endif /* CONFIG_MAX7219 */
+#endif /* GPIO_MAX7219 */

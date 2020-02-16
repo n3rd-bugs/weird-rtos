@@ -34,12 +34,12 @@ void sys_log_init(void)
 #ifdef SYS_LOG_RUNTIME_UPDATE
     /* Set default level for all the components. */
     log_level[SYS_LOG_DEF]              = SYS_LOG_LEVEL_DEF;
-#ifdef CONFIG_MMC
+#ifdef IO_MMC
     log_level[SYS_LOG_MMC]              = SYS_LOG_LEVEL_MMC;
-#endif /* CONFIG_MMC */
-#ifdef CONFIG_ETHERNET
+#endif /* IO_MMC */
+#ifdef IO_ETHERNET
     log_level[SYS_LOG_ENC28J60]         = SYS_LOG_LEVEL_ENC28J60;
-#endif /* CONFIG_ETHERNET */
+#endif /* IO_ETHERNET */
 #ifdef CONFIG_FS
     log_level[SYS_LOG_FATFS]            = SYS_LOG_LEVEL_FATFS;
 #endif /* CONFIG_FS */
@@ -77,7 +77,7 @@ void sys_log(uint8_t *comp_name, const uint8_t *message, ...)
 {
     va_list vl;
 
-#ifndef CONFIG_SERIAL
+#ifndef IO_SERIAL
     /* Removed some compiler warnings. */
     UNUSED_PARAM(comp_name);
 #endif
@@ -85,7 +85,7 @@ void sys_log(uint8_t *comp_name, const uint8_t *message, ...)
     /* Arguments start from the format. */
     va_start(vl, message);
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
     /* Print the component name. */
     io_puts("[", -1);
     io_puts((const char *)comp_name, -1);
@@ -96,7 +96,7 @@ void sys_log(uint8_t *comp_name, const uint8_t *message, ...)
 
     /* Add a new line. */
     io_puts("\r\n", -1);
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
     /* Destroy the argument list. */
     va_end(vl);
@@ -117,7 +117,7 @@ void sys_log_hexdump(uint8_t *comp_name, const uint8_t *message, uint8_t *bytes,
 {
     va_list vl;
 
-#ifndef CONFIG_SERIAL
+#ifndef IO_SERIAL
     /* Removed some compiler warnings. */
     UNUSED_PARAM(comp_name);
     UNUSED_PARAM(message);
@@ -127,7 +127,7 @@ void sys_log_hexdump(uint8_t *comp_name, const uint8_t *message, uint8_t *bytes,
     /* Arguments start from the format. */
     va_start(vl, num_bytes);
 
-#ifdef CONFIG_SERIAL
+#ifdef IO_SERIAL
     /* Print the component name. */
     io_puts("[", -1);
     io_puts((const char *)comp_name, -1);
@@ -156,7 +156,7 @@ void sys_log_hexdump(uint8_t *comp_name, const uint8_t *message, uint8_t *bytes,
 
     /* Add a new line. */
     io_puts("\r\n", -1);
-#endif /* CONFIG_SERIAL */
+#endif /* IO_SERIAL */
 
     /* Destroy the argument list. */
     va_end(vl);

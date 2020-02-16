@@ -12,7 +12,7 @@
  */
 #include <kernel.h>
 
-#ifdef CONFIG_OLED
+#ifdef IO_OLED
 #include <oled_ssd1306.h>
 #include <oled_stm32.h>
 #include <i2c_stm32f103.h>
@@ -70,4 +70,4 @@ void oled_stm32_init(void)
     oled_ssd1306_register(&stm32_ssd1306);
 
 } /* oled_stm32_init */
-#endif /* CONFIG_OLED */
+#endif /* IO_OLED */
