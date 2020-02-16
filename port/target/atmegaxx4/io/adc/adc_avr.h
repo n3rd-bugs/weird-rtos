@@ -46,11 +46,14 @@
 /* This is callback function when ADC data is available to read. */
 typedef void ADC_DATA_CALLBACK (uint32_t);
 
+/* Type definition for ADC sample. */
+typedef uint16_t ADC_SAMPLE;
+
 /* Function prototypes. */
 void adc_avr_init(void);
 void adc_avr_channel_select(uint32_t);
 void adc_avr_channel_unselect(uint32_t);
-uint32_t adc_avr_read(void);
+ADC_SAMPLE adc_avr_read(void);
 void adc_avr_periodic_read_start(ADC_DATA_CALLBACK *, uint32_t);
 void adc_avr_periodic_read_stop(void);
 
