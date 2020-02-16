@@ -1,4 +1,7 @@
 # Add subdirectories.
+if (${IO_ADC})
+    add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/adc)
+endif ()
 if (${GPIO_DHT})
     add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/dhtxx)
 endif ()

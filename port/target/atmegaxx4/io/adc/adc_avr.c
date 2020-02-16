@@ -14,8 +14,8 @@
 
 #ifdef IO_ADC
 #include <avr/interrupt.h>
-#include <adc_avr.h>
 #include <adc.h>
+#include <adc_avr.h>
 
 ADC_DATA_CALLBACK *adc_callback = NULL;
 
@@ -103,7 +103,7 @@ void adc_avr_channel_unselect(uint32_t channel)
  * @return: Returns the ADC reading.
  * This function will take a reading from the given ADC channel.
  */
-uint32_t adc_avr_read(void)
+ADC_SAMPLE adc_avr_read(void)
 {
     /* Start ADC conversion. */
     ADCSRA |= (1 << ADSC);

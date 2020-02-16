@@ -15,13 +15,13 @@
 #include <kernel.h>
 
 #ifdef IO_ADC
-#include <adc_stm32.h>
+#include <adc_stm32f103.h>
 
 /* Hook-up ADC OS stack. */
-#define ADC_TGT_INIT                adc_stm32_init
-#define ADC_TGT_CHANNEL_SELECT      adc_stm32_channel_select
-#define ADC_TGT_CHANNEL_UNSELECT    adc_stm32_channel_unselect
-#define ADC_TGT_READ                adc_stm32_read
+#define ADC_TGT_INIT                adc_stm32f103_init
+#define ADC_TGT_CHANNEL_SELECT      adc_stm32f103_channel_select
+#define ADC_TGT_CHANNEL_UNSELECT    adc_stm32f103_channel_unselect
+#define ADC_TGT_READ                adc_stm32f103_read
 
 #endif /* IO_ADC */
 #endif /* _ADC_TARGET_H_ */
