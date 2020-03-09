@@ -114,17 +114,6 @@ Wire Notes Line
 Text Notes 7500 3600 2    50   ~ 0
 16v8 - Implements delayed trigger
 $Comp
-L Triac_Thyristor:BT169G Q1
-U 1 1 5E2FE16C
-P 3500 5850
-F 0 "Q1" H 3588 5896 50  0000 L CNN
-F 1 "BTA20" H 3588 5805 50  0000 L CNN
-F 2 "Package_TO_SOT_THT:TO-220-3_Horizontal_TabDown" H 3600 5775 50  0001 L CIN
-F 3 "https://media.digikey.com/pdf/Data%20Sheets/NXP%20PDFs/BT169_Series.pdf" H 3500 5850 50  0001 L CNN
-	1    3500 5850
-	1    0    0    -1  
-$EndComp
-$Comp
 L Device:R R4
 U 1 1 5E300454
 P 3250 5650
@@ -197,7 +186,7 @@ L Device:R R5
 U 1 1 5E3078C4
 P 3300 5000
 F 0 "R5" V 3507 5000 50  0000 C CNN
-F 1 "20k" V 3416 5000 50  0000 C CNN
+F 1 "100k" V 3416 5000 50  0000 C CNN
 F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 3230 5000 50  0001 C CNN
 F 3 "~" H 3300 5000 50  0001 C CNN
 	1    3300 5000
@@ -208,7 +197,7 @@ L Device:R R6
 U 1 1 5E308575
 P 3300 5200
 F 0 "R6" V 3093 5200 50  0000 C CNN
-F 1 "20k" V 3184 5200 50  0000 C CNN
+F 1 "100k" V 3184 5200 50  0000 C CNN
 F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 3230 5200 50  0001 C CNN
 F 3 "~" H 3300 5200 50  0001 C CNN
 	1    3300 5200
@@ -284,8 +273,6 @@ F 3 "" H 2350 6350 50  0001 C CNN
 	1    2350 6350
 	1    0    0    -1  
 $EndComp
-Wire Wire Line
-	2350 6350 2350 6300
 Text GLabel 6100 2550 0    50   Input ~ 0
 Line
 Wire Wire Line
@@ -293,28 +280,19 @@ Wire Wire Line
 Text GLabel 2100 5200 0    50   Input ~ 0
 Line
 Connection ~ 2350 5200
-Text GLabel 2100 5500 0    50   Input ~ 0
+Text GLabel 2250 5850 0    50   Input ~ 0
 TRIG
 $Comp
 L Device:R R1
 U 1 1 5E314E2A
-P 2050 5850
-F 0 "R1" V 1843 5850 50  0000 C CNN
-F 1 "1k" V 1934 5850 50  0000 C CNN
-F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 1980 5850 50  0001 C CNN
-F 3 "~" H 2050 5850 50  0001 C CNN
-	1    2050 5850
+P 2100 5650
+F 0 "R1" V 1893 5650 50  0000 C CNN
+F 1 "1k" V 1984 5650 50  0000 C CNN
+F 2 "Resistor_THT:R_Axial_DIN0207_L6.3mm_D2.5mm_P7.62mm_Horizontal" V 2030 5650 50  0001 C CNN
+F 3 "~" H 2100 5650 50  0001 C CNN
+	1    2100 5650
 	0    1    1    0   
 $EndComp
-Wire Wire Line
-	2200 5850 2450 5850
-Wire Wire Line
-	1900 5850 1900 6300
-Wire Wire Line
-	1900 6300 2350 6300
-Connection ~ 2350 6300
-Wire Wire Line
-	2350 6300 2350 6250
 Wire Notes Line
 	1450 4450 4800 4450
 Wire Notes Line
@@ -764,12 +742,6 @@ Text GLabel 7550 2150 2    50   Input ~ 0
 LINEINV
 Wire Wire Line
 	7550 2150 7350 2150
-Wire Wire Line
-	2100 5500 2250 5500
-Wire Wire Line
-	2250 5500 2250 5650
-Wire Wire Line
-	2250 5650 2450 5650
 $Comp
 L Connector:Conn_01x01_Female J3
 U 1 1 5E2EE2B9
@@ -794,4 +766,49 @@ F 3 "~" H 4250 6400 50  0001 C CNN
 $EndComp
 Wire Wire Line
 	4050 6400 4050 6600
+$Comp
+L power:GNDD #PWR?
+U 1 1 5E66B6DA
+P 6350 2800
+F 0 "#PWR?" H 6350 2550 50  0001 C CNN
+F 1 "GNDD" H 6354 2645 50  0000 C CNN
+F 2 "" H 6350 2800 50  0001 C CNN
+F 3 "" H 6350 2800 50  0001 C CNN
+	1    6350 2800
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	6350 2800 6350 2650
+Wire Wire Line
+	2350 6250 2350 6350
+Wire Wire Line
+	2250 5850 2450 5850
+Wire Wire Line
+	2450 5650 2250 5650
+$Comp
+L power:+5V #PWR?
+U 1 1 5E67DA7A
+P 1850 5550
+F 0 "#PWR?" H 1850 5400 50  0001 C CNN
+F 1 "+5V" H 1865 5723 50  0000 C CNN
+F 2 "" H 1850 5550 50  0001 C CNN
+F 3 "" H 1850 5550 50  0001 C CNN
+	1    1850 5550
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	1850 5650 1950 5650
+Wire Wire Line
+	1850 5550 1850 5650
+$Comp
+L Device:Q_TRIAC_A1A2G D1
+U 1 1 5E68C8D1
+P 3500 5850
+F 0 "D1" H 3628 5896 50  0000 L CNN
+F 1 "BTA20" H 3628 5805 50  0000 L CNN
+F 2 "Package_TO_SOT_THT:TO-220-3_Horizontal_TabDown" V 3575 5875 50  0001 C CNN
+F 3 "~" V 3500 5850 50  0001 C CNN
+	1    3500 5850
+	1    0    0    -1  
+$EndComp
 $EndSCHEMATC
