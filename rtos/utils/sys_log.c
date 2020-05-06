@@ -94,6 +94,11 @@ void sys_log(uint8_t *comp_name, const uint8_t *message, ...)
     /* Print the given message. */
     vprintf((const char *)message, vl);
 
+#ifdef IO_BUFFERED
+    /* Flush STD-OUT now. */
+    fflush(stdout);
+#endif
+
     /* Add a new line. */
     io_puts("\r\n", -1);
 #endif /* IO_SERIAL */
@@ -153,6 +158,11 @@ void sys_log_hexdump(uint8_t *comp_name, const uint8_t *message, uint8_t *bytes,
         /* Dump a byte on the console. */
         printf("%02X", *bytes);
     }
+
+#ifdef IO_BUFFERED
+    /* Flush STD-OUT now. */
+    fflush(stdout);
+#endif
 
     /* Add a new line. */
     io_puts("\r\n", -1);
