@@ -520,6 +520,12 @@ static int32_t usart_stm32f411_puts(void *fd, void *priv_data, const uint8_t *bu
         /* While we have some data to be printed. */
         while (nbytes > 0)
         {
+            /* Wait for transmission of the last byte. */
+            while (!(usart->reg->SR & USART_SR_TC))
+            {
+                ;
+            }
+
             /* Put a byte on USART. */
             usart->reg->DR = ((uint32_t)*buf) & 0xFF;
 
@@ -528,12 +534,6 @@ static int32_t usart_stm32f411_puts(void *fd, void *priv_data, const uint8_t *bu
 
             /* Move forward in the buffer. */
             buf++;
-
-            /* Wait for transmission of the last byte. */
-            while (!(usart->reg->SR & USART_SR_TC))
-            {
-                ;
-            }
         }
     }
 
