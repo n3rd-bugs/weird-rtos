@@ -29,13 +29,13 @@ setup_option(TASK_USAGE_RETAIN ON)
 # Setup enc28j60 configurations.
 setup_option(ENC28J60_INT_POLL ON)
 setup_option(ENC28J60_MAX_BUFFER_SIZE 64)
-setup_option(ENC28J60_NUM_BUFFERS 8)
-setup_option(ENC28J60_NUM_BUFFER_LISTS 4)
-setup_option(ENC28J60_NUM_THR_BUFFER 0)
-setup_option(ENC28J60_NUM_THR_LIST 0)
-setup_option(ENC28J60_NUM_ARP 1)
+setup_option(ENC28J60_NUM_BUFFERS 32)
+setup_option(ENC28J60_NUM_BUFFER_LISTS 8)
+setup_option(ENC28J60_NUM_THR_BUFFER 2)
+setup_option(ENC28J60_NUM_THR_LIST 2)
+setup_option(ENC28J60_NUM_ARP 2)
 setup_option(ENC28J60_NUM_IPV4_FRAGS 0)
-setup_option(ENC28J60_SOFT_MAX_RX_FRAME 512)
+setup_option(ENC28J60_SOFT_MAX_RX_FRAME 2048)
 
 # Setup networking stack configurations.
 setup_option(NET_COND_STACK_SIZE 512)
@@ -43,7 +43,7 @@ setup_option(IPV4_ENABLE_FRAG OFF)
 setup_option(IPV4_ALLOW_SIZE_MISMATCH ON)
 setup_option(UDP_ALLOW_SIZE_MISMATCH ON)
 setup_option(UDP_CSUM OFF)
-setup_option(NET_NUM_ROUTES 2)
+setup_option(NET_NUM_ROUTES 4)
 setup_option(NET_TCP OFF)
 
 # Setup static IP configuration.
@@ -62,8 +62,8 @@ setup_option(LCD_AN_AVR_PIN_NUM_SCL 0)
 setup_option(LCD_AN_AVR_PIN_NUM_SDA 1)
 
 # Setup target configuration.
-#setup_option(TGT_PLATFORM atmega1284p)
-setup_option(TGT_PLATFORM atmega644p)
+setup_option(TGT_PLATFORM atmega1284p)
+#setup_option(TGT_PLATFORM atmega644p)
 setup_option(F_CPU 20000000UL)
 
 # Setup bootloader
