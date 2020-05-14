@@ -96,16 +96,19 @@ WEIRD_VIEW_PLUGIN           weird_view_plugins[] =
 };
 
 /* Control task definitions. */
-#define CONTROL_TASK_STACK_SIZE         128
+#define CONTROL_TASK_STACK_SIZE         512
 uint8_t control_stack[CONTROL_TASK_STACK_SIZE];
 TASK control_cb;
 void control_entry(void *argv);
 
 /* Log task definitions. */
-#define LOG_TASK_STACK_SIZE             320
+#define LOG_TASK_STACK_SIZE             512
 uint8_t log_stack[LOG_TASK_STACK_SIZE];
 TASK log_cb;
 void log_entry(void *argv);
+
+/* Time at which last power failure occur. */
+volatile uint32_t last_power_failure = 0;
 
 /* ADC configuration and data. */
 #define ADC_PRESCALE            ((uint32_t)125)
@@ -129,7 +132,8 @@ void log_entry(void *argv);
 #define GENERATOR_SELF_DEL_INC  (750)
 #define GENERATOR_ON_DELAY      (10000)
 #define GENERATOR_SELF_RETRY    (3)
-#define SWITCH_DELAY            (5000)
+#define CHANGE_OVER_DELAY       (5000)
+#define SWITCH_DELAY            (8000)
 #define ADC_CHANNEL_DELAY       (100)
 #define ADC_MAX_WAVES           (20)
 #define ADC_NUM_SAMPLES         (ADC_MAX_WAVES * ADC_SAMPLE_PER_WAVE)
@@ -173,10 +177,10 @@ void log_entry(void *argv);
 #define IN_GENSELF_ON           PINB
 #define PIN_GENSELF_ON          2
 
-#define DDR_CHANGE_OVER         DDRD
-#define PORT_CHANGE_OVER        PORTD
-#define IN_CHANGE_OVER          PIND
-#define PIN_CHANGE_OVER         3
+#define DDR_GENERATOR_RELAY     DDRD
+#define PORT_GENERATOR_RELAY    PORTD
+#define IN_GENERATOR_RELAY      PIND
+#define PIN_GENERATOR_RELAY     3
 
 #define DDR_AUTO_SEL            DDRA
 #define PORT_AUTO_SEL           PORTA
@@ -209,10 +213,10 @@ void log_entry(void *argv);
 #define IN_GENSELF_ON           PINB
 #define PIN_GENSELF_ON          2
 
-#define DDR_CHANGE_OVER         DDRD
-#define PORT_CHANGE_OVER        PORTD
-#define IN_CHANGE_OVER          PIND
-#define PIN_CHANGE_OVER         3
+#define DDR_GENERATOR_RELAY         DDRD
+#define PORT_GENERATOR_RELAY        PORTD
+#define IN_GENERATOR_RELAY          PIND
+#define PIN_GENERATOR_RELAY         3
 
 #define DDR_AUTO_SEL            DDRA
 #define PORT_AUTO_SEL           PORTA
@@ -323,9 +327,16 @@ void generator_self(void)
             }
             else
             {
-                /* Main is no longer on. */
-                PORT_MAINON_IND  &= (uint8_t)(~(1 << PIN_MAINON_IND));
-                main_on = FALSE;
+                /* If this is a new power failure. */
+                if (main_on == TRUE)
+                {
+                    /* Main is no longer on. */
+                    PORT_MAINON_IND  &= (uint8_t)(~(1 << PIN_MAINON_IND));
+                    main_on = FALSE;
+
+                    /* Save the time at which this happened. */
+                    last_power_failure = current_system_tick();
+                }
             }
 
             /* If generator has crossed the threshold. */
@@ -393,8 +404,11 @@ void toggle_auto_start(uint8_t *auto_start, uint8_t force_off)
 void control_entry(void *argv)
 {
     INT_LVL interrupt_level;
-    uint32_t gen_off_count, change_over_count = 0, switch_count = 0;
-    uint8_t main_on, generator_on;
+    uint32_t gen_off_count;
+    uint32_t switch_count = 0;
+    uint32_t generator_count = 0;
+    uint8_t generator_on;
+    uint8_t main_on = FALSE;
     uint8_t generator_selfed = FALSE;
     uint8_t generator_switched_on = FALSE;
     uint8_t supply_gen = FALSE;
@@ -420,8 +434,8 @@ void control_entry(void *argv)
     DDR_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
     PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
 
-    /* Turn off the change over. */
-    PORT_CHANGE_OVER &= (uint8_t)(~(1 << PIN_CHANGE_OVER));
+    /* Turn off the generator relay. */
+    PORT_GENERATOR_RELAY &= (uint8_t)(~(1 << PIN_GENERATOR_RELAY));
 
     /* TURN on the connected LED. */
     PORT_CONNECTED |= (1 << PIN_CONNECTED);
@@ -535,9 +549,16 @@ void control_entry(void *argv)
         }
         else
         {
-            /* Main is no longer on. */
-            PORT_MAINON_IND  &= (uint8_t)(~(1 << PIN_MAINON_IND));
-            main_on = FALSE;
+            /* If this is a new power failure. */
+            if (main_on == TRUE)
+            {
+                /* Main is no longer on. */
+                PORT_MAINON_IND  &= (uint8_t)(~(1 << PIN_MAINON_IND));
+                main_on = FALSE;
+
+                /* Save the time at which this happened. */
+                last_power_failure = current_system_tick();
+            }
         }
 
         /* If generator has crossed the threshold. */
@@ -563,11 +584,11 @@ void control_entry(void *argv)
             /* If we were on generator. */
             if (supply_gen == TRUE)
             {
-                /* Increment change over count. */
-                change_over_count ++;
+                /* Increment generator count. */
+                generator_count ++;
 
-                /* If we have waited long enough to turn off the switch over. */
-                if (change_over_count >= (SWITCH_DELAY / STATE_DELAY))
+                /* If we have waited long enough to turn off the generator relay. */
+                if (generator_count >= (SWITCH_DELAY / STATE_DELAY))
                 {
                     /* Get system interrupt level. */
                     interrupt_level = GET_INTERRUPT_LEVEL();
@@ -575,8 +596,8 @@ void control_entry(void *argv)
                     /* Disable global interrupts. */
                     DISABLE_INTERRUPTS();
 
-                    /* Toggle the change over. */
-                    PORT_CHANGE_OVER &= ((uint8_t)~(1 << PIN_CHANGE_OVER));
+                    /* Turn off the generator relay. */
+                    PORT_GENERATOR_RELAY &= ((uint8_t)~(1 << PIN_GENERATOR_RELAY));
 
                     /* Supply is no longer on the generator. */
                     supply_gen = FALSE;
@@ -588,8 +609,8 @@ void control_entry(void *argv)
         }
         else
         {
-            /* Reset the change over count. */
-            change_over_count = 0;
+            /* Reset the generator count. */
+            generator_count = 0;
         }
 
         /* Check if main is on or we need to turn off the generator. */
@@ -600,6 +621,29 @@ void control_entry(void *argv)
             {
                 /* We have detected an update in state. */
                 switch_count ++;
+
+                /* If we were on generator. */
+                if (supply_gen == TRUE)
+                {
+                    /* If we have waited long enough to turn off the switch over. */
+                    if (switch_count >= (CHANGE_OVER_DELAY / STATE_DELAY))
+                    {
+                        /* Get system interrupt level. */
+                        interrupt_level = GET_INTERRUPT_LEVEL();
+
+                        /* Disable global interrupts. */
+                        DISABLE_INTERRUPTS();
+
+                        /* Turn off the generator relay. */
+                        PORT_GENERATOR_RELAY &= ((uint8_t)~(1 << PIN_GENERATOR_RELAY));
+
+                        /* Supply is no longer on the generator. */
+                        supply_gen = FALSE;
+
+                        /* Restore old interrupt level. */
+                        SET_INTERRUPT_LEVEL(interrupt_level);
+                    }
+                }
 
                 /* If we have waited long enough to process this state or we
                  * need to turn off the generator forcefully. */
@@ -613,13 +657,13 @@ void control_entry(void *argv)
                     generator_switched_on = FALSE;
                     generator_selfed = FALSE;
 
-                    /* Reset the change count. */
+                    /* Reset the switch count. */
                     switch_count = 0;
                 }
             }
             else
             {
-                /* Reset the change count. */
+                /* Reset the switch count. */
                 switch_count = 0;
             }
 
@@ -645,13 +689,13 @@ void control_entry(void *argv)
                     /* Generator is turned on. */
                     generator_switched_on = TRUE;
 
-                    /* Reset the change count. */
+                    /* Reset the switch count. */
                     switch_count = 0;
                 }
             }
             else
             {
-                /* Reset the change count. */
+                /* Reset the switch count. */
                 switch_count = 0;
             }
 
@@ -668,8 +712,8 @@ void control_entry(void *argv)
                 /* Turn off the self LED. */
                 PORT_SELFON_IND &= (uint8_t)(~(1 << PIN_SELFON_IND));
 
-                /* Turn off the change over. */
-                PORT_CHANGE_OVER &= ((uint8_t)~(1 << PIN_CHANGE_OVER));
+                /* Turn off the generator relay. */
+                PORT_GENERATOR_RELAY &= ((uint8_t)~(1 << PIN_GENERATOR_RELAY));
                 supply_gen = FALSE;
 
                 /* Restore old interrupt level. */
@@ -691,8 +735,8 @@ void control_entry(void *argv)
                 /* Disable global interrupts. */
                 DISABLE_INTERRUPTS();
 
-                /* Toggle the generator supply. */
-                PORT_CHANGE_OVER |= (1 << PIN_CHANGE_OVER);
+                /* Turn on the generator relay. */
+                PORT_GENERATOR_RELAY |= (1 << PIN_GENERATOR_RELAY);
 
                 /* Supply is no longer on the generator. */
                 supply_gen = TRUE;
@@ -1225,7 +1269,7 @@ void adc_int_unlock(void *data)
  */
 void log_entry(void *argv)
 {
-    uint32_t systick, ip_address, target_time = (current_system_tick() / SOFT_TICKS_PER_SEC) * 1000;
+    uint32_t systick, ip_address;
     static FD *enc28j60_fd = NULL;
     uint8_t day, hour, min, sec, milisec;
     char str[10];
@@ -1243,16 +1287,8 @@ void log_entry(void *argv)
 
     for (;;)
     {
-        /* Sleep for some time. */
-        /* Pick the system tick. */
-        systick = current_system_tick();
-        if (target_time > TICK_TO_MS(systick))
-        {
-            sleep_fms(target_time - TICK_TO_MS(systick));
-        }
-
-        /* If we should update display. */
-        systick = current_system_tick();
+        /* Calculate time since last power failure. */
+        systick = current_system_tick() - last_power_failure;
 
         /* Reset LCD AN interface. */
         fs_ioctl(lcd_an_fd, LCD_AN_RESET, NULL);
@@ -1304,6 +1340,8 @@ void log_entry(void *argv)
         io_puts(str, -1);
         rtl_ultoa_b10((uint32_t)(ip_address & 0xFF), (uint8_t*)str);
         io_puts(str, -1);
+        P_STR_CPY(str, P_STR(" "));
+        io_puts(str, -1);
 
         /* If generator power is on. */
         if (IN_GENPWR_ON & (1 << PIN_GENPWR_ON))
@@ -1319,10 +1357,10 @@ void log_entry(void *argv)
             io_puts(str, -1);
         }
 
-        /* If change over is on. */
-        if (IN_CHANGE_OVER & (1 << PIN_CHANGE_OVER))
+        /* If generator relay is on. */
+        if (IN_GENERATOR_RELAY & (1 << PIN_GENERATOR_RELAY))
         {
-            P_STR_CPY(str, P_STR("C"));
+            P_STR_CPY(str, P_STR("R"));
             io_puts(str, -1);
         }
 
@@ -1358,8 +1396,8 @@ void log_entry(void *argv)
         usage_reset();
 #endif /* (defined(TASK_STATS) && defined(TASK_USAGE)) */
 
-        /* Calculate the tick at which we need to display log. */
-        target_time += LOG_DELAY;
+        /* Sleep for some time. */
+        sleep_fms(LOG_DELAY);
     }
 
 } /* log_entry */
@@ -1387,9 +1425,9 @@ int main(void)
     DDR_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
     PORT_GENSELF_ON &= (uint8_t)(~(1 << PIN_GENSELF_ON));
 
-    /* Configure and turn off the change over. */
-    DDR_CHANGE_OVER |= (1 << PIN_CHANGE_OVER);
-    PORT_CHANGE_OVER &= (uint8_t)(~(1 << PIN_CHANGE_OVER));
+    /* Configure and turn off the generator relay. */
+    DDR_GENERATOR_RELAY |= (1 << PIN_GENERATOR_RELAY);
+    PORT_GENERATOR_RELAY &= (uint8_t)(~(1 << PIN_GENERATOR_RELAY));
 
     /* Configure connected LED. */
     DDR_CONNECTED |= (1 << PIN_CONNECTED);
