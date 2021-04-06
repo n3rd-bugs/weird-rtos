@@ -7,3 +7,4 @@ pld/galasm
 *.kicad_pcb-bak
 *.sch-bak
 *.net
+pld/dimmer/pcb/fp-info-cache
